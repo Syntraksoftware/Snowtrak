@@ -1,12 +1,14 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:syntrak/models/user.dart';
+import 'package:syntrak/models/auth_session.dart';
 import 'package:syntrak/services/api_service.dart';
 import 'package:syntrak/services/storage_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final ApiService _apiService;
   final StorageService? _storageService;
-  User? _user;
+  AuthSession? _session;
   bool _isAuthenticated = false;
   bool _isLoading = true;
   String? _error;
@@ -16,7 +18,8 @@ class AuthProvider extends ChangeNotifier {
   // Public method to check auth (called after storage is initialized)
   Future<void> checkAuth() => _checkAuth();
 
-  User? get user => _user;
+  User? get user => _session?.user;
+  AuthSession? get session => _session;
   bool get isAuthenticated => _isAuthenticated;
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -37,34 +40,54 @@ class AuthProvider extends ChangeNotifier {
         print('🔍 [AuthProvider] No storage service available');
       }
 
-      // Check if token exists in storage
-      if (_storageService != null && _storageService!.token != null) {
-        print('🔍 [AuthProvider] Token found, validating with backend...');
-        _apiService.setToken(_storageService!.token);
-        try {
-          // Add timeout to prevent hanging if backend is not running
-          _user = await _apiService.getCurrentUser()
-              .timeout(const Duration(seconds: 3));
-          _isAuthenticated = true;
-          print('🔍 [AuthProvider] User authenticated: ${_user?.email}');
-        } catch (e) {
-          print('🔍 [AuthProvider] Auth validation failed: $e');
-          // Token invalid or backend not available, clear it and show login
-          if (_storageService != null) {
-            await _storageService!.clearToken();
+      // Try to restore session from storage
+      final restoredSession = await _restoreSession();
+      if (restoredSession != null) {
+        print('🔍 [AuthProvider] Session restored from storage');
+        
+        // Check if token is expired
+        if (restoredSession.isExpired) {
+          print('🔍 [AuthProvider] Access token expired, attempting refresh...');
+          try {
+            _session = await _refreshSession(restoredSession);
+            await _saveSession(_session!);
+            _apiService.setToken(_session!.accessToken);
+            _isAuthenticated = true;
+            print('🔍 [AuthProvider] Session refreshed successfully');
+          } catch (e) {
+            print('🔍 [AuthProvider] Token refresh failed: $e');
+            await _clearSession();
+            _isAuthenticated = false;
           }
-          _isAuthenticated = false;
+        } else {
+          print('🔍 [AuthProvider] Token still valid, validating with backend...');
+          _apiService.setToken(restoredSession.accessToken);
+          try {
+            // Validate token with backend
+            final user = await _apiService.getCurrentUser()
+                .timeout(const Duration(seconds: 3));
+            _session = AuthSession(
+              accessToken: restoredSession.accessToken,
+              refreshToken: restoredSession.refreshToken,
+              expiresAt: restoredSession.expiresAt,
+              user: user,
+            );
+            _isAuthenticated = true;
+            print('🔍 [AuthProvider] User authenticated: ${user.email}');
+          } catch (e) {
+            print('🔍 [AuthProvider] Token validation failed: $e');
+            await _clearSession();
+            _isAuthenticated = false;
+          }
         }
       } else {
-        print('🔍 [AuthProvider] No token found, showing login');
+        print('🔍 [AuthProvider] No session found, showing login');
         _isAuthenticated = false;
       }
     } catch (e) {
       print('🔍 [AuthProvider] Error in _checkAuth: $e');
-      // Any error - just show login screen
       _isAuthenticated = false;
     } finally {
-      // ALWAYS set loading to false, no matter what happens
       print('🔍 [AuthProvider] Setting isLoading to false');
       _isLoading = false;
       notifyListeners();
@@ -79,18 +102,15 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
 
       final response = await _apiService.login(email: email, password: password);
-      final token = response['token'] as String;
-      final userJson = response['user'] as Map<String, dynamic>;
-
-      _apiService.setToken(token);
-      _user = User.fromJson(userJson);
+      
+      // Parse session from response
+      _session = AuthSession.fromJson(response);
+      _apiService.setToken(_session!.accessToken);
       _isAuthenticated = true;
       _error = null;
 
-      // Save token to storage
-      if (_storageService != null) {
-        await _storageService!.saveToken(token, _user!.id);
-      }
+      // Save session to storage
+      await _saveSession(_session!);
 
       _isLoading = false;
       notifyListeners();
@@ -116,18 +136,15 @@ class AuthProvider extends ChangeNotifier {
         firstName: firstName,
         lastName: lastName,
       );
-      final token = response['token'] as String;
-      final userJson = response['user'] as Map<String, dynamic>;
-
-      _apiService.setToken(token);
-      _user = User.fromJson(userJson);
+      
+      // Parse session from response
+      _session = AuthSession.fromJson(response);
+      _apiService.setToken(_session!.accessToken);
       _isAuthenticated = true;
       _error = null;
 
-      // Save token to storage
-      if (_storageService != null) {
-        await _storageService!.saveToken(token, _user!.id);
-      }
+      // Save session to storage
+      await _saveSession(_session!);
 
       _isLoading = false;
       notifyListeners();
@@ -150,15 +167,69 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> logout() async {
     _apiService.setToken(null);
-    _user = null;
+    _session = null;
     _isAuthenticated = false;
 
-    // Clear token from storage
-    if (_storageService != null) {
-      await _storageService!.clearToken();
-    }
+    // Clear session from storage
+    await _clearSession();
 
     notifyListeners();
+  }
+
+  // Session management helpers
+  
+  Future<AuthSession?> _restoreSession() async {
+    if (_storageService == null) return null;
+    
+    try {
+      await _storageService!.init();
+      final sessionJson = _storageService!.token; // Reuse token field for session JSON
+      
+      if (sessionJson == null || sessionJson.isEmpty) return null;
+      
+      final decoded = jsonDecode(sessionJson);
+      return AuthSession.fromJson(decoded);
+    } catch (e) {
+      print('🔍 [AuthProvider] Error restoring session: $e');
+      return null;
+    }
+  }
+
+  Future<void> _saveSession(AuthSession session) async {
+    if (_storageService == null) return;
+    
+    try {
+      final sessionJson = jsonEncode(session.toJson());
+      await _storageService!.saveToken(sessionJson, session.user.id);
+      print('🔍 [AuthProvider] Session saved to storage');
+    } catch (e) {
+      print('🔍 [AuthProvider] Error saving session: $e');
+    }
+  }
+
+  Future<void> _clearSession() async {
+    if (_storageService == null) return;
+    
+    try {
+      await _storageService!.clearToken();
+      print('🔍 [AuthProvider] Session cleared from storage');
+    } catch (e) {
+      print('🔍 [AuthProvider] Error clearing session: $e');
+    }
+  }
+
+  Future<AuthSession> _refreshSession(AuthSession oldSession) async {
+    if (oldSession.refreshToken == null) {
+      throw Exception('No refresh token available');
+    }
+
+    try {
+      final response = await _apiService.refreshToken(oldSession.refreshToken!);
+      return AuthSession.fromJson(response);
+    } catch (e) {
+      print('🔍 [AuthProvider] Token refresh failed: $e');
+      rethrow;
+    }
   }
 }
 
