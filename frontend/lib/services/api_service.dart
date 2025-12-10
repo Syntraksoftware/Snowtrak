@@ -92,6 +92,20 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
+    try {
+      final response = await _dio.post('/auth/refresh', data: {
+        'refresh_token': refreshToken,
+      });
+      return response.data;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        throw Exception('Refresh token expired. Please login again.');
+      }
+      throw Exception('Token refresh failed: ${e.message}');
+    }
+  }
+
   // User endpoints
   Future<User> getCurrentUser() async {
     final response = await _dio.get('/users/me');
