@@ -111,6 +111,19 @@ def login(credentials: LoginRequest) -> AuthSession:
             detail="Account is disabled"
         )
     
+    # Verify user exists in Supabase
+    if supabase_client.is_configured():
+        try:
+            supabase_user = supabase_client.get_user_info_by_email(credentials.email)
+            if not supabase_user:
+                logger.warning(f"User {credentials.email} not found in Supabase during login")
+            else:
+                logger.info(f"User {credentials.email} verified in Supabase")
+        except Exception as e:
+            logger.exception(f"Error verifying user {credentials.email} in Supabase: {e}")
+    else:
+        logger.warning("Supabase not configured; skipping user verification")
+    
     # Update last login
     user.last_login_at = datetime.utcnow()
     
