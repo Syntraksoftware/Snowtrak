@@ -50,6 +50,31 @@ class Settings(BaseSettings):
         if isinstance(self.allowed_origins, str):
             return [origin.strip() for origin in self.allowed_origins.split(",") if origin.strip()]
         return self.allowed_origins if isinstance(self.allowed_origins, list) else []
+    
+    @model_validator(mode="after")
+    def validate_supabase_config(self):
+        """
+        Validate that Supabase URL and service role key are either both set or both None.
+        
+        Raises:
+            ValueError: If only one of supabase_url or supabase_service_role_key is provided.
+        """
+        url_provided = self.supabase_url is not None and str(self.supabase_url).strip() != ""
+        key_provided = self.supabase_service_role_key is not None and str(self.supabase_service_role_key).strip() != ""
+        
+        if url_provided != key_provided:
+            if url_provided:
+                raise ValueError(
+                    "supabase_url is provided but supabase_service_role_key is missing. "
+                    "Both SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set together."
+                )
+            else:
+                raise ValueError(
+                    "supabase_service_role_key is provided but supabase_url is missing. "
+                    "Both SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set together."
+                )
+        
+        return self
 
 
 # Global settings instance
