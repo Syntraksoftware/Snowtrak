@@ -14,17 +14,19 @@ class User:
         email: str,
         hashed_password: str,
         first_name: Optional[str] = None,
-        last_name: Optional[str] = None
+        last_name: Optional[str] = None,
+        id: Optional[str] = None,
+        is_active: bool = True,
     ):
-        # Generate a real UUID for Supabase compatibility
-        self.id = str(uuid.uuid4())
+        # Use provided id or generate a real UUID for Supabase compatibility
+        self.id = id or str(uuid.uuid4())
         # Keep a backend-specific ID if needed for internal use
         self.backend_id = f"usr_{uuid.uuid4().hex[:16]}"
         self.email = email
         self.hashed_password = hashed_password
         self.first_name = first_name
         self.last_name = last_name
-        self.is_active = True
+        self.is_active = is_active
         self.created_at = datetime.utcnow()
         self.last_login_at: Optional[datetime] = None
 
