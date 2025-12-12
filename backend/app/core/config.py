@@ -2,13 +2,19 @@
 Core configuration module using Pydantic Settings.
 Loads environment variables and provides type-safe config access.
 """
-from pydantic_settings import BaseSettings
-from pydantic import Field
-from typing import List
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field, field_validator, model_validator
+from typing import List, Union
 
 
 class Settings(BaseSettings):
     """Application settings with validation."""
+    
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=False,
+        env_file_encoding="utf-8",
+    )
     
     # App Info
     app_name: str = Field(default="Syntrak Auth API", alias="APP_NAME")
@@ -26,9 +32,9 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = Field(default=60, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
     refresh_token_expire_days: int = Field(default=7, alias="REFRESH_TOKEN_EXPIRE_DAYS")
     
-    # CORS
-    allowed_origins: List[str] = Field(
-        default=["http://localhost:3000", "http://127.0.0.1:3000"],
+    # CORS - stored as string in env, converted to list
+    allowed_origins: str = Field(
+        default="http://localhost:3000,http://127.0.0.1:3000",
         alias="ALLOWED_ORIGINS"
     )
     
@@ -39,15 +45,11 @@ class Settings(BaseSettings):
     supabase_url: str | None = Field(default=None, alias="SUPABASE_URL")
     supabase_service_role_key: str | None = Field(default=None, alias="SUPABASE_SERVICE_ROLE_KEY")
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
-        
-        @classmethod
-        def parse_env_var(cls, field_name: str, raw_val: str):
-            if field_name == 'allowed_origins':
-                return [origin.strip() for origin in raw_val.split(',')]
-            return raw_val
+    def get_allowed_origins(self) -> List[str]:
+        """Get allowed origins as a list."""
+        if isinstance(self.allowed_origins, str):
+            return [origin.strip() for origin in self.allowed_origins.split(",") if origin.strip()]
+        return self.allowed_origins if isinstance(self.allowed_origins, list) else []
 
 
 # Global settings instance
