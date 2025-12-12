@@ -72,11 +72,20 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
                     detail="User account is disabled"
                 )
             
+            # Validate required Supabase fields
+            user_id = supabase_user.get("id")
+            email = supabase_user.get("email")
+            hashed_password = supabase_user.get("hashed_password")
+            
+            if not user_id or not email or not hashed_password:
+                logger.error("Supabase user record missing required fields for user_id=%s", token_data.user_id)
+                raise credentials_exception
+            
             # Convert Supabase dict to User object
             user = User(
-                id=supabase_user["id"],
-                email=supabase_user["email"],
-                hashed_password=supabase_user.get("hashed_password", ""),
+                id=user_id,
+                email=email,
+                hashed_password=hashed_password,
                 first_name=supabase_user.get("first_name"),
                 last_name=supabase_user.get("last_name"),
                 is_active=is_active,

@@ -142,17 +142,29 @@ def login(credentials: LoginRequest) -> AuthSession:
                 detail="Account is disabled"
             )
         
+        # Validate required Supabase fields
+        user_id = supabase_user.get("id")
+        email = supabase_user.get("email")
+        hashed_password = supabase_user.get("hashed_password")
+        
+        if not user_id or not email or not hashed_password:
+            logger.error("Supabase user record missing required fields for email=%s", credentials.email)
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password"
+            )
+        
         # Update last login in Supabase
         try:
-            supabase_client.update_user_last_login(supabase_user["id"])
+            supabase_client.update_user_last_login(user_id)
         except Exception as e:
             logger.warning(f"Failed to update last_login_at: {e}")
         
         # Create local User object for session
         user = User(
-            id=supabase_user["id"],
-            email=supabase_user["email"],
-            hashed_password=supabase_user["hashed_password"],
+            id=user_id,
+            email=email,
+            hashed_password=hashed_password,
             first_name=supabase_user.get("first_name"),
             last_name=supabase_user.get("last_name"),
             is_active=is_active,
@@ -234,11 +246,23 @@ def refresh_token(request: RefreshTokenRequest) -> AuthSession:
                     detail="User not found or inactive"
                 )
             
+            # Validate required Supabase fields
+            user_id = supabase_user.get("id")
+            email = supabase_user.get("email")
+            hashed_password = supabase_user.get("hashed_password")
+            
+            if not user_id or not email or not hashed_password:
+                logger.error("Supabase user record missing required fields for user_id=%s", token_data.user_id)
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid token"
+                )
+            
             # Create local User object for session
             user = User(
-                id=supabase_user["id"],
-                email=supabase_user["email"],
-                hashed_password=supabase_user["hashed_password"],
+                id=user_id,
+                email=email,
+                hashed_password=hashed_password,
                 first_name=supabase_user.get("first_name"),
                 last_name=supabase_user.get("last_name"),
                 is_active=is_active,
