@@ -77,3 +77,24 @@ def list_post_comments(post_id):
         }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@posts_bp.route("/<post_id>", methods=["DELETE"])
+@token_required
+def delete_post(user_id, post_id):
+    """Delete a post and all its comments (authenticated)."""
+    try:
+        client = get_community_client()
+        
+        # The delete method will verify ownership
+        success = client.delete_post(post_id, user_id)
+        
+        if not success:
+            return jsonify({"error": "Post not found or unauthorized"}), 404
+        
+        return jsonify({
+            "message": "Post and all comments deleted successfully",
+            "deleted_post_id": post_id
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

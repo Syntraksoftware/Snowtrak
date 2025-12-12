@@ -59,3 +59,24 @@ def get_comment(comment_id):
         return jsonify(comment), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@comments_bp.route("/<comment_id>", methods=["DELETE"])
+@token_required
+def delete_comment(user_id, comment_id):
+    """Delete a comment and all its nested replies (authenticated)."""
+    try:
+        client = get_community_client()
+        
+        # The delete method will verify ownership
+        success = client.delete_comment(comment_id, user_id)
+        
+        if not success:
+            return jsonify({"error": "Comment not found or unauthorized"}), 404
+        
+        return jsonify({
+            "message": "Comment and nested replies deleted successfully",
+            "deleted_comment_id": comment_id
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

@@ -90,3 +90,26 @@ def list_subthread_posts(subthread_id):
         }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@subthreads_bp.route("/<subthread_id>", methods=["DELETE"])
+@token_required
+def delete_subthread(user_id, subthread_id):
+    """Delete a subthread and all its posts/comments (authenticated, admin only in production)."""
+    try:
+        client = get_community_client()
+        
+        # Note: In production, add admin/moderator check here
+        # For now, any authenticated user can delete
+        
+        success = client.delete_subthread(subthread_id)
+        
+        if not success:
+            return jsonify({"error": "Subthread not found"}), 404
+        
+        return jsonify({
+            "message": "Subthread, posts, and comments deleted successfully",
+            "deleted_subthread_id": subthread_id
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
