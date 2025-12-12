@@ -1,6 +1,6 @@
 # Syntrak Auth API
 
-Minimal FastAPI backend for authentication with in-memory storage. Perfect for development and prototyping.
+FastAPI backend for authentication with Supabase integration. Supports persistent storage with automatic fallback to in-memory storage for development.
 
 ## 🚀 Quick Start
 
@@ -13,13 +13,30 @@ source venv/bin/activate  # macOS/Linux
 pip install -r requirements.txt
 ```
 
-### 2. Run Server
+### 2. Configure Supabase (Optional but Recommended)
+
+1. **Create Supabase Project**: Go to [Supabase](https://supabase.com) and create a new project
+2. **Run SQL Script**: Execute `docs/supabase_schema.sql` in Supabase SQL Editor
+3. **Get Credentials**: Copy your Project URL and Service Role Key from Settings → API
+4. **Configure Environment**: 
+   ```bash
+   cp .env.example .env
+   # Edit .env and add your Supabase credentials
+   ```
+
+See [Supabase Setup Guide](docs/SUPABASE_SETUP.md) for detailed instructions.
+
+### 3. Run Server
 
 ```bash
 python run.py
 ```
 
 Server starts at `http://localhost:8080`
+
+**Expected output:**
+- ✅ `💾 Using Supabase database (persistent storage)` - Supabase configured correctly
+- ⚠️ `💾 Using in-memory storage` - Supabase not configured, using fallback
 
 API docs available at `http://localhost:8080/docs`
 
@@ -84,23 +101,38 @@ curl http://localhost:8080/api/v1/users/me \
 
 ## ⚙️ Configuration
 
-Create `.env` file (optional):
+### Environment Variables
+
+Create `.env` file:
 
 ```bash
 cp .env.example .env
 ```
 
-Default settings work out of the box. Customize if needed:
+**Required for Supabase:**
+- `SUPABASE_URL` - Your Supabase project URL (e.g., `https://xxxxx.supabase.co`)
+- `SUPABASE_SERVICE_ROLE_KEY` - Service role key from Supabase Settings → API
 
-- `SECRET_KEY` - JWT signing key (change in production!)
+**Optional Settings:**
+- `SECRET_KEY` - JWT signing key (change in production! Use `openssl rand -hex 32`)
 - `ACCESS_TOKEN_EXPIRE_MINUTES` - Token lifetime (default: 60)
-- `ALLOWED_ORIGINS` - CORS origins (default: localhost:3000)
+- `REFRESH_TOKEN_EXPIRE_DAYS` - Refresh token lifetime (default: 7)
+- `ALLOWED_ORIGINS` - CORS origins (comma-separated, default: localhost:3000)
+- `BCRYPT_ROUNDS` - Password hashing rounds (default: 12)
 
 ## 💾 Storage
 
-**In-Memory Storage**: All data is stored in memory and resets on server restart. Perfect for development, not for production.
+**Supabase (Recommended)**: Persistent PostgreSQL database with automatic backups and scaling.
 
-To persist data, you'll need to add a database (PostgreSQL, MySQL, etc.).
+**In-Memory Fallback**: If Supabase is not configured, the app automatically falls back to in-memory storage. Data resets on server restart.
+
+**To use Supabase:**
+1. Create a Supabase project
+2. Run the SQL schema script (`docs/supabase_schema.sql`)
+3. Add credentials to `.env`
+4. Restart the server
+
+See [Supabase Setup Guide](docs/SUPABASE_SETUP.md) for detailed instructions.
 
 ## 🔒 Security Notes
 
