@@ -7,16 +7,24 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:syntrak/main.dart';
 
 void main() {
+  setUp(() {
+    // Mock SharedPreferences to prevent timeout timers
+    // This makes SharedPreferences.getInstance() return immediately
+    SharedPreferences.setMockInitialValues({});
+  });
+
   testWidgets('App loads successfully', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const SyntrakApp());
     
     // Allow async operations to complete
-    await tester.pumpAndSettle();
+    // pumpAndSettle will wait for all animations and async operations
+    await tester.pumpAndSettle(const Duration(seconds: 10));
 
     // Verify that the app loads (check for MaterialApp)
     expect(find.byType(MaterialApp), findsOneWidget);
