@@ -23,18 +23,18 @@ class StorageService extends ChangeNotifier {
       // future and a very short delay to detect if it's mocked without creating
       // a long-lived timer.
       final prefsFuture = SharedPreferences.getInstance();
-      
-      // Use Future.any to race between the actual future and a short delay
-      // If mocked, the future wins immediately. If not, we apply timeout.
-      final prefs = await Future.any([
-        prefsFuture,
-        Future.delayed(const Duration(milliseconds: 10))
-            .then((_) => throw TimeoutException('Not mocked')),
-      ]).timeout(
-        const Duration(seconds: 5),
-        onTimeout: () => throw TimeoutException('SharedPreferences timeout'),
-      ) as SharedPreferences;
-      
+
+      SharedPreferences prefs;
+      try {
+        // Fast path (typically tests with setMockInitialValues)
+        prefs = await prefsFuture.timeout(const Duration(milliseconds: 10));
+      } on TimeoutException {
+        // Normal path (don't treat as failure; just wasn't immediate)
+        prefs = await prefsFuture.timeout(
+          const Duration(seconds: 5),
+          onTimeout: () => throw TimeoutException('SharedPreferences timeout'),
+        );
+      }
       _token = prefs.getString(_tokenKey);
       _userId = prefs.getString(_userIdKey);
       _locationPermissionAsked = prefs.getBool(_locationPermissionAskedKey) ?? false;
