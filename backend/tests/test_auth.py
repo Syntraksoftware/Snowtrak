@@ -10,16 +10,20 @@ class TestRegisterEndpoint:
     
     def test_register_success(self, client, clean_storage, test_user_data):
         """Test successful user registration."""
-        response = client.post("/api/v1/auth/register", json=test_user_data)
+        # Use a unique email to avoid conflicts with existing users in Supabase
+        unique_email = f"test_{id(test_user_data)}@example.com"
+        registration_data = {**test_user_data, "email": unique_email}
+        
+        response = client.post("/api/v1/auth/register", json=registration_data)
         
         assert response.status_code == status.HTTP_201_CREATED
         data = response.json()
         assert "access_token" in data
         assert "refresh_token" in data
         assert "user" in data
-        assert data["user"]["email"] == test_user_data["email"]
-        assert data["user"]["first_name"] == test_user_data["first_name"]
-        assert data["user"]["last_name"] == test_user_data["last_name"]
+        assert data["user"]["email"] == unique_email
+        assert data["user"]["first_name"] == registration_data["first_name"]
+        assert data["user"]["last_name"] == registration_data["last_name"]
     
     def test_register_duplicate_email(self, client, clean_storage, test_user):
         """Test registration with duplicate email fails."""
