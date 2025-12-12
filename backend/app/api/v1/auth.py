@@ -132,8 +132,11 @@ def login(credentials: LoginRequest) -> AuthSession:
                 detail="Invalid email or password"
             )
         
+        # Use consistent default (True) for is_active - missing field treated as active
+        is_active = supabase_user.get("is_active", True)
+        
         # Check if account is active
-        if not supabase_user.get("is_active", False):
+        if not is_active:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Account is disabled"
@@ -152,7 +155,7 @@ def login(credentials: LoginRequest) -> AuthSession:
             hashed_password=supabase_user["hashed_password"],
             first_name=supabase_user.get("first_name"),
             last_name=supabase_user.get("last_name"),
-            is_active=supabase_user.get("is_active", True),
+            is_active=is_active,
         )
         user.last_login_at = datetime.now(timezone.utc)
         
@@ -216,7 +219,16 @@ def refresh_token(request: RefreshTokenRequest) -> AuthSession:
         if supabase_client.is_configured():
             supabase_user = supabase_client.get_user_info_by_id(user_id)
             
-            if not supabase_user or not supabase_user.get("is_active"):
+            if not supabase_user:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="User not found or inactive"
+                )
+            
+            # Use consistent default (True) for is_active - missing field treated as active
+            is_active = supabase_user.get("is_active", True)
+            
+            if not is_active:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="User not found or inactive"
@@ -229,7 +241,7 @@ def refresh_token(request: RefreshTokenRequest) -> AuthSession:
                 hashed_password=supabase_user["hashed_password"],
                 first_name=supabase_user.get("first_name"),
                 last_name=supabase_user.get("last_name"),
-                is_active=supabase_user.get("is_active", True),
+                is_active=is_active,
             )
         else:
             # Fallback to user_store

@@ -63,7 +63,10 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
             if not supabase_user:
                 raise credentials_exception
             
-            if not supabase_user.get("is_active", False):
+            # Use consistent default (True) for is_active - missing field treated as active
+            is_active = supabase_user.get("is_active", True)
+            
+            if not is_active:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="User account is disabled"
@@ -76,7 +79,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
                 hashed_password=supabase_user.get("hashed_password", ""),
                 first_name=supabase_user.get("first_name"),
                 last_name=supabase_user.get("last_name"),
-                is_active=supabase_user.get("is_active", True),
+                is_active=is_active,
             )
             
             # Parse last_login_at if present
