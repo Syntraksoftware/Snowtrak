@@ -16,7 +16,10 @@ class User:
         first_name: Optional[str] = None,
         last_name: Optional[str] = None
     ):
-        self.id = f"usr_{uuid.uuid4().hex[:16]}"
+        # Generate a real UUID for Supabase compatibility
+        self.id = str(uuid.uuid4())
+        # Keep a backend-specific ID if needed for internal use
+        self.backend_id = f"usr_{uuid.uuid4().hex[:16]}"
         self.email = email
         self.hashed_password = hashed_password
         self.first_name = first_name
