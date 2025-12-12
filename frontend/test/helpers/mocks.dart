@@ -63,7 +63,10 @@ class MockApiService extends ApiService {
     if (shouldFail) {
       throw Exception(errorMessage ?? 'Get activities failed');
     }
-    return mockActivities ?? [];
+    if (mockActivities != null) {
+      return mockActivities!;
+    }
+    throw UnimplementedError('Set mockActivities in test');
   }
   
   @override
