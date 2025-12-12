@@ -38,14 +38,22 @@ def register(user_data: UserCreate) -> AuthSession:
     
     Returns authentication session with access/refresh tokens.
     """
-    # Check if email exists
-    if user_store.exists_by_email(user_data.email):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="An account with this email already exists"
-        )
+    # Check if email exists in Supabase
+    if supabase_client.is_configured():
+        if supabase_client.email_exists(user_data.email):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="An account with this email already exists"
+            )
+    else:
+        # Fallback to user_store if Supabase not configured
+        if user_store.exists_by_email(user_data.email):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="An account with this email already exists"
+            )
     
-    # Create user
+    # Create user locally for session data
     hashed_pwd = hash_password(user_data.password)
     user = User(
         email=user_data.email,
@@ -53,26 +61,35 @@ def register(user_data: UserCreate) -> AuthSession:
         first_name=user_data.first_name,
         last_name=user_data.last_name,
     )
-    user_store.create(user)
     
-    # Insert into Supabase user_info table
+    # Insert into Supabase
     if supabase_client.is_configured():
         try:
             result = supabase_client.insert_user_info(
                 id=user.id,
                 email=user.email,
+                hashed_password=hashed_pwd,
                 first_name=user.first_name,
                 last_name=user.last_name,
                 is_active=user.is_active,
             )
             if result:
-                logger.info(f"User {user.email} inserted into Supabase user_info")
+                logger.info(f"User {user.email} registered in Supabase")
             else:
-                logger.warning(f"Failed to insert user {user.email} into Supabase")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Failed to register user"
+                )
         except Exception as e:
-            logger.exception(f"Error inserting user {user.email} into Supabase: {e}")
+            logger.exception(f"Error registering user {user.email}: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Registration failed"
+            )
     else:
-        logger.warning("Supabase not configured; skipping user_info insert")
+        # Fallback to local storage
+        user_store.create(user)
+        logger.warning("Supabase not configured; user stored locally only")
     
     # Generate tokens
     return _create_session(user)
@@ -96,39 +113,68 @@ def login(credentials: LoginRequest) -> AuthSession:
     
     Returns authentication session with access/refresh tokens.
     """
-    # Find user
-    user = user_store.get_by_email(credentials.email)
-    
-    if not user or not verify_password(credentials.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password"
-        )
-    
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Account is disabled"
-        )
-    
-    # Verify user exists in Supabase
+    # Fetch user from Supabase
     if supabase_client.is_configured():
+        supabase_user = supabase_client.get_user_info_by_email(credentials.email)
+        
+        if not supabase_user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password"
+            )
+        
+        # Verify password
+        if not verify_password(credentials.password, supabase_user.get("hashed_password", "")):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password"
+            )
+        
+        # Check if account is active
+        if not supabase_user.get("is_active", False):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Account is disabled"
+            )
+        
+        # Update last login in Supabase
         try:
-            supabase_user = supabase_client.get_user_info_by_email(credentials.email)
-            if not supabase_user:
-                logger.warning(f"User {credentials.email} not found in Supabase during login")
-            else:
-                logger.info(f"User {credentials.email} verified in Supabase")
+            supabase_client.update_user_last_login(supabase_user["id"])
         except Exception as e:
-            logger.exception(f"Error verifying user {credentials.email} in Supabase: {e}")
+            logger.warning(f"Failed to update last_login_at: {e}")
+        
+        # Create local User object for session
+        user = User(
+            id=supabase_user["id"],
+            email=supabase_user["email"],
+            hashed_password=supabase_user["hashed_password"],
+            first_name=supabase_user.get("first_name"),
+            last_name=supabase_user.get("last_name"),
+            is_active=supabase_user.get("is_active", True),
+        )
+        user.last_login_at = datetime.utcnow()
+        
+        logger.info(f"User {credentials.email} logged in via Supabase")
+        return _create_session(user)
+    
     else:
-        logger.warning("Supabase not configured; skipping user verification")
-    
-    # Update last login
-    user.last_login_at = datetime.utcnow()
-    
-    # Generate tokens
-    return _create_session(user)
+        # Fallback to user_store if Supabase not configured
+        user = user_store.get_by_email(credentials.email)
+        
+        if not user or not verify_password(credentials.password, user.hashed_password):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password"
+            )
+        
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Account is disabled"
+            )
+        
+        user.last_login_at = datetime.utcnow()
+        return _create_session(user)
 
 
 @router.post(
@@ -157,14 +203,41 @@ def refresh_token(request: RefreshTokenRequest) -> AuthSession:
                 detail="Invalid token type"
             )
         
-        # Get user
-        user = user_store.get_by_id(token_data.user_id)
-        
-        if not user or not user.is_active:
+        user_id = token_data.user_id
+        if not user_id:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found or inactive"
+                detail="Invalid token"
             )
+        
+        # Get user from Supabase
+        if supabase_client.is_configured():
+            supabase_user = supabase_client.get_user_info_by_id(user_id)
+            
+            if not supabase_user or not supabase_user.get("is_active"):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="User not found or inactive"
+                )
+            
+            # Create local User object for session
+            user = User(
+                id=supabase_user["id"],
+                email=supabase_user["email"],
+                hashed_password=supabase_user["hashed_password"],
+                first_name=supabase_user.get("first_name"),
+                last_name=supabase_user.get("last_name"),
+                is_active=supabase_user.get("is_active", True),
+            )
+        else:
+            # Fallback to user_store
+            user = user_store.get_by_id(user_id)
+            
+            if not user or not user.is_active:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="User not found or inactive"
+                )
         
         # Generate new tokens
         return _create_session(user)
