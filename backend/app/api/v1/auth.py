@@ -9,7 +9,11 @@ from app.core.storage import User, user_store
 from app.core.security import hash_password, verify_password
 from app.core.jwt import create_access_token, create_refresh_token, decode_token, verify_token_type
 from app.core.config import settings
+from app.core.supabase import supabase_client
 from jose import JWTError
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -50,6 +54,25 @@ def register(user_data: UserCreate) -> AuthSession:
         last_name=user_data.last_name,
     )
     user_store.create(user)
+    
+    # Insert into Supabase user_info table
+    if supabase_client.is_configured():
+        try:
+            result = supabase_client.insert_user_info(
+                id=user.id,
+                email=user.email,
+                first_name=user.first_name,
+                last_name=user.last_name,
+                is_active=user.is_active,
+            )
+            if result:
+                logger.info(f"User {user.email} inserted into Supabase user_info")
+            else:
+                logger.warning(f"Failed to insert user {user.email} into Supabase")
+        except Exception as e:
+            logger.exception(f"Error inserting user {user.email} into Supabase: {e}")
+    else:
+        logger.warning("Supabase not configured; skipping user_info insert")
     
     # Generate tokens
     return _create_session(user)
