@@ -118,6 +118,36 @@ class CommunitySupabaseClient:
             logger.exception(f"Failed to list subthreads: {exc}")
             return []
     
+    def delete_subthread(self, subthread_id: str) -> bool:
+        """
+        Delete a subthread and all its posts (and comments via CASCADE).
+        
+        Args:
+            subthread_id: UUID of the subthread to delete
+            
+        Returns:
+            True if deleted successfully, False otherwise
+        """
+        try:
+            # Verify the subthread exists
+            subthread = self.get_subthread_by_id(subthread_id)
+            if not subthread:
+                logger.warning(f"Subthread {subthread_id} not found")
+                return False
+            
+            # Delete the subthread (CASCADE will handle posts and their comments)
+            resp = self._client.table("subthreads").delete().eq("id", subthread_id).execute()
+            data = getattr(resp, "data", None)
+            
+            if isinstance(data, list) and data:
+                logger.info(f"Deleted subthread {subthread_id} and all associated posts/comments")
+                return True
+            
+            return False
+        except Exception as exc:
+            logger.exception(f"Failed to delete subthread {subthread_id}: {exc}")
+            return False
+    
     # ========== Post Operations ==========
     
     def create_post(
@@ -212,6 +242,41 @@ class CommunitySupabaseClient:
             logger.exception(f"Failed to count posts: {exc}")
             return 0
     
+    def delete_post(self, post_id: str, user_id: str) -> bool:
+        """
+        Delete a post and all its comments (via CASCADE).
+        
+        Args:
+            post_id: UUID of the post to delete
+            user_id: UUID of the user attempting deletion (must be post author)
+            
+        Returns:
+            True if deleted successfully, False otherwise
+        """
+        try:
+            # Verify the post exists and belongs to the user
+            post = self.get_post_by_id(post_id)
+            if not post:
+                logger.warning(f"Post {post_id} not found")
+                return False
+            
+            if post["user_id"] != user_id:
+                logger.warning(f"User {user_id} attempted to delete post {post_id} owned by {post['user_id']}")
+                return False
+            
+            # Delete the post (CASCADE will handle comments)
+            resp = self._client.table("posts").delete().eq("post_id", post_id).execute()
+            data = getattr(resp, "data", None)
+            
+            if isinstance(data, list) and data:
+                logger.info(f"Deleted post {post_id} and all comments")
+                return True
+            
+            return False
+        except Exception as exc:
+            logger.exception(f"Failed to delete post {post_id}: {exc}")
+            return False
+    
     # ========== Comment Operations ==========
     
     def create_comment(
@@ -301,3 +366,38 @@ class CommunitySupabaseClient:
         except Exception as exc:
             logger.exception(f"Failed to count comments: {exc}")
             return 0
+    
+    def delete_comment(self, comment_id: str, user_id: str) -> bool:
+        """
+        Delete a comment (and all nested child comments via CASCADE).
+        
+        Args:
+            comment_id: UUID of the comment to delete
+            user_id: UUID of the user attempting deletion (must be comment author)
+            
+        Returns:
+            True if deleted successfully, False otherwise
+        """
+        try:
+            # First verify the comment exists and belongs to the user
+            comment = self.get_comment_by_id(comment_id)
+            if not comment:
+                logger.warning(f"Comment {comment_id} not found")
+                return False
+            
+            if comment["user_id"] != user_id:
+                logger.warning(f"User {user_id} attempted to delete comment {comment_id} owned by {comment['user_id']}")
+                return False
+            
+            # Delete the comment (CASCADE will handle nested comments)
+            resp = self._client.table("comments").delete().eq("id", comment_id).execute()
+            data = getattr(resp, "data", None)
+            
+            if isinstance(data, list) and data:
+                logger.info(f"Deleted comment {comment_id} and all nested replies")
+                return True
+            
+            return False
+        except Exception as exc:
+            logger.exception(f"Failed to delete comment {comment_id}: {exc}")
+            return False
