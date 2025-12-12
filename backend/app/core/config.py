@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     # Security
     bcrypt_rounds: int = Field(default=12, alias="BCRYPT_ROUNDS")
     
+    # Supabase
+    supabase_url: str | None = Field(default=None, alias="SUPABASE_URL")
+    supabase_service_role_key: str | None = Field(default=None, alias="SUPABASE_SERVICE_ROLE_KEY")
+    
     class Config:
         env_file = ".env"
         case_sensitive = False
