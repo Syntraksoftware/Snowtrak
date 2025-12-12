@@ -3,7 +3,7 @@ Authentication API endpoints.
 Handles registration, login, and token refresh.
 """
 from fastapi import APIRouter, HTTPException, status
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.schemas import UserCreate, LoginRequest, RefreshTokenRequest, AuthSession, ErrorResponse, UserResponse
 from app.core.storage import User, user_store
 from app.core.security import hash_password, verify_password
@@ -73,18 +73,20 @@ def register(user_data: UserCreate) -> AuthSession:
                 last_name=user.last_name,
                 is_active=user.is_active,
             )
-            if result:
-                logger.info(f"User {user.email} registered in Supabase")
-            else:
+            if not result:
+                logger.error(f"Failed to register user {user.email} in Supabase: insert returned None")
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Failed to register user"
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to register user. Please try again later."
                 )
+            logger.info(f"User {user.email} registered successfully in Supabase")
+        except HTTPException:
+            raise
         except Exception as e:
-            logger.exception(f"Error registering user {user.email}: {e}")
+            logger.exception(f"Error registering user {user.email} in Supabase: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Registration failed"
+                detail="Registration failed. Please try again later."
             )
     else:
         # Fallback to local storage
@@ -152,7 +154,7 @@ def login(credentials: LoginRequest) -> AuthSession:
             last_name=supabase_user.get("last_name"),
             is_active=supabase_user.get("is_active", True),
         )
-        user.last_login_at = datetime.utcnow()
+        user.last_login_at = datetime.now(timezone.utc)
         
         logger.info(f"User {credentials.email} logged in via Supabase")
         return _create_session(user)
@@ -173,7 +175,7 @@ def login(credentials: LoginRequest) -> AuthSession:
                 detail="Account is disabled"
             )
         
-        user.last_login_at = datetime.utcnow()
+        user.last_login_at = datetime.now(timezone.utc)
         return _create_session(user)
 
 
@@ -258,7 +260,7 @@ def _create_session(user: User) -> AuthSession:
     
     access_token = create_access_token(token_data)
     refresh_token = create_refresh_token(token_data)
-    expires_at = datetime.utcnow() + timedelta(minutes=settings.access_token_expire_minutes)
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
     
     return AuthSession(
         access_token=access_token,

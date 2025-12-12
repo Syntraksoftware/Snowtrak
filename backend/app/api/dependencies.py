@@ -6,8 +6,13 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer
 from fastapi.security.http import HTTPAuthorizationCredentials
 from jose import JWTError
+from datetime import datetime
 from app.core.jwt import decode_token, verify_token_type
 from app.core.storage import User, user_store
+from app.core.supabase import supabase_client
+import logging
+
+logger = logging.getLogger(__name__)
 
 # HTTP Bearer token scheme
 security = HTTPBearer()
@@ -16,6 +21,8 @@ security = HTTPBearer()
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> User:
     """
     Dependency to get current authenticated user from JWT token.
+    
+    First tries to fetch from Supabase, falls back to in-memory storage if not configured.
     
     Usage:
         @router.get("/protected")
@@ -45,8 +52,48 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         if not verify_token_type(token_data, "access"):
             raise credentials_exception
         
-        # Get user from storage
-        user = user_store.get_by_id(token_data.user_id)
+        user_id = token_data.user_id
+        if not user_id:
+            raise credentials_exception
+        
+        # get user from Supabase first
+        if supabase_client.is_configured():
+            supabase_user = supabase_client.get_user_info_by_id(user_id)
+            
+            if not supabase_user:
+                raise credentials_exception
+            
+            if not supabase_user.get("is_active", False):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="User account is disabled"
+                )
+            
+            # Convert Supabase dict to User object
+            user = User(
+                id=supabase_user["id"],
+                email=supabase_user["email"],
+                hashed_password=supabase_user.get("hashed_password", ""),
+                first_name=supabase_user.get("first_name"),
+                last_name=supabase_user.get("last_name"),
+                is_active=supabase_user.get("is_active", True),
+            )
+            
+            # Parse last_login_at if present
+            last_login = supabase_user.get("last_login_at")
+            if last_login:
+                try:
+                    if isinstance(last_login, str):
+                        user.last_login_at = datetime.fromisoformat(last_login.replace("Z", "+00:00"))
+                    elif isinstance(last_login, datetime):
+                        user.last_login_at = last_login
+                except Exception as e:
+                    logger.warning(f"Failed to parse last_login_at: {e}")
+            
+            return user
+        
+        # Fallback to in-memory storage if Supabase not configured
+        user = user_store.get_by_id(user_id)
         
         if user is None:
             raise credentials_exception

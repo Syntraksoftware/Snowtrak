@@ -2,10 +2,14 @@
 User API endpoints.
 Handles user profile management.
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from app.schemas import UserResponse, UserUpdate
 from app.core.storage import User
+from app.core.supabase import supabase_client
 from app.api.dependencies import get_current_user
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -35,12 +39,48 @@ def update_current_user_profile(
     
     - **first_name**: Update first name
     - **last_name**: Update last name
-    """
-    if user_update.first_name is not None:
-        current_user.first_name = user_update.first_name
     
-    if user_update.last_name is not None:
-        current_user.last_name = user_update.last_name
+    Updates are synchronized to Supabase if configured, otherwise stored locally.
+    """
+    # Update Supabase if configured
+    if supabase_client.is_configured():
+        try:
+            updated_user = supabase_client.update_user_info(
+                id=current_user.id,
+                first_name=user_update.first_name,
+                last_name=user_update.last_name,
+            )
+            
+            if not updated_user:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to update user profile"
+                )
+            
+            # Update local user object with new values
+            if user_update.first_name is not None:
+                current_user.first_name = user_update.first_name
+            if user_update.last_name is not None:
+                current_user.last_name = user_update.last_name
+            
+            logger.info(f"User {current_user.id} profile updated in Supabase")
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.exception(f"Error updating user profile in Supabase: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update user profile"
+            )
+    else:
+        # Fallback to local storage
+        if user_update.first_name is not None:
+            current_user.first_name = user_update.first_name
+        if user_update.last_name is not None:
+            current_user.last_name = user_update.last_name
+        
+        logger.warning("Supabase not configured; user profile updated locally only")
     
     return UserResponse(
         id=current_user.id,

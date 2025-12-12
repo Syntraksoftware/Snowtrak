@@ -154,9 +154,9 @@ class SupabaseClient:
         if client is None:
             return False
         try:
-            from datetime import datetime
+            from datetime import datetime, timezone
             resp = client.table("user_info").update(
-                {"last_login_at": datetime.utcnow().isoformat()}
+                {"last_login_at": datetime.now(timezone.utc).isoformat()}
             ).eq("id", id).execute()
             logger.info(f"Updated last_login_at for user {id}")
             return True
@@ -174,6 +174,55 @@ class SupabaseClient:
         except Exception as exc:
             logger.exception(f"Error checking email existence: {exc}")
             return False
+
+    # ---------- Update ----------
+    def update_user_info(
+        self,
+        id: str,
+        *,
+        first_name: Optional[str] = None,
+        last_name: Optional[str] = None,
+        is_active: Optional[bool] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Update user profile fields in `user_info` table.
+        
+        Only updates provided fields (partial update).
+        Returns updated row dict on success, or None on failure.
+        """
+        if not self.is_configured():
+            logger.warning("Supabase not configured; skipping update.")
+            return None
+        
+        client = self._client
+        if client is None:
+            return None
+        
+        # Build update payload with only provided fields
+        update_data: Dict[str, Any] = {}
+        if first_name is not None:
+            update_data["first_name"] = first_name
+        if last_name is not None:
+            update_data["last_name"] = last_name
+        if is_active is not None:
+            update_data["is_active"] = is_active
+        
+        if not update_data:
+            logger.warning("No fields to update provided")
+            return None
+        
+        try:
+            resp = client.table("user_info").update(update_data).eq("id", id).execute()
+            data = getattr(resp, "data", None)
+            if isinstance(data, list) and data:
+                return data[0]
+            if isinstance(data, dict):
+                return data
+            logger.error("Supabase update returned no data: %s", data)
+            return None
+        except Exception as exc:
+            logger.exception("Supabase update failed: %s", exc)
+            return None
 
 
 # Singleton instance for app-wide use
