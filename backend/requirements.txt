@@ -12,4 +12,4 @@ python-dotenv==1.0.1
 pydantic==2.10.5
 pydantic-settings==2.7.1
 
-supabase
+supabase==2.25.1
