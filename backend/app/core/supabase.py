@@ -6,12 +6,14 @@ Schema (user_info):
 - email (text, unique)
 - first_name (text, nullable)
 - last_name (text, nullable)
+- hashed_password (text) - bcrypt hashed password
 - is_active (bool)
+- last_login_at (timestamptz, nullable)
 - created_at (timestamptz, default now())
 - updated_at (timestamptz, default now(), updated via trigger)
 
 This module initializes a Supabase client from environment settings and
-exposes convenience methods for insert and select operations.
+exposes convenience methods for CRUD operations on the user_info table.
 """
 from __future__ import annotations
 
@@ -60,6 +62,7 @@ class SupabaseClient:
         *,
         id: str,
         email: str,
+        hashed_password: str,
         first_name: Optional[str] = None,
         last_name: Optional[str] = None,
         is_active: bool = True,
@@ -81,6 +84,7 @@ class SupabaseClient:
         payload: Dict[str, Any] = {
             "id": id,
             "email": email,
+            "hashed_password": hashed_password,
             "first_name": first_name,
             "last_name": last_name,
             "is_active": is_active,
@@ -140,6 +144,36 @@ class SupabaseClient:
         except Exception as exc:
             logger.exception("Supabase select by email failed: %s", exc)
             return None
+
+    def update_user_last_login(self, id: str) -> bool:
+        """Update last_login_at timestamp for a user. Returns True on success."""
+        if not self.is_configured():
+            logger.warning("Supabase not configured; skipping update.")
+            return False
+        client = self._client
+        if client is None:
+            return False
+        try:
+            from datetime import datetime
+            resp = client.table("user_info").update(
+                {"last_login_at": datetime.utcnow().isoformat()}
+            ).eq("id", id).execute()
+            logger.info(f"Updated last_login_at for user {id}")
+            return True
+        except Exception as exc:
+            logger.exception(f"Failed to update last_login_at for user {id}: {exc}")
+            return False
+
+    def email_exists(self, email: str) -> bool:
+        """Check if email already exists in user_info table."""
+        if not self.is_configured():
+            return False
+        try:
+            user = self.get_user_info_by_email(email)
+            return user is not None
+        except Exception as exc:
+            logger.exception(f"Error checking email existence: {exc}")
+            return False
 
 
 # Singleton instance for app-wide use
