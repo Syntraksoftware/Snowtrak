@@ -14,6 +14,9 @@ void main() {
   testWidgets('App loads successfully', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const SyntrakApp());
+    
+    // Allow async operations to complete
+    await tester.pumpAndSettle();
 
     // Verify that the app loads (check for MaterialApp)
     expect(find.byType(MaterialApp), findsOneWidget);

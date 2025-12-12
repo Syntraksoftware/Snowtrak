@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from app.core.config import settings
+from app.core.supabase import supabase_client
 from app.api.v1 import api_router
 
 
@@ -15,7 +16,13 @@ async def lifespan(app: FastAPI):
     # Startup
     print("🚀 Starting Syntrak Auth API...")
     print(f"📦 Environment: {settings.environment}")
-    print("💾 Using in-memory storage (data resets on restart)")
+    
+    # Display storage backend information
+    if supabase_client.is_configured():
+        print("💾 Using Supabase database (persistent storage)")
+    else:
+        print("💾 Using in-memory storage (data resets on restart)")
+        print("⚠️  Warning: Supabase not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env")
     
     yield
     
@@ -28,7 +35,7 @@ def create_application() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
         version=settings.app_version,
-        description="Minimal Authentication API for Syntrak (In-Memory Storage)",
+        description="Authentication API for Syntrak with Supabase integration",
         docs_url="/docs" if settings.debug else None,
         redoc_url="/redoc" if settings.debug else None,
         lifespan=lifespan,
@@ -37,7 +44,7 @@ def create_application() -> FastAPI:
     # CORS middleware
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.allowed_origins,
+        allow_origins=settings.get_allowed_origins(),
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE"],
         allow_headers=["Authorization", "Content-Type"],

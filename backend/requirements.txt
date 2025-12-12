@@ -9,5 +9,7 @@ python-multipart==0.0.17
 
 # Environment & Config
 python-dotenv==1.0.1
-pydantic==2.10.5
+pydantic>=2.11.7
 pydantic-settings==2.7.1
+
+supabase==2.25.1

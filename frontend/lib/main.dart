@@ -41,7 +41,8 @@ class SyntrakApp extends StatelessWidget {
               // Storage is ready, now check auth
               auth.checkAuth();
             }).catchError((error) {
-              print('🔍 [Main] Storage init error: $error, calling checkAuth anyway');
+              print(
+                  '🔍 [Main] Storage init error: $error, calling checkAuth anyway');
               // If storage init fails, still check auth (will show login)
               auth.checkAuth();
             });
@@ -54,7 +55,8 @@ class SyntrakApp extends StatelessWidget {
               final auth = AuthProvider(apiService, storage);
               // Initialize storage first, then check auth
               storage.init().then((_) {
-                print('🔍 [Main] Storage initialized in update, calling checkAuth');
+                print(
+                    '🔍 [Main] Storage initialized in update, calling checkAuth');
                 auth.checkAuth();
               }).catchError((error) {
                 print('🔍 [Main] Storage init error in update: $error');
@@ -83,16 +85,11 @@ class SyntrakApp extends StatelessWidget {
             foregroundColor: Colors.black,
             elevation: 0,
           ),
-          cardTheme: CardThemeData(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
         ),
         home: Consumer<AuthProvider>(
           builder: (context, authProvider, _) {
-            print('🔍 [Main] Building home. isLoading: ${authProvider.isLoading}, isAuthenticated: ${authProvider.isAuthenticated}');
+            print(
+                '🔍 [Main] Building home. isLoading: ${authProvider.isLoading}, isAuthenticated: ${authProvider.isAuthenticated}');
             // Safety timeout: if loading takes more than 10 seconds, show login
             if (authProvider.isLoading) {
               print('🔍 [Main] Showing loading screen');
@@ -121,7 +118,8 @@ class _LoadingScreenWithTimeout extends StatefulWidget {
   const _LoadingScreenWithTimeout({required this.authProvider});
 
   @override
-  State<_LoadingScreenWithTimeout> createState() => _LoadingScreenWithTimeoutState();
+  State<_LoadingScreenWithTimeout> createState() =>
+      _LoadingScreenWithTimeoutState();
 }
 
 class _LoadingScreenWithTimeoutState extends State<_LoadingScreenWithTimeout> {
@@ -152,4 +150,3 @@ class _LoadingScreenWithTimeoutState extends State<_LoadingScreenWithTimeout> {
     );
   }
 }
-
