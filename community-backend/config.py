@@ -24,7 +24,7 @@ class Config:
     JWT_ALGORITHM = "HS256"
     
     # FastAPI
-    FASTAPI_ENV = os.getenv("FASTAPI_ENV", "production")
+    FASTAPI_ENV = os.getenv("FASTAPI_ENV", "development")
     DEBUG = FASTAPI_ENV == "development"
     PORT = int(os.getenv("PORT", 5001))
     
@@ -58,5 +58,5 @@ config = {
 
 def get_config():
     """Get configuration based on environment."""
-    env = os.getenv("FASTAPI_ENV", "development")
+    env = os.getenv("FASTAPI_ENV", Config.FASTAPI_ENV)
     return config.get(env, config["default"])
