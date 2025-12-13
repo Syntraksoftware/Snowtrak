@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 import logging
 
 from config import get_config
+from services.supabase_client import initialize_community_client
 
 # Configure logging
 logging.basicConfig(
@@ -25,10 +26,20 @@ config = get_config()
 async def lifespan(app: FastAPI):
     """Lifespan context manager for app startup/shutdown."""
     # Startup
-    logger.info(f"Starting Community Backend on port {config.PORT}")
+    logger.info(f"Starting Community Backend on {config.HOST}:{config.PORT}")
     logger.info(f"Environment: {config.FASTAPI_ENV}")
     logger.info(f"Debug mode: {config.DEBUG}")
+    
+    # Initialize Supabase client at startup (thread-safe, single instance)
+    try:
+        initialize_community_client()
+        logger.info("✅ Supabase Global Client Instance initialized successfully")
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize services: {e}")
+        raise
+    
     yield
+    
     # Shutdown
     logger.info("Shutting down Community Backend")
 
@@ -80,11 +91,10 @@ def health():
 
 
 if __name__ == "__main__":
-    #TODO: When migrate to production, use 0.0.0.0 as production host and 127.0.0.1 as default for local testing
     import uvicorn
     uvicorn.run(
         "main:app",
-        host=os.getenv("HOST", "127.0.0.1"),
+        host=config.HOST,
         port=config.PORT,
         reload=config.DEBUG,
         log_level="info"

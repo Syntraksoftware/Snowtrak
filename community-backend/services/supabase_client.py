@@ -14,22 +14,49 @@ from config import get_config
 
 logger = logging.getLogger(__name__)
 
-# Global client instance
-_community_client = None
+# Global client instance - initialized at app startup
+_community_client: Optional["CommunitySupabaseClient"] = None
 
 
-def get_community_client():
+def initialize_community_client() -> "CommunitySupabaseClient":
     """
-    Get or create the community Supabase client instance.
+    Initialize the Supabase client at application startup.
+    
+    This should be called once during FastAPI lifespan startup.
+    Avoids lazy initialization race conditions and redundant client creation.
     
     Returns:
         CommunitySupabaseClient instance
     """
     global _community_client
-    if _community_client is None:
-        config = get_config()
+    config = get_config()
+    try:
         supabase = create_client(config.SUPABASE_URL, config.SUPABASE_SERVICE_ROLE_KEY)
         _community_client = CommunitySupabaseClient(supabase)
+        logger.info("✅ Supabase client initialized at startup")
+        return _community_client
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize Supabase client: {e}")
+        raise
+
+
+def get_community_client() -> "CommunitySupabaseClient":
+    """
+    Get the community Supabase client instance.
+    
+    IMPORTANT: Call initialize_community_client() at app startup before using this.
+    
+    Returns:
+        CommunitySupabaseClient instance
+        
+    Raises:
+        RuntimeError: If client was not initialized at startup
+    """
+    if _community_client is None:
+        raise RuntimeError(
+            "Supabase client not initialized. "
+            "Call initialize_community_client() during app startup (in lifespan)."
+        )
     return _community_client
 
 

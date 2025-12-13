@@ -27,7 +27,8 @@ class Config:
     FASTAPI_ENV = os.getenv("FASTAPI_ENV", "development")
     DEBUG = FASTAPI_ENV == "development"
     PORT = int(os.getenv("PORT", 5001))
-    
+    HOST = os.getenv("HOST", "127.0.0.1")
+
     # CORS
     CORS_ORIGINS = [
         "http://localhost:3000",  # Flutter web dev
