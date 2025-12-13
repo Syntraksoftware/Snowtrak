@@ -104,6 +104,6 @@ async def get_optional_user(authorization: Optional[str] = Header(None)) -> Opti
         user_id = payload.get("sub")
         return user_id
         
-    except:
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         # Silently ignore invalid tokens for optional auth
         return None
