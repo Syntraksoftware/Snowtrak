@@ -1,84 +1,109 @@
-"""Authentication middleware for JWT verification."""
-from functools import wraps
-from flask import request, jsonify
+"""Authentication utilities for JWT verification."""
+from typing import Optional
+from fastapi import Depends, HTTPException, status, Header
 import jwt
+import logging
 from config import get_config
 
 config = get_config()
+logger = logging.getLogger(__name__)
 
 
-def token_required(f):
+async def get_current_user(authorization: Optional[str] = Header(None)) -> str:
     """
-    Decorator to require valid JWT token for routes.
+    Dependency to extract and verify JWT token from Authorization header.
+    Required for protected endpoints.
     
-    Extracts user_id from token and passes it to the route function.
+    Returns:
+        user_id: The user ID from the token's 'sub' claim
+        
+    Raises:
+        HTTPException: 401 if token is missing or invalid
     """
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        token = None
+    if not authorization:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token is missing"
+        )
+    
+    # Parse "Bearer <token>" format
+    try:
+        scheme, token = authorization.split(" ")
+        if scheme.lower() != "bearer":
+            raise ValueError("Invalid authorization scheme")
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authorization header format"
+        )
+    
+    try:
+        # Decode JWT token
+        payload = jwt.decode(
+            token,
+            config.JWT_SECRET,
+            algorithms=[config.JWT_ALGORITHM]
+        )
         
-        # Get token from Authorization header
-        if "Authorization" in request.headers:
-            auth_header = request.headers["Authorization"]
-            try:
-                # Format: "Bearer <token>"
-                token = auth_header.split(" ")[1]
-            except IndexError:
-                return jsonify({"error": "Invalid authorization header format"}), 401
-        
-        if not token:
-            return jsonify({"error": "Token is missing"}), 401
-        
-        try:
-            # Decode JWT token
-            payload = jwt.decode(
-                token,
-                config.JWT_SECRET,
-                algorithms=[config.JWT_ALGORITHM]
+        # Extract user_id from token
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token payload"
             )
-            
-            # Extract user_id from token
-            user_id = payload.get("sub")
-            if not user_id:
-                return jsonify({"error": "Invalid token payload"}), 401
-            
-            # Pass user_id to the route function
-            return f(user_id=user_id, *args, **kwargs)
-            
-        except jwt.ExpiredSignatureError:
-            return jsonify({"error": "Token has expired"}), 401
-        except jwt.InvalidTokenError:
-            return jsonify({"error": "Invalid token"}), 401
-        except Exception as e:
-            return jsonify({"error": f"Authentication error: {str(e)}"}), 401
-    
-    return decorated
+        
+        return user_id
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired"
+        )
+    except jwt.InvalidTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token"
+        )
+    except Exception as e:
+        logger.error(f"Authentication error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Authentication error: {str(e)}"
+        )
 
 
-def optional_token(f):
+async def get_optional_user(authorization: Optional[str] = Header(None)) -> Optional[str]:
     """
-    Decorator for routes where authentication is optional.
+    Dependency to extract JWT token from Authorization header if present (optional).
+    Returns None if no token provided.
     
-    If token is present and valid, user_id is passed; otherwise user_id is None.
+    Returns:
+        user_id: The user ID from the token's 'sub' claim, or None
     """
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        user_id = None
-        
-        # Get token from Authorization header
-        if "Authorization" in request.headers:
-            auth_header = request.headers["Authorization"]
-            try:
-                token = auth_header.split(" ")[1]
-                payload = jwt.decode(
-                    token,
-                    config.JWT_SECRET,
-                    algorithms=[config.JWT_ALGORITHM]
-                )
-                user_id = payload.get("sub")
-            except:
-                pass  # Silently ignore invalid tokens for optional auth
-        
-        return f(user_id=user_id, *args, **kwargs)
+    if not authorization:
+        return None
     
-    return decorated
+    # Parse "Bearer <token>" format
+    try:
+        scheme, token = authorization.split(" ")
+        if scheme.lower() != "bearer":
+            return None
+    except ValueError:
+        return None
+    
+    try:
+        # Decode JWT token
+        payload = jwt.decode(
+            token,
+            config.JWT_SECRET,
+            algorithms=[config.JWT_ALGORITHM]
+        )
+        
+        # Extract user_id from token
+        user_id = payload.get("sub")
+        return user_id
+        
+    except:
+        # Silently ignore invalid tokens for optional auth
+        return None
