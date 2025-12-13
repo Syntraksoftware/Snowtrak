@@ -36,11 +36,6 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> str:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authorization header format"
         )
-    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid JWT token"
-        )
     
     try:
         # Decode JWT token
@@ -95,8 +90,6 @@ async def get_optional_user(authorization: Optional[str] = Header(None)) -> Opti
         if scheme.lower() != "bearer":
             return None
     except ValueError:
-        return None
-    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return None
     
     try:
