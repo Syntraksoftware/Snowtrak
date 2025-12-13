@@ -3,6 +3,7 @@ Community Backend - FastAPI Application
 
 A standalone microservice for Reddit-like community features.
 """
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -79,10 +80,11 @@ def health():
 
 
 if __name__ == "__main__":
+    #TODO: When migrate to production, use 0.0.0.0 as production host and 127.0.0.1 as default for local testing
     import uvicorn
     uvicorn.run(
         "main:app",
-        host="0.0.0.0",
+        host=os.getenv("HOST", "127.0.0.1"),
         port=config.PORT,
         reload=config.DEBUG,
         log_level="info"
