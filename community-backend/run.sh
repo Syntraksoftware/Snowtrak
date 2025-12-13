@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Community Backend Startup Script
+# Community Backend Startup Script (FastAPI)
 
-echo "🚀 Starting Community Backend..."
+echo "🚀 Starting Syntrak Community API..."
 
 # Check if virtual environment exists
 if [ ! -d "venv" ]; then
@@ -18,14 +18,9 @@ source venv/bin/activate
 echo "📥 Installing dependencies..."
 pip install -r requirements.txt
 
-# Check if .env exists
-if [ ! -f ".env" ]; then
-    echo "⚠️  .env file not found! Copying from .env.example..."
-    cp .env.example .env
-    echo "⚙️  Please edit .env with your credentials before running again."
-    exit 1
-fi
+# Start FastAPI server
+echo "⚡ Starting FastAPI server..."
+uvicorn main:app --host 0.0.0.0 --port 5001 --reload
 
-# Run the app
 echo "✅ Starting Flask server..."
 python app.py
