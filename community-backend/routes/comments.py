@@ -28,7 +28,7 @@ class CommentResponse(BaseModel):
     content: str
     has_parent: bool
     created_at: str
-    author_email: Optional[str] = None
+    author_email: Optional[str] = None #TODO: review whether to include email
     author_first_name: Optional[str] = None
     author_last_name: Optional[str] = None
 
