@@ -39,28 +39,76 @@ class ApiService {
     String? lastName,
   }) async {
     try {
-      final response = await _dio.post('/auth/register', data: {
+      // Build request data, only including non-null optional fields
+      final data = <String, dynamic>{
         'email': email,
         'password': password,
-        'first_name': firstName,
-        'last_name': lastName,
-      });
+      };
+      
+      // Only add optional fields if they are not null and not empty
+      if (firstName != null && firstName.isNotEmpty) {
+        data['first_name'] = firstName;
+      }
+      if (lastName != null && lastName.isNotEmpty) {
+        data['last_name'] = lastName;
+      }
+      
+      final response = await _dio.post('/auth/register', data: data);
       return response.data;
     } on DioException catch (e) {
+      // Log the full error for debugging
+      print('🔴 Registration error: ${e.response?.statusCode}');
+      print('🔴 Response data: ${e.response?.data}');
+      
       // Extract error message from response
       if (e.response != null && e.response!.data != null) {
         final errorData = e.response!.data;
-        if (errorData is Map && errorData['error'] != null) {
-          throw Exception(errorData['error']);
+        
+        // Try to extract error message
+        if (errorData is Map) {
+          // Try different error message fields
+          String? errorMessage;
+          if (errorData['error'] != null) {
+            errorMessage = errorData['error'].toString();
+          } else if (errorData['detail'] != null) {
+            if (errorData['detail'] is String) {
+              errorMessage = errorData['detail'];
+            } else if (errorData['detail'] is List) {
+              // Pydantic validation errors
+              final errors = (errorData['detail'] as List)
+                  .map((e) {
+                    if (e is Map) {
+                      final loc = e['loc']?.join('.') ?? '';
+                      final msg = e['msg'] ?? e.toString();
+                      return '$loc: $msg';
+                    }
+                    return e.toString();
+                  })
+                  .join(', ');
+              errorMessage = 'Validation error: $errors';
+            }
+          } else if (errorData['message'] != null) {
+            errorMessage = errorData['message'].toString();
+          }
+          
+          if (errorMessage != null) {
+            throw Exception(errorMessage);
+          }
         }
       }
-      // Default error messages
+      
+      // Default error messages based on status code
       if (e.response?.statusCode == 409) {
         throw Exception('An account with this email already exists. Please login instead.');
       } else if (e.response?.statusCode == 400) {
         throw Exception('Invalid registration data. Please check your input.');
+      } else if (e.response?.statusCode == 422) {
+        throw Exception('Invalid registration data. Please check that your email is valid and password is at least 8 characters.');
+      } else if (e.response?.statusCode == 500) {
+        throw Exception('Server error. Please try again later.');
       }
-      throw Exception('Registration failed: ${e.message}');
+      
+      throw Exception('Registration failed: ${e.message ?? "Unknown error"}');
     }
   }
 

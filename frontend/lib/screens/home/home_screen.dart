@@ -3,9 +3,11 @@ import 'package:provider/provider.dart';
 import 'package:syntrak/screens/activities/activities_screen.dart';
 import 'package:syntrak/screens/record/record_screen.dart';
 import 'package:syntrak/screens/profile/profile_screen.dart';
+import 'package:syntrak/screens/groups/groups_screen.dart';
 import 'package:syntrak/screens/home/location_permission_dialog.dart';
 import 'package:syntrak/services/location_service.dart';
 import 'package:syntrak/services/storage_service.dart';
+import 'package:syntrak/widgets/groups_icon.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,6 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _screens = [
     const ActivitiesScreen(),
     const RecordScreen(),
+    const GroupsScreen(),
     const ProfileScreen(),
   ];
 
@@ -69,18 +72,27 @@ class _HomeScreenState extends State<HomeScreen> {
             _currentIndex = index;
           });
         },
-        items: const [
-          BottomNavigationBarItem(
+        type: BottomNavigationBarType.fixed,
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.fiber_manual_record),
             label: 'Record',
           ),
           BottomNavigationBarItem(
+            icon: GroupsIcon(
+              color: _currentIndex == 2
+                  ? const Color(0xFFFF4500)
+                  : Colors.grey,
+            ),
+            label: 'Groups',
+          ),
+          const BottomNavigationBarItem(
             icon: Icon(Icons.person),
-            label: 'Profile',
+            label: 'You',
           ),
         ],
         selectedItemColor: const Color(0xFFFF4500),
