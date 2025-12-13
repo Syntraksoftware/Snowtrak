@@ -236,7 +236,8 @@ class CommunitySupabaseClient:
     def count_posts_by_subthread(self, subthread_id: str) -> int:
         """Count total posts in a subthread."""
         try:
-            resp = self._client.table("posts").select("post_id", count="exact").eq("subthread_id", subthread_id).execute()
+            from postgrest import CountMethod
+            resp = self._client.table("posts").select("post_id", count=CountMethod.exact).eq("subthread_id", subthread_id).execute()
             return getattr(resp, "count", 0) or 0
         except Exception as exc:
             logger.exception(f"Failed to count posts: {exc}")
@@ -361,7 +362,8 @@ class CommunitySupabaseClient:
     def count_comments_by_post(self, post_id: str) -> int:
         """Count total comments on a post."""
         try:
-            resp = self._client.table("comments").select("id", count="exact").eq("post_id", post_id).execute()
+            from postgrest import CountMethod
+            resp = self._client.table("comments").select("id", count=CountMethod.exact).eq("post_id", post_id).execute()
             return getattr(resp, "count", 0) or 0
         except Exception as exc:
             logger.exception(f"Failed to count comments: {exc}")
