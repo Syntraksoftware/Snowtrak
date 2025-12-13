@@ -6,16 +6,21 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+def _require_env(name: str) -> str:  
+    value = os.getenv(name)  
+    if not value:  
+        raise ValueError(f"Required environment variable {name} is not set")  
+    return value
 
 class Config:
     """Base configuration."""
     
     # Supabase
-    SUPABASE_URL = os.getenv("SUPABASE_URL")
-    SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    SUPABASE_URL = _require_env("SUPABASE_URL")  
+    SUPABASE_SERVICE_ROLE_KEY = _require_env("SUPABASE_SERVICE_ROLE_KEY")
     
     # JWT
-    JWT_SECRET = os.getenv("JWT_SECRET")
+    JWT_SECRET = _require_env("JWT_SECRET")
     JWT_ALGORITHM = "HS256"
     
     # Flask
