@@ -81,11 +81,11 @@ async def create_comment(
         return result
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Error creating comment: {str(e)}")
+    except Exception:
+        logger.error(f"Error creating comment")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
+            detail="Internal Server Error"
         )
 
 
@@ -105,11 +105,11 @@ async def get_comment(comment_id: str):
         return comment
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Error getting comment: {str(e)}")
+    except Exception:
+        logger.error(f"Error getting comment")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
+            detail="Internal Server Error"
         )
 
 
@@ -137,9 +137,9 @@ async def delete_comment(
         )
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Error deleting comment: {str(e)}")
+    except Exception:
+        logger.error(f"Error deleting comment")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
+            detail="Internal Server Error"
         )
