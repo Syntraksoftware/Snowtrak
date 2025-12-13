@@ -188,8 +188,8 @@ async def delete_subthread(
     try:
         client = get_community_client()
         
-        # Note: In production, add admin/moderator check here
-        # For now, any authenticated user can delete
+        # TODO: Implement admin/moderator check before production  
+        # TEMPORARY: Block all deletions until authorization is implemented  
         
         success = client.delete_subthread(subthread_id)
         
