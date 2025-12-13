@@ -47,14 +47,19 @@ def create_refresh_token(data: Dict[str, Any]) -> str:
     Returns:
         Encoded JWT refresh token string
     """
+    import secrets
+    
     to_encode = data.copy()
     now = datetime.now(timezone.utc)
     expire = now + timedelta(days=settings.refresh_token_expire_days)
     
+    # Add a random nonce to ensure each refresh token is unique
+    # This prevents token reuse even if generated at the same timestamp
     to_encode.update({
         "exp": expire,
         "iat": now,
-        "type": "refresh"
+        "type": "refresh",
+        "nonce": secrets.token_urlsafe(16)  # Add random nonce for uniqueness
     })
     
     encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
