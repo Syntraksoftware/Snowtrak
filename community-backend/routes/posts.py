@@ -92,11 +92,11 @@ async def create_post(
         return result
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Error creating post: {str(e)}")
+    except Exception:
+        logger.error(f"Error creating post")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
+            detail="Internal Server Error"
         )
 
 
@@ -151,11 +151,11 @@ async def list_post_comments(post_id: str):
         )
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Error listing post comments: {str(e)}")
+    except Exception:
+        logger.error(f"Error listing post comments")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
+            detail="Internal Server Error"
         )
 
 
@@ -183,9 +183,9 @@ async def delete_post(
         )
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Error deleting post: {str(e)}")
+    except Exception:
+        logger.error(f"Error deleting post")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
+            detail="Internal Server Error"
         )
