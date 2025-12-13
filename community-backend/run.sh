@@ -21,6 +21,3 @@ pip install -r requirements.txt
 # Start FastAPI server
 echo "⚡ Starting FastAPI server..."
 uvicorn main:app --host 0.0.0.0 --port 5001 --reload
-
-echo "✅ Starting Flask server..."
-python app.py
