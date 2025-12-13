@@ -25,7 +25,7 @@ async def lifespan(app: FastAPI):
     """Lifespan context manager for app startup/shutdown."""
     # Startup
     logger.info(f"Starting Community Backend on port {config.PORT}")
-    logger.info(f"Environment: {config.FLASK_ENV}")
+    logger.info(f"Environment: {config.FASTAPI_ENV}")
     logger.info(f"Debug mode: {config.DEBUG}")
     yield
     # Shutdown

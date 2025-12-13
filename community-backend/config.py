@@ -23,9 +23,9 @@ class Config:
     JWT_SECRET = _require_env("JWT_SECRET")
     JWT_ALGORITHM = "HS256"
     
-    # Flask
-    FLASK_ENV = os.getenv("FLASK_ENV", "production")
-    DEBUG = FLASK_ENV == "development"
+    # FastAPI
+    FASTAPI_ENV = os.getenv("FASTAPI_ENV", "production")
+    DEBUG = FASTAPI_ENV == "development"
     PORT = int(os.getenv("PORT", 5001))
     
     # CORS
@@ -39,13 +39,13 @@ class Config:
 class DevelopmentConfig(Config):
     """Development configuration."""
     DEBUG = True
-    FLASK_ENV = "development"
+    FASTAPI_ENV = "development"
 
 
 class ProductionConfig(Config):
     """Production configuration."""
     DEBUG = False
-    FLASK_ENV = "production"
+    FASTAPI_ENV = "production"
 
 
 # Config dictionary
@@ -58,5 +58,5 @@ config = {
 
 def get_config():
     """Get configuration based on environment."""
-    env = os.getenv("FLASK_ENV", "development")
+    env = os.getenv("FASTAPI_ENV", "development")
     return config.get(env, config["default"])
