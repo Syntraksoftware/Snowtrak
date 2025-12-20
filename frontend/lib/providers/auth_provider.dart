@@ -35,7 +35,8 @@ class AuthProvider extends ChangeNotifier {
       if (_storageService != null) {
         print('🔍 [AuthProvider] Initializing storage...');
         await _storageService!.init();
-        print('🔍 [AuthProvider] Storage initialized. Token: ${_storageService!.token}');
+        print(
+            '🔍 [AuthProvider] Storage initialized. Token: ${_storageService!.token}');
       } else {
         print('🔍 [AuthProvider] No storage service available');
       }
@@ -44,10 +45,11 @@ class AuthProvider extends ChangeNotifier {
       final restoredSession = await _restoreSession();
       if (restoredSession != null) {
         print('🔍 [AuthProvider] Session restored from storage');
-        
+
         // Check if token is expired
         if (restoredSession.isExpired) {
-          print('🔍 [AuthProvider] Access token expired, attempting refresh...');
+          print(
+              '🔍 [AuthProvider] Access token expired, attempting refresh...');
           try {
             _session = await _refreshSession(restoredSession);
             await _saveSession(_session!);
@@ -60,11 +62,13 @@ class AuthProvider extends ChangeNotifier {
             _isAuthenticated = false;
           }
         } else {
-          print('🔍 [AuthProvider] Token still valid, validating with backend...');
+          print(
+              '🔍 [AuthProvider] Token still valid, validating with backend...');
           _apiService.setToken(restoredSession.accessToken);
           try {
             // Validate token with backend
-            final user = await _apiService.getCurrentUser()
+            final user = await _apiService
+                .getCurrentUser()
                 .timeout(const Duration(seconds: 3));
             _session = AuthSession(
               accessToken: restoredSession.accessToken,
@@ -91,31 +95,50 @@ class AuthProvider extends ChangeNotifier {
       print('🔍 [AuthProvider] Setting isLoading to false');
       _isLoading = false;
       notifyListeners();
-      print('🔍 [AuthProvider] Auth check complete. isAuthenticated: $_isAuthenticated');
+      print(
+          '🔍 [AuthProvider] Auth check complete. isAuthenticated: $_isAuthenticated');
     }
   }
 
   Future<bool> login(String email, String password) async {
     try {
+      print('🔍 [AuthProvider] Starting login for: $email');
       _isLoading = true;
       _error = null;
       notifyListeners();
 
-      final response = await _apiService.login(email: email, password: password);
-      
+      final response =
+          await _apiService.login(email: email, password: password);
+      print('🔍 [AuthProvider] Login API response received');
+
       // Parse session from response
       _session = AuthSession.fromJson(response);
+      print('🔍 [AuthProvider] Session parsed, user: ${_session!.user.email}');
       _apiService.setToken(_session!.accessToken);
       _isAuthenticated = true;
       _error = null;
 
       // Save session to storage
       await _saveSession(_session!);
+      print(
+          '🔍 [AuthProvider] Session saved, isAuthenticated: $_isAuthenticated');
 
       _isLoading = false;
+      print(
+          '🔍 [AuthProvider] Calling notifyListeners() after successful login');
       notifyListeners();
+
+      // Force another notify after a brief delay to ensure Consumer rebuilds
+      Future.delayed(const Duration(milliseconds: 50), () {
+        print(
+            '🔍 [AuthProvider] Second notifyListeners() call to ensure rebuild');
+        notifyListeners();
+      });
+
+      print('🔍 [AuthProvider] notifyListeners() called, returning true');
       return true;
     } catch (e) {
+      print('🔍 [AuthProvider] Login error: $e');
       _error = e.toString();
       _isLoading = false;
       _isAuthenticated = false;
@@ -124,7 +147,8 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> register(String email, String password, {String? firstName, String? lastName}) async {
+  Future<bool> register(String email, String password,
+      {String? firstName, String? lastName}) async {
     try {
       _isLoading = true;
       _error = null;
@@ -136,7 +160,7 @@ class AuthProvider extends ChangeNotifier {
         firstName: firstName,
         lastName: lastName,
       );
-      
+
       // Parse session from response
       _session = AuthSession.fromJson(response);
       _apiService.setToken(_session!.accessToken);
@@ -177,16 +201,17 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // Session management helpers
-  
+
   Future<AuthSession?> _restoreSession() async {
     if (_storageService == null) return null;
-    
+
     try {
       await _storageService!.init();
-      final sessionJson = _storageService!.token; // Reuse token field for session JSON
-      
+      final sessionJson =
+          _storageService!.token; // Reuse token field for session JSON
+
       if (sessionJson == null || sessionJson.isEmpty) return null;
-      
+
       final decoded = jsonDecode(sessionJson);
       return AuthSession.fromJson(decoded);
     } catch (e) {
@@ -197,7 +222,7 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> _saveSession(AuthSession session) async {
     if (_storageService == null) return;
-    
+
     try {
       final sessionJson = jsonEncode(session.toJson());
       await _storageService!.saveToken(sessionJson, session.user.id);
@@ -209,7 +234,7 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> _clearSession() async {
     if (_storageService == null) return;
-    
+
     try {
       await _storageService!.clearToken();
       print('🔍 [AuthProvider] Session cleared from storage');
@@ -232,4 +257,3 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 }
-

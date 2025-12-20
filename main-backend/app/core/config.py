@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = Field(default=7, alias="REFRESH_TOKEN_EXPIRE_DAYS")
     
     # CORS - stored as string in env, converted to list
+    # Allow origins for mobile app development (iOS simulator, Android emulator, web)
     allowed_origins: str = Field(
         default="http://localhost:3000,http://127.0.0.1:3000",
         alias="ALLOWED_ORIGINS"
@@ -48,7 +49,9 @@ class Settings(BaseSettings):
     def get_allowed_origins(self) -> List[str]:
         """Get allowed origins as a list."""
         if isinstance(self.allowed_origins, str):
-            return [origin.strip() for origin in self.allowed_origins.split(",") if origin.strip()]
+            origins = [origin.strip() for origin in self.allowed_origins.split(",") if origin.strip()]
+            # Filter out "*" if present (not compatible with allow_credentials=True)
+            return [o for o in origins if o != "*"]
         return self.allowed_origins if isinstance(self.allowed_origins, list) else []
     
     @model_validator(mode="after")

@@ -560,25 +560,32 @@ class _RecordScreenState extends State<RecordScreen> {
       return Container(
         color: Colors.grey[200],
         child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.map, size: 64, color: Colors.grey),
-              const SizedBox(height: 16),
-              const Text(
-                'Map unavailable',
-                style: TextStyle(color: Colors.grey, fontSize: 18),
-              ),
-              const SizedBox(height: 8),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 32.0),
-                child: Text(
-                  'You can still record activities. The map will appear once configured.',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                  textAlign: TextAlign.center,
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.map_outlined, size: 80, color: Colors.grey),
+                const SizedBox(height: 24),
+                const Text(
+                  'The page is not ready!',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 32.0),
+                  child: Text(
+                    'Map functionality is coming soon. You can still record activities without the map.',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );

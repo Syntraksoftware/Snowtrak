@@ -84,9 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           BottomNavigationBarItem(
             icon: GroupsIcon(
-              color: _currentIndex == 2
-                  ? const Color(0xFFFF4500)
-                  : Colors.grey,
+              color: _currentIndex == 2 ? const Color(0xFFFF4500) : Colors.grey,
             ),
             label: 'Groups',
           ),
@@ -101,4 +99,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-

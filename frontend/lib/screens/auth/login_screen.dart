@@ -42,17 +42,94 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (!success && mounted) {
+      // Show helpful error message with registration prompt
+      final errorMessage = authProvider.error ?? 'Login failed';
+      final isAuthError =
+          errorMessage.toLowerCase().contains('invalid email or password') ||
+              errorMessage.toLowerCase().contains('invalid credentials') ||
+              errorMessage.toLowerCase().contains('unauthorized');
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(authProvider.error ?? 'Login failed'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                errorMessage,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              if (isAuthError) ...[
+                const SizedBox(height: 8),
+                const Text(
+                  'Don\'t have an account? Please register to create one.',
+                  style: TextStyle(fontSize: 12),
+                ),
+              ],
+            ],
+          ),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+          action: isAuthError
+              ? SnackBarAction(
+                  label: 'Sign Up',
+                  textColor: Colors.white,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                    );
+                  },
+                )
+              : null,
         ),
       );
+    } else if (success) {
+      // Login successful - the Consumer in main.dart will automatically rebuild
+      // Wait a moment to ensure state propagates
+      print(
+          '🔍 [LoginScreen] Login successful, isAuthenticated: ${authProvider.isAuthenticated}');
+
+      // Give the Consumer time to rebuild
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      // Verify state
+      if (mounted) {
+        print(
+            '🔍 [LoginScreen] After delay, isAuthenticated: ${authProvider.isAuthenticated}');
+        // The Consumer should have rebuilt by now and shown HomeScreen
+        // If still on login screen, there might be an issue with the Consumer
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Use Consumer to listen to auth state changes
+    // When authenticated, the Consumer in main.dart will automatically show HomeScreen
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, _) {
+        // If user becomes authenticated while on this screen,
+        // the Consumer in main.dart will rebuild and show HomeScreen
+        if (authProvider.isAuthenticated) {
+          print(
+              '🔍 [LoginScreen] User authenticated, Consumer in main.dart should show HomeScreen');
+          // Return a loading indicator briefly while navigation happens
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF4500)),
+              ),
+            ),
+          );
+        }
+
+        return _buildLoginForm(context);
+      },
+    );
+  }
+
+  Widget _buildLoginForm(BuildContext context) {
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -144,7 +221,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                         : const Text(
@@ -159,7 +237,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const RegisterScreen()),
                       );
                     },
                     child: const Text('Don\'t have an account? Sign up'),
@@ -173,4 +252,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-

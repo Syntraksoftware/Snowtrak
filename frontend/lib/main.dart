@@ -16,6 +16,25 @@ void main() {
 class SyntrakApp extends StatelessWidget {
   const SyntrakApp({super.key});
 
+  Widget _buildHome(AuthProvider authProvider) {
+    print(
+        '🔍 [Main] _buildHome called. isLoading: ${authProvider.isLoading}, isAuthenticated: ${authProvider.isAuthenticated}');
+    // Safety timeout: if loading takes more than 10 seconds, show login
+    if (authProvider.isLoading) {
+      print('🔍 [Main] Showing loading screen');
+      return _LoadingScreenWithTimeout(
+        authProvider: authProvider,
+      );
+    }
+    if (authProvider.isAuthenticated) {
+      print('🔍 [Main] User is authenticated, showing HomeScreen');
+      return const HomeScreen();
+    } else {
+      print('🔍 [Main] User not authenticated, showing LoginScreen');
+      return const LoginScreen();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -73,39 +92,30 @@ class SyntrakApp extends StatelessWidget {
               previous ?? ActivityProvider(ApiService()),
         ),
       ],
-      child: MaterialApp(
-        title: 'Syntrak',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          primarySwatch: Colors.orange,
-          primaryColor: const Color(0xFFFF4500),
-          scaffoldBackgroundColor: Colors.white,
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black,
-            elevation: 0,
-          ),
-        ),
-        home: Consumer<AuthProvider>(
-          builder: (context, authProvider, _) {
-            print(
-                '🔍 [Main] Building home. isLoading: ${authProvider.isLoading}, isAuthenticated: ${authProvider.isAuthenticated}');
-            // Safety timeout: if loading takes more than 10 seconds, show login
-            if (authProvider.isLoading) {
-              print('🔍 [Main] Showing loading screen');
-              return _LoadingScreenWithTimeout(
-                authProvider: authProvider,
-              );
-            }
-            if (authProvider.isAuthenticated) {
-              print('🔍 [Main] Showing HomeScreen');
-              return const HomeScreen();
-            } else {
-              print('🔍 [Main] Showing LoginScreen');
-              return const LoginScreen();
-            }
-          },
-        ),
+      child: Consumer<AuthProvider>(
+        builder: (context, authProvider, _) {
+          print(
+              '🔍 [Main] Building MaterialApp. isLoading: ${authProvider.isLoading}, isAuthenticated: ${authProvider.isAuthenticated}');
+
+          return MaterialApp(
+            title: 'Syntrak',
+            debugShowCheckedModeBanner: false,
+            // Use key to force rebuild when auth state changes
+            key: ValueKey(
+                'auth_${authProvider.isAuthenticated}_${authProvider.isLoading}'),
+            theme: ThemeData(
+              primarySwatch: Colors.orange,
+              primaryColor: const Color(0xFFFF4500),
+              scaffoldBackgroundColor: Colors.white,
+              appBarTheme: const AppBarTheme(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+                elevation: 0,
+              ),
+            ),
+            home: _buildHome(authProvider),
+          );
+        },
       ),
     );
   }
