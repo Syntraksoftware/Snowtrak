@@ -44,7 +44,7 @@ class ApiService {
         'email': email,
         'password': password,
       };
-      
+
       // Only add optional fields if they are not null and not empty
       if (firstName != null && firstName.isNotEmpty) {
         data['first_name'] = firstName;
@@ -52,18 +52,18 @@ class ApiService {
       if (lastName != null && lastName.isNotEmpty) {
         data['last_name'] = lastName;
       }
-      
+
       final response = await _dio.post('/auth/register', data: data);
       return response.data;
     } on DioException catch (e) {
       // Log the full error for debugging
       print('🔴 Registration error: ${e.response?.statusCode}');
       print('🔴 Response data: ${e.response?.data}');
-      
+
       // Extract error message from response
       if (e.response != null && e.response!.data != null) {
         final errorData = e.response!.data;
-        
+
         // Try to extract error message
         if (errorData is Map) {
           // Try different error message fields
@@ -75,39 +75,39 @@ class ApiService {
               errorMessage = errorData['detail'];
             } else if (errorData['detail'] is List) {
               // Pydantic validation errors
-              final errors = (errorData['detail'] as List)
-                  .map((e) {
-                    if (e is Map) {
-                      final loc = e['loc']?.join('.') ?? '';
-                      final msg = e['msg'] ?? e.toString();
-                      return '$loc: $msg';
-                    }
-                    return e.toString();
-                  })
-                  .join(', ');
+              final errors = (errorData['detail'] as List).map((e) {
+                if (e is Map) {
+                  final loc = e['loc']?.join('.') ?? '';
+                  final msg = e['msg'] ?? e.toString();
+                  return '$loc: $msg';
+                }
+                return e.toString();
+              }).join(', ');
               errorMessage = 'Validation error: $errors';
             }
           } else if (errorData['message'] != null) {
             errorMessage = errorData['message'].toString();
           }
-          
+
           if (errorMessage != null) {
             throw Exception(errorMessage);
           }
         }
       }
-      
+
       // Default error messages based on status code
       if (e.response?.statusCode == 409) {
-        throw Exception('An account with this email already exists. Please login instead.');
+        throw Exception(
+            'An account with this email already exists. Please login instead.');
       } else if (e.response?.statusCode == 400) {
         throw Exception('Invalid registration data. Please check your input.');
       } else if (e.response?.statusCode == 422) {
-        throw Exception('Invalid registration data. Please check that your email is valid and password is at least 8 characters.');
+        throw Exception(
+            'Invalid registration data. Please check that your email is valid and password is at least 8 characters.');
       } else if (e.response?.statusCode == 500) {
         throw Exception('Server error. Please try again later.');
       }
-      
+
       throw Exception('Registration failed: ${e.message ?? "Unknown error"}');
     }
   }
@@ -192,7 +192,8 @@ class ApiService {
     return Activity.fromJson(response.data);
   }
 
-  Future<Activity> updateActivity(String id, {
+  Future<Activity> updateActivity(
+    String id, {
     String? name,
     String? description,
     bool? isPublic,
@@ -209,4 +210,3 @@ class ApiService {
     await _dio.delete('/activities/$id');
   }
 }
-

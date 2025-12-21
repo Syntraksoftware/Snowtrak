@@ -29,44 +29,75 @@ class _RecordScreenState extends State<RecordScreen> {
   StreamSubscription<Position>? _positionSubscription;
   List<LatLng> _routePoints = [];
   CameraPosition? _initialCameraPosition;
+  bool _hasError = false;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _initializeLocation();
+    // Initialize with error state by default to prevent crashes
+    _hasError = true;
+    _errorMessage = "The page is not ready!";
+    // Try to initialize location, but don't crash if it fails
+    _initializeLocation().catchError((e) {
+      print('🔍 [RecordScreen] Error in initState: $e');
+      if (mounted) {
+        setState(() {
+          _hasError = true;
+          _errorMessage = "The page is not ready!";
+        });
+      }
+    });
   }
 
   Future<void> _initializeLocation() async {
     print('🔍 [RecordScreen] Initializing location...');
     try {
+      // For now, keep error state to prevent crashes
+      // TODO: Properly configure Google Maps API key before enabling map
+      if (mounted) {
+        setState(() {
+          _hasError = true;
+          _errorMessage = "The page is not ready!";
+        });
+      }
+      return;
+
+      // Commented out until Google Maps is properly configured
+      /*
       // Check if we have permission (don't request again, just check)
       print('🔍 [RecordScreen] Checking permissions...');
       final hasPermission = await _locationService.checkPermissions();
 
       if (!hasPermission && mounted) {
-        print('🔍 [RecordScreen] Permission not granted, using default location');
+        print(
+            '🔍 [RecordScreen] Permission not granted, using default location');
         // If no permission, use a default location (San Francisco as fallback)
         setState(() {
           _initialCameraPosition = const CameraPosition(
             target: LatLng(37.7749, -122.4194), // Default location
             zoom: 15,
           );
+          _hasError = false;
         });
         return;
       }
 
       // Try to get current position with timeout
       print('🔍 [RecordScreen] Getting current position...');
-      final position = await _locationService.getCurrentPosition()
+      final position = await _locationService
+          .getCurrentPosition()
           .timeout(const Duration(seconds: 10));
 
       if (position != null && mounted) {
-        print('🔍 [RecordScreen] Position obtained: ${position.latitude}, ${position.longitude}');
+        print(
+            '🔍 [RecordScreen] Position obtained: ${position.latitude}, ${position.longitude}');
         setState(() {
           _initialCameraPosition = CameraPosition(
             target: LatLng(position.latitude, position.longitude),
             zoom: 15,
           );
+          _hasError = false;
         });
       } else if (mounted) {
         print('🔍 [RecordScreen] Position is null, using default location');
@@ -76,17 +107,17 @@ class _RecordScreenState extends State<RecordScreen> {
             target: LatLng(37.7749, -122.4194),
             zoom: 15,
           );
+          _hasError = false;
         });
       }
+      */
     } catch (e) {
       print('🔍 [RecordScreen] Error getting location: $e');
-      // If anything fails, use default location
+      // If anything fails, show error screen
       if (mounted) {
         setState(() {
-          _initialCameraPosition = const CameraPosition(
-            target: LatLng(37.7749, -122.4194),
-            zoom: 15,
-          );
+          _hasError = true;
+          _errorMessage = "The page is not ready!";
         });
       }
     }
@@ -197,7 +228,8 @@ class _RecordScreenState extends State<RecordScreen> {
           // Update map camera
           _mapController.future.then((controller) {
             controller.animateCamera(
-              CameraUpdate.newLatLng(LatLng(position.latitude, position.longitude)),
+              CameraUpdate.newLatLng(
+                  LatLng(position.latitude, position.longitude)),
             );
           });
         }
@@ -291,7 +323,8 @@ class _RecordScreenState extends State<RecordScreen> {
       locations: locations,
     );
 
-    final activityProvider = Provider.of<ActivityProvider>(context, listen: false);
+    final activityProvider =
+        Provider.of<ActivityProvider>(context, listen: false);
     final savedActivity = await activityProvider.createActivity(activity);
 
     if (savedActivity != null && mounted) {
@@ -334,180 +367,203 @@ class _RecordScreenState extends State<RecordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // If still loading location, show loading but with timeout fallback
-    if (_initialCameraPosition == null) {
-      // Set a default after a short delay if location doesn't load
-      Future.delayed(const Duration(seconds: 3), () {
-        if (mounted && _initialCameraPosition == null) {
-          setState(() {
-            _initialCameraPosition = const CameraPosition(
-              target: LatLng(37.7749, -122.4194),
-              zoom: 15,
-            );
-          });
-        }
-      });
-      return const Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Loading map...'),
-            ],
-          ),
-        ),
-      );
+    // Show error screen by default to prevent crashes
+    if (_hasError) {
+      return _buildErrorScreen();
     }
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          // Map with error handling
-          _buildMapWidget(),
+    // Wrap entire build in error handling to prevent crashes
+    try {
+      // If still loading location, show loading but with timeout fallback
+      if (_initialCameraPosition == null) {
+        // Set a default after a short delay if location doesn't load
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted && _initialCameraPosition == null) {
+            try {
+              setState(() {
+                _initialCameraPosition = const CameraPosition(
+                  target: LatLng(37.7749, -122.4194),
+                  zoom: 15,
+                );
+              });
+            } catch (e) {
+              print('🔍 [RecordScreen] Error setting default location: $e');
+              if (mounted) {
+                setState(() {
+                  _hasError = true;
+                  _errorMessage = "The page is not ready!";
+                });
+              }
+            }
+          }
+        });
+        return const Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Loading map...'),
+              ],
+            ),
+          ),
+        );
+      }
 
-          // Top overlay
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: _isRecording
-                        ? null
-                        : () => Navigator.pop(context),
-                  ),
-                  if (_isRecording)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black87,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        _formatDuration(_elapsedTime),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    )
-                  else
-                    const SizedBox(width: 48),
-                  if (_isRecording)
+      return Scaffold(
+        body: Stack(
+          children: [
+            // Map with error handling
+            _buildMapWidget(),
+
+            // Top overlay
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
                     IconButton(
-                      icon: Icon(_isPaused ? Icons.play_arrow : Icons.pause),
-                      onPressed: _isPaused ? _resumeRecording : _pauseRecording,
-                    )
-                  else
-                    const SizedBox(width: 48),
-                ],
-              ),
-            ),
-          ),
-
-          // Bottom overlay
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(24.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (!_isRecording)
-                    ElevatedButton(
-                      onPressed: _selectedActivityType == null
-                          ? _selectActivityType
-                          : _startRecording,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF4500),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 48,
-                          vertical: 16,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                      child: Text(
-                        _selectedActivityType == null
-                            ? 'Select Activity Type'
-                            : 'Start Recording',
-                        style: const TextStyle(fontSize: 18),
-                      ),
-                    )
-                  else
-                    Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            _buildMetric(
-                              'Distance',
-                              '${(_locationService.calculateDistance() / 1000).toStringAsFixed(2)} km',
-                            ),
-                            _buildMetric(
-                              'Pace',
-                              '-- /km',
-                            ),
-                            _buildMetric(
-                              'Elevation',
-                              '${_locationService.calculateElevationGain().toStringAsFixed(0)} m',
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _stopRecording,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 48,
-                              vertical: 16,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                          ),
-                          child: const Text(
-                            'Stop',
-                            style: TextStyle(fontSize: 18),
-                          ),
-                        ),
-                      ],
+                      icon: const Icon(Icons.close),
+                      onPressed:
+                          _isRecording ? null : () => Navigator.pop(context),
                     ),
-                ],
+                    if (_isRecording)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black87,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          _formatDuration(_elapsedTime),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      )
+                    else
+                      const SizedBox(width: 48),
+                    if (_isRecording)
+                      IconButton(
+                        icon: Icon(_isPaused ? Icons.play_arrow : Icons.pause),
+                        onPressed:
+                            _isPaused ? _resumeRecording : _pauseRecording,
+                      )
+                    else
+                      const SizedBox(width: 48),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
+
+            // Bottom overlay
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.all(24.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, -5),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (!_isRecording)
+                      ElevatedButton(
+                        onPressed: _selectedActivityType == null
+                            ? _selectActivityType
+                            : _startRecording,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF4500),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 48,
+                            vertical: 16,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        child: Text(
+                          _selectedActivityType == null
+                              ? 'Select Activity Type'
+                              : 'Start Recording',
+                          style: const TextStyle(fontSize: 18),
+                        ),
+                      )
+                    else
+                      Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _buildMetric(
+                                'Distance',
+                                '${(_locationService.calculateDistance() / 1000).toStringAsFixed(2)} km',
+                              ),
+                              _buildMetric(
+                                'Pace',
+                                '-- /km',
+                              ),
+                              _buildMetric(
+                                'Elevation',
+                                '${_locationService.calculateElevationGain().toStringAsFixed(0)} m',
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _stopRecording,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 48,
+                                vertical: 16,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                            ),
+                            child: const Text(
+                              'Stop',
+                              style: TextStyle(fontSize: 18),
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    } catch (e, stackTrace) {
+      print('🔍 [RecordScreen] Error in build: $e');
+      print('🔍 [RecordScreen] Stack trace: $stackTrace');
+      // Show "page not ready" message instead of crashing
+      return _buildErrorScreen();
+    }
   }
 
   Widget _buildMetric(String label, String value) {
@@ -557,39 +613,76 @@ class _RecordScreenState extends State<RecordScreen> {
       print('🔍 [RecordScreen] Error building map: $e');
       print('🔍 [RecordScreen] Stack trace: $stackTrace');
       // Fallback: Show a placeholder instead of crashing
-      return Container(
-        color: Colors.grey[200],
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.map_outlined, size: 80, color: Colors.grey),
-                const SizedBox(height: 24),
-                const Text(
-                  'The page is not ready!',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 32.0),
-                  child: Text(
-                    'Map functionality is coming soon. You can still record activities without the map.',
-                    style: TextStyle(fontSize: 14, color: Colors.grey),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
+      return _buildErrorScreen();
     }
   }
-}
 
+  Widget _buildErrorScreen() {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Record Activity'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.map_outlined,
+                size: 80,
+                color: Colors.grey[400],
+              ),
+              const SizedBox(height: 24),
+              Text(
+                _errorMessage ?? 'The page is not ready!',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 32.0),
+                child: Text(
+                  'Map functionality is coming soon. You can still record activities without the map.',
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () {
+                  // Retry by resetting state
+                  setState(() {
+                    _hasError = false;
+                    _initialCameraPosition = null;
+                    _errorMessage = null;
+                  });
+                  _initializeLocation();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF4500),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

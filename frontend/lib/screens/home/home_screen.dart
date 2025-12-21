@@ -4,7 +4,6 @@ import 'package:syntrak/screens/activities/activities_screen.dart';
 import 'package:syntrak/screens/record/record_screen.dart';
 import 'package:syntrak/screens/profile/profile_screen.dart';
 import 'package:syntrak/screens/groups/groups_screen.dart';
-import 'package:syntrak/screens/maps/maps_screen.dart';
 import 'package:syntrak/screens/home/location_permission_dialog.dart';
 import 'package:syntrak/services/location_service.dart';
 import 'package:syntrak/services/storage_service.dart';
@@ -23,10 +22,9 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _hasCheckedPermission = false;
 
   final List<Widget> _screens = [
-    const ActivitiesScreen(),
     const RecordScreen(),
-    const MapsScreen(),
     const GroupsScreen(),
+    const ActivitiesScreen(), // Home in the middle
     const ProfileScreen(),
   ];
 
@@ -77,22 +75,18 @@ class _HomeScreenState extends State<HomeScreen> {
         type: BottomNavigationBarType.fixed,
         items: [
           const BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          const BottomNavigationBarItem(
             icon: Icon(Icons.fiber_manual_record),
             label: 'Record',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.map),
-            label: 'Maps',
-          ),
           BottomNavigationBarItem(
             icon: GroupsIcon(
-              color: _currentIndex == 3 ? const Color(0xFFFF4500) : Colors.grey,
+              color: _currentIndex == 1 ? const Color(0xFFFF4500) : Colors.grey,
             ),
             label: 'Groups',
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
           ),
           const BottomNavigationBarItem(
             icon: Icon(Icons.person),
