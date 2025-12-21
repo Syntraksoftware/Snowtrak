@@ -4,10 +4,12 @@ import 'package:syntrak/screens/activities/activities_screen.dart';
 import 'package:syntrak/screens/record/record_screen.dart';
 import 'package:syntrak/screens/profile/profile_screen.dart';
 import 'package:syntrak/screens/groups/groups_screen.dart';
+import 'package:syntrak/screens/community/community_screen.dart';
 import 'package:syntrak/screens/home/location_permission_dialog.dart';
 import 'package:syntrak/services/location_service.dart';
 import 'package:syntrak/services/storage_service.dart';
 import 'package:syntrak/widgets/groups_icon.dart';
+import 'package:syntrak/widgets/logo_icon.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,12 +27,15 @@ class _HomeScreenState extends State<HomeScreen> {
     const RecordScreen(),
     const GroupsScreen(),
     const ActivitiesScreen(), // Home in the middle
+    const CommunityScreen(),
     const ProfileScreen(),
   ];
 
   @override
   void initState() {
     super.initState();
+    // Ensure currentIndex is within bounds on initialization
+    _currentIndex = _currentIndex.clamp(0, _screens.length - 1);
     // Check and ask for location permission after a short delay
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkLocationPermission();
@@ -63,34 +68,57 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Ensure currentIndex is within bounds
+    final safeIndex = _currentIndex.clamp(0, _screens.length - 1);
+
     return Scaffold(
-      body: _screens[_currentIndex],
+      body: _screens[safeIndex],
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
+        currentIndex: safeIndex,
         onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
+          if (index >= 0 && index < _screens.length) {
+            setState(() {
+              _currentIndex = index;
+            });
+          }
         },
         type: BottomNavigationBarType.fixed,
+        showSelectedLabels: false,
+        showUnselectedLabels: false,
         items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.fiber_manual_record),
-            label: 'Record',
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.fiber_manual_record,
+              color: safeIndex == 0 ? const Color(0xFFFF4500) : Colors.grey,
+            ),
+            label: '',
           ),
           BottomNavigationBarItem(
             icon: GroupsIcon(
-              color: _currentIndex == 1 ? const Color(0xFFFF4500) : Colors.grey,
+              color: safeIndex == 1 ? const Color(0xFFFF4500) : Colors.grey,
             ),
-            label: 'Groups',
+            label: '',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.home,
+              color: safeIndex == 2 ? const Color(0xFFFF4500) : Colors.grey,
+            ),
+            label: '',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'You',
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.people_outline,
+              color: safeIndex == 3 ? const Color(0xFFFF4500) : Colors.grey,
+            ),
+            label: '',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.person_outline,
+              color: safeIndex == 4 ? const Color(0xFFFF4500) : Colors.grey,
+            ),
+            label: '',
           ),
         ],
         selectedItemColor: const Color(0xFFFF4500),
