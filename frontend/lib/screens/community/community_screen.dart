@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/models/post.dart';
 import 'package:syntrak/widgets/community_header.dart';
-import 'package:syntrak/widgets/composer_widget.dart';
+import 'package:syntrak/widgets/compact_composer.dart';
 import 'package:syntrak/widgets/message_card.dart';
 
 class CommunityScreen extends StatefulWidget {
@@ -262,12 +262,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
             isAtTop: _isAtTop,
             isRefreshing: _isRefreshing,
           ),
-          // Composer
-          ComposerWidget(
-            onPost: _handlePost,
-            maxCharacters: 280,
-          ),
-          // Feed list
+          // Feed list with composer as first item
           Expanded(
             child: _isLoading && _posts.isEmpty
                 ? const Center(
@@ -281,9 +276,17 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     color: const Color(0xFFFF4500),
                     child: ListView.builder(
                       controller: _scrollController,
-                      itemCount: _posts.length,
+                      itemCount: _posts.length + 1, // +1 for composer
                       itemBuilder: (context, index) {
-                        final post = _posts[index];
+                        // First item is the composer
+                        if (index == 0) {
+                          return CompactComposer(
+                            onPost: _handlePost,
+                            maxCharacters: 280,
+                          );
+                        }
+                        // Rest are posts
+                        final post = _posts[index - 1];
                         return MessageCard(
                           post: post,
                           isExpanded: _expandedPostId == post.id,
