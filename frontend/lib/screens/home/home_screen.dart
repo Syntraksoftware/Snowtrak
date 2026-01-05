@@ -21,6 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
   final LocationService _locationService = LocationService();
   bool _hasCheckedPermission = false;
+  final PageController _pageController = PageController();
 
   // Restructured navigation order: Map, Community, Home, Groups/Activities, You
   final List<Widget> _screens = [
@@ -40,6 +41,12 @@ class _HomeScreenState extends State<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkLocationPermission();
     });
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Future<void> _checkLocationPermission() async {
@@ -66,26 +73,42 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _onTabTapped(int index) {
+    if (index >= 0 && index < _screens.length && index != _currentIndex) {
+      setState(() {
+        _currentIndex = index;
+      });
+      _pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOutCubic,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Ensure currentIndex is within bounds
     final safeIndex = _currentIndex.clamp(0, _screens.length - 1);
 
     return Scaffold(
-      body: _screens[safeIndex],
+      body: PageView(
+        controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(), // Disable swipe gestures
+        onPageChanged: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        children: _screens,
+      ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: SyntrakElevation.md,
         ),
         child: BottomNavigationBar(
           currentIndex: safeIndex,
-          onTap: (index) {
-            if (index >= 0 && index < _screens.length) {
-              setState(() {
-                _currentIndex = index;
-              });
-            }
-          },
+          onTap: _onTabTapped,
           type: BottomNavigationBarType.fixed,
           showSelectedLabels: true,
           showUnselectedLabels: true,
