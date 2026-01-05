@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/core/activity_helpers.dart';
 import 'package:syntrak/models/activity.dart';
 import 'package:syntrak/models/user.dart';
 import 'package:syntrak/providers/auth_provider.dart';
@@ -399,9 +398,6 @@ class _ActivityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activityColor = ActivityHelpers.getActivityColor(activity.type);
-    final activityIcon = ActivityHelpers.getActivityIcon(activity.type);
-
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -447,52 +443,27 @@ class _ActivityCard extends StatelessWidget {
                         style: SyntrakTypography.bodyMedium.copyWith(
                           color: SyntrakColors.textPrimary,
                           fontWeight: FontWeight.bold,
+                          fontSize: 15,
                         ),
                       ),
                       const SizedBox(height: SyntrakSpacing.xs / 2),
-                      // Date/time and device
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              _formatDateTime(activity.startTime),
-                              style: SyntrakTypography.labelSmall.copyWith(
-                                color: SyntrakColors.textTertiary,
-                                fontSize: 12,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: SyntrakSpacing.xs),
-                          Text(
-                            '•',
-                            style: SyntrakTypography.labelSmall.copyWith(
-                              color: SyntrakColors.textTertiary,
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(width: SyntrakSpacing.xs),
-                          Flexible(
-                            child: Text(
-                              'Apple Watch SE',
-                              style: SyntrakTypography.labelSmall.copyWith(
-                                color: SyntrakColors.textTertiary,
-                                fontSize: 12,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
+                      // Date/time and device - all on one line
+                      Text(
+                        '${_formatDateTime(activity.startTime)} • Apple Watch SE',
+                        style: SyntrakTypography.labelSmall.copyWith(
+                          color: SyntrakColors.textTertiary,
+                          fontSize: 10,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: SyntrakSpacing.xs / 2),
-                      // Location
+                      // Location with shoe icon
                       Row(
                         children: [
                           Icon(
-                            Icons.location_on,
-                            size: 12,
+                            Icons.directions_walk,
+                            size: 14,
                             color: SyntrakColors.textTertiary,
                           ),
                           const SizedBox(width: SyntrakSpacing.xs / 2),
@@ -501,7 +472,7 @@ class _ActivityCard extends StatelessWidget {
                               'Finland, Tampere',
                               style: SyntrakTypography.labelSmall.copyWith(
                                 color: SyntrakColors.textTertiary,
-                                fontSize: 12,
+                                fontSize: 11,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -510,19 +481,6 @@ class _ActivityCard extends StatelessWidget {
                         ],
                       ),
                     ],
-                  ),
-                ),
-                // Activity type icon on the right
-                Container(
-                  padding: const EdgeInsets.all(SyntrakSpacing.sm),
-                  decoration: BoxDecoration(
-                    color: activityColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(SyntrakRadius.md),
-                  ),
-                  child: Icon(
-                    activityIcon,
-                    color: activityColor,
-                    size: 24,
                   ),
                 ),
               ],
