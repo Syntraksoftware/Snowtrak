@@ -182,10 +182,13 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
     final user = Provider.of<AuthProvider>(context, listen: false).user;
 
     if (_isLoading) {
-      return Column(
-        children: [
-          _buildSearchBar(),
-          const Expanded(
+      return CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: _buildSearchBar(),
+          ),
+          const SliverFillRemaining(
+            hasScrollBody: false,
             child: Center(
               child: CircularProgressIndicator(),
             ),
@@ -195,10 +198,13 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
     }
 
     if (_filteredActivities.isEmpty && _searchQuery.isNotEmpty) {
-      return Column(
-        children: [
-          _buildSearchBar(),
-          Expanded(
+      return CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: _buildSearchBar(),
+          ),
+          SliverFillRemaining(
+            hasScrollBody: false,
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -231,10 +237,13 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
     }
 
     if (_filteredActivities.isEmpty) {
-      return Column(
-        children: [
-          _buildSearchBar(),
-          Expanded(
+      return CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: _buildSearchBar(),
+          ),
+          SliverFillRemaining(
+            hasScrollBody: false,
             child: Center(
               child: Padding(
                 padding: const EdgeInsets.all(SyntrakSpacing.xl),
@@ -270,37 +279,48 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
       );
     }
 
-    return Column(
-      children: [
-        _buildSearchBar(),
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: _loadActivities,
-            color: SyntrakColors.primary,
-            child: ListView.separated(
-              padding: const EdgeInsets.all(SyntrakSpacing.md),
-              itemCount: _filteredActivities.length,
-              separatorBuilder: (context, index) =>
-                  const SizedBox(height: SyntrakSpacing.md),
-              itemBuilder: (context, index) {
-                final activity = _filteredActivities[index];
-                // First activity (index 0) is the most recent and should show kudos card
-                final isFirstActivity = index == 0;
-                return _ActivityCard(
-                  activity: activity,
-                  user: user,
-                  isFirstActivity: isFirstActivity,
-                  hasKudos: _kudosMap[activity.id] ?? false,
-                  kudosCount: _kudosCountMap[activity.id] ?? 0,
-                  onKudosToggle: () => _toggleKudos(activity.id),
-                  onShare: () => _shareActivity(activity.id),
-                  onComment: () => _commentActivity(activity.id),
-                );
-              },
+    return RefreshIndicator(
+      onRefresh: _loadActivities,
+      color: SyntrakColors.primary,
+      child: CustomScrollView(
+        slivers: [
+          // Search bar as scrollable header
+          SliverToBoxAdapter(
+            child: _buildSearchBar(),
+          ),
+          // Activities list
+          SliverPadding(
+            padding: const EdgeInsets.all(SyntrakSpacing.md),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final activity = _filteredActivities[index];
+                  // First activity (index 0) is the most recent and should show kudos card
+                  final isFirstActivity = index == 0;
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      bottom: index < _filteredActivities.length - 1
+                          ? SyntrakSpacing.md
+                          : 0,
+                    ),
+                    child: _ActivityCard(
+                      activity: activity,
+                      user: user,
+                      isFirstActivity: isFirstActivity,
+                      hasKudos: _kudosMap[activity.id] ?? false,
+                      kudosCount: _kudosCountMap[activity.id] ?? 0,
+                      onKudosToggle: () => _toggleKudos(activity.id),
+                      onShare: () => _shareActivity(activity.id),
+                      onComment: () => _commentActivity(activity.id),
+                    ),
+                  );
+                },
+                childCount: _filteredActivities.length,
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -313,32 +333,37 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
         SyntrakSpacing.md,
       ),
       decoration: BoxDecoration(
-        color: SyntrakColors.surface,
-        border: Border(
-          bottom: BorderSide(
-            color: SyntrakColors.divider.withOpacity(0.5),
-            width: 0.5,
-          ),
-        ),
+        color: SyntrakColors.background,
       ),
       child: TextField(
         controller: _searchController,
         decoration: InputDecoration(
           hintText: 'Search and filter your activities',
           hintStyle: SyntrakTypography.bodySmall.copyWith(
-            color: SyntrakColors.textTertiary,
-            fontSize: 14,
+            color: SyntrakColors.textTertiary.withOpacity(0.6),
+            fontSize: 13,
           ),
           prefixIcon: Icon(
             Icons.search,
-            color: SyntrakColors.textTertiary,
-            size: 20,
+            color: SyntrakColors.textTertiary.withOpacity(0.6),
+            size: 18,
           ),
           filled: true,
-          fillColor: SyntrakColors.surfaceVariant.withOpacity(0.5),
+          fillColor: SyntrakColors.surfaceVariant.withOpacity(0.3),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+            borderRadius: BorderRadius.circular(SyntrakRadius.xl),
             borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(SyntrakRadius.xl),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(SyntrakRadius.xl),
+            borderSide: BorderSide(
+              color: SyntrakColors.primary.withOpacity(0.3),
+              width: 1,
+            ),
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: SyntrakSpacing.md,
@@ -347,7 +372,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
           isDense: true,
         ),
         style: SyntrakTypography.bodySmall.copyWith(
-          fontSize: 14,
+          fontSize: 13,
         ),
       ),
     );
@@ -447,7 +472,7 @@ class _ActivityCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: SyntrakSpacing.xs / 2),
-                      // Date/time and device - all on one line
+
                       Text(
                         '${_formatDateTime(activity.startTime)} • Apple Watch SE',
                         style: SyntrakTypography.labelSmall.copyWith(
