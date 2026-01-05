@@ -9,6 +9,66 @@ class ClubsTab extends StatefulWidget {
 }
 
 class _ClubsTabState extends State<ClubsTab> {
+  // List of skiing clubs
+  final List<Map<String, dynamic>> _clubs = [
+    {
+      'name': 'Alpine Skiers',
+      'memberCount': 10290,
+      'location': 'Colorado, United States',
+      'postCount': 231,
+      'icon': Icons.downhill_skiing,
+    },
+    {
+      'name': 'Powder Hounds',
+      'memberCount': 8750,
+      'location': 'Utah, United States',
+      'postCount': 189,
+      'icon': Icons.snowboarding,
+    },
+    {
+      'name': 'Nordic Trackers',
+      'memberCount': 5420,
+      'location': 'Vermont, United States',
+      'postCount': 156,
+      'icon': Icons.nordic_walking,
+    },
+    {
+      'name': 'Backcountry Explorers',
+      'memberCount': 6230,
+      'location': 'British Columbia, Canada',
+      'postCount': 203,
+      'icon': Icons.terrain,
+    },
+    {
+      'name': 'Freestyle Skiers',
+      'memberCount': 3890,
+      'location': 'Switzerland',
+      'postCount': 124,
+      'icon': Icons.sports_gymnastics,
+    },
+    {
+      'name': 'Mountain Riders',
+      'memberCount': 7120,
+      'location': 'Alps, France',
+      'postCount': 178,
+      'icon': Icons.landscape,
+    },
+    {
+      'name': 'Slope Masters',
+      'memberCount': 4560,
+      'location': 'Austria',
+      'postCount': 142,
+      'icon': Icons.speed,
+    },
+    {
+      'name': 'Snow Valley Club',
+      'memberCount': 2980,
+      'location': 'Japan',
+      'postCount': 98,
+      'icon': Icons.ac_unit,
+    },
+  ];
+
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
@@ -86,10 +146,10 @@ class _ClubsTabState extends State<ClubsTab> {
                   Expanded(
                     child: Text(
                       'Create your own Syntrak club',
-                      style: SyntrakTypography.headlineSmall.copyWith(
+                      style: SyntrakTypography.bodyLarge.copyWith(
                         color: SyntrakColors.textPrimary,
                       ),
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -163,49 +223,16 @@ class _ClubsTabState extends State<ClubsTab> {
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
+                final club = _clubs[index];
                 return _buildClubCard(
-                  name: 'Alpine Skiers',
-                  memberCount: 10290,
-                  location: 'Colorado, United States',
-                  postCount: 231,
-                  icon: Icons.downhill_skiing,
+                  name: club['name'] as String,
+                  memberCount: club['memberCount'] as int,
+                  location: club['location'] as String,
+                  postCount: club['postCount'] as int,
+                  icon: club['icon'] as IconData,
                 );
               },
-              childCount: 1, // Placeholder - will be dynamic
-            ),
-          ),
-          // Empty state
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.group,
-                      size: 80,
-                      color: SyntrakColors.textTertiary,
-                    ),
-                    const SizedBox(height: SyntrakSpacing.lg),
-                    Text(
-                      'No clubs yet',
-                      style: SyntrakTypography.headlineMedium.copyWith(
-                        color: SyntrakColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: SyntrakSpacing.sm),
-                    Text(
-                      'Create or join a skiing club to get started',
-                      style: SyntrakTypography.bodyMedium.copyWith(
-                        color: SyntrakColors.textTertiary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
+              childCount: _clubs.length,
             ),
           ),
         ],
@@ -314,11 +341,3 @@ class _ClubsTabState extends State<ClubsTab> {
     return '$count Members';
   }
 }
-
-
-
-
-
-
-
-

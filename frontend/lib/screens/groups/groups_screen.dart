@@ -50,30 +50,41 @@ class _GroupsScreenState extends State<GroupsScreen>
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: Column(
-            children: [
-              TabBar(
-                controller: _tabController,
-                indicatorColor: SyntrakColors.primary,
-                indicatorWeight: 3,
-                labelColor: SyntrakColors.textPrimary,
-                unselectedLabelColor: SyntrakColors.textTertiary,
-                labelStyle: SyntrakTypography.labelLarge.copyWith(
-                  fontWeight: FontWeight.w600,
+          preferredSize: const Size.fromHeight(52),
+          child: Container(
+            decoration: BoxDecoration(
+              color: SyntrakColors.background,
+            ),
+            child: TabBar(
+              controller: _tabController,
+              indicator: BoxDecoration(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(SyntrakRadius.md),
+                  topRight: Radius.circular(SyntrakRadius.md),
                 ),
-                unselectedLabelStyle: SyntrakTypography.labelLarge,
-                tabs: const [
-                  Tab(text: 'Active'),
-                  Tab(text: 'Challenges'),
-                  Tab(text: 'Clubs'),
-                ],
+                color: SyntrakColors.primary.withOpacity(0.1),
               ),
-              Divider(
-                height: 1,
-                color: SyntrakColors.divider,
+              indicatorSize: TabBarIndicatorSize.tab,
+              indicatorPadding: const EdgeInsets.symmetric(
+                horizontal: SyntrakSpacing.sm,
+                vertical: SyntrakSpacing.xs,
               ),
-            ],
+              labelColor: SyntrakColors.primary,
+              unselectedLabelColor: SyntrakColors.textTertiary,
+              labelStyle: SyntrakTypography.labelLarge.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+              ),
+              unselectedLabelStyle: SyntrakTypography.labelLarge.copyWith(
+                fontSize: 15,
+              ),
+              dividerColor: Colors.transparent,
+              tabs: const [
+                Tab(text: 'Active'),
+                Tab(text: 'Challenges'),
+                Tab(text: 'Clubs'),
+              ],
+            ),
           ),
         ),
       ),

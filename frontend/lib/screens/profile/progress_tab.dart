@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/models/activity.dart';
 import 'package:intl/intl.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 class ProgressTab extends StatefulWidget {
   final List<Activity> activities;
-  
+
   const ProgressTab({
     super.key,
     required this.activities,
@@ -22,7 +23,7 @@ class _ProgressTabState extends State<ProgressTab> {
     'time': 0, // minutes
     'elevGain': 0.0, // meters
   };
-  
+
   final List<Map<String, dynamic>> _bestEfforts = [];
   final Map<String, dynamic> _goals = {
     'weeklyRuns': {'current': 1, 'target': 4},
@@ -36,7 +37,7 @@ class _ProgressTabState extends State<ProgressTab> {
     'distance': 10.9, // km
     'dateRange': 'Jan 5 - Jan 11, 2026',
   };
-  
+
   final Set<DateTime> _activityDays = {}; // Days with activities
 
   @override
@@ -49,11 +50,11 @@ class _ProgressTabState extends State<ProgressTab> {
     // Calculate weekly stats
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
-    
+
     double weeklyDistance = 0;
     int weeklyTime = 0;
     double weeklyElevGain = 0;
-    
+
     for (var activity in widget.activities) {
       if (activity.startTime.isAfter(weekStart)) {
         weeklyDistance += activity.distance / 1000; // Convert to km
@@ -66,13 +67,13 @@ class _ProgressTabState extends State<ProgressTab> {
         ));
       }
     }
-    
+
     // Calculate best efforts (mock for now)
     if (widget.activities.isNotEmpty) {
       // Sort by distance, time, etc. to find best efforts
       final sortedByDistance = List<Activity>.from(widget.activities)
         ..sort((a, b) => b.distance.compareTo(a.distance));
-      
+
       if (sortedByDistance.isNotEmpty) {
         _bestEfforts.add({
           'type': '5K',
@@ -82,7 +83,7 @@ class _ProgressTabState extends State<ProgressTab> {
         });
       }
     }
-    
+
     setState(() {
       _weeklyStats['distance'] = weeklyDistance;
       _weeklyStats['time'] = weeklyTime;
@@ -104,40 +105,40 @@ class _ProgressTabState extends State<ProgressTab> {
           children: [
             // Streaks subsection
             _buildStreaksSection(),
-            
+
             // Weekly activity diagram
             _buildWeeklyActivityDiagram(),
-            
+
             const SizedBox(height: SyntrakSpacing.lg),
-            
+
             // Best Efforts card
             _buildBestEffortsCard(),
-            
+
             const SizedBox(height: SyntrakSpacing.md),
-            
+
             // Goals card
             _buildGoalsCard(),
-            
+
             const SizedBox(height: SyntrakSpacing.md),
-            
+
             // Relative Effort card
             _buildRelativeEffortCard(),
-            
+
             const SizedBox(height: SyntrakSpacing.md),
-            
+
             // Training Log card
             _buildTrainingLogCard(),
-            
+
             const SizedBox(height: SyntrakSpacing.lg),
-            
+
             // Start free trial button
             _buildFreeTrialButton(),
-            
+
             const SizedBox(height: SyntrakSpacing.xl),
-            
+
             // Activity calendar
             _buildActivityCalendar(),
-            
+
             const SizedBox(height: SyntrakSpacing.xl),
           ],
         ),
@@ -280,17 +281,19 @@ class _ProgressTabState extends State<ProgressTab> {
     // Calculate weekly distances from activities
     final now = DateTime.now();
     final weeks = List.generate(12, (index) {
-      final weekStart = now.subtract(Duration(days: (11 - index) * 7 + now.weekday - 1));
+      final weekStart =
+          now.subtract(Duration(days: (11 - index) * 7 + now.weekday - 1));
       final weekEnd = weekStart.add(const Duration(days: 6));
-      
+
       double weekDistance = 0.0;
       for (var activity in widget.activities) {
-        if (activity.startTime.isAfter(weekStart.subtract(const Duration(days: 1))) &&
+        if (activity.startTime
+                .isAfter(weekStart.subtract(const Duration(days: 1))) &&
             activity.startTime.isBefore(weekEnd.add(const Duration(days: 1)))) {
           weekDistance += activity.distance / 1000; // Convert to km
         }
       }
-      
+
       return {
         'date': weekStart,
         'distance': weekDistance,
@@ -662,10 +665,7 @@ class _ProgressTabState extends State<ProgressTab> {
 
   Widget _buildActivityCalendar() {
     final now = DateTime.now();
-    final firstDayOfMonth = DateTime(now.year, now.month, 1);
-    final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
-    final daysInMonth = lastDayOfMonth.day;
-    final firstWeekday = firstDayOfMonth.weekday;
+    final focusedDay = DateTime(now.year, now.month, now.day);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
@@ -686,80 +686,103 @@ class _ProgressTabState extends State<ProgressTab> {
             ),
           ),
           const SizedBox(height: SyntrakSpacing.md),
-          // Day labels
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day) {
-              return SizedBox(
-                width: 40,
-                child: Center(
-                  child: Text(
-                    day,
-                    style: SyntrakTypography.labelSmall.copyWith(
-                      color: SyntrakColors.textTertiary,
+          TableCalendar(
+            firstDay: DateTime.utc(2020, 1, 1),
+            lastDay: DateTime.utc(2030, 12, 31),
+            focusedDay: focusedDay,
+            calendarFormat: CalendarFormat.month,
+            startingDayOfWeek: StartingDayOfWeek.monday,
+            headerVisible: false,
+            daysOfWeekVisible: true,
+            eventLoader: (date) {
+              final normalizedDate = DateTime(date.year, date.month, date.day);
+              return _activityDays.contains(normalizedDate) ? [1] : [];
+            },
+            calendarStyle: CalendarStyle(
+              outsideDaysVisible: false,
+              defaultTextStyle: SyntrakTypography.labelSmall.copyWith(
+                color: SyntrakColors.textSecondary,
+              ),
+              weekendTextStyle: SyntrakTypography.labelSmall.copyWith(
+                color: SyntrakColors.textSecondary,
+              ),
+              selectedTextStyle: SyntrakTypography.labelSmall.copyWith(
+                color: SyntrakColors.primary,
+                fontWeight: FontWeight.w600,
+              ),
+              todayTextStyle: SyntrakTypography.labelSmall.copyWith(
+                color: SyntrakColors.primary,
+                fontWeight: FontWeight.w600,
+              ),
+              todayDecoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: SyntrakColors.primary,
+                  width: 2,
+                ),
+              ),
+              selectedDecoration: BoxDecoration(
+                color: SyntrakColors.primary.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              markerDecoration: BoxDecoration(
+                color: SyntrakColors.primary,
+                shape: BoxShape.circle,
+              ),
+              markerSize: 4,
+              markerMargin: const EdgeInsets.only(bottom: 4),
+              cellMargin: const EdgeInsets.all(4),
+            ),
+            daysOfWeekStyle: DaysOfWeekStyle(
+              weekdayStyle: SyntrakTypography.labelSmall.copyWith(
+                color: SyntrakColors.textTertiary,
+              ),
+              weekendStyle: SyntrakTypography.labelSmall.copyWith(
+                color: SyntrakColors.textTertiary,
+              ),
+            ),
+            selectedDayPredicate: (date) {
+              return false; // Don't show selection
+            },
+            onDaySelected: (selectedDay, focusedDay) {
+              // Optional: Handle day selection
+            },
+            // Custom builder for days with activities
+            calendarBuilders: CalendarBuilders(
+              defaultBuilder: (context, date, _) {
+                final normalizedDate =
+                    DateTime(date.year, date.month, date.day);
+                final hasActivity = _activityDays.contains(normalizedDate);
+                final isToday = date.year == now.year &&
+                    date.month == now.month &&
+                    date.day == now.day;
+
+                return Container(
+                  margin: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: hasActivity
+                        ? SyntrakColors.primary.withOpacity(0.2)
+                        : Colors.transparent,
+                    shape: BoxShape.circle,
+                    border: isToday
+                        ? Border.all(color: SyntrakColors.primary, width: 2)
+                        : null,
+                  ),
+                  child: Center(
+                    child: Text(
+                      date.day.toString(),
+                      style: SyntrakTypography.labelSmall.copyWith(
+                        color: hasActivity
+                            ? SyntrakColors.primary
+                            : SyntrakColors.textSecondary,
+                        fontWeight:
+                            isToday ? FontWeight.w600 : FontWeight.normal,
+                      ),
                     ),
                   ),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: SyntrakSpacing.sm),
-          // Calendar grid
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final availableWidth = constraints.maxWidth;
-              final cellSize = (availableWidth - (6 * SyntrakSpacing.xs)) / 7;
-              final minCellSize = 35.0;
-              final actualCellSize = cellSize < minCellSize ? minCellSize : cellSize;
-              
-              return Wrap(
-                spacing: SyntrakSpacing.xs,
-                runSpacing: SyntrakSpacing.xs,
-                alignment: WrapAlignment.spaceBetween,
-                children: List.generate(firstWeekday - 1 + daysInMonth, (index) {
-                  if (index < firstWeekday - 1) {
-                    return SizedBox(
-                      width: actualCellSize,
-                      height: actualCellSize,
-                    );
-                  }
-                  final day = index - (firstWeekday - 1) + 1;
-                  final date = DateTime(now.year, now.month, day);
-                  final hasActivity = _activityDays.contains(
-                    DateTime(date.year, date.month, date.day),
-                  );
-                  final isToday = date.year == now.year &&
-                      date.month == now.month &&
-                      date.day == now.day;
-
-                  return SizedBox(
-                    width: actualCellSize,
-                    height: actualCellSize,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: hasActivity
-                            ? SyntrakColors.primary.withOpacity(0.2)
-                            : SyntrakColors.surfaceVariant,
-                        shape: BoxShape.circle,
-                        border: isToday
-                            ? Border.all(color: SyntrakColors.primary, width: 2)
-                            : null,
-                      ),
-                      child: Center(
-                        child: Text(
-                          day.toString(),
-                          style: SyntrakTypography.labelSmall.copyWith(
-                            color: hasActivity
-                                ? SyntrakColors.primary
-                                : SyntrakColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              );
-            },
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -829,9 +852,8 @@ class _GraphPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final distances = weeks.map((w) => w['distance'] as double).toList();
-    final maxDistance = distances.isEmpty 
-        ? 1.0 
-        : distances.reduce((a, b) => a > b ? a : b);
+    final maxDistance =
+        distances.isEmpty ? 1.0 : distances.reduce((a, b) => a > b ? a : b);
 
     // Prevent division by zero
     final stepX = weeks.length <= 1 ? 0.0 : size.width / (weeks.length - 1);
@@ -839,10 +861,11 @@ class _GraphPainter extends CustomPainter {
 
     for (int i = 0; i < weeks.length; i++) {
       final distance = weeks[i]['distance'] as double;
-      final normalizedDistance = maxDistance > 0 ? (distance / maxDistance) : 0.0;
+      final normalizedDistance =
+          maxDistance > 0 ? (distance / maxDistance) : 0.0;
       final y = size.height - (normalizedDistance * size.height);
       final x = weeks.length <= 1 ? size.width / 2 : i * stepX;
-      
+
       // Ensure valid coordinates
       if (x.isFinite && y.isFinite) {
         points.add(Offset(x, y));
@@ -851,9 +874,9 @@ class _GraphPainter extends CustomPainter {
 
     // Draw line (only if we have valid points)
     for (int i = 0; i < points.length - 1; i++) {
-      if (points[i].dx.isFinite && 
-          points[i].dy.isFinite && 
-          points[i + 1].dx.isFinite && 
+      if (points[i].dx.isFinite &&
+          points[i].dy.isFinite &&
+          points[i + 1].dx.isFinite &&
           points[i + 1].dy.isFinite) {
         canvas.drawLine(points[i], points[i + 1], paint);
       }
@@ -874,7 +897,7 @@ class _GraphPainter extends CustomPainter {
           ..color = SyntrakColors.accent
           ..style = PaintingStyle.fill;
         canvas.drawCircle(lastPoint, 6, highlightPaint);
-        
+
         // Draw vertical line
         final linePaint = Paint()
           ..color = SyntrakColors.textPrimary.withOpacity(0.3)
@@ -891,4 +914,3 @@ class _GraphPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-
