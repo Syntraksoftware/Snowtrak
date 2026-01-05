@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:syntrak/core/theme.dart';
 
 class ClubsTab extends StatefulWidget {
   const ClubsTab({super.key});
@@ -15,37 +16,36 @@ class _ClubsTabState extends State<ClubsTab> {
         // TODO: Implement refresh functionality
         await Future.delayed(const Duration(seconds: 1));
       },
+      color: SyntrakColors.primary,
       child: CustomScrollView(
         slivers: [
           // Customize Notifications section
           SliverToBoxAdapter(
             child: Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.all(SyntrakSpacing.md),
+              padding: const EdgeInsets.all(SyntrakSpacing.md),
               decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[200]!),
+                color: SyntrakColors.surfaceVariant,
+                borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+                border: Border.all(color: SyntrakColors.divider),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Customize Notifications',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                    style: SyntrakTypography.headlineSmall.copyWith(
+                      color: SyntrakColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: SyntrakSpacing.sm),
                   Text(
                     'Stay up to date. Turn on push notifications for your favorite clubs and mute the rest.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
+                    style: SyntrakTypography.bodyMedium.copyWith(
+                      color: SyntrakColors.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: SyntrakSpacing.md),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -53,14 +53,13 @@ class _ClubsTabState extends State<ClubsTab> {
                         // TODO: Implement learn more functionality
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF4500),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                        backgroundColor: SyntrakColors.primary,
+                        foregroundColor: SyntrakColors.textOnPrimary,
                       ),
-                      child: const Text('Learn more'),
+                      child: Text(
+                        'Learn more',
+                        style: SyntrakTypography.labelLarge,
+                      ),
                     ),
                   ),
                 ],
@@ -70,37 +69,47 @@ class _ClubsTabState extends State<ClubsTab> {
           // Create club section
           SliverToBoxAdapter(
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.symmetric(
+                horizontal: SyntrakSpacing.md,
+                vertical: SyntrakSpacing.sm,
+              ),
+              padding: const EdgeInsets.all(SyntrakSpacing.md),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[200]!),
+                color: SyntrakColors.surface,
+                borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+                border: Border.all(color: SyntrakColors.divider),
+                boxShadow: SyntrakElevation.sm,
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Create your own Strava club',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Text(
+                      'Create your own Syntrak club',
+                      style: SyntrakTypography.headlineSmall.copyWith(
+                        color: SyntrakColors.textPrimary,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  const SizedBox(width: SyntrakSpacing.sm),
                   OutlinedButton(
                     onPressed: () {
                       // TODO: Implement create club functionality
                     },
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFFFF4500),
-                      side: const BorderSide(color: Color(0xFFFF4500)),
+                      foregroundColor: SyntrakColors.primary,
+                      side: BorderSide(color: SyntrakColors.primary),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        horizontal: SyntrakSpacing.md,
+                        vertical: SyntrakSpacing.sm,
                       ),
                     ),
-                    child: const Text('Create a Club'),
+                    child: Text(
+                      'Create',
+                      style: SyntrakTypography.labelMedium,
+                    ),
                   ),
                 ],
               ),
@@ -109,19 +118,27 @@ class _ClubsTabState extends State<ClubsTab> {
           // Clubs list header
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              padding: const EdgeInsets.fromLTRB(
+                SyntrakSpacing.md,
+                SyntrakSpacing.md,
+                SyntrakSpacing.md,
+                SyntrakSpacing.sm,
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.group, size: 18, color: Colors.grey[600]),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Faster 5K',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                      Icon(
+                        Icons.group,
+                        size: 18,
+                        color: SyntrakColors.textSecondary,
+                      ),
+                      const SizedBox(width: SyntrakSpacing.sm),
+                      Text(
+                        'Skiing Clubs',
+                        style: SyntrakTypography.headlineSmall.copyWith(
+                          color: SyntrakColors.textPrimary,
                         ),
                       ),
                     ],
@@ -130,11 +147,11 @@ class _ClubsTabState extends State<ClubsTab> {
                     onPressed: () {
                       // TODO: Show all clubs
                     },
-                    child: const Text(
+                    child: Text(
                       'All clubs',
-                      style: TextStyle(
-                        color: Color(0xFFFF4500),
-                        fontWeight: FontWeight.bold,
+                      style: SyntrakTypography.labelLarge.copyWith(
+                        color: SyntrakColors.primary,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -147,11 +164,11 @@ class _ClubsTabState extends State<ClubsTab> {
             delegate: SliverChildBuilderDelegate(
               (context, index) {
                 return _buildClubCard(
-                  name: 'Faster 5K',
+                  name: 'Alpine Skiers',
                   memberCount: 10290,
-                  location: 'England, United Kingdom',
+                  location: 'Colorado, United States',
                   postCount: 231,
-                  icon: Icons.directions_run,
+                  icon: Icons.downhill_skiing,
                 );
               },
               childCount: 1, // Placeholder - will be dynamic
@@ -168,24 +185,21 @@ class _ClubsTabState extends State<ClubsTab> {
                   children: [
                     Icon(
                       Icons.group,
-                      size: 64,
-                      color: Colors.grey[400],
+                      size: 80,
+                      color: SyntrakColors.textTertiary,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: SyntrakSpacing.lg),
                     Text(
                       'No clubs yet',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[600],
+                      style: SyntrakTypography.headlineMedium.copyWith(
+                        color: SyntrakColors.textSecondary,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: SyntrakSpacing.sm),
                     Text(
-                      'Create or join a club to get started',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[500],
+                      'Create or join a skiing club to get started',
+                      style: SyntrakTypography.bodyMedium.copyWith(
+                        color: SyntrakColors.textTertiary,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -207,12 +221,16 @@ class _ClubsTabState extends State<ClubsTab> {
     required IconData icon,
   }) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(
+        horizontal: SyntrakSpacing.md,
+        vertical: SyntrakSpacing.sm,
+      ),
+      padding: const EdgeInsets.all(SyntrakSpacing.md),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        color: SyntrakColors.surface,
+        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+        border: Border.all(color: SyntrakColors.divider),
+        boxShadow: SyntrakElevation.sm,
       ),
       child: Row(
         children: [
@@ -221,29 +239,13 @@ class _ClubsTabState extends State<ClubsTab> {
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: Colors.grey[100],
+              color: SyntrakColors.primaryLight.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Icon(icon, color: Colors.grey[600], size: 30),
-                // Decorative wreath (simplified)
-                Positioned(
-                  bottom: 0,
-                  child: Container(
-                    width: 50,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300]!.withOpacity(0.5),
-                      borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(25),
-                        bottomRight: Radius.circular(25),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            child: Icon(
+              icon,
+              color: SyntrakColors.primary,
+              size: 30,
             ),
           ),
           const SizedBox(width: 16),
@@ -254,39 +256,39 @@ class _ClubsTabState extends State<ClubsTab> {
               children: [
                 Text(
                   name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                  style: SyntrakTypography.headlineSmall.copyWith(
+                    color: SyntrakColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: SyntrakSpacing.xs),
                 Row(
                   children: [
-                    Icon(icon, size: 14, color: Colors.grey[600]),
-                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.people,
+                      size: 14,
+                      color: SyntrakColors.textSecondary,
+                    ),
+                    const SizedBox(width: SyntrakSpacing.xs),
                     Text(
                       _formatMemberCount(memberCount),
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
+                      style: SyntrakTypography.bodyMedium.copyWith(
+                        color: SyntrakColors.textSecondary,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: SyntrakSpacing.xs / 2),
                 Text(
                   location,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[500],
+                  style: SyntrakTypography.bodySmall.copyWith(
+                    color: SyntrakColors.textTertiary,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: SyntrakSpacing.xs / 2),
                 Text(
                   '$postCount posts',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[500],
+                  style: SyntrakTypography.bodySmall.copyWith(
+                    color: SyntrakColors.textTertiary,
                   ),
                 ),
               ],
@@ -295,7 +297,7 @@ class _ClubsTabState extends State<ClubsTab> {
           // Join/Joined indicator
           IconButton(
             icon: const Icon(Icons.chevron_right),
-            color: Colors.grey[400],
+            color: SyntrakColors.textTertiary,
             onPressed: () {
               // TODO: Navigate to club detail
             },

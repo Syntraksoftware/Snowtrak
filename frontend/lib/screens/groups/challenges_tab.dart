@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:syntrak/core/theme.dart';
+import 'package:syntrak/core/activity_helpers.dart';
+import 'package:syntrak/models/activity.dart';
 
 class ChallengesTab extends StatefulWidget {
   const ChallengesTab({super.key});
@@ -8,14 +11,15 @@ class ChallengesTab extends StatefulWidget {
 }
 
 class _ChallengesTabState extends State<ChallengesTab> {
-  // Activity type filter
-  String? _selectedActivityType;
+  // Activity type filter - skiing focused
+  ActivityType? _selectedActivityType;
 
-  final List<Map<String, dynamic>> _activityTypes = [
-    {'type': 'Run', 'icon': Icons.directions_run},
-    {'type': 'Ride', 'icon': Icons.directions_bike},
-    {'type': 'Swim', 'icon': Icons.pool},
-    {'type': 'Walk', 'icon': Icons.directions_walk},
+  final List<ActivityType> _activityTypes = [
+    ActivityType.alpine,
+    ActivityType.crossCountry,
+    ActivityType.freestyle,
+    ActivityType.backcountry,
+    ActivityType.snowboard,
   ];
 
   @override
@@ -25,48 +29,64 @@ class _ChallengesTabState extends State<ChallengesTab> {
         // TODO: Implement refresh functionality
         await Future.delayed(const Duration(seconds: 1));
       },
+      color: SyntrakColors.primary,
       child: CustomScrollView(
         slivers: [
-          // Activity type filter chips
+          // Activity type filter chips - skiing focused
           SliverToBoxAdapter(
             child: Container(
-              height: 50,
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              height: 56,
+              padding: const EdgeInsets.symmetric(
+                vertical: SyntrakSpacing.sm,
+                horizontal: SyntrakSpacing.md,
+              ),
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: _activityTypes.length,
                 itemBuilder: (context, index) {
                   final activityType = _activityTypes[index];
-                  final isSelected = _selectedActivityType == activityType['type'];
+                  final isSelected = _selectedActivityType == activityType;
+                  final icon = ActivityHelpers.getActivityIcon(activityType);
+                  
                   return Padding(
-                    padding: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.only(right: SyntrakSpacing.sm),
                     child: FilterChip(
                       selected: isSelected,
                       label: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            activityType['icon'] as IconData,
+                            icon,
                             size: 18,
-                            color: isSelected ? Colors.white : Colors.grey[700],
+                            color: isSelected
+                                ? SyntrakColors.textOnPrimary
+                                : SyntrakColors.textSecondary,
                           ),
-                          const SizedBox(width: 4),
-                          Text(activityType['type'] as String),
+                          const SizedBox(width: SyntrakSpacing.xs),
+                          Text(
+                            activityType.displayName,
+                            style: SyntrakTypography.labelMedium,
+                          ),
                         ],
                       ),
                       onSelected: (selected) {
                         setState(() {
                           _selectedActivityType =
-                              selected ? activityType['type'] as String : null;
+                              selected ? activityType : null;
                         });
                       },
-                      selectedColor: const Color(0xFFFF4500),
-                      checkmarkColor: Colors.white,
-                      labelStyle: TextStyle(
-                        color: isSelected ? Colors.white : Colors.grey[700],
+                      selectedColor: SyntrakColors.primary,
+                      checkmarkColor: SyntrakColors.textOnPrimary,
+                      backgroundColor: SyntrakColors.surfaceVariant,
+                      labelStyle: SyntrakTypography.labelMedium.copyWith(
+                        color: isSelected
+                            ? SyntrakColors.textOnPrimary
+                            : SyntrakColors.textSecondary,
                         fontWeight:
-                            isSelected ? FontWeight.bold : FontWeight.normal,
+                            isSelected ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(SyntrakRadius.round),
                       ),
                     ),
                   );
@@ -77,18 +97,19 @@ class _ChallengesTabState extends State<ChallengesTab> {
           // Featured challenge banner (placeholder)
           SliverToBoxAdapter(
             child: Container(
-              margin: const EdgeInsets.all(16),
+              margin: const EdgeInsets.all(SyntrakSpacing.md),
               height: 200,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Colors.blue[900]!,
-                    Colors.blue[700]!,
+                    SyntrakColors.primaryDark,
+                    SyntrakColors.primary,
                   ],
                 ),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+                boxShadow: SyntrakElevation.md,
               ),
               child: Stack(
                 children: [
@@ -126,35 +147,33 @@ class _ChallengesTabState extends State<ChallengesTab> {
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFF4500),
-                            borderRadius: BorderRadius.circular(4),
+                            horizontal: SyntrakSpacing.md,
+                            vertical: SyntrakSpacing.xs,
                           ),
-                          child: const Text(
-                            'STRAVA',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
+                          decoration: BoxDecoration(
+                            color: SyntrakColors.accent,
+                            borderRadius: BorderRadius.circular(SyntrakRadius.sm),
+                          ),
+                          child: Text(
+                            'SYNTRAK',
+                            style: SyntrakTypography.labelSmall.copyWith(
+                              color: SyntrakColors.textOnPrimary,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'December 5K Challenge',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
+                        const SizedBox(height: SyntrakSpacing.md),
+                        Text(
+                          'December Vertical Challenge',
+                          style: SyntrakTypography.displaySmall.copyWith(
+                            color: SyntrakColors.textOnPrimary,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Complete a 5 km (3.1 mi) run',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
+                        const SizedBox(height: SyntrakSpacing.sm),
+                        Text(
+                          'Complete 5,000m of vertical drop',
+                          style: SyntrakTypography.bodyMedium.copyWith(
+                            color: SyntrakColors.textOnPrimary.withOpacity(0.9),
                           ),
                         ),
                       ],
@@ -167,9 +186,9 @@ class _ChallengesTabState extends State<ChallengesTab> {
           // Challenge card
           SliverToBoxAdapter(
             child: _buildChallengeCard(
-              icon: Icons.directions_run,
-              title: 'December 5K Challenge',
-              description: 'Complete a 5 km (3.1 mi) run.',
+              icon: ActivityHelpers.getActivityIcon(ActivityType.alpine),
+              title: 'December Vertical Challenge',
+              description: 'Complete 5,000m of vertical drop skiing.',
               duration: 'Dec 1 to Dec 31, 2025',
               badge: '5K',
             ),
@@ -177,7 +196,7 @@ class _ChallengesTabState extends State<ChallengesTab> {
           // Join button for featured challenge
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -185,19 +204,15 @@ class _ChallengesTabState extends State<ChallengesTab> {
                     // TODO: Implement join challenge functionality
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF4500),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                    backgroundColor: SyntrakColors.primary,
+                    foregroundColor: SyntrakColors.textOnPrimary,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: SyntrakSpacing.md,
                     ),
                   ),
-                  child: const Text(
-                    'Join',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  child: Text(
+                    'Join Challenge',
+                    style: SyntrakTypography.labelLarge,
                   ),
                 ),
               ),
@@ -206,16 +221,24 @@ class _ChallengesTabState extends State<ChallengesTab> {
           // Recommended challenges section
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+              padding: const EdgeInsets.fromLTRB(
+                SyntrakSpacing.md,
+                SyntrakSpacing.lg,
+                SyntrakSpacing.md,
+                SyntrakSpacing.sm,
+              ),
               child: Row(
                 children: [
-                  Icon(Icons.person, size: 18, color: Colors.grey[600]),
-                  const SizedBox(width: 8),
-                  const Text(
+                  Icon(
+                    Icons.person,
+                    size: 18,
+                    color: SyntrakColors.textSecondary,
+                  ),
+                  const SizedBox(width: SyntrakSpacing.sm),
+                  Text(
                     'Recommended For You',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                    style: SyntrakTypography.headlineSmall.copyWith(
+                      color: SyntrakColors.textPrimary,
                     ),
                   ),
                 ],
@@ -224,12 +247,11 @@ class _ChallengesTabState extends State<ChallengesTab> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
               child: Text(
-                'Based on your activities.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
+                'Based on your skiing activities.',
+                style: SyntrakTypography.bodySmall.copyWith(
+                  color: SyntrakColors.textTertiary,
                 ),
               ),
             ),
@@ -240,17 +262,17 @@ class _ChallengesTabState extends State<ChallengesTab> {
               height: 180,
               child: ListView(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(SyntrakSpacing.md),
                 children: [
                   _buildRecommendedChallengeCard(
-                    icon: Icons.directions_run,
-                    title: 'December 400-Minute x Runna',
+                    icon: ActivityHelpers.getActivityIcon(ActivityType.alpine),
+                    title: 'December 400-Minute Alpine Challenge',
                     badge: '400\'',
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: SyntrakSpacing.md),
                   _buildRecommendedChallengeCard(
-                    icon: Icons.directions_walk,
-                    title: 'December Walk 50K Challenge',
+                    icon: ActivityHelpers.getActivityIcon(ActivityType.crossCountry),
+                    title: 'December Cross-Country 50K Challenge',
                     badge: '50K',
                   ),
                 ],
@@ -268,24 +290,21 @@ class _ChallengesTabState extends State<ChallengesTab> {
                   children: [
                     Icon(
                       Icons.emoji_events,
-                      size: 64,
-                      color: Colors.grey[400],
+                      size: 80,
+                      color: SyntrakColors.textTertiary,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: SyntrakSpacing.lg),
                     Text(
                       'No challenges available',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[600],
+                      style: SyntrakTypography.headlineMedium.copyWith(
+                        color: SyntrakColors.textSecondary,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: SyntrakSpacing.sm),
                     Text(
-                      'Check back later for new challenges',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[500],
+                      'Check back later for new skiing challenges',
+                      style: SyntrakTypography.bodyMedium.copyWith(
+                        color: SyntrakColors.textTertiary,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -307,12 +326,16 @@ class _ChallengesTabState extends State<ChallengesTab> {
     required String badge,
   }) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(
+        horizontal: SyntrakSpacing.md,
+        vertical: SyntrakSpacing.sm,
+      ),
+      padding: const EdgeInsets.all(SyntrakSpacing.md),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        color: SyntrakColors.surface,
+        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+        border: Border.all(color: SyntrakColors.divider),
+        boxShadow: SyntrakElevation.sm,
       ),
       child: Row(
         children: [
@@ -323,23 +346,27 @@ class _ChallengesTabState extends State<ChallengesTab> {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: Colors.blue[100],
-                  borderRadius: BorderRadius.circular(12),
+                  color: SyntrakColors.primaryLight.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(SyntrakRadius.md),
                 ),
-                child: Icon(icon, color: Colors.blue[700], size: 30),
+                child: Icon(
+                  icon,
+                  color: SyntrakColors.primary,
+                  size: 30,
+                ),
               ),
               Positioned(
                 top: -4,
                 right: -4,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFF4500),
+                  decoration: BoxDecoration(
+                    color: SyntrakColors.accent,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_upward,
-                    color: Colors.white,
+                    color: SyntrakColors.textOnPrimary,
                     size: 12,
                   ),
                 ),
@@ -349,16 +376,17 @@ class _ChallengesTabState extends State<ChallengesTab> {
                 left: -4,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 6, vertical: 2),
+                    horizontal: SyntrakSpacing.xs,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(4),
+                    color: SyntrakColors.textPrimary,
+                    borderRadius: BorderRadius.circular(SyntrakRadius.sm),
                   ),
                   child: Text(
                     badge,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
+                    style: SyntrakTypography.labelSmall.copyWith(
+                      color: SyntrakColors.textOnPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -374,25 +402,22 @@ class _ChallengesTabState extends State<ChallengesTab> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                  style: SyntrakTypography.headlineSmall.copyWith(
+                    color: SyntrakColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: SyntrakSpacing.xs),
                 Text(
                   description,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
+                  style: SyntrakTypography.bodyMedium.copyWith(
+                    color: SyntrakColors.textSecondary,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: SyntrakSpacing.xs),
                 Text(
                   duration,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[500],
+                  style: SyntrakTypography.bodySmall.copyWith(
+                    color: SyntrakColors.textTertiary,
                   ),
                 ),
               ],
@@ -410,11 +435,12 @@ class _ChallengesTabState extends State<ChallengesTab> {
   }) {
     return Container(
       width: 200,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(SyntrakSpacing.md),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        color: SyntrakColors.surface,
+        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+        border: Border.all(color: SyntrakColors.divider),
+        boxShadow: SyntrakElevation.sm,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -425,23 +451,27 @@ class _ChallengesTabState extends State<ChallengesTab> {
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: Colors.blue[100],
-                  borderRadius: BorderRadius.circular(10),
+                  color: SyntrakColors.primaryLight.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(SyntrakRadius.md),
                 ),
-                child: Icon(icon, color: Colors.blue[700], size: 24),
+                child: Icon(
+                  icon,
+                  color: SyntrakColors.primary,
+                  size: 24,
+                ),
               ),
               Positioned(
                 top: -4,
                 right: -4,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFF4500),
+                  decoration: BoxDecoration(
+                    color: SyntrakColors.accent,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_upward,
-                    color: Colors.white,
+                    color: SyntrakColors.textOnPrimary,
                     size: 10,
                   ),
                 ),
@@ -451,16 +481,17 @@ class _ChallengesTabState extends State<ChallengesTab> {
                 left: -4,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 6, vertical: 2),
+                    horizontal: SyntrakSpacing.xs,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(4),
+                    color: SyntrakColors.textPrimary,
+                    borderRadius: BorderRadius.circular(SyntrakRadius.sm),
                   ),
                   child: Text(
                     badge,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
+                    style: SyntrakTypography.labelSmall.copyWith(
+                      color: SyntrakColors.textOnPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -468,12 +499,12 @@ class _ChallengesTabState extends State<ChallengesTab> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: SyntrakSpacing.md),
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
+            style: SyntrakTypography.bodyMedium.copyWith(
+              color: SyntrakColors.textPrimary,
+              fontWeight: FontWeight.w600,
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,

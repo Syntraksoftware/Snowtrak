@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/screens/groups/active_tab.dart';
 import 'package:syntrak/screens/groups/challenges_tab.dart';
 import 'package:syntrak/screens/groups/clubs_tab.dart';
@@ -29,34 +30,23 @@ class _GroupsScreenState extends State<GroupsScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: SyntrakColors.background,
       appBar: AppBar(
-        title: const Text(
-          'Groups',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.search, color: Colors.black),
-          onPressed: () {
-            // TODO: Implement search functionality
-          },
-        ),
+        title: const Text('Groups'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.message, color: Colors.black),
+            icon: const Icon(Icons.search),
             onPressed: () {
-              // TODO: Implement messages functionality
+              // TODO: Implement search functionality
             },
+            tooltip: 'Search',
           ),
           IconButton(
-            icon: const Icon(Icons.settings, color: Colors.black),
+            icon: const Icon(Icons.settings),
             onPressed: () {
               // TODO: Implement settings functionality
             },
+            tooltip: 'Settings',
           ),
         ],
         bottom: PreferredSize(
@@ -65,25 +55,24 @@ class _GroupsScreenState extends State<GroupsScreen>
             children: [
               TabBar(
                 controller: _tabController,
-                indicatorColor: const Color(0xFFFF4500),
+                indicatorColor: SyntrakColors.primary,
                 indicatorWeight: 3,
-                labelColor: Colors.black,
-                unselectedLabelColor: Colors.grey,
-                labelStyle: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
+                labelColor: SyntrakColors.textPrimary,
+                unselectedLabelColor: SyntrakColors.textTertiary,
+                labelStyle: SyntrakTypography.labelLarge.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
-                unselectedLabelStyle: const TextStyle(
-                  fontWeight: FontWeight.normal,
-                  fontSize: 14,
-                ),
+                unselectedLabelStyle: SyntrakTypography.labelLarge,
                 tabs: const [
                   Tab(text: 'Active'),
                   Tab(text: 'Challenges'),
                   Tab(text: 'Clubs'),
                 ],
               ),
-              const Divider(height: 1),
+              Divider(
+                height: 1,
+                color: SyntrakColors.divider,
+              ),
             ],
           ),
         ),

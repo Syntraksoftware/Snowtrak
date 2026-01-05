@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:syntrak/core/theme.dart';
 
 class ActiveTab extends StatefulWidget {
   const ActiveTab({super.key});
@@ -15,39 +16,40 @@ class _ActiveTabState extends State<ActiveTab> {
         // TODO: Implement refresh functionality
         await Future.delayed(const Duration(seconds: 1));
       },
+      color: SyntrakColors.primary,
       child: CustomScrollView(
         slivers: [
           // Empty state or content will go here
           SliverFillRemaining(
             hasScrollBody: false,
             child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.group,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No active groups',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[600],
+              child: Padding(
+                padding: const EdgeInsets.all(SyntrakSpacing.xl),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.group,
+                      size: 80,
+                      color: SyntrakColors.textTertiary,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Join clubs or challenges to see them here',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[500],
+                    const SizedBox(height: SyntrakSpacing.lg),
+                    Text(
+                      'No active groups',
+                      style: SyntrakTypography.headlineMedium.copyWith(
+                        color: SyntrakColors.textSecondary,
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+                    const SizedBox(height: SyntrakSpacing.sm),
+                    Text(
+                      'Join clubs or challenges to see them here',
+                      style: SyntrakTypography.bodyMedium.copyWith(
+                        color: SyntrakColors.textTertiary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
