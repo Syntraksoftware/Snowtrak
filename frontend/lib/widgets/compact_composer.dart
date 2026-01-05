@@ -70,9 +70,9 @@ class _CompactComposerState extends State<CompactComposer> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Avatar
+          // Avatar - same size as message cards (radius 20)
           CircleAvatar(
-            radius: 16,
+            radius: 20,
             backgroundColor: Colors.grey[300],
             child: user?.firstName != null
                 ? Text(
@@ -80,10 +80,10 @@ class _CompactComposerState extends State<CompactComposer> {
                     style: const TextStyle(
                       color: Colors.black87,
                       fontWeight: FontWeight.w600,
-                      fontSize: 12,
+                      fontSize: 14,
                     ),
                   )
-                : const Icon(Icons.person, color: Colors.grey, size: 16),
+                : const Icon(Icons.person, color: Colors.grey, size: 20),
           ),
           const SizedBox(width: 12),
           // Text input
@@ -154,3 +154,6 @@ class _CompactComposerState extends State<CompactComposer> {
     );
   }
 }
+
+
+

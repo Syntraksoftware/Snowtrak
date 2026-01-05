@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/models/post.dart';
 import 'package:syntrak/widgets/community_header.dart';
@@ -252,7 +253,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA), // Off-white background
+      backgroundColor: SyntrakColors.background,
       body: Column(
         children: [
           // Fixed header
@@ -265,15 +266,14 @@ class _CommunityScreenState extends State<CommunityScreen> {
           // Feed list with composer as first item
           Expanded(
             child: _isLoading && _posts.isEmpty
-                ? const Center(
+                ? Center(
                     child: CircularProgressIndicator(
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(Color(0xFFFF4500)),
+                      valueColor: AlwaysStoppedAnimation<Color>(SyntrakColors.primary),
                     ),
                   )
                 : RefreshIndicator(
                     onRefresh: _handleRefresh,
-                    color: const Color(0xFFFF4500),
+                    color: SyntrakColors.primary,
                     child: ListView.builder(
                       controller: _scrollController,
                       itemCount: _posts.length + 1, // +1 for composer

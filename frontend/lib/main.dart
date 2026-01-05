@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/providers/activity_provider.dart';
 import 'package:syntrak/screens/auth/login_screen.dart';
@@ -103,16 +104,9 @@ class SyntrakApp extends StatelessWidget {
             // Use key to force rebuild when auth state changes
             key: ValueKey(
                 'auth_${authProvider.isAuthenticated}_${authProvider.isLoading}'),
-            theme: ThemeData(
-              primarySwatch: Colors.orange,
-              primaryColor: const Color(0xFFFF4500),
-              scaffoldBackgroundColor: Colors.white,
-              appBarTheme: const AppBarTheme(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
-                elevation: 0,
-              ),
-            ),
+            theme: SyntrakTheme.lightTheme,
+            darkTheme: SyntrakTheme.darkTheme,
+            themeMode: ThemeMode.light, // Can be changed to system or dark
             home: _buildHome(authProvider),
           );
         },

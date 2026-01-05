@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
+import 'package:syntrak/core/theme.dart';
+import 'package:syntrak/core/activity_helpers.dart';
 import 'package:syntrak/models/activity.dart';
 import 'package:syntrak/providers/activity_provider.dart';
 import 'package:syntrak/services/location_service.dart';
@@ -35,16 +37,13 @@ class _RecordScreenState extends State<RecordScreen> {
   @override
   void initState() {
     super.initState();
-    // Initialize with error state by default to prevent crashes
-    _hasError = true;
-    _errorMessage = "The page is not ready!";
-    // Try to initialize location, but don't crash if it fails
+    // Try to initialize location
     _initializeLocation().catchError((e) {
       print('🔍 [RecordScreen] Error in initState: $e');
       if (mounted) {
         setState(() {
           _hasError = true;
-          _errorMessage = "The page is not ready!";
+          _errorMessage = "Failed to initialize map. Please check your location permissions.";
         });
       }
     });
@@ -53,18 +52,6 @@ class _RecordScreenState extends State<RecordScreen> {
   Future<void> _initializeLocation() async {
     print('🔍 [RecordScreen] Initializing location...');
     try {
-      // For now, keep error state to prevent crashes
-      // TODO: Properly configure Google Maps API key before enabling map
-      if (mounted) {
-        setState(() {
-          _hasError = true;
-          _errorMessage = "The page is not ready!";
-        });
-      }
-      return;
-
-      // Commented out until Google Maps is properly configured
-      /*
       // Check if we have permission (don't request again, just check)
       print('🔍 [RecordScreen] Checking permissions...');
       final hasPermission = await _locationService.checkPermissions();
@@ -110,7 +97,6 @@ class _RecordScreenState extends State<RecordScreen> {
           _hasError = false;
         });
       }
-      */
     } catch (e) {
       print('🔍 [RecordScreen] Error getting location: $e');
       // If anything fails, show error screen
@@ -426,6 +412,7 @@ class _RecordScreenState extends State<RecordScreen> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.close),
+                      color: SyntrakColors.textPrimary,
                       onPressed:
                           _isRecording ? null : () => Navigator.pop(context),
                     ),
@@ -436,15 +423,13 @@ class _RecordScreenState extends State<RecordScreen> {
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.black87,
-                          borderRadius: BorderRadius.circular(20),
+                          color: SyntrakColors.textPrimary.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(SyntrakRadius.round),
                         ),
                         child: Text(
                           _formatDuration(_elapsedTime),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
+                          style: SyntrakTypography.metricLarge.copyWith(
+                            color: SyntrakColors.textOnPrimary,
                           ),
                         ),
                       )
@@ -452,9 +437,12 @@ class _RecordScreenState extends State<RecordScreen> {
                       const SizedBox(width: 48),
                     if (_isRecording)
                       IconButton(
-                        icon: Icon(_isPaused ? Icons.play_arrow : Icons.pause),
-                        onPressed:
-                            _isPaused ? _resumeRecording : _pauseRecording,
+                      icon: Icon(
+                        _isPaused ? Icons.play_arrow : Icons.pause,
+                        color: SyntrakColors.textPrimary,
+                      ),
+                      onPressed:
+                          _isPaused ? _resumeRecording : _pauseRecording,
                       )
                     else
                       const SizedBox(width: 48),
@@ -469,84 +457,70 @@ class _RecordScreenState extends State<RecordScreen> {
               left: 0,
               right: 0,
               child: Container(
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.all(SyntrakSpacing.lg),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: SyntrakColors.surface,
                   borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(24),
-                    topRight: Radius.circular(24),
+                    topLeft: Radius.circular(SyntrakRadius.xl),
+                    topRight: Radius.circular(SyntrakRadius.xl),
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, -5),
-                    ),
-                  ],
+                  boxShadow: SyntrakElevation.lg,
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (!_isRecording)
-                      ElevatedButton(
-                        onPressed: _selectedActivityType == null
-                            ? _selectActivityType
-                            : _startRecording,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF4500),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 48,
-                            vertical: 16,
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _selectedActivityType == null
+                              ? _selectActivityType
+                              : _startRecording,
+                          icon: _selectedActivityType == null
+                              ? const Icon(Icons.add)
+                              : Icon(ActivityHelpers.getActivityIcon(_selectedActivityType!)),
+                          label: Text(
+                            _selectedActivityType == null
+                                ? 'Select Activity Type'
+                                : 'Start Recording',
+                            style: SyntrakTypography.labelLarge,
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        child: Text(
-                          _selectedActivityType == null
-                              ? 'Select Activity Type'
-                              : 'Start Recording',
-                          style: const TextStyle(fontSize: 18),
                         ),
                       )
                     else
                       Column(
                         children: [
+                          // Skiing-specific metrics
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
+                              _buildMetric(
+                                'Vertical',
+                                '${_locationService.calculateElevationGain().toStringAsFixed(0)} m',
+                              ),
                               _buildMetric(
                                 'Distance',
                                 '${(_locationService.calculateDistance() / 1000).toStringAsFixed(2)} km',
                               ),
                               _buildMetric(
-                                'Pace',
-                                '-- /km',
-                              ),
-                              _buildMetric(
-                                'Elevation',
-                                '${_locationService.calculateElevationGain().toStringAsFixed(0)} m',
+                                'Speed',
+                                _calculateCurrentSpeed(),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: _stopRecording,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 48,
-                                vertical: 16,
+                          const SizedBox(height: SyntrakSpacing.md),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _stopRecording,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: SyntrakColors.error,
+                                foregroundColor: SyntrakColors.textOnPrimary,
                               ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
+                              child: Text(
+                                'Stop Recording',
+                                style: SyntrakTypography.labelLarge,
                               ),
-                            ),
-                            child: const Text(
-                              'Stop',
-                              style: TextStyle(fontSize: 18),
                             ),
                           ),
                         ],
@@ -566,24 +540,44 @@ class _RecordScreenState extends State<RecordScreen> {
     }
   }
 
+  String _calculateCurrentSpeed() {
+    if (_routePoints.length < 2) return '-- km/h';
+    // Calculate speed from last two points
+    final lastPoint = _routePoints.last;
+    final secondLastPoint = _routePoints[_routePoints.length - 2];
+    final distance = Geolocator.distanceBetween(
+      secondLastPoint.latitude,
+      secondLastPoint.longitude,
+      lastPoint.latitude,
+      lastPoint.longitude,
+    );
+    // Assuming 1 second between points
+    final speedMs = distance / 1.0;
+    final speedKmh = speedMs * 3.6;
+    return '${speedKmh.toStringAsFixed(1)} km/h';
+  }
+
   Widget _buildMetric(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: SyntrakTypography.metricMedium.copyWith(
+              color: SyntrakColors.textPrimary,
+            ),
+            textAlign: TextAlign.center,
           ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.grey,
+          const SizedBox(height: SyntrakSpacing.xs),
+          Text(
+            label,
+            style: SyntrakTypography.labelSmall.copyWith(
+              color: SyntrakColors.textTertiary,
+            ),
+            textAlign: TextAlign.center,
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

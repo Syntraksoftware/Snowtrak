@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:syntrak/core/theme.dart';
+import 'package:syntrak/core/activity_helpers.dart';
 import 'package:syntrak/models/activity.dart';
 import 'package:syntrak/providers/activity_provider.dart';
 import 'package:syntrak/screens/activities/activity_detail_screen.dart';
@@ -25,49 +27,67 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Activities'),
+        title: const Text('Home'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: () {
+              // TODO: Implement filter functionality
+            },
+            tooltip: 'Filter activities',
+          ),
+        ],
       ),
       body: Consumer<ActivityProvider>(
         builder: (context, provider, _) {
           if (provider.isLoading && provider.activities.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(SyntrakColors.primary),
+              ),
+            );
           }
 
           if (provider.activities.isEmpty) {
             return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.fitness_center,
-                    size: 64,
-                    color: Colors.grey,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'No activities yet',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.grey,
+              child: Padding(
+                padding: const EdgeInsets.all(SyntrakSpacing.xl),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.downhill_skiing,
+                      size: 80,
+                      color: SyntrakColors.textTertiary,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Start recording your first activity!',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
+                    const SizedBox(height: SyntrakSpacing.lg),
+                    Text(
+                      'No activities yet',
+                      style: SyntrakTypography.headlineMedium.copyWith(
+                        color: SyntrakColors.textSecondary,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: SyntrakSpacing.sm),
+                    Text(
+                      'Start recording your first skiing activity!',
+                      style: SyntrakTypography.bodyMedium.copyWith(
+                        color: SyntrakColors.textTertiary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
             );
           }
 
           return RefreshIndicator(
             onRefresh: () => provider.loadActivities(),
-            child: ListView.builder(
+            color: SyntrakColors.primary,
+            child: ListView.separated(
+              padding: const EdgeInsets.all(SyntrakSpacing.md),
               itemCount: provider.activities.length,
+              separatorBuilder: (context, index) => const SizedBox(height: SyntrakSpacing.md),
               itemBuilder: (context, index) {
                 final activity = provider.activities[index];
                 return _ActivityCard(activity: activity);
@@ -87,8 +107,18 @@ class _ActivityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final activityColor = ActivityHelpers.getActivityColor(activity.type);
+    final activityIcon = ActivityHelpers.getActivityIcon(activity.type);
+    
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+        side: BorderSide(
+          color: SyntrakColors.divider,
+          width: 1,
+        ),
+      ),
       child: InkWell(
         onTap: () {
           Navigator.push(
@@ -98,42 +128,66 @@ class _ActivityCard extends StatelessWidget {
             ),
           );
         },
+        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(SyntrakSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Icon(
-                    _getActivityIcon(activity.type),
-                    color: const Color(0xFFFF4500),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    activity.type.displayName,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  Container(
+                    padding: const EdgeInsets.all(SyntrakSpacing.sm),
+                    decoration: BoxDecoration(
+                      color: activityColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(SyntrakRadius.md),
+                    ),
+                    child: Icon(
+                      activityIcon,
+                      color: activityColor,
+                      size: 24,
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: SyntrakSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          activity.type.displayName,
+                          style: SyntrakTypography.headlineSmall.copyWith(
+                            color: SyntrakColors.textPrimary,
+                          ),
+                        ),
+                        if (activity.name != null && activity.name!.isNotEmpty)
+                          Text(
+                            activity.name!,
+                            style: SyntrakTypography.bodySmall.copyWith(
+                              color: SyntrakColors.textTertiary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                      ],
+                    ),
+                  ),
                   Text(
                     _formatDate(activity.startTime),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
+                    style: SyntrakTypography.bodySmall.copyWith(
+                      color: SyntrakColors.textTertiary,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: SyntrakSpacing.md),
+              // Skiing-specific metrics
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
+                  _buildMetric('Vertical', activity.formattedVerticalDrop),
                   _buildMetric('Distance', activity.formattedDistance),
                   _buildMetric('Time', activity.formattedDuration),
-                  _buildMetric('Pace', activity.formattedPace),
+                  _buildMetric('Speed', activity.formattedSpeed),
                 ],
               ),
             ],
@@ -141,23 +195,6 @@ class _ActivityCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  IconData _getActivityIcon(ActivityType type) {
-    switch (type) {
-      case ActivityType.run:
-        return Icons.directions_run;
-      case ActivityType.ride:
-        return Icons.directions_bike;
-      case ActivityType.walk:
-        return Icons.directions_walk;
-      case ActivityType.hike:
-        return Icons.terrain;
-      case ActivityType.swim:
-        return Icons.pool;
-      case ActivityType.other:
-        return Icons.fitness_center;
-    }
   }
 
   String _formatDate(DateTime date) {
@@ -179,23 +216,26 @@ class _ActivityCard extends StatelessWidget {
   }
 
   Widget _buildMetric(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: SyntrakTypography.metricMedium.copyWith(
+              color: SyntrakColors.textPrimary,
+            ),
+            textAlign: TextAlign.center,
           ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.grey,
+          const SizedBox(height: SyntrakSpacing.xs),
+          Text(
+            label,
+            style: SyntrakTypography.labelSmall.copyWith(
+              color: SyntrakColors.textTertiary,
+            ),
+            textAlign: TextAlign.center,
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -6,6 +6,7 @@ import 'package:syntrak/widgets/inline_reply_preview.dart';
 class MessageCard extends StatefulWidget {
   final Post post;
   final bool isExpanded;
+  final bool isReply; // Indicates if this is a nested reply
   final VoidCallback? onTap;
   final VoidCallback? onAvatarTap;
   final Function(Post post)? onLike;
@@ -17,6 +18,7 @@ class MessageCard extends StatefulWidget {
     super.key,
     required this.post,
     this.isExpanded = false,
+    this.isReply = false,
     this.onTap,
     this.onAvatarTap,
     this.onLike,
@@ -48,22 +50,27 @@ class _MessageCardState extends State<MessageCard> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.symmetric(
+        horizontal: 16, // Same padding for all - ensures alignment
+        vertical: widget.isReply ? 8 : 12,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.grey[200]!,
-            width: 0.5,
-          ),
-        ),
+        border: widget.isReply
+            ? null
+            : Border(
+                bottom: BorderSide(
+                  color: Colors.grey[200]!,
+                  width: 0.5,
+                ),
+              ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top row: Avatar, name, handle, timestamp
+          // Top row: Avatar, name, handle, timestamp - all horizontally aligned
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Avatar
               GestureDetector(
@@ -87,13 +94,12 @@ class _MessageCardState extends State<MessageCard> {
                 ),
               ),
               const SizedBox(width: 12),
-              // Name, handle, timestamp
+              // Name, handle, timestamp - all on same baseline
               Expanded(
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Expanded(
+                    Flexible(
                       child: Row(
                         children: [
                           Text(
@@ -113,16 +119,20 @@ class _MessageCardState extends State<MessageCard> {
                             ),
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            '@${widget.post.author.username}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
+                          Flexible(
+                            child: Text(
+                              '@${widget.post.author.username}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Text(
                       widget.post.timestampLabel,
                       style: TextStyle(
@@ -136,15 +146,19 @@ class _MessageCardState extends State<MessageCard> {
             ],
           ),
           const SizedBox(height: 8),
-          // Message text
-          GestureDetector(
-            onTap: _toggleExpand,
-            child: Text(
-              widget.post.text,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black87,
-                height: 1.5,
+          Padding(
+            padding: const EdgeInsets.only(
+                left:
+                    52), // Align with name/handle (avatar 40px + spacing 12px)
+            child: GestureDetector(
+              onTap: _toggleExpand,
+              child: Text(
+                widget.post.text,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.black87,
+                  height: 1.5,
+                ),
               ),
             ),
           ),
@@ -171,29 +185,48 @@ class _MessageCardState extends State<MessageCard> {
           // Inline reply preview (if not expanded and has replies)
           if (!_isExpanded &&
               widget.post.replies != null &&
-              widget.post.replies!.isNotEmpty)
+              widget.post.replies!.isNotEmpty) ...[
+            const SizedBox(height: 8),
             InlineReplyPreview(
               replies: widget.post.replies!,
               onTap: _toggleExpand,
             ),
+          ],
           // Expanded replies (if expanded)
           if (_isExpanded &&
               widget.post.replies != null &&
               widget.post.replies!.isNotEmpty) ...[
             const SizedBox(height: 12),
-            ...widget.post.replies!.map((reply) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: MessageCard(
-                    post: reply,
-                    onLike: widget.onLike,
-                    onRepost: widget.onRepost,
-                    onReply: widget.onReply,
-                    onShare: widget.onShare,
+            Container(
+              margin: EdgeInsets.zero, // Start at same position as main post
+              decoration: BoxDecoration(
+                border: Border(
+                  left: BorderSide(
+                    color: Colors.grey[300]!,
+                    width: 1,
                   ),
-                )),
+                ),
+              ),
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: widget.post.replies!.map((reply) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: MessageCard(
+                      post: reply,
+                      isReply: true,
+                      onLike: widget.onLike,
+                      onRepost: widget.onRepost,
+                      onReply: widget.onReply,
+                      onShare: widget.onShare,
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
           ],
           const SizedBox(height: 12),
-          // Action row
+
           MessageActions(
             replyCount: widget.post.replyCount,
             likeCount: widget.post.likeCount,

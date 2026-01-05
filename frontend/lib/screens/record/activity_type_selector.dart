@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:syntrak/core/theme.dart';
+import 'package:syntrak/core/activity_helpers.dart';
 import 'package:syntrak/models/activity.dart';
 
 class ActivityTypeSelector extends StatelessWidget {
@@ -12,16 +14,17 @@ class ActivityTypeSelector extends StatelessWidget {
       ),
       body: GridView.count(
         crossAxisCount: 2,
-        padding: const EdgeInsets.all(24),
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
+        padding: const EdgeInsets.all(SyntrakSpacing.lg),
+        crossAxisSpacing: SyntrakSpacing.md,
+        mainAxisSpacing: SyntrakSpacing.md,
+        childAspectRatio: 1.1,
         children: [
-          _buildActivityTypeCard(context, ActivityType.run, Icons.directions_run, 'Run'),
-          _buildActivityTypeCard(context, ActivityType.ride, Icons.directions_bike, 'Ride'),
-          _buildActivityTypeCard(context, ActivityType.walk, Icons.directions_walk, 'Walk'),
-          _buildActivityTypeCard(context, ActivityType.hike, Icons.terrain, 'Hike'),
-          _buildActivityTypeCard(context, ActivityType.swim, Icons.pool, 'Swim'),
-          _buildActivityTypeCard(context, ActivityType.other, Icons.fitness_center, 'Other'),
+          _buildActivityTypeCard(context, ActivityType.alpine),
+          _buildActivityTypeCard(context, ActivityType.crossCountry),
+          _buildActivityTypeCard(context, ActivityType.freestyle),
+          _buildActivityTypeCard(context, ActivityType.backcountry),
+          _buildActivityTypeCard(context, ActivityType.snowboard),
+          _buildActivityTypeCard(context, ActivityType.other),
         ],
       ),
     );
@@ -30,25 +33,61 @@ class ActivityTypeSelector extends StatelessWidget {
   Widget _buildActivityTypeCard(
     BuildContext context,
     ActivityType type,
-    IconData icon,
-    String label,
   ) {
+    final color = ActivityHelpers.getActivityColor(type);
+    final icon = ActivityHelpers.getActivityIcon(type);
+    final label = type.displayName;
+    final description = ActivityHelpers.getActivityDescription(type);
+    
     return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+        side: BorderSide(
+          color: SyntrakColors.divider,
+          width: 1,
+        ),
+      ),
       child: InkWell(
         onTap: () => Navigator.pop(context, type),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 48, color: const Color(0xFFFF4500)),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+        child: Padding(
+          padding: const EdgeInsets.all(SyntrakSpacing.md),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(SyntrakSpacing.md),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  size: 40,
+                  color: color,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: SyntrakSpacing.md),
+              Text(
+                label,
+                style: SyntrakTypography.headlineSmall.copyWith(
+                  color: SyntrakColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: SyntrakSpacing.xs),
+              Text(
+                description,
+                style: SyntrakTypography.bodySmall.copyWith(
+                  color: SyntrakColors.textTertiary,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );

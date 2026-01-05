@@ -21,7 +21,8 @@ class InlineReplyPreview extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(top: 8, left: 40),
+        margin:
+            const EdgeInsets.only(top: 8, left: 52), // Align with text content
         padding: const EdgeInsets.only(left: 12, top: 8, bottom: 8, right: 8),
         decoration: BoxDecoration(
           border: Border(
@@ -35,55 +36,68 @@ class InlineReplyPreview extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ...previewReplies.map((reply) => Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
+                  padding: const EdgeInsets.only(bottom: 8),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       CircleAvatar(
-                        radius: 10,
+                        radius: 20, // Same size as main posts
                         backgroundColor: Colors.grey[300],
                         child: reply.author.avatarUrl != null
                             ? null
                             : Text(
                                 reply.author.displayName[0].toUpperCase(),
                                 style: const TextStyle(
-                                  fontSize: 10,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
                                 ),
                               ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 12), // Same spacing as main posts
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Text(
                                   reply.author.displayName,
                                   style: const TextStyle(
-                                    fontSize: 13,
+                                    fontSize: 15,
                                     fontWeight: FontWeight.w600,
                                     color: Colors.black87,
                                   ),
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  '@${reply.author.username}',
+                                  '·',
                                   style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
+                                    fontSize: 15,
+                                    color: Colors.grey[400],
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    '@${reply.author.username}',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[600],
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: 4),
                             Text(
                               reply.text,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey[700],
-                                height: 1.4,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.black87,
+                                height: 1.5,
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,

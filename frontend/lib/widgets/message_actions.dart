@@ -60,15 +60,19 @@ class _MessageActionsState extends State<MessageActions>
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisSize:
+          MainAxisSize.min, // Prevent expansion, maintain fixed spacing
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Reply
+        // Reply - left-aligned
         _buildActionButton(
           icon: Icons.chat_bubble_outline,
           count: widget.replyCount,
           onTap: widget.onReply,
         ),
-        const SizedBox(width: 24),
-        // Like
+        const SizedBox(width: 32),
+        // Like - consistent spacing
         _buildActionButton(
           icon: _isLiked ? Icons.favorite : Icons.favorite_border,
           count: widget.likeCount,
@@ -76,16 +80,16 @@ class _MessageActionsState extends State<MessageActions>
           onTap: _handleLike,
           animated: true,
         ),
-        const SizedBox(width: 24),
-        // Repost
+        const SizedBox(width: 32),
+        // Repost - consistent spacing
         _buildActionButton(
           icon: Icons.repeat,
           count: widget.repostCount,
           isActive: widget.isReposted,
           onTap: widget.onRepost,
         ),
-        const SizedBox(width: 24),
-        // Share
+        const SizedBox(width: 32),
+        // Share - consistent spacing
         _buildActionButton(
           icon: Icons.share_outlined,
           onTap: widget.onShare,
@@ -123,18 +127,21 @@ class _MessageActionsState extends State<MessageActions>
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
         child: Row(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             iconWidget,
             if (count > 0) ...[
-              const SizedBox(width: 4),
+              const SizedBox(width: 6),
               Text(
                 count.toString(),
                 style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
+                  fontSize: 13,
+                  color: isActive ? const Color(0xFFFF4500) : Colors.grey[600],
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],

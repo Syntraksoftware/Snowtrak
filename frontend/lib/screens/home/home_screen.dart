@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/screens/activities/activities_screen.dart';
 import 'package:syntrak/screens/record/record_screen.dart';
 import 'package:syntrak/screens/profile/profile_screen.dart';
@@ -8,8 +9,6 @@ import 'package:syntrak/screens/community/community_screen.dart';
 import 'package:syntrak/screens/home/location_permission_dialog.dart';
 import 'package:syntrak/services/location_service.dart';
 import 'package:syntrak/services/storage_service.dart';
-import 'package:syntrak/widgets/groups_icon.dart';
-import 'package:syntrak/widgets/logo_icon.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,12 +22,13 @@ class _HomeScreenState extends State<HomeScreen> {
   final LocationService _locationService = LocationService();
   bool _hasCheckedPermission = false;
 
+  // Restructured navigation order: Map, Community, Home, Groups/Activities, You
   final List<Widget> _screens = [
-    const RecordScreen(),
-    const GroupsScreen(),
-    const ActivitiesScreen(), // Home in the middle
-    const CommunityScreen(),
-    const ProfileScreen(),
+    const RecordScreen(),      // 0: Map (Record Activities)
+    const CommunityScreen(),   // 1: Community
+    const ActivitiesScreen(),  // 2: Home (Activities Feed)
+    const GroupsScreen(),      // 3: Groups/Activities
+    const ProfileScreen(),     // 4: You (Profile)
   ];
 
   @override
@@ -73,56 +73,52 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       body: _screens[safeIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: safeIndex,
-        onTap: (index) {
-          if (index >= 0 && index < _screens.length) {
-            setState(() {
-              _currentIndex = index;
-            });
-          }
-        },
-        type: BottomNavigationBarType.fixed,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.fiber_manual_record,
-              color: safeIndex == 0 ? const Color(0xFFFF4500) : Colors.grey,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: SyntrakElevation.md,
+        ),
+        child: BottomNavigationBar(
+          currentIndex: safeIndex,
+          onTap: (index) {
+            if (index >= 0 && index < _screens.length) {
+              setState(() {
+                _currentIndex = index;
+              });
+            }
+          },
+          type: BottomNavigationBarType.fixed,
+          showSelectedLabels: true,
+          showUnselectedLabels: true,
+          selectedFontSize: 11,
+          unselectedFontSize: 11,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.map_outlined),
+              activeIcon: Icon(Icons.map),
+              label: 'Map',
             ),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: GroupsIcon(
-              color: safeIndex == 1 ? const Color(0xFFFF4500) : Colors.grey,
+            BottomNavigationBarItem(
+              icon: Icon(Icons.forum_outlined),
+              activeIcon: Icon(Icons.forum),
+              label: 'Community',
             ),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.home,
-              color: safeIndex == 2 ? const Color(0xFFFF4500) : Colors.grey,
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
+              label: 'Home',
             ),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.people_outline,
-              color: safeIndex == 3 ? const Color(0xFFFF4500) : Colors.grey,
+            BottomNavigationBarItem(
+              icon: Icon(Icons.group_outlined),
+              activeIcon: Icon(Icons.group),
+              label: 'Groups',
             ),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.person_outline,
-              color: safeIndex == 4 ? const Color(0xFFFF4500) : Colors.grey,
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
+              label: 'You',
             ),
-            label: '',
-          ),
-        ],
-        selectedItemColor: const Color(0xFFFF4500),
-        unselectedItemColor: Colors.grey,
+          ],
+        ),
       ),
     );
   }
