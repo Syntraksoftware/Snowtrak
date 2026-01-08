@@ -101,9 +101,8 @@ class SyntrakApp extends StatelessWidget {
           return MaterialApp(
             title: 'Syntrak',
             debugShowCheckedModeBanner: false,
-            // Use key to force rebuild when auth state changes
-            key: ValueKey(
-                'auth_${authProvider.isAuthenticated}_${authProvider.isLoading}'),
+            // Remove key to prevent Navigator recreation issues
+            // The home widget will update automatically via Consumer
             theme: SyntrakTheme.lightTheme,
             darkTheme: SyntrakTheme.darkTheme,
             themeMode: ThemeMode.light, // Can be changed to system or dark

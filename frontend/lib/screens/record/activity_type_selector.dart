@@ -52,39 +52,49 @@ class ActivityTypeSelector extends StatelessWidget {
         onTap: () => Navigator.pop(context, type),
         borderRadius: BorderRadius.circular(SyntrakRadius.lg),
         child: Padding(
-          padding: const EdgeInsets.all(SyntrakSpacing.md),
+          padding: const EdgeInsets.all(SyntrakSpacing.sm),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                padding: const EdgeInsets.all(SyntrakSpacing.md),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  shape: BoxShape.circle,
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.all(SyntrakSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 32,
+                    color: color,
+                  ),
                 ),
-                child: Icon(
-                  icon,
-                  size: 40,
-                  color: color,
-                ),
-              ),
-              const SizedBox(height: SyntrakSpacing.md),
-              Text(
-                label,
-                style: SyntrakTypography.headlineSmall.copyWith(
-                  color: SyntrakColors.textPrimary,
-                ),
-                textAlign: TextAlign.center,
               ),
               const SizedBox(height: SyntrakSpacing.xs),
-              Text(
-                description,
-                style: SyntrakTypography.bodySmall.copyWith(
-                  color: SyntrakColors.textTertiary,
+              Flexible(
+                child: Text(
+                  label,
+                  style: SyntrakTypography.labelLarge.copyWith(
+                    color: SyntrakColors.textPrimary,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: SyntrakSpacing.xs / 2),
+              Flexible(
+                child: Text(
+                  description,
+                  style: SyntrakTypography.bodySmall.copyWith(
+                    color: SyntrakColors.textTertiary,
+                    fontSize: 10,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),

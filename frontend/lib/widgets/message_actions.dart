@@ -60,39 +60,46 @@ class _MessageActionsState extends State<MessageActions>
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisSize:
-          MainAxisSize.min, // Prevent expansion, maintain fixed spacing
+      mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // Reply - left-aligned
-        _buildActionButton(
-          icon: Icons.chat_bubble_outline,
-          count: widget.replyCount,
-          onTap: widget.onReply,
+        Flexible(
+          child: _buildActionButton(
+            icon: Icons.chat_bubble_outline,
+            count: widget.replyCount,
+            onTap: widget.onReply,
+          ),
         ),
-        const SizedBox(width: 32),
+        const SizedBox(width: 16),
         // Like - consistent spacing
-        _buildActionButton(
-          icon: _isLiked ? Icons.favorite : Icons.favorite_border,
-          count: widget.likeCount,
-          isActive: _isLiked,
-          onTap: _handleLike,
-          animated: true,
+        Flexible(
+          child: _buildActionButton(
+            icon: _isLiked ? Icons.favorite : Icons.favorite_border,
+            count: widget.likeCount,
+            isActive: _isLiked,
+            onTap: _handleLike,
+            animated: true,
+          ),
         ),
-        const SizedBox(width: 32),
+        const SizedBox(width: 16),
         // Repost - consistent spacing
-        _buildActionButton(
-          icon: Icons.repeat,
-          count: widget.repostCount,
-          isActive: widget.isReposted,
-          onTap: widget.onRepost,
+        Flexible(
+          child: _buildActionButton(
+            icon: Icons.repeat,
+            count: widget.repostCount,
+            isActive: widget.isReposted,
+            onTap: widget.onRepost,
+          ),
         ),
-        const SizedBox(width: 32),
+        const SizedBox(width: 16),
         // Share - consistent spacing
-        _buildActionButton(
-          icon: Icons.share_outlined,
-          onTap: widget.onShare,
+        Flexible(
+          child: _buildActionButton(
+            icon: Icons.share_outlined,
+            onTap: widget.onShare,
+          ),
         ),
       ],
     );

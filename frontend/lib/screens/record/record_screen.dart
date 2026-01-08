@@ -55,6 +55,7 @@ class _RecordScreenState extends State<RecordScreen> {
       // Check if we have permission (don't request again, just check)
       print('🔍 [RecordScreen] Checking permissions...');
       final hasPermission = await _locationService.checkPermissions();
+      print('🔍 [RecordScreen] Permission check result: $hasPermission');
 
       if (!hasPermission && mounted) {
         print(
@@ -69,6 +70,8 @@ class _RecordScreenState extends State<RecordScreen> {
         });
         return;
       }
+      
+      print('🔍 [RecordScreen] Permission granted, proceeding to get location');
 
       // Try to get current position with timeout
       print('🔍 [RecordScreen] Getting current position...');
