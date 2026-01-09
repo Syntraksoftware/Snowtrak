@@ -31,7 +31,6 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       print('🔍 [AuthProvider] isLoading set to true');
 
-      // Ensure storage is initialized
       if (_storageService != null) {
         print('🔍 [AuthProvider] Initializing storage...');
         await _storageService!.init();
