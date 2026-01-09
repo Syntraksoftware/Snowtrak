@@ -96,15 +96,37 @@ class LocationService {
       }
 
       print('🔍 [LocationService] Getting current position...');
-      _currentPosition = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.best,
-        timeLimit: const Duration(seconds: 10), // Add timeout
-      );
-      print(
-          '🔍 [LocationService] Position obtained: ${_currentPosition?.latitude}, ${_currentPosition?.longitude}');
-      return _currentPosition;
+      try {
+        _currentPosition = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.best,
+          timeLimit: const Duration(seconds: 30), // Increased timeout for emulator/slow GPS
+        );
+        print(
+            '🔍 [LocationService] Position obtained: ${_currentPosition?.latitude}, ${_currentPosition?.longitude}');
+        return _currentPosition;
+      } on TimeoutException catch (e) {
+        print('🔍 [LocationService] Timeout getting position: $e');
+        // Try with lower accuracy as fallback
+        print('🔍 [LocationService] Retrying with lower accuracy...');
+        try {
+          _currentPosition = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.medium,
+            timeLimit: const Duration(seconds: 15),
+          );
+          print(
+              '🔍 [LocationService] Position obtained with medium accuracy: ${_currentPosition?.latitude}, ${_currentPosition?.longitude}');
+          return _currentPosition;
+        } catch (e2) {
+          print('🔍 [LocationService] Failed to get position even with lower accuracy: $e2');
+          return null;
+        }
+      } catch (e, stackTrace) {
+        print('🔍 [LocationService] Error getting position: $e');
+        print('🔍 [LocationService] Stack trace: $stackTrace');
+        return null;
+      }
     } catch (e, stackTrace) {
-      print('🔍 [LocationService] Error getting position: $e');
+      print('🔍 [LocationService] Outer error getting position: $e');
       print('🔍 [LocationService] Stack trace: $stackTrace');
       return null;
     }

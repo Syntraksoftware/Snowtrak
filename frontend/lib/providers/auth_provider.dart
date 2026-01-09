@@ -200,6 +200,30 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Refresh user data from the backend, do not assume the data is constant
+  /// setup the reload logic to detect changes in the supabase side rather than user side 
+  Future<void> refreshUserData() async {
+    if (!_isAuthenticated || _session == null) {
+      return;
+    }
+
+    try {
+      print('🔍 [AuthProvider] Refreshing user data...');
+      final user = await _apiService.getCurrentUser();
+      _session = AuthSession(
+        accessToken: _session!.accessToken,
+        refreshToken: _session!.refreshToken,
+        expiresAt: _session!.expiresAt,
+        user: user,
+      );
+      await _saveSession(_session!);
+      print('🔍 [AuthProvider] User data refreshed: ${user.firstName}');
+      notifyListeners();
+    } catch (e) {
+      print('🔍 [AuthProvider] Error refreshing user data: $e');
+    }
+  }
+
   // Session management helpers
 
   Future<AuthSession?> _restoreSession() async {

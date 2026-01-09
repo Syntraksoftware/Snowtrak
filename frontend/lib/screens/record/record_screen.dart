@@ -8,6 +8,7 @@ import 'package:syntrak/core/activity_helpers.dart';
 import 'package:syntrak/models/activity.dart';
 import 'package:syntrak/providers/activity_provider.dart';
 import 'package:syntrak/services/location_service.dart';
+import 'package:syntrak/services/map_config.dart';
 import 'package:syntrak/screens/record/activity_type_selector.dart';
 import 'package:syntrak/screens/activities/activity_detail_screen.dart';
 import 'package:geolocator/geolocator.dart' hide ActivityType;
@@ -73,11 +74,9 @@ class _RecordScreenState extends State<RecordScreen> {
       
       print('🔍 [RecordScreen] Permission granted, proceeding to get location');
 
-      // Try to get current position with timeout
+      // Try to get current position (timeout handled in LocationService)
       print('🔍 [RecordScreen] Getting current position...');
-      final position = await _locationService
-          .getCurrentPosition()
-          .timeout(const Duration(seconds: 10));
+      final position = await _locationService.getCurrentPosition();
 
       if (position != null && mounted) {
         print(
@@ -312,6 +311,9 @@ class _RecordScreenState extends State<RecordScreen> {
       locations: locations,
     );
 
+    // NOTE: Activity saving requires backend API to be running
+    // The ActivityProvider.createActivity() calls the backend API
+    // If backend is not available, this will fail silently or show error
     final activityProvider =
         Provider.of<ActivityProvider>(context, listen: false);
     final savedActivity = await activityProvider.createActivity(activity);
@@ -586,6 +588,12 @@ class _RecordScreenState extends State<RecordScreen> {
 
   Widget _buildMapWidget() {
     try {
+      // Check if Google Maps API key is configured
+      if (!MapConfig.isConfigured) {
+        print('⚠️ [RecordScreen] Google Maps API key not configured');
+        return _buildMapNotConfiguredScreen();
+      }
+
       return GoogleMap(
         initialCameraPosition: _initialCameraPosition!,
         mapType: MapType.normal,
@@ -594,6 +602,7 @@ class _RecordScreenState extends State<RecordScreen> {
         zoomControlsEnabled: false,
         onMapCreated: (controller) {
           _mapController.complete(controller);
+          print('✅ [RecordScreen] Map created successfully');
         },
         polylines: _routePoints.length > 1
             ? {
@@ -612,6 +621,46 @@ class _RecordScreenState extends State<RecordScreen> {
       // Fallback: Show a placeholder instead of crashing
       return _buildErrorScreen();
     }
+  }
+
+  Widget _buildMapNotConfiguredScreen() {
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.map_outlined,
+                size: 80,
+                color: Colors.grey[400],
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Google Maps API Key Required',
+                style: SyntrakTypography.headlineSmall.copyWith(
+                  color: SyntrakColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'To display the map, you need to configure your Google Maps API key:\n\n'
+                '1. Get an API key from Google Cloud Console\n'
+                '2. For iOS: Add it in ios/Runner/AppDelegate.swift\n'
+                '3. For Android: Add it in android/app/src/main/AndroidManifest.xml\n\n'
+                'You can still record activities without the map.',
+                style: SyntrakTypography.bodyMedium.copyWith(
+                  color: SyntrakColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildErrorScreen() {
