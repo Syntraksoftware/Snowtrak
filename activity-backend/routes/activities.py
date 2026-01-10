@@ -1,91 +1,25 @@
 """Activity routes for skiing activity records (minimal FastAPI implementation)."""
-from typing import Optional, List
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from pydantic import BaseModel, Field
 import logging
 
 from middleware.auth import get_current_user, get_optional_user
 from services.supabase_client import get_activity_client
+from models import (
+    ActivityCreate,
+    ActivityUpdate,
+    ActivityResponse,
+    ActivitiesListResponse,
+    CommentCreate,
+    CommentResponse,
+    CommentsListResponse,
+    ToggleKudosResponse,
+    ShareLinkResponse,
+    DeleteResponse,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/activities", tags=["activities"])
-
-
-# -----------------------
-# Pydantic models
-# -----------------------
-class LocationPoint(BaseModel):
-    lat: float
-    lng: float
-    elevation: Optional[float] = None
-    timestamp: Optional[str] = None  # ISO string
-
-
-class ActivityCreate(BaseModel):
-    name: str = Field(..., description="Activity name")
-    activity_type: str = Field(..., description="e.g., ski, snowboard")
-    gps_path: List[LocationPoint] = Field(default_factory=list)
-    duration_seconds: int
-    distance_meters: float
-    elevation_gain_meters: float
-    visibility: str = Field("private", description="private|followers|public")
-    description: Optional[str] = None
-
-
-class ActivityUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    visibility: Optional[str] = None
-
-
-class ActivityResponse(BaseModel):
-    id: str
-    user_id: str
-    name: str
-    activity_type: str
-    gps_path: List[LocationPoint]
-    duration_seconds: int
-    distance_meters: float
-    elevation_gain_meters: float
-    visibility: Optional[str] = None
-    description: Optional[str] = None
-    created_at: Optional[str] = None
-
-
-class ActivitiesListResponse(BaseModel):
-    items: List[ActivityResponse]
-    total: int
-
-
-class CommentCreate(BaseModel):
-    content: str
-
-
-class CommentResponse(BaseModel):
-    id: Optional[str] = None
-    activity_id: str
-    user_id: str
-    content: str
-    created_at: Optional[str] = None
-
-
-class CommentsListResponse(BaseModel):
-    items: List[CommentResponse]
-    total: int
-
-
-class ToggleKudosResponse(BaseModel):
-    liked: bool
-
-
-class ShareLinkResponse(BaseModel):
-    share_token: str
-    share_url: str
-
-
-class DeleteResponse(BaseModel):
-    message: str
-    deleted_activity_id: Optional[str] = None
 
 
 # -----------------------
