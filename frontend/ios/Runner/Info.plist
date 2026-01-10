@@ -49,6 +49,8 @@
 	<string>We need your location to track your activities</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>We need your location to track your activities</string>
+	<key>GoogleMapsAPIKey</key>
+	<string>AIzaSyAs8wsfIIpI93UsR8GrH2KQIG4CV4NEaYU</string>
 </dict>
 </plist>
 
