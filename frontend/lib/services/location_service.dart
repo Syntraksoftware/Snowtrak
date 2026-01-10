@@ -97,8 +97,8 @@ class LocationService {
 
       print('🔍 [LocationService] Getting current position...');
       try {
-        _currentPosition = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.best,
+      _currentPosition = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.best,
           timeLimit: const Duration(seconds: 30), // Increased timeout for emulator/slow GPS
         );
         print(
@@ -115,13 +115,13 @@ class LocationService {
           );
           print(
               '🔍 [LocationService] Position obtained with medium accuracy: ${_currentPosition?.latitude}, ${_currentPosition?.longitude}');
-          return _currentPosition;
+      return _currentPosition;
         } catch (e2) {
           print('🔍 [LocationService] Failed to get position even with lower accuracy: $e2');
           return null;
         }
       } catch (e, stackTrace) {
-        print('🔍 [LocationService] Error getting position: $e');
+      print('🔍 [LocationService] Error getting position: $e');
         print('🔍 [LocationService] Stack trace: $stackTrace');
         return null;
       }
@@ -150,11 +150,12 @@ class LocationService {
     bool enableFiltering = true,
     bool enableSmoothing = false,
   }) {
+    // Use a longer timeout for position updates (30 seconds) to handle slow GPS/emulator
     final rawStream = Geolocator.getPositionStream(
       locationSettings: LocationSettings(
         accuracy: LocationAccuracy.best,
         distanceFilter: distanceFilter.toInt(),
-        timeLimit: interval,
+        timeLimit: const Duration(seconds: 30), // Increased from interval to handle slow GPS
       ),
     );
 

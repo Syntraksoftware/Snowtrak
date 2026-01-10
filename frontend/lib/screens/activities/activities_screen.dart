@@ -709,6 +709,7 @@ class _ActivityCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(SyntrakRadius.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Header: Athlete info, timestamp, privacy, activity type
             Padding(
@@ -731,6 +732,7 @@ class _ActivityCard extends StatelessWidget {
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Row(
                           children: [
@@ -856,6 +858,7 @@ class _ActivityCard extends StatelessWidget {
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.map_outlined,
@@ -936,6 +939,7 @@ class _ActivityCard extends StatelessWidget {
   Widget _buildStat(String label, String value) {
     return Expanded(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             value,

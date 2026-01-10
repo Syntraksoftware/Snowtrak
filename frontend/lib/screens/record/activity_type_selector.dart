@@ -60,25 +60,25 @@ class ActivityTypeSelector extends StatelessWidget {
               Flexible(
                 child: Container(
                   padding: const EdgeInsets.all(SyntrakSpacing.sm),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    icon,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
                     size: 32,
-                    color: color,
+                  color: color,
                   ),
                 ),
               ),
               const SizedBox(height: SyntrakSpacing.xs),
               Flexible(
                 child: Text(
-                  label,
+                label,
                   style: SyntrakTypography.labelLarge.copyWith(
-                    color: SyntrakColors.textPrimary,
-                  ),
-                  textAlign: TextAlign.center,
+                  color: SyntrakColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -86,14 +86,14 @@ class ActivityTypeSelector extends StatelessWidget {
               const SizedBox(height: SyntrakSpacing.xs / 2),
               Flexible(
                 child: Text(
-                  description,
-                  style: SyntrakTypography.bodySmall.copyWith(
-                    color: SyntrakColors.textTertiary,
+                description,
+                style: SyntrakTypography.bodySmall.copyWith(
+                  color: SyntrakColors.textTertiary,
                     fontSize: 10,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],

@@ -28,11 +28,9 @@
             android:name="flutterEmbedding"
             android:value="2" />
         <!-- Google Maps API Key -->
-        <!-- TODO: Replace YOUR_API_KEY_HERE with your actual Google Maps API key -->
-        <!-- Get your key from: https://console.cloud.google.com/ -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="YOUR_API_KEY_HERE"/>
+            android:value="AIzaSyAs8wsfIIpI93UsR8GrH2KQIG4CV4NEaYU"/>
     </application>
 </manifest>
 

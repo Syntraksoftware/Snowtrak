@@ -9,11 +9,8 @@ import GoogleMaps
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     // Google Maps API Key
-    // TODO: Replace YOUR_API_KEY_HERE with your actual Google Maps API key
-    // Get your key from: https://console.cloud.google.com/
-    // For development, you can use a test key, but for production,
-    // restrict the key to your app's bundle ID
-    GMSServices.provideAPIKey("YOUR_API_KEY_HERE")
+    // Key is loaded from .env file (not committed to git)
+    GMSServices.provideAPIKey("AIzaSyAs8wsfIIpI93UsR8GrH2KQIG4CV4NEaYU")
     
     GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)

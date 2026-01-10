@@ -82,21 +82,25 @@ class _SyntrakAppState extends State<SyntrakApp> {
               previous ?? ActivityProvider(ApiService()),
         ),
       ],
-      child: MaterialApp(
-        navigatorKey: _navigatorKey,
-        title: 'Syntrak',
-        debugShowCheckedModeBanner: false,
-        theme: SyntrakTheme.lightTheme,
-        darkTheme: SyntrakTheme.darkTheme,
-        themeMode: ThemeMode.light,
-        // Use Consumer inside home to update content without recreating MaterialApp
-        home: Consumer<AuthProvider>(
-          builder: (context, authProvider, _) {
-            print(
-                '🔍 [Main] Building home widget. isLoading: ${authProvider.isLoading}, isAuthenticated: ${authProvider.isAuthenticated}');
-            return _AppWrapper(authProvider: authProvider);
-          },
-        ),
+      child: Consumer<AuthProvider>(
+        builder: (context, authProvider, _) {
+          print(
+              '🔍 [Main] Building MaterialApp. isLoading: ${authProvider.isLoading}, isAuthenticated: ${authProvider.isAuthenticated}');
+          return MaterialApp(
+            navigatorKey: _navigatorKey,
+            title: 'Syntrak',
+            debugShowCheckedModeBanner: false,
+            theme: SyntrakTheme.lightTheme,
+            darkTheme: SyntrakTheme.darkTheme,
+            themeMode: ThemeMode.light,
+            // Use onGenerateRoute to ensure stable Navigator
+            onGenerateRoute: (settings) {
+              return MaterialPageRoute(
+                builder: (context) => _AppWrapper(authProvider: authProvider),
+              );
+            },
+          );
+        },
       ),
     );
   }

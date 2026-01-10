@@ -62,7 +62,7 @@ class AuthProvider extends ChangeNotifier {
           }
         } else {
           print(
-              '🔍 [AuthProvider] Token still valid, validating with backend...');
+            '🔍 [AuthProvider] Token still valid, validating with backend...');
           _apiService.setToken(restoredSession.accessToken);
           try {
             // Validate token with backend

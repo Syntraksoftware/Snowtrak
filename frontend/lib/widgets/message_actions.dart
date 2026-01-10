@@ -67,38 +67,38 @@ class _MessageActionsState extends State<MessageActions>
         // Reply - left-aligned
         Flexible(
           child: _buildActionButton(
-            icon: Icons.chat_bubble_outline,
-            count: widget.replyCount,
-            onTap: widget.onReply,
-          ),
+          icon: Icons.chat_bubble_outline,
+          count: widget.replyCount,
+          onTap: widget.onReply,
+        ),
         ),
         const SizedBox(width: 16),
         // Like - consistent spacing
         Flexible(
           child: _buildActionButton(
-            icon: _isLiked ? Icons.favorite : Icons.favorite_border,
-            count: widget.likeCount,
-            isActive: _isLiked,
-            onTap: _handleLike,
-            animated: true,
-          ),
+          icon: _isLiked ? Icons.favorite : Icons.favorite_border,
+          count: widget.likeCount,
+          isActive: _isLiked,
+          onTap: _handleLike,
+          animated: true,
+        ),
         ),
         const SizedBox(width: 16),
         // Repost - consistent spacing
         Flexible(
           child: _buildActionButton(
-            icon: Icons.repeat,
-            count: widget.repostCount,
-            isActive: widget.isReposted,
-            onTap: widget.onRepost,
-          ),
+          icon: Icons.repeat,
+          count: widget.repostCount,
+          isActive: widget.isReposted,
+          onTap: widget.onRepost,
+        ),
         ),
         const SizedBox(width: 16),
         // Share - consistent spacing
         Flexible(
           child: _buildActionButton(
-            icon: Icons.share_outlined,
-            onTap: widget.onShare,
+          icon: Icons.share_outlined,
+          onTap: widget.onShare,
           ),
         ),
       ],
