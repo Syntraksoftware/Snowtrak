@@ -57,6 +57,8 @@ jobs:
         run: |
           cd frontend
           flutter test --coverage
+        continue-on-error: false
+        timeout-minutes: 10
       
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4

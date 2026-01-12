@@ -15,7 +15,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # HTTP Bearer token scheme
-security = HTTPBearer()
+# Set auto_error=False to handle missing token ourselves and return 401
+security = HTTPBearer(auto_error=False)
 
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> User:
@@ -43,6 +44,10 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    
+    # Handle missing token
+    if credentials is None:
+        raise credentials_exception
     
     try:
         # Decode JWT token

@@ -1,7 +1,7 @@
 """
 Pydantic schemas for request/response validation.
 """
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from typing import Optional
 from datetime import datetime
 
@@ -28,26 +28,24 @@ class UserUpdate(BaseModel):
 
 class UserInDB(UserBase):
     """User as stored in database."""
+    model_config = ConfigDict(from_attributes=True)
+    
     id: str
     is_active: bool
     is_verified: bool
     created_at: datetime
     updated_at: Optional[datetime] = None
     last_login_at: Optional[datetime] = None
-    
-    class Config:
-        from_attributes = True
 
 
 class UserResponse(BaseModel):
     """Public user response (no sensitive data)."""
+    model_config = ConfigDict(from_attributes=True)
+    
     id: str
     email: str
     first_name: Optional[str] = None
     last_name: Optional[str] = None
-    
-    class Config:
-        from_attributes = True
 
 
 # ===== Auth Schemas =====
@@ -75,7 +73,7 @@ class AuthSession(BaseModel):
 
 class LoginRequest(BaseModel):
     """Login credentials."""
-    email: str
+    email: EmailStr
     password: str
 
 
