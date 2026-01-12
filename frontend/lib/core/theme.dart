@@ -247,7 +247,7 @@ class SyntrakTheme {
           color: SyntrakColors.textPrimary,
         ),
       ),
-      cardTheme: CardThemeData(
+      cardTheme: CardTheme(
         color: SyntrakColors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -343,7 +343,7 @@ class SyntrakTheme {
           color: SyntrakColors.darkTextPrimary,
         ),
       ),
-      cardTheme: CardThemeData(
+      cardTheme: CardTheme(
         color: SyntrakColors.darkSurface,
         elevation: 0,
         shape: RoundedRectangleBorder(
