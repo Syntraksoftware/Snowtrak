@@ -1,27 +1,27 @@
 import 'package:syntrak/models/location.dart';
 
 enum ActivityType {
-  run,
-  ride,
-  walk,
-  hike,
-  swim,
-  other,
+  alpine,        // Alpine/Downhill skiing
+  crossCountry,  // Cross-country skiing
+  freestyle,     // Freestyle skiing
+  backcountry,   // Backcountry skiing
+  snowboard,     // Snowboarding
+  other,         // Other winter activities
 }
 
 extension ActivityTypeExtension on ActivityType {
   String get value {
     switch (this) {
-      case ActivityType.run:
-        return 'run';
-      case ActivityType.ride:
-        return 'ride';
-      case ActivityType.walk:
-        return 'walk';
-      case ActivityType.hike:
-        return 'hike';
-      case ActivityType.swim:
-        return 'swim';
+      case ActivityType.alpine:
+        return 'alpine';
+      case ActivityType.crossCountry:
+        return 'cross_country';
+      case ActivityType.freestyle:
+        return 'freestyle';
+      case ActivityType.backcountry:
+        return 'backcountry';
+      case ActivityType.snowboard:
+        return 'snowboard';
       case ActivityType.other:
         return 'other';
     }
@@ -29,16 +29,16 @@ extension ActivityTypeExtension on ActivityType {
 
   String get displayName {
     switch (this) {
-      case ActivityType.run:
-        return 'Run';
-      case ActivityType.ride:
-        return 'Ride';
-      case ActivityType.walk:
-        return 'Walk';
-      case ActivityType.hike:
-        return 'Hike';
-      case ActivityType.swim:
-        return 'Swim';
+      case ActivityType.alpine:
+        return 'Alpine';
+      case ActivityType.crossCountry:
+        return 'Cross-Country';
+      case ActivityType.freestyle:
+        return 'Freestyle';
+      case ActivityType.backcountry:
+        return 'Backcountry';
+      case ActivityType.snowboard:
+        return 'Snowboard';
       case ActivityType.other:
         return 'Other';
     }
@@ -46,16 +46,16 @@ extension ActivityTypeExtension on ActivityType {
 
   static ActivityType fromString(String value) {
     switch (value) {
-      case 'run':
-        return ActivityType.run;
-      case 'ride':
-        return ActivityType.ride;
-      case 'walk':
-        return ActivityType.walk;
-      case 'hike':
-        return ActivityType.hike;
-      case 'swim':
-        return ActivityType.swim;
+      case 'alpine':
+        return ActivityType.alpine;
+      case 'cross_country':
+        return ActivityType.crossCountry;
+      case 'freestyle':
+        return ActivityType.freestyle;
+      case 'backcountry':
+        return ActivityType.backcountry;
+      case 'snowboard':
+        return ActivityType.snowboard;
       default:
         return ActivityType.other;
     }
@@ -124,6 +124,20 @@ class Activity {
     final minutes = (averagePace ~/ 60).toString().padLeft(2, '0');
     final seconds = (averagePace % 60).toString().padLeft(2, '0');
     return '$minutes:$seconds /km';
+  }
+  
+  // Skiing-specific metrics
+  String get formattedVerticalDrop {
+    if (elevationGain < 1000) {
+      return '${elevationGain.toStringAsFixed(0)} m';
+    }
+    return '${(elevationGain / 1000).toStringAsFixed(1)} km';
+  }
+  
+  String get formattedSpeed {
+    if (averagePace == 0) return '--';
+    final speedKmh = 3600 / averagePace;
+    return '${speedKmh.toStringAsFixed(1)} km/h';
   }
 
   factory Activity.fromJson(Map<String, dynamic> json) {

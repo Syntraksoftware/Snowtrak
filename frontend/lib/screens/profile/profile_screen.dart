@@ -1,22 +1,93 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/providers/activity_provider.dart';
+import 'package:syntrak/screens/profile/progress_tab.dart';
+import 'package:syntrak/screens/profile/activities_tab.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: SyntrakColors.background,
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: const Text('You'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => _showLogoutDialog(context),
+            icon: const Icon(Icons.add_circle_outline),
+            onPressed: () {
+              // TODO: Navigate to record activity
+            },
+            tooltip: 'Record Activity',
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              // TODO: Navigate to settings
+            },
+            tooltip: 'Settings',
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(52),
+          child: Container(
+            decoration: BoxDecoration(
+              color: SyntrakColors.background,
+            ),
+            child: TabBar(
+              controller: _tabController,
+              indicator: BoxDecoration(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(SyntrakRadius.md),
+                  topRight: Radius.circular(SyntrakRadius.md),
+                ),
+                color: SyntrakColors.primary.withOpacity(0.1),
+              ),
+              indicatorSize: TabBarIndicatorSize.tab,
+              indicatorPadding: const EdgeInsets.symmetric(
+                horizontal: SyntrakSpacing.sm,
+                vertical: SyntrakSpacing.xs,
+              ),
+              labelColor: SyntrakColors.primary,
+              unselectedLabelColor: SyntrakColors.textTertiary,
+              labelStyle: SyntrakTypography.labelLarge.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+              ),
+              unselectedLabelStyle: SyntrakTypography.labelLarge.copyWith(
+                fontSize: 15,
+              ),
+              dividerColor: Colors.transparent,
+              tabs: const [
+                Tab(text: 'Progress'),
+                Tab(text: 'Activities'),
+              ],
+            ),
+          ),
+        ),
       ),
       body: Consumer2<AuthProvider, ActivityProvider>(
         builder: (context, authProvider, activityProvider, _) {
@@ -24,157 +95,24 @@ class ProfileScreen extends StatelessWidget {
           final activities = activityProvider.activities;
 
           if (user == null) {
-            return const Center(child: Text('Not logged in'));
+            return Center(
+              child: Text(
+                'Not logged in',
+                style: SyntrakTypography.bodyLarge.copyWith(
+                  color: SyntrakColors.textSecondary,
+                ),
+              ),
+            );
           }
 
-          // Calculate stats
-          double totalDistance = 0;
-          int totalDuration = 0;
-          for (var activity in activities) {
-            totalDistance += activity.distance;
-            totalDuration += activity.duration;
-          }
-
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                const SizedBox(height: 24),
-                // Profile picture placeholder
-                CircleAvatar(
-                  radius: 50,
-                  backgroundColor: const Color(0xFFFF4500),
-                  child: Text(
-                    user.fullName[0].toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 36,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  user.fullName,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  user.email,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // Stats
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _StatCard(
-                        label: 'Activities',
-                        value: activities.length.toString(),
-                        icon: Icons.fitness_center,
-                      ),
-                      _StatCard(
-                        label: 'Total Distance',
-                        value: totalDistance >= 1000
-                            ? '${(totalDistance / 1000).toStringAsFixed(1)} km'
-                            : '${totalDistance.toStringAsFixed(0)} m',
-                        icon: Icons.straighten,
-                      ),
-                      _StatCard(
-                        label: 'Total Time',
-                        value: _formatDuration(totalDuration),
-                        icon: Icons.timer,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          return TabBarView(
+            controller: _tabController,
+            children: [
+              ProgressTab(activities: activities),
+              ActivitiesTab(activities: activities),
+            ],
           );
         },
-      ),
-    );
-  }
-
-  String _formatDuration(int seconds) {
-    final hours = seconds ~/ 3600;
-    final minutes = (seconds % 3600) ~/ 60;
-    if (hours > 0) {
-      return '${hours}h ${minutes}m';
-    }
-    return '${minutes}m';
-  }
-
-  Future<void> _showLogoutDialog(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout?'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Logout'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && context.mounted) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      await authProvider.logout();
-    }
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-
-  const _StatCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Icon(icon, color: const Color(0xFFFF4500)),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
       ),
     );
   }
