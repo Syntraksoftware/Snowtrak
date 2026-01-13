@@ -114,12 +114,10 @@ class ActivitiesTab extends StatefulWidget {
 class _ActivitiesTabState extends State<ActivitiesTab> {
   final ActivityService _activityService = ActivityService();
   final TextEditingController _searchController = TextEditingController();
-  final FocusNode _searchFocusNode = FocusNode();
   String _searchQuery = '';
   List<Activity> _activities = [];
   List<Activity> _filteredActivities = [];
   bool _isLoading = true;
-  bool _isSearchFocused = false;
   final Map<String, bool> _kudosMap = {}; // activityId -> hasKudos
   final Map<String, int> _kudosCountMap = {}; // activityId -> count
 
@@ -128,11 +126,6 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
     super.initState();
     _loadActivities();
     _searchController.addListener(_onSearchChanged);
-    _searchFocusNode.addListener(() {
-      setState(() {
-        _isSearchFocused = _searchFocusNode.hasFocus;
-      });
-    });
   }
 
   Future<void> _loadActivities() async {
@@ -162,7 +155,6 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
   @override
   void dispose() {
     _searchController.dispose();
-    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -333,32 +325,14 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
         SyntrakSpacing.md,
         SyntrakSpacing.sm,
       ),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+      child: Container(
+        height: 44,
         decoration: BoxDecoration(
-          color: _isSearchFocused
-              ? SyntrakColors.surface
-              : SyntrakColors.surfaceVariant,
-          borderRadius: BorderRadius.circular(SyntrakRadius.round),
-          border: Border.all(
-            color: _isSearchFocused
-                ? SyntrakColors.primary
-                : Colors.transparent,
-            width: 2,
-          ),
-          boxShadow: _isSearchFocused
-              ? [
-                  BoxShadow(
-                    color: SyntrakColors.primary.withAlpha(30),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
+          color: SyntrakColors.surfaceVariant,
+          borderRadius: BorderRadius.circular(12),
         ),
         child: TextField(
           controller: _searchController,
-          focusNode: _searchFocusNode,
           style: SyntrakTypography.bodyMedium.copyWith(
             color: SyntrakColors.textPrimary,
           ),
@@ -369,9 +343,8 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
             ),
             prefixIcon: Icon(
               Icons.search,
-              color: _isSearchFocused
-                  ? SyntrakColors.primary
-                  : SyntrakColors.textTertiary,
+              color: SyntrakColors.textTertiary,
+              size: 22,
             ),
             suffixIcon: _searchController.text.isNotEmpty
                 ? IconButton(
@@ -389,7 +362,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
             border: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: SyntrakSpacing.md,
-              vertical: 14,
+              vertical: 12,
             ),
           ),
         ),
