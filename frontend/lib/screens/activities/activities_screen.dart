@@ -99,7 +99,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
             // Debug: Print user data to help diagnose issues
             if (user != null) {
               print(
-                  '🔍 [ActivitiesScreen] User data - firstName: ${user.firstName}, lastName: ${user.lastName}, email: ${user.email}');
+                  '🔍 [Home/Feed] User: ${user.firstName ?? "N/A"} ${user.lastName ?? "N/A"} (${user.email})');
             }
 
             return RefreshIndicator(
