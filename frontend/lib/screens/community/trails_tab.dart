@@ -243,15 +243,24 @@ class _TrailsTabState extends State<TrailsTab> {
     );
   }
 
-  // Search bar - FIXED at top
+
   Widget _buildSearchBar() {
     return Container(
-      color: SyntrakColors.surface,
+      decoration: BoxDecoration(
+        color: SyntrakColors.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       padding: const EdgeInsets.fromLTRB(
         SyntrakSpacing.md,
         SyntrakSpacing.md,
         SyntrakSpacing.md,
-        SyntrakSpacing.sm,
+        SyntrakSpacing.md,
       ),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -261,9 +270,8 @@ class _TrailsTabState extends State<TrailsTab> {
               : SyntrakColors.surfaceVariant,
           borderRadius: BorderRadius.circular(SyntrakRadius.round),
           border: Border.all(
-            color: _isSearchFocused
-                ? SyntrakColors.primary
-                : Colors.transparent,
+            color:
+                _isSearchFocused ? SyntrakColors.primary : Colors.transparent,
             width: 2,
           ),
           boxShadow: _isSearchFocused
@@ -320,28 +328,23 @@ class _TrailsTabState extends State<TrailsTab> {
 
   // Filter chips - SCROLLS with list
   Widget _buildFilterChips() {
-    return Container(
-      color: SyntrakColors.surface,
-      child: Column(
-        children: [
-          SizedBox(
-            height: 44,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
-              children: [
-                _buildDifficultyChip(),
-                const SizedBox(width: SyntrakSpacing.sm),
-                _buildCountryChip(),
-                if (_selectedDifficulty != null || _selectedCountry != null) ...[
-                  const SizedBox(width: SyntrakSpacing.sm),
-                  _buildClearFiltersChip(),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: SyntrakSpacing.sm),
-        ],
+    return Padding(
+      padding: const EdgeInsets.only(top: SyntrakSpacing.sm),
+      child: SizedBox(
+        height: 44,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+          children: [
+            _buildDifficultyChip(),
+            const SizedBox(width: SyntrakSpacing.sm),
+            _buildCountryChip(),
+            if (_selectedDifficulty != null || _selectedCountry != null) ...[
+              const SizedBox(width: SyntrakSpacing.sm),
+              _buildClearFiltersChip(),
+            ],
+          ],
+        ),
       ),
     );
   }
