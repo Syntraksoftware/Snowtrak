@@ -93,12 +93,8 @@ class _SyntrakAppState extends State<SyntrakApp> {
             theme: SyntrakTheme.lightTheme,
             darkTheme: SyntrakTheme.darkTheme,
             themeMode: ThemeMode.light,
-            // Use onGenerateRoute to ensure stable Navigator
-            onGenerateRoute: (settings) {
-              return MaterialPageRoute(
-                builder: (context) => _AppWrapper(authProvider: authProvider),
-              );
-            },
+            // Use home for simpler navigation that handles hot reload better
+            home: _AppWrapper(authProvider: authProvider),
           );
         },
       ),
