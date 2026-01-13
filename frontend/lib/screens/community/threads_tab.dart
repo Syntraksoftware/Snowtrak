@@ -16,21 +16,47 @@ class ThreadsTab extends StatefulWidget {
 
 class _ThreadsTabState extends State<ThreadsTab> {
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   final List<Post> _posts = [];
+  List<Post> _filteredPosts = [];
   bool _isRefreshing = false;
   bool _isLoading = false;
+  bool _isSearchFocused = false;
   String? _expandedPostId;
 
   @override
   void initState() {
     super.initState();
+    _searchFocusNode.addListener(() {
+      setState(() {
+        _isSearchFocused = _searchFocusNode.hasFocus;
+      });
+    });
     _loadFeed();
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
+  }
+
+  void _filterPosts() {
+    final query = _searchController.text.toLowerCase().trim();
+    setState(() {
+      if (query.isEmpty) {
+        _filteredPosts = List.from(_posts);
+      } else {
+        _filteredPosts = _posts.where((post) {
+          return post.text.toLowerCase().contains(query) ||
+              post.author.displayName.toLowerCase().contains(query) ||
+              post.author.username.toLowerCase().contains(query);
+        }).toList();
+      }
+    });
   }
 
   Future<void> _loadFeed() async {
@@ -48,6 +74,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
         setState(() {
           _posts.clear();
           _posts.addAll(_generateMockPosts());
+          _filteredPosts = List.from(_posts);
           _isLoading = false;
         });
       }
@@ -218,31 +245,113 @@ class _ThreadsTabState extends State<ThreadsTab> {
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _handleRefresh,
-      color: SyntrakColors.primary,
-      child: ListView.builder(
-        controller: _scrollController,
-        padding: const EdgeInsets.only(top: SyntrakSpacing.sm),
-        itemCount: _posts.length + 1,
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            return CompactComposer(
-              onPost: _handlePost,
-              maxCharacters: 280,
-            );
-          }
-          final post = _posts[index - 1];
-          return MessageCard(
-            post: post,
-            isExpanded: _expandedPostId == post.id,
-            onTap: () => _handlePostTap(post),
-            onLike: _handleLike,
-            onRepost: _handleRepost,
-            onReply: _handleReply,
-            onShare: _handleShare,
-          );
-        },
+    return Column(
+      children: [
+        _buildSearchBar(),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _handleRefresh,
+            color: SyntrakColors.primary,
+            child: ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.only(top: SyntrakSpacing.sm),
+              itemCount: _filteredPosts.length + 1,
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return CompactComposer(
+                    onPost: _handlePost,
+                    maxCharacters: 280,
+                  );
+                }
+                final post = _filteredPosts[index - 1];
+                return MessageCard(
+                  post: post,
+                  isExpanded: _expandedPostId == post.id,
+                  onTap: () => _handlePostTap(post),
+                  onLike: _handleLike,
+                  onRepost: _handleRepost,
+                  onReply: _handleReply,
+                  onShare: _handleShare,
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Fixed search bar at top
+  Widget _buildSearchBar() {
+    return Container(
+      color: SyntrakColors.surface,
+      padding: const EdgeInsets.fromLTRB(
+        SyntrakSpacing.md,
+        SyntrakSpacing.md,
+        SyntrakSpacing.md,
+        SyntrakSpacing.sm,
+      ),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          color: _isSearchFocused
+              ? SyntrakColors.surface
+              : SyntrakColors.surfaceVariant,
+          borderRadius: BorderRadius.circular(SyntrakRadius.round),
+          border: Border.all(
+            color: _isSearchFocused
+                ? SyntrakColors.primary
+                : Colors.transparent,
+            width: 2,
+          ),
+          boxShadow: _isSearchFocused
+              ? [
+                  BoxShadow(
+                    color: SyntrakColors.primary.withAlpha(30),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: TextField(
+          controller: _searchController,
+          focusNode: _searchFocusNode,
+          onChanged: (_) => _filterPosts(),
+          style: SyntrakTypography.bodyMedium.copyWith(
+            color: SyntrakColors.textPrimary,
+          ),
+          decoration: InputDecoration(
+            hintText: 'Search posts, users...',
+            hintStyle: SyntrakTypography.bodyMedium.copyWith(
+              color: SyntrakColors.textTertiary,
+            ),
+            prefixIcon: Icon(
+              Icons.search,
+              color: _isSearchFocused
+                  ? SyntrakColors.primary
+                  : SyntrakColors.textTertiary,
+            ),
+            suffixIcon: _searchController.text.isNotEmpty
+                ? IconButton(
+                    icon: Icon(
+                      Icons.close,
+                      color: SyntrakColors.textSecondary,
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      _searchController.clear();
+                      _filterPosts();
+                    },
+                  )
+                : null,
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: SyntrakSpacing.md,
+              vertical: 14,
+            ),
+          ),
+        ),
       ),
     );
   }
