@@ -245,47 +245,49 @@ class _ThreadsTabState extends State<ThreadsTab> {
       );
     }
 
-    return Scaffold(
-      backgroundColor: SyntrakColors.background,
-      body: Column(
-        children: [
-          // Search bar 
-          Material(
-            color: SyntrakColors.surface,
-            elevation: 1,
-            child: _buildSearchBar(),
+    return NestedScrollView(
+      controller: _scrollController,
+      headerSliverBuilder: (context, innerBoxIsScrolled) {
+        return [
+          // Pinned search bar - stays fixed at top
+          SliverAppBar(
+            pinned: true,
+            floating: false,
+            automaticallyImplyLeading: false,
+            backgroundColor: SyntrakColors.surface,
+            surfaceTintColor: Colors.transparent,
+            elevation: innerBoxIsScrolled ? 2 : 0,
+            shadowColor: Colors.black26,
+            toolbarHeight: 72,
+            flexibleSpace: _buildSearchBar(),
           ),
-          // Posts list 
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _handleRefresh,
-              color: SyntrakColors.primary,
-              child: ListView.builder(
-                controller: _scrollController,
-                padding: const EdgeInsets.only(top: SyntrakSpacing.sm),
-                itemCount: _filteredPosts.length + 1,
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    return CompactComposer(
-                      onPost: _handlePost,
-                      maxCharacters: 280,
-                    );
-                  }
-                  final post = _filteredPosts[index - 1];
-                  return MessageCard(
-                    post: post,
-                    isExpanded: _expandedPostId == post.id,
-                    onTap: () => _handlePostTap(post),
-                    onLike: _handleLike,
-                    onRepost: _handleRepost,
-                    onReply: _handleReply,
-                    onShare: _handleShare,
-                  );
-                },
-              ),
-            ),
-          ),
-        ],
+        ];
+      },
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        color: SyntrakColors.primary,
+        child: ListView.builder(
+          padding: const EdgeInsets.only(top: SyntrakSpacing.sm),
+          itemCount: _filteredPosts.length + 1,
+          itemBuilder: (context, index) {
+            if (index == 0) {
+              return CompactComposer(
+                onPost: _handlePost,
+                maxCharacters: 280,
+              );
+            }
+            final post = _filteredPosts[index - 1];
+            return MessageCard(
+              post: post,
+              isExpanded: _expandedPostId == post.id,
+              onTap: () => _handlePostTap(post),
+              onLike: _handleLike,
+              onRepost: _handleRepost,
+              onReply: _handleReply,
+              onShare: _handleShare,
+            );
+          },
+        ),
       ),
     );
   }
