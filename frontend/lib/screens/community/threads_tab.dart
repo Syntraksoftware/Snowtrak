@@ -294,7 +294,8 @@ class _ThreadsTabState extends State<ThreadsTab> {
 
   // Fixed search bar at top
   Widget _buildSearchBar() {
-    return Padding(
+    return Container(
+      color: SyntrakColors.surface,
       padding: const EdgeInsets.fromLTRB(
         SyntrakSpacing.md,
         SyntrakSpacing.md,
