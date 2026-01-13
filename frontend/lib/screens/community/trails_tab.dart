@@ -205,37 +205,31 @@ class _TrailsTabState extends State<TrailsTab> {
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadTrails,
-      color: SyntrakColors.primary,
-      child: CustomScrollView(
-        slivers: [
-          // Search section - scrolls with content
-          SliverToBoxAdapter(
-            child: _buildSearchSection(),
-          ),
-          // Results header - scrolls with content
-          SliverToBoxAdapter(
-            child: _buildResultsHeader(),
-          ),
-          // Trail list
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  return _TrailCard(trail: _filteredTrails[index]);
-                },
-                childCount: _filteredTrails.length,
-              ),
+    return Column(
+      children: [
+
+        _buildSearchSection(),
+
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _loadTrails,
+            color: SyntrakColors.primary,
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+              // +1 for the results header at index 0
+              itemCount: _filteredTrails.length + 1,
+              itemBuilder: (context, index) {
+                // First item is the results header
+                if (index == 0) {
+                  return _buildResultsHeader();
+                }
+                // Rest are trail cards
+                return _TrailCard(trail: _filteredTrails[index - 1]);
+              },
             ),
           ),
-          // Bottom padding
-          const SliverToBoxAdapter(
-            child: SizedBox(height: SyntrakSpacing.lg),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -541,9 +535,9 @@ class _TrailsTabState extends State<TrailsTab> {
 
   Widget _buildResultsHeader() {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SyntrakSpacing.md,
-        vertical: SyntrakSpacing.sm,
+      padding: const EdgeInsets.only(
+        top: SyntrakSpacing.sm,
+        bottom: SyntrakSpacing.sm,
       ),
       child: Row(
         children: [
