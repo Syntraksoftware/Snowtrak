@@ -4,19 +4,14 @@ Supabase client wrapper for community feature operations.
 This module provides access to the unified SupabaseClient from main-backend,
 configured with community-backend's settings.
 """
-import sys
-from pathlib import Path
-
-# Add main-backend to Python path so we can import the unified client
-main_backend_path = Path(__file__).parent.parent.parent / "main-backend"
-if str(main_backend_path) not in sys.path:
-    sys.path.insert(0, str(main_backend_path))
-
-from app.core.supabase import SupabaseClient
+import logging
+from typing import Any, Dict, List, Optional
 from config import get_config
+from supabase import create_client, Client
 
 # Global client instance - initialized at app startup
 _community_client: Optional["CommunitySupabaseClient"] = None
+logger = logging.getLogger(__name__)
 
 
 def initialize_community_client() -> "CommunitySupabaseClient":
@@ -431,6 +426,3 @@ class CommunitySupabaseClient:
         except Exception as exc:
             logger.exception(f"Failed to delete comment {comment_id}: {exc}")
             return False
-# For backward compatibility, alias CommunitySupabaseClient to SupabaseClient
-# This allows existing code to continue working
-CommunitySupabaseClient = SupabaseClient

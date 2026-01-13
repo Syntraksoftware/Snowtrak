@@ -73,7 +73,15 @@ Run the SQL from `../backend/app/community/SUPABASE_SCHEMA.md` in your Supabase 
 ### 4. Run the Server
 
 ```bash
-python app.py
+# Check if Python 3.12 is available
+python3.12 --version
+
+# If yes, use it:
+python3.12 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip setuptools wheel
+pip install -r requirements.txt
+./run.sh
 ```
 
 The server will start on `http://localhost:5001`
