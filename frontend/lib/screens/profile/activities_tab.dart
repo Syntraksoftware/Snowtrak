@@ -319,52 +319,47 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
   Widget _buildSearchBar() {
     return Container(
       padding: const EdgeInsets.fromLTRB(
+        SyntrakSpacing.lg,
         SyntrakSpacing.md,
-        SyntrakSpacing.md,
-        SyntrakSpacing.md,
+        SyntrakSpacing.lg,
         SyntrakSpacing.md,
       ),
-      decoration: BoxDecoration(
-        color: SyntrakColors.background,
-      ),
-      child: TextField(
-        controller: _searchController,
-        decoration: InputDecoration(
-          hintText: 'Search and filter your activities',
-          hintStyle: SyntrakTypography.bodySmall.copyWith(
-            color: SyntrakColors.textTertiary.withOpacity(0.6),
-            fontSize: 13,
+      color: SyntrakColors.background,
+      child: Container(
+        height: 44,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: SyntrakColors.textTertiary.withOpacity(0.3),
+            width: 1,
           ),
-          prefixIcon: Icon(
-            Icons.search,
-            color: SyntrakColors.textTertiary.withOpacity(0.6),
-            size: 18,
-          ),
-          filled: true,
-          fillColor: SyntrakColors.surfaceVariant.withOpacity(0.3),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(SyntrakRadius.xl),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(SyntrakRadius.xl),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(SyntrakRadius.xl),
-            borderSide: BorderSide(
-              color: SyntrakColors.primary.withOpacity(0.3),
-              width: 1,
+        ),
+        child: TextField(
+          controller: _searchController,
+          decoration: InputDecoration(
+            hintText: '',
+            suffixIcon: Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Icon(
+                Icons.search,
+                color: SyntrakColors.textTertiary,
+                size: 22,
+              ),
+            ),
+            suffixIconConstraints: const BoxConstraints(
+              minWidth: 40,
+              minHeight: 40,
+            ),
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: SyntrakSpacing.md,
+              vertical: 12,
             ),
           ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: SyntrakSpacing.md,
-            vertical: SyntrakSpacing.sm,
+          style: SyntrakTypography.bodyMedium.copyWith(
+            color: SyntrakColors.textPrimary,
           ),
-          isDense: true,
-        ),
-        style: SyntrakTypography.bodySmall.copyWith(
-          fontSize: 13,
         ),
       ),
     );
