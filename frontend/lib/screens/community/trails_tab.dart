@@ -243,24 +243,15 @@ class _TrailsTabState extends State<TrailsTab> {
     );
   }
 
-
+  // Search bar - FIXED at top
   Widget _buildSearchBar() {
     return Container(
-      decoration: BoxDecoration(
-        color: SyntrakColors.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      color: SyntrakColors.surface,
       padding: const EdgeInsets.fromLTRB(
         SyntrakSpacing.md,
         SyntrakSpacing.md,
         SyntrakSpacing.md,
-        SyntrakSpacing.md,
+        0, // No bottom padding - seamless transition
       ),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -326,25 +317,27 @@ class _TrailsTabState extends State<TrailsTab> {
     );
   }
 
-  // Filter chips - SCROLLS with list
+  // Filter chips - SCROLLS with list (seamless - no background)
   Widget _buildFilterChips() {
-    return Padding(
-      padding: const EdgeInsets.only(top: SyntrakSpacing.sm),
-      child: SizedBox(
-        height: 44,
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
-          children: [
-            _buildDifficultyChip(),
-            const SizedBox(width: SyntrakSpacing.sm),
-            _buildCountryChip(),
-            if (_selectedDifficulty != null || _selectedCountry != null) ...[
-              const SizedBox(width: SyntrakSpacing.sm),
-              _buildClearFiltersChip(),
-            ],
-          ],
+    return SizedBox(
+      height: 52, // Slightly taller to include top padding
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(
+          SyntrakSpacing.md,
+          SyntrakSpacing.sm, // Top padding for spacing from search bar
+          SyntrakSpacing.md,
+          SyntrakSpacing.sm, // Bottom padding before results
         ),
+        children: [
+          _buildDifficultyChip(),
+          const SizedBox(width: SyntrakSpacing.sm),
+          _buildCountryChip(),
+          if (_selectedDifficulty != null || _selectedCountry != null) ...[
+            const SizedBox(width: SyntrakSpacing.sm),
+            _buildClearFiltersChip(),
+          ],
+        ],
       ),
     );
   }
