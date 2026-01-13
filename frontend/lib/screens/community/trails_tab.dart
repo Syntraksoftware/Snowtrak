@@ -251,7 +251,7 @@ class _TrailsTabState extends State<TrailsTab> {
         SyntrakSpacing.md,
         SyntrakSpacing.md,
         SyntrakSpacing.md,
-        0, // No bottom padding - seamless transition
+        SyntrakSpacing.sm,
       ),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -317,26 +317,31 @@ class _TrailsTabState extends State<TrailsTab> {
     );
   }
 
-  // Filter chips - SCROLLS with list (seamless - no background)
+  // Filter chips - SCROLLS with list
   Widget _buildFilterChips() {
-    return SizedBox(
-      height: 52, // Slightly taller to include top padding
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(
-          SyntrakSpacing.md,
-          SyntrakSpacing.sm, // Top padding for spacing from search bar
-          SyntrakSpacing.md,
-          SyntrakSpacing.sm, // Bottom padding before results
-        ),
+    return Container(
+      color: SyntrakColors.surface,
+      child: Column(
         children: [
-          _buildDifficultyChip(),
-          const SizedBox(width: SyntrakSpacing.sm),
-          _buildCountryChip(),
-          if (_selectedDifficulty != null || _selectedCountry != null) ...[
-            const SizedBox(width: SyntrakSpacing.sm),
-            _buildClearFiltersChip(),
-          ],
+          SizedBox(
+            height: 44,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+              children: [
+                _buildDifficultyChip(),
+                const SizedBox(width: SyntrakSpacing.sm),
+                _buildCountryChip(),
+                if (_selectedDifficulty != null ||
+                    _selectedCountry != null) ...[
+                  const SizedBox(width: SyntrakSpacing.sm),
+                  _buildClearFiltersChip(),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: SyntrakSpacing.sm),
         ],
       ),
     );

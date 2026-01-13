@@ -98,4 +98,3 @@ frontend/.env
 *.env
 local.properties
 frontend/android/local.properties
-
