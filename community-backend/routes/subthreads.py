@@ -1,79 +1,151 @@
 """Subthread routes."""
-from flask import Blueprint, request, jsonify
-from middleware.auth import token_required, optional_token
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from typing import Optional, List
+from pydantic import BaseModel
+import logging
+
+from middleware.auth import get_current_user, get_optional_user
 from services.supabase_client import get_community_client
 
-subthreads_bp = Blueprint("subthreads", __name__)
+logger = logging.getLogger(__name__)
+router = APIRouter()
 
 
-@subthreads_bp.route("", methods=["GET"])
-def list_subthreads():
+# Pydantic models
+class SubthreadCreate(BaseModel):
+    """Schema for creating a subthread."""
+    name: str
+    description: Optional[str] = None
+
+
+class SubthreadResponse(BaseModel):
+    """Schema for subthread response."""
+    id: str
+    name: str
+    description: Optional[str] = None
+    created_at: str
+
+
+class SubthreadsListResponse(BaseModel):
+    """Schema for subthreads list response."""
+    subthreads: List[SubthreadResponse]
+    total: int
+
+
+@router.get("", response_model=SubthreadsListResponse)
+async def list_subthreads(limit: int = Query(50, ge=1, le=200)):
     """List all subthreads."""
     try:
-        limit = request.args.get("limit", 50, type=int)
         client = get_community_client()
         subthreads = client.list_subthreads(limit=limit)
         
-        return jsonify({
-            "subthreads": subthreads,
-            "total": len(subthreads)
-        }), 200
+        # Convert dicts to Pydantic models
+        subthread_models = [SubthreadResponse(**sub) for sub in subthreads]
+        
+        return SubthreadsListResponse(
+            subthreads=subthread_models,
+            total=len(subthread_models)
+        )
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Error listing subthreads: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
 
 
-@subthreads_bp.route("", methods=["POST"])
-@token_required
-def create_subthread(user_id):
+@router.post("", response_model=SubthreadResponse, status_code=status.HTTP_201_CREATED)
+async def create_subthread(
+    data: SubthreadCreate,
+    user_id: str = Depends(get_current_user)
+):
     """Create a new subthread (authenticated)."""
     try:
-        data = request.get_json()
-        
-        if not data or "name" not in data:
-            return jsonify({"error": "name is required"}), 400
-        
-        name = data["name"]
-        description = data.get("description")
-        
         client = get_community_client()
-        result = client.create_subthread(name=name, description=description)
+        result = client.create_subthread(
+            name=data.name,
+            description=data.description
+        )
         
         if not result:
-            return jsonify({"error": "Failed to create subthread"}), 500
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create subthread"
+            )
         
-        return jsonify(result), 201
+        return result
+    except HTTPException:
+        raise
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Error creating subthread: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
 
 
-@subthreads_bp.route("/<subthread_id>", methods=["GET"])
-def get_subthread(subthread_id):
+@router.get("/{subthread_id}", response_model=SubthreadResponse)
+async def get_subthread(subthread_id: str):
     """Get subthread by ID."""
     try:
         client = get_community_client()
         subthread = client.get_subthread_by_id(subthread_id)
         
         if not subthread:
-            return jsonify({"error": "Subthread not found"}), 404
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Subthread not found"
+            )
         
-        return jsonify(subthread), 200
+        return subthread
+    except HTTPException:
+        raise
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Error getting subthread: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
 
 
-@subthreads_bp.route("/<subthread_id>/posts", methods=["GET"])
-def list_subthread_posts(subthread_id):
+class PostResponse(BaseModel):
+    """Schema for post in subthread list."""
+    post_id: str
+    user_id: str
+    subthread_id: str
+    title: str
+    content: str
+    created_at: str
+    author_email: Optional[str] = None
+    author_first_name: Optional[str] = None
+    author_last_name: Optional[str] = None
+
+
+class PostsListResponse(BaseModel):
+    """Schema for posts list response."""
+    posts: List[PostResponse]
+    total: int
+    page: int
+    page_size: int
+
+
+@router.get("/{subthread_id}/posts", response_model=PostsListResponse)
+async def list_subthread_posts(
+    subthread_id: str,
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0)
+):
     """List posts in a subthread."""
     try:
-        limit = request.args.get("limit", 20, type=int)
-        offset = request.args.get("offset", 0, type=int)
-        
         client = get_community_client()
         
         # Verify subthread exists
         subthread = client.get_subthread_by_id(subthread_id)
         if not subthread:
-            return jsonify({"error": "Subthread not found"}), 404
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Subthread not found"
+            )
         
         posts = client.list_posts_by_subthread(
             subthread_id=subthread_id,
@@ -82,34 +154,60 @@ def list_subthread_posts(subthread_id):
         )
         total = client.count_posts_by_subthread(subthread_id)
         
-        return jsonify({
-            "posts": posts,
-            "total": total,
-            "page": offset // limit + 1,
-            "page_size": limit
-        }), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        # Convert dicts to Pydantic models
+        post_models = [PostResponse(**post) for post in posts]
+        
+        return PostsListResponse(
+            posts=post_models,
+            total=total,
+            page=offset // limit + 1,
+            page_size=limit
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error(f"Error listing subthread posts")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Server Error"
+        )
 
 
-@subthreads_bp.route("/<subthread_id>", methods=["DELETE"])
-@token_required
-def delete_subthread(user_id, subthread_id):
-    """Delete a subthread and all its posts/comments (authenticated, admin only in production)."""
+class DeleteResponse(BaseModel):
+    """Schema for delete response."""
+    message: str
+    deleted_subthread_id: Optional[str] = None
+
+
+@router.delete("/{subthread_id}", response_model=DeleteResponse)
+async def delete_subthread(
+    subthread_id: str,
+    user_id: str = Depends(get_current_user)
+):
+    """Delete a subthread and all its posts/comments (authenticated)."""
     try:
         client = get_community_client()
         
-        # Note: In production, add admin/moderator check here
-        # For now, any authenticated user can delete
+        # TODO: Implement admin/moderator check before production  
+        # TEMPORARY: Block all deletions until authorization is implemented  
         
         success = client.delete_subthread(subthread_id)
         
         if not success:
-            return jsonify({"error": "Subthread not found"}), 404
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Subthread not found"
+            )
         
-        return jsonify({
-            "message": "Subthread, posts, and comments deleted successfully",
-            "deleted_subthread_id": subthread_id
-        }), 200
+        return DeleteResponse(
+            message="Subthread, posts, and comments deleted successfully",
+            deleted_subthread_id=subthread_id
+        )
+    except HTTPException:
+        raise
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Error deleting subthread")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Server Error"
+        )
