@@ -207,24 +207,34 @@ class _TrailsTabState extends State<TrailsTab> {
 
     return Column(
       children: [
-
-        _buildSearchSection(),
-
+        _buildSearchBar(),
         Expanded(
           child: RefreshIndicator(
             onRefresh: _loadTrails,
             color: SyntrakColors.primary,
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
-              // +1 for the results header at index 0
-              itemCount: _filteredTrails.length + 1,
+              padding: EdgeInsets.zero,
+              // +2 for filter chips and results header
+              itemCount: _filteredTrails.length + 2,
               itemBuilder: (context, index) {
-                // First item is the results header
+                // First item: filter chips
                 if (index == 0) {
-                  return _buildResultsHeader();
+                  return _buildFilterChips();
+                }
+                // Second item: results header
+                if (index == 1) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: SyntrakSpacing.md),
+                    child: _buildResultsHeader(),
+                  );
                 }
                 // Rest are trail cards
-                return _TrailCard(trail: _filteredTrails[index - 1]);
+                return Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+                  child: _TrailCard(trail: _filteredTrails[index - 2]),
+                );
               },
             ),
           ),
@@ -233,95 +243,97 @@ class _TrailsTabState extends State<TrailsTab> {
     );
   }
 
-  Widget _buildSearchSection() {
+  // Search bar - FIXED at top
+  Widget _buildSearchBar() {
+    return Container(
+      color: SyntrakColors.surface,
+      padding: const EdgeInsets.fromLTRB(
+        SyntrakSpacing.md,
+        SyntrakSpacing.md,
+        SyntrakSpacing.md,
+        SyntrakSpacing.sm,
+      ),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          color: _isSearchFocused
+              ? SyntrakColors.surface
+              : SyntrakColors.surfaceVariant,
+          borderRadius: BorderRadius.circular(SyntrakRadius.round),
+          border: Border.all(
+            color: _isSearchFocused
+                ? SyntrakColors.primary
+                : Colors.transparent,
+            width: 2,
+          ),
+          boxShadow: _isSearchFocused
+              ? [
+                  BoxShadow(
+                    color: SyntrakColors.primary.withAlpha(30),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: TextField(
+          controller: _searchController,
+          focusNode: _searchFocusNode,
+          onChanged: (_) => _filterTrails(),
+          style: SyntrakTypography.bodyMedium.copyWith(
+            color: SyntrakColors.textPrimary,
+          ),
+          decoration: InputDecoration(
+            hintText: 'Search trails, resorts...',
+            hintStyle: SyntrakTypography.bodyMedium.copyWith(
+              color: SyntrakColors.textTertiary,
+            ),
+            prefixIcon: Icon(
+              Icons.search,
+              color: _isSearchFocused
+                  ? SyntrakColors.primary
+                  : SyntrakColors.textTertiary,
+            ),
+            suffixIcon: _searchController.text.isNotEmpty
+                ? IconButton(
+                    icon: Icon(
+                      Icons.close,
+                      color: SyntrakColors.textSecondary,
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      _searchController.clear();
+                      _filterTrails();
+                    },
+                  )
+                : null,
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: SyntrakSpacing.md,
+              vertical: 14,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Filter chips - SCROLLS with list
+  Widget _buildFilterChips() {
     return Container(
       color: SyntrakColors.surface,
       child: Column(
         children: [
-          // Strava-style search bar
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              SyntrakSpacing.md,
-              SyntrakSpacing.md,
-              SyntrakSpacing.md,
-              SyntrakSpacing.sm,
-            ),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              decoration: BoxDecoration(
-                color: _isSearchFocused
-                    ? SyntrakColors.surface
-                    : SyntrakColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(SyntrakRadius.round),
-                border: Border.all(
-                  color: _isSearchFocused
-                      ? SyntrakColors.primary
-                      : Colors.transparent,
-                  width: 2,
-                ),
-                boxShadow: _isSearchFocused
-                    ? [
-                        BoxShadow(
-                          color: SyntrakColors.primary.withAlpha(30),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ]
-                    : null,
-              ),
-              child: TextField(
-                controller: _searchController,
-                focusNode: _searchFocusNode,
-                onChanged: (_) => _filterTrails(),
-                style: SyntrakTypography.bodyMedium.copyWith(
-                  color: SyntrakColors.textPrimary,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Search trails, resorts...',
-                  hintStyle: SyntrakTypography.bodyMedium.copyWith(
-                    color: SyntrakColors.textTertiary,
-                  ),
-                  prefixIcon: Icon(
-                    Icons.search,
-                    color: _isSearchFocused
-                        ? SyntrakColors.primary
-                        : SyntrakColors.textTertiary,
-                  ),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: Icon(
-                            Icons.close,
-                            color: SyntrakColors.textSecondary,
-                            size: 20,
-                          ),
-                          onPressed: () {
-                            _searchController.clear();
-                            _filterTrails();
-                          },
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: SyntrakSpacing.md,
-                    vertical: 14,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          // Filter chips - horizontal scroll
           SizedBox(
             height: 44,
             child: ListView(
               scrollDirection: Axis.horizontal,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+              padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
               children: [
                 _buildDifficultyChip(),
                 const SizedBox(width: SyntrakSpacing.sm),
                 _buildCountryChip(),
-                if (_selectedDifficulty != null ||
-                    _selectedCountry != null) ...[
+                if (_selectedDifficulty != null || _selectedCountry != null) ...[
                   const SizedBox(width: SyntrakSpacing.sm),
                   _buildClearFiltersChip(),
                 ],
