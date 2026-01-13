@@ -30,76 +30,64 @@ class _CommunityScreenState extends State<CommunityScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: SyntrakColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header with title
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: SyntrakSpacing.md,
-                vertical: SyntrakSpacing.sm,
-              ),
-              color: SyntrakColors.surface,
-              child: Row(
-                children: [
-                  Text(
-                    'Community',
-                    style: SyntrakTypography.headlineLarge.copyWith(
-                      color: SyntrakColors.textPrimary,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.search),
-                    onPressed: () {
-                      // TODO: Implement search
-                    },
-                  ),
-                ],
-              ),
+      appBar: AppBar(
+        title: const Text('Community'),
+        elevation: 0,
+        backgroundColor: SyntrakColors.surface,
+        foregroundColor: SyntrakColors.textPrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () {
+              // TODO: Implement notifications
+            },
+            tooltip: 'Notifications',
+          ),
+        ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(52),
+          child: Container(
+            decoration: BoxDecoration(
+              color: SyntrakColors.background,
             ),
-            // Tab bar
-            Container(
-              color: SyntrakColors.surface,
-              child: TabBar(
-                controller: _tabController,
-                labelColor: SyntrakColors.primary,
-                unselectedLabelColor: SyntrakColors.textSecondary,
-                indicatorColor: SyntrakColors.primary,
-                indicatorWeight: 3,
-                labelStyle: SyntrakTypography.labelLarge.copyWith(
-                  fontWeight: FontWeight.w600,
+            child: TabBar(
+              controller: _tabController,
+              indicator: BoxDecoration(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(SyntrakRadius.md),
+                  topRight: Radius.circular(SyntrakRadius.md),
                 ),
-                unselectedLabelStyle: SyntrakTypography.labelLarge,
-                tabs: const [
-                  Tab(
-                    icon: Icon(Icons.forum_outlined),
-                    text: 'Threads',
-                  ),
-                  Tab(
-                    icon: Icon(Icons.downhill_skiing),
-                    text: 'Trails',
-                  ),
-                ],
+                color: SyntrakColors.primary.withAlpha(25),
               ),
-            ),
-            // Divider
-            Container(
-              height: 1,
-              color: SyntrakColors.divider,
-            ),
-            // Tab content
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: const [
-                  ThreadsTab(),
-                  TrailsTab(),
-                ],
+              indicatorSize: TabBarIndicatorSize.tab,
+              indicatorPadding: const EdgeInsets.symmetric(
+                horizontal: SyntrakSpacing.sm,
+                vertical: SyntrakSpacing.xs,
               ),
+              labelColor: SyntrakColors.primary,
+              unselectedLabelColor: SyntrakColors.textTertiary,
+              labelStyle: SyntrakTypography.labelLarge.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+              ),
+              unselectedLabelStyle: SyntrakTypography.labelLarge.copyWith(
+                fontSize: 15,
+              ),
+              dividerColor: Colors.transparent,
+              tabs: const [
+                Tab(text: 'Threads'),
+                Tab(text: 'Trails'),
+              ],
             ),
-          ],
+          ),
         ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: const [
+          ThreadsTab(),
+          TrailsTab(),
+        ],
       ),
     );
   }

@@ -11,9 +11,11 @@ class TrailsTab extends StatefulWidget {
 
 class _TrailsTabState extends State<TrailsTab> {
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   List<SkiTrail> _trails = [];
   List<SkiTrail> _filteredTrails = [];
   bool _isLoading = false;
+  bool _isSearchFocused = false;
   TrailDifficulty? _selectedDifficulty;
   String? _selectedCountry;
 
@@ -21,11 +23,17 @@ class _TrailsTabState extends State<TrailsTab> {
   void initState() {
     super.initState();
     _loadTrails();
+    _searchFocusNode.addListener(() {
+      setState(() {
+        _isSearchFocused = _searchFocusNode.hasFocus;
+      });
+    });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -192,103 +200,24 @@ class _TrailsTabState extends State<TrailsTab> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(SyntrakColors.primary),
-        ),
+      return const Center(
+        child: CircularProgressIndicator(),
       );
     }
 
     return Column(
       children: [
-        // Search and filters
-        Container(
-          padding: const EdgeInsets.all(SyntrakSpacing.md),
-          color: SyntrakColors.surface,
-          child: Column(
-            children: [
-              // Search bar
-              TextField(
-                controller: _searchController,
-                onChanged: (_) => _filterTrails(),
-                decoration: InputDecoration(
-                  hintText: 'Search trails, resorts, or countries...',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _searchController.clear();
-                            _filterTrails();
-                          },
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: SyntrakColors.surfaceVariant,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: SyntrakSpacing.md,
-                    vertical: SyntrakSpacing.sm,
-                  ),
-                ),
-              ),
-              const SizedBox(height: SyntrakSpacing.sm),
-              // Filter chips
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _buildDifficultyFilter(),
-                    const SizedBox(width: SyntrakSpacing.sm),
-                    _buildCountryFilter(),
-                    if (_selectedDifficulty != null ||
-                        _selectedCountry != null) ...[
-                      const SizedBox(width: SyntrakSpacing.sm),
-                      ActionChip(
-                        label: const Text('Clear Filters'),
-                        onPressed: () {
-                          setState(() {
-                            _selectedDifficulty = null;
-                            _selectedCountry = null;
-                          });
-                          _filterTrails();
-                        },
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        // Results count
-        Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: SyntrakSpacing.md,
-            vertical: SyntrakSpacing.sm,
-          ),
-          child: Row(
-            children: [
-              Text(
-                '${_filteredTrails.length} trails found',
-                style: SyntrakTypography.labelMedium.copyWith(
-                  color: SyntrakColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
+        // Strava-style search bar
+        _buildSearchSection(),
+        // Results count and sort
+        _buildResultsHeader(),
         // Trail list
         Expanded(
           child: RefreshIndicator(
             onRefresh: _loadTrails,
             color: SyntrakColors.primary,
             child: ListView.builder(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+              padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
               itemCount: _filteredTrails.length,
               itemBuilder: (context, index) {
                 return _TrailCard(trail: _filteredTrails[index]);
@@ -300,100 +229,339 @@ class _TrailsTabState extends State<TrailsTab> {
     );
   }
 
-  Widget _buildDifficultyFilter() {
-    return PopupMenuButton<TrailDifficulty?>(
-      onSelected: (value) {
-        setState(() {
-          _selectedDifficulty = value;
-        });
-        _filterTrails();
-      },
-      itemBuilder: (context) => [
-        const PopupMenuItem(
-          value: null,
-          child: Text('All Difficulties'),
-        ),
-        ...TrailDifficulty.values.map(
-          (d) => PopupMenuItem(
-            value: d,
-            child: Row(
-              children: [
-                Container(
-                  width: 16,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: Color(d.color),
-                    shape: BoxShape.circle,
+  Widget _buildSearchSection() {
+    return Container(
+      color: SyntrakColors.surface,
+      child: Column(
+        children: [
+          // Strava-style search bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              SyntrakSpacing.md,
+              SyntrakSpacing.md,
+              SyntrakSpacing.md,
+              SyntrakSpacing.sm,
+            ),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              decoration: BoxDecoration(
+                color: _isSearchFocused
+                    ? SyntrakColors.surface
+                    : SyntrakColors.surfaceVariant,
+                borderRadius: BorderRadius.circular(SyntrakRadius.round),
+                border: Border.all(
+                  color: _isSearchFocused
+                      ? SyntrakColors.primary
+                      : Colors.transparent,
+                  width: 2,
+                ),
+                boxShadow: _isSearchFocused
+                    ? [
+                        BoxShadow(
+                          color: SyntrakColors.primary.withAlpha(30),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: TextField(
+                controller: _searchController,
+                focusNode: _searchFocusNode,
+                onChanged: (_) => _filterTrails(),
+                style: SyntrakTypography.bodyMedium.copyWith(
+                  color: SyntrakColors.textPrimary,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Search trails, resorts...',
+                  hintStyle: SyntrakTypography.bodyMedium.copyWith(
+                    color: SyntrakColors.textTertiary,
                   ),
-                  child: Center(
-                    child: Text(
-                      d.icon,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: d == TrailDifficulty.green
-                            ? Colors.white
-                            : Colors.white,
-                      ),
-                    ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: _isSearchFocused
+                        ? SyntrakColors.primary
+                        : SyntrakColors.textTertiary,
+                  ),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: Icon(
+                            Icons.close,
+                            color: SyntrakColors.textSecondary,
+                            size: 20,
+                          ),
+                          onPressed: () {
+                            _searchController.clear();
+                            _filterTrails();
+                          },
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: SyntrakSpacing.md,
+                    vertical: 14,
                   ),
                 ),
-                const SizedBox(width: 8),
-                Text(d.shortName),
+              ),
+            ),
+          ),
+          // Filter chips - horizontal scroll
+          SizedBox(
+            height: 44,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+              children: [
+                _buildDifficultyChip(),
+                const SizedBox(width: SyntrakSpacing.sm),
+                _buildCountryChip(),
+                if (_selectedDifficulty != null || _selectedCountry != null) ...[
+                  const SizedBox(width: SyntrakSpacing.sm),
+                  _buildClearFiltersChip(),
+                ],
               ],
             ),
           ),
-        ),
-      ],
-      child: Chip(
-        avatar: _selectedDifficulty != null
-            ? Container(
-                width: 20,
-                height: 20,
-                decoration: BoxDecoration(
-                  color: Color(_selectedDifficulty!.color),
-                  shape: BoxShape.circle,
-                ),
-              )
-            : const Icon(Icons.filter_list, size: 18),
-        label: Text(_selectedDifficulty?.shortName ?? 'Difficulty'),
-        backgroundColor: _selectedDifficulty != null
-            ? Color(_selectedDifficulty!.color).withAlpha(30)
-            : null,
+          const SizedBox(height: SyntrakSpacing.sm),
+        ],
       ),
     );
   }
 
-  Widget _buildCountryFilter() {
-    return PopupMenuButton<String?>(
-      onSelected: (value) {
+  Widget _buildDifficultyChip() {
+    final isSelected = _selectedDifficulty != null;
+    return FilterChip(
+      selected: isSelected,
+      showCheckmark: false,
+      avatar: isSelected
+          ? Container(
+              width: 14,
+              height: 14,
+              decoration: BoxDecoration(
+                color: Color(_selectedDifficulty!.color),
+                shape: BoxShape.circle,
+              ),
+            )
+          : Icon(
+              Icons.terrain,
+              size: 16,
+              color: SyntrakColors.textSecondary,
+            ),
+      label: Text(
+        isSelected ? _selectedDifficulty!.shortName : 'Difficulty',
+        style: SyntrakTypography.labelMedium.copyWith(
+          color: isSelected ? SyntrakColors.primary : SyntrakColors.textSecondary,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+        ),
+      ),
+      backgroundColor: SyntrakColors.surfaceVariant,
+      selectedColor: SyntrakColors.primary.withAlpha(25),
+      side: BorderSide(
+        color: isSelected ? SyntrakColors.primary : Colors.transparent,
+      ),
+      onSelected: (_) => _showDifficultyPicker(),
+    );
+  }
+
+  Widget _buildCountryChip() {
+    final isSelected = _selectedCountry != null;
+    return FilterChip(
+      selected: isSelected,
+      showCheckmark: false,
+      avatar: Icon(
+        Icons.public,
+        size: 16,
+        color: isSelected ? SyntrakColors.primary : SyntrakColors.textSecondary,
+      ),
+      label: Text(
+        isSelected ? _selectedCountry! : 'Country',
+        style: SyntrakTypography.labelMedium.copyWith(
+          color: isSelected ? SyntrakColors.primary : SyntrakColors.textSecondary,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+        ),
+      ),
+      backgroundColor: SyntrakColors.surfaceVariant,
+      selectedColor: SyntrakColors.primary.withAlpha(25),
+      side: BorderSide(
+        color: isSelected ? SyntrakColors.primary : Colors.transparent,
+      ),
+      onSelected: (_) => _showCountryPicker(),
+    );
+  }
+
+  Widget _buildClearFiltersChip() {
+    return ActionChip(
+      avatar: const Icon(Icons.close, size: 16),
+      label: const Text('Clear'),
+      onPressed: () {
         setState(() {
-          _selectedCountry = value;
+          _selectedDifficulty = null;
+          _selectedCountry = null;
         });
         _filterTrails();
       },
-      itemBuilder: (context) => [
-        const PopupMenuItem(
-          value: null,
-          child: Text('All Countries'),
+    );
+  }
+
+  void _showDifficultyPicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: SyntrakColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(SyntrakRadius.xl)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: SyntrakSpacing.md),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: SyntrakColors.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: SyntrakSpacing.md),
+            Text(
+              'Select Difficulty',
+              style: SyntrakTypography.headlineSmall,
+            ),
+            const SizedBox(height: SyntrakSpacing.md),
+            ListTile(
+              leading: const Icon(Icons.clear_all),
+              title: const Text('All Difficulties'),
+              selected: _selectedDifficulty == null,
+              onTap: () {
+                setState(() => _selectedDifficulty = null);
+                _filterTrails();
+                Navigator.pop(context);
+              },
+            ),
+            ...TrailDifficulty.values.map((d) => ListTile(
+                  leading: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: Color(d.color),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Center(
+                      child: Text(
+                        d.icon,
+                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                    ),
+                  ),
+                  title: Text(d.displayName),
+                  selected: _selectedDifficulty == d,
+                  onTap: () {
+                    setState(() => _selectedDifficulty = d);
+                    _filterTrails();
+                    Navigator.pop(context);
+                  },
+                )),
+            const SizedBox(height: SyntrakSpacing.lg),
+          ],
         ),
-        ..._countries.map(
-          (c) => PopupMenuItem(
-            value: c,
-            child: Text(c),
+      ),
+    );
+  }
+
+  void _showCountryPicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: SyntrakColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(SyntrakRadius.xl)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: SyntrakSpacing.md),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: SyntrakColors.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: SyntrakSpacing.md),
+            Text(
+              'Select Country',
+              style: SyntrakTypography.headlineSmall,
+            ),
+            const SizedBox(height: SyntrakSpacing.md),
+            ListTile(
+              leading: const Icon(Icons.public),
+              title: const Text('All Countries'),
+              selected: _selectedCountry == null,
+              onTap: () {
+                setState(() => _selectedCountry = null);
+                _filterTrails();
+                Navigator.pop(context);
+              },
+            ),
+            ..._countries.map((c) => ListTile(
+                  leading: const Icon(Icons.place),
+                  title: Text(c),
+                  selected: _selectedCountry == c,
+                  onTap: () {
+                    setState(() => _selectedCountry = c);
+                    _filterTrails();
+                    Navigator.pop(context);
+                  },
+                )),
+            const SizedBox(height: SyntrakSpacing.lg),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResultsHeader() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SyntrakSpacing.md,
+        vertical: SyntrakSpacing.sm,
+      ),
+      child: Row(
+        children: [
+          Text(
+            '${_filteredTrails.length} trails',
+            style: SyntrakTypography.labelLarge.copyWith(
+              color: SyntrakColors.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-      ],
-      child: Chip(
-        avatar: const Icon(Icons.public, size: 18),
-        label: Text(_selectedCountry ?? 'Country'),
-        backgroundColor: _selectedCountry != null
-            ? SyntrakColors.primaryLight.withAlpha(30)
-            : null,
+          const Spacer(),
+          // Sort button
+          TextButton.icon(
+            onPressed: () {
+              // TODO: Implement sort
+            },
+            icon: Icon(
+              Icons.sort,
+              size: 18,
+              color: SyntrakColors.textSecondary,
+            ),
+            label: Text(
+              'Sort',
+              style: SyntrakTypography.labelMedium.copyWith(
+                color: SyntrakColors.textSecondary,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
+// Enhanced Trail Card with Strava-like design
 class _TrailCard extends StatelessWidget {
   final SkiTrail trail;
 
@@ -401,150 +569,216 @@ class _TrailCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: SyntrakSpacing.md),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
+      decoration: BoxDecoration(
+        color: SyntrakColors.surface,
         borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-        side: BorderSide(color: SyntrakColors.divider),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(10),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: InkWell(
-        onTap: () {
-          // TODO: Navigate to trail detail screen
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Trail details for ${trail.name} coming soon!'),
-              duration: const Duration(seconds: 1),
-            ),
-          );
-        },
-        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-        child: Padding(
-          padding: const EdgeInsets.all(SyntrakSpacing.md),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Trail details for ${trail.name} coming soon!'),
+                duration: const Duration(seconds: 1),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(SyntrakRadius.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header row
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Difficulty indicator
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Color(trail.difficulty.color),
-                      borderRadius: BorderRadius.circular(SyntrakRadius.md),
-                    ),
-                    child: Center(
-                      child: Text(
-                        trail.difficulty.icon,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+              // Header with gradient background
+              Container(
+                padding: const EdgeInsets.all(SyntrakSpacing.md),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(trail.difficulty.color).withAlpha(40),
+                      Color(trail.difficulty.color).withAlpha(10),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  const SizedBox(width: SyntrakSpacing.md),
-                  // Trail name and resort
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          trail.name,
-                          style: SyntrakTypography.headlineSmall,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${trail.resort} • ${trail.country}',
-                          style: SyntrakTypography.bodySmall.copyWith(
-                            color: SyntrakColors.textSecondary,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(SyntrakRadius.lg),
+                    topRight: Radius.circular(SyntrakRadius.lg),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    // Difficulty badge
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Color(trail.difficulty.color),
+                        borderRadius: BorderRadius.circular(SyntrakRadius.md),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(trail.difficulty.color).withAlpha(80),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Rating
-                  if (trail.rating != null)
-                    Row(
-                      children: [
-                        const Icon(Icons.star, color: Colors.amber, size: 18),
-                        const SizedBox(width: 4),
-                        Text(
-                          trail.rating!.toStringAsFixed(1),
-                          style: SyntrakTypography.labelMedium.copyWith(
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          trail.difficulty.icon,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+                      ),
+                    ),
+                    const SizedBox(width: SyntrakSpacing.md),
+                    // Trail info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            trail.name,
+                            style: SyntrakTypography.headlineSmall.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.place,
+                                size: 14,
+                                color: SyntrakColors.textSecondary,
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  '${trail.resort}, ${trail.country}',
+                                  style: SyntrakTypography.bodySmall.copyWith(
+                                    color: SyntrakColors.textSecondary,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Rating
+                    if (trail.rating != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: SyntrakSpacing.sm,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.withAlpha(30),
+                          borderRadius: BorderRadius.circular(SyntrakRadius.sm),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.star, color: Colors.amber, size: 16),
+                            const SizedBox(width: 4),
+                            Text(
+                              trail.rating!.toStringAsFixed(1),
+                              style: SyntrakTypography.labelMedium.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.amber.shade800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              // Stats section
+              Padding(
+                padding: const EdgeInsets.all(SyntrakSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Stats row with icons
+                    Row(
+                      children: [
+                        _StatItem(
+                          icon: Icons.straighten,
+                          value: '${trail.lengthKm.toStringAsFixed(1)} km',
+                          label: 'Length',
+                        ),
+                        const SizedBox(width: SyntrakSpacing.lg),
+                        _StatItem(
+                          icon: Icons.trending_down,
+                          value: '${trail.elevationDropM} m',
+                          label: 'Drop',
+                        ),
+                        const Spacer(),
+                        // Badges
+                        if (trail.isGroomed)
+                          _Badge(
+                            icon: Icons.ac_unit,
+                            label: 'Groomed',
+                            color: SyntrakColors.info,
+                          ),
                       ],
                     ),
-                ],
-              ),
-              const SizedBox(height: SyntrakSpacing.md),
-              // Stats row
-              Row(
-                children: [
-                  _StatChip(
-                    icon: Icons.straighten,
-                    label: '${trail.lengthKm.toStringAsFixed(1)} km',
-                  ),
-                  const SizedBox(width: SyntrakSpacing.sm),
-                  _StatChip(
-                    icon: Icons.height,
-                    label: '${trail.elevationDropM} m drop',
-                  ),
-                  if (trail.isGroomed) ...[
-                    const SizedBox(width: SyntrakSpacing.sm),
-                    _StatChip(
-                      icon: Icons.ac_unit,
-                      label: 'Groomed',
-                    ),
-                  ],
-                ],
-              ),
-              // Description
-              if (trail.description != null) ...[
-                const SizedBox(height: SyntrakSpacing.sm),
-                Text(
-                  trail.description!,
-                  style: SyntrakTypography.bodySmall.copyWith(
-                    color: SyntrakColors.textSecondary,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-              // Features
-              if (trail.features != null && trail.features!.isNotEmpty) ...[
-                const SizedBox(height: SyntrakSpacing.sm),
-                Wrap(
-                  spacing: SyntrakSpacing.xs,
-                  runSpacing: SyntrakSpacing.xs,
-                  children: trail.features!
-                      .take(3)
-                      .map(
-                        (f) => Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: SyntrakSpacing.sm,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: SyntrakColors.surfaceVariant,
-                            borderRadius:
-                                BorderRadius.circular(SyntrakRadius.sm),
-                          ),
-                          child: Text(
-                            f,
-                            style: SyntrakTypography.labelSmall,
-                          ),
+                    // Description
+                    if (trail.description != null) ...[
+                      const SizedBox(height: SyntrakSpacing.md),
+                      Text(
+                        trail.description!,
+                        style: SyntrakTypography.bodySmall.copyWith(
+                          color: SyntrakColors.textSecondary,
+                          height: 1.4,
                         ),
-                      )
-                      .toList(),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    // Features tags
+                    if (trail.features != null && trail.features!.isNotEmpty) ...[
+                      const SizedBox(height: SyntrakSpacing.md),
+                      Wrap(
+                        spacing: SyntrakSpacing.xs,
+                        runSpacing: SyntrakSpacing.xs,
+                        children: trail.features!
+                            .take(4)
+                            .map((f) => Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: SyntrakColors.surfaceVariant,
+                                    borderRadius: BorderRadius.circular(SyntrakRadius.round),
+                                  ),
+                                  child: Text(
+                                    f,
+                                    style: SyntrakTypography.labelSmall.copyWith(
+                                      color: SyntrakColors.textSecondary,
+                                    ),
+                                  ),
+                                ))
+                            .toList(),
+                      ),
+                    ],
+                  ],
                 ),
-              ],
+              ),
             ],
           ),
         ),
@@ -553,32 +787,76 @@ class _TrailCard extends StatelessWidget {
   }
 }
 
-class _StatChip extends StatelessWidget {
+class _StatItem extends StatelessWidget {
   final IconData icon;
+  final String value;
   final String label;
 
-  const _StatChip({required this.icon, required this.label});
+  const _StatItem({
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: SyntrakColors.textTertiary),
+        const SizedBox(width: 6),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              value,
+              style: SyntrakTypography.labelLarge.copyWith(
+                fontWeight: FontWeight.w600,
+                color: SyntrakColors.textPrimary,
+              ),
+            ),
+            Text(
+              label,
+              style: SyntrakTypography.labelSmall.copyWith(
+                color: SyntrakColors.textTertiary,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _Badge extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  const _Badge({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SyntrakSpacing.sm,
-        vertical: 4,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: SyntrakColors.surfaceVariant,
+        color: color.withAlpha(25),
         borderRadius: BorderRadius.circular(SyntrakRadius.sm),
+        border: Border.all(color: color.withAlpha(50)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: SyntrakColors.textSecondary),
+          Icon(icon, size: 14, color: color),
           const SizedBox(width: 4),
           Text(
             label,
             style: SyntrakTypography.labelSmall.copyWith(
-              color: SyntrakColors.textSecondary,
+              color: color,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
