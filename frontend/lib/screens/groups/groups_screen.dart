@@ -80,7 +80,7 @@ class _GroupsScreenState extends State<GroupsScreen>
               ),
               dividerColor: Colors.transparent,
               tabs: const [
-                Tab(text: 'Active'),
+                Tab(text: 'Activity'),
                 Tab(text: 'Challenges'),
                 Tab(text: 'Clubs'),
               ],
