@@ -287,7 +287,8 @@ class _TrailsTabState extends State<TrailsTab> {
             onRefresh: _loadTrails,
             color: SyntrakColors.primary,
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
               itemCount: _filteredTrails.length,
               itemBuilder: (context, index) {
                 return _TrailCard(trail: _filteredTrails[index]);
@@ -385,8 +386,9 @@ class _TrailsTabState extends State<TrailsTab> {
       child: Chip(
         avatar: const Icon(Icons.public, size: 18),
         label: Text(_selectedCountry ?? 'Country'),
-        backgroundColor:
-            _selectedCountry != null ? SyntrakColors.primaryLight.withAlpha(30) : null,
+        backgroundColor: _selectedCountry != null
+            ? SyntrakColors.primaryLight.withAlpha(30)
+            : null,
       ),
     );
   }
@@ -531,7 +533,8 @@ class _TrailCard extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             color: SyntrakColors.surfaceVariant,
-                            borderRadius: BorderRadius.circular(SyntrakRadius.sm),
+                            borderRadius:
+                                BorderRadius.circular(SyntrakRadius.sm),
                           ),
                           child: Text(
                             f,
