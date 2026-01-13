@@ -1,33 +1,73 @@
+import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:syntrak/models/location.dart' as app_location;
+import 'package:syntrak/services/gps_filter_service.dart';
 
 class LocationService {
   bool _isTracking = false;
   Position? _currentPosition;
   List<app_location.Location> _locations = [];
+  StreamSubscription<Position>? _positionSubscription;
+  Position? _lastAcceptedPosition;
 
   bool get isTracking => _isTracking;
   Position? get currentPosition => _currentPosition;
   List<app_location.Location> get locations => List.unmodifiable(_locations);
 
   Future<bool> checkPermissions() async {
-    final status = await Permission.location.status;
-    if (status.isGranted) {
+    // Check permission_handler status
+    final permissionStatus = await Permission.location.status;
+    print('🔍 [LocationService] Permission status: $permissionStatus');
+
+    // Also check Geolocator permission status for better compatibility
+    final geolocatorPermission = await Geolocator.checkPermission();
+    print('🔍 [LocationService] Geolocator permission: $geolocatorPermission');
+
+    // Check if location services are enabled
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    print('🔍 [LocationService] Location services enabled: $serviceEnabled');
+
+    // If permission is granted by either system, return true
+    if (permissionStatus.isGranted ||
+        geolocatorPermission == LocationPermission.always ||
+        geolocatorPermission == LocationPermission.whileInUse) {
+      if (!serviceEnabled) {
+        print(
+            '🔍 [LocationService] Permission granted but location services disabled');
+        return false;
+      }
+      print('🔍 [LocationService] Permission granted');
       return true;
     }
 
-    if (status.isDenied) {
+    // If denied, try to request
+    if (permissionStatus.isDenied ||
+        geolocatorPermission == LocationPermission.denied) {
+      print('🔍 [LocationService] Permission denied, requesting...');
       final result = await Permission.location.request();
-      return result.isGranted;
+      print('🔍 [LocationService] Permission request result: $result');
+
+      // Also check Geolocator after request
+      final newGeolocatorPermission = await Geolocator.checkPermission();
+      print(
+          '🔍 [LocationService] Geolocator permission after request: $newGeolocatorPermission');
+
+      return result.isGranted ||
+          newGeolocatorPermission == LocationPermission.always ||
+          newGeolocatorPermission == LocationPermission.whileInUse;
     }
 
-    if (status.isPermanentlyDenied) {
+    // If permanently denied, open settings
+    if (permissionStatus.isPermanentlyDenied ||
+        geolocatorPermission == LocationPermission.deniedForever) {
+      print('🔍 [LocationService] Permission permanently denied');
       // Open app settings
       await openAppSettings();
       return false;
     }
 
+    print('🔍 [LocationService] Permission check failed');
     return false;
   }
 
@@ -56,38 +96,126 @@ class LocationService {
       }
 
       print('🔍 [LocationService] Getting current position...');
+      try {
       _currentPosition = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.best,
-        timeLimit: const Duration(seconds: 10), // Add timeout
-      );
-      print('🔍 [LocationService] Position obtained: ${_currentPosition?.latitude}, ${_currentPosition?.longitude}');
+          timeLimit: const Duration(seconds: 30), // Increased timeout for emulator/slow GPS
+        );
+        print(
+            '🔍 [LocationService] Position obtained: ${_currentPosition?.latitude}, ${_currentPosition?.longitude}');
+        return _currentPosition;
+      } on TimeoutException catch (e) {
+        print('🔍 [LocationService] Timeout getting position: $e');
+        // Try with lower accuracy as fallback
+        print('🔍 [LocationService] Retrying with lower accuracy...');
+        try {
+          _currentPosition = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.medium,
+            timeLimit: const Duration(seconds: 15),
+          );
+          print(
+              '🔍 [LocationService] Position obtained with medium accuracy: ${_currentPosition?.latitude}, ${_currentPosition?.longitude}');
       return _currentPosition;
-    } catch (e) {
+        } catch (e2) {
+          print('🔍 [LocationService] Failed to get position even with lower accuracy: $e2');
+          return null;
+        }
+      } catch (e, stackTrace) {
       print('🔍 [LocationService] Error getting position: $e');
+        print('🔍 [LocationService] Stack trace: $stackTrace');
+        return null;
+      }
+    } catch (e, stackTrace) {
+      print('🔍 [LocationService] Outer error getting position: $e');
+      print('🔍 [LocationService] Stack trace: $stackTrace');
       return null;
     }
   }
 
-  Stream<Position> getPositionStream() {
-    return Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
+  /// Get a stream of GPS positions with optional filtering and smoothing
+  ///
+  /// [interval] - Sampling interval (default: 5 seconds)
+  /// [distanceFilter] - Minimum distance in meters before emitting new position (default: 5m)
+  /// [accuracyThreshold] - Maximum accuracy in meters to accept (default: 50m)
+  /// [maxSpeed] - Maximum speed in km/h to accept (default: 200 km/h)
+  /// [maxDistanceJump] - Maximum distance jump in meters (default: 500m)
+  /// [enableFiltering] - Whether to filter bad GPS points (default: true)
+  /// [enableSmoothing] - Whether to smooth GPS points (default: false)
+  Stream<Position> getPositionStream({
+    Duration interval = const Duration(seconds: 5),
+    double distanceFilter = 5.0,
+    double accuracyThreshold = GpsFilterService.defaultAccuracyThreshold,
+    double maxSpeed = GpsFilterService.defaultMaxSpeed,
+    double maxDistanceJump = GpsFilterService.defaultMaxDistanceJump,
+    bool enableFiltering = true,
+    bool enableSmoothing = false,
+  }) {
+    // Use a longer timeout for position updates (30 seconds) to handle slow GPS/emulator
+    final rawStream = Geolocator.getPositionStream(
+      locationSettings: LocationSettings(
         accuracy: LocationAccuracy.best,
-        distanceFilter: 5, // Update every 5 meters
+        distanceFilter: distanceFilter.toInt(),
+        timeLimit: const Duration(seconds: 30), // Increased from interval to handle slow GPS
       ),
+    );
+
+    if (enableFiltering) {
+      return GpsFilterService.filterPositionStream(
+        rawStream,
+        accuracyThreshold: accuracyThreshold,
+        maxSpeed: maxSpeed,
+        maxDistanceJump: maxDistanceJump,
+        enableSmoothing: enableSmoothing,
+      );
+    }
+
+    return rawStream;
+  }
+
+  /// Get a simple position stream (backward compatibility)
+  Stream<Position> getPositionStreamSimple() {
+    return getPositionStream(
+      enableFiltering: false,
+      enableSmoothing: false,
     );
   }
 
   void startTracking() {
     _isTracking = true;
     _locations.clear();
+    _lastAcceptedPosition = null;
   }
 
   void stopTracking() {
     _isTracking = false;
+    _positionSubscription?.cancel();
+    _positionSubscription = null;
   }
 
-  void addLocation(Position position) {
-    if (!_isTracking) return;
+  /// Add a location with optional filtering
+  ///
+  /// Returns true if the location was added, false if it was filtered out.
+  bool addLocation(
+    Position position, {
+    bool enableFiltering = true,
+    double accuracyThreshold = GpsFilterService.defaultAccuracyThreshold,
+    double maxSpeed = GpsFilterService.defaultMaxSpeed,
+    double maxDistanceJump = GpsFilterService.defaultMaxDistanceJump,
+  }) {
+    if (!_isTracking) return false;
+
+    // Apply filtering if enabled
+    if (enableFiltering) {
+      if (!GpsFilterService.shouldAcceptPoint(
+        position,
+        lastPoint: _lastAcceptedPosition,
+        accuracyThreshold: accuracyThreshold,
+        maxSpeed: maxSpeed,
+        maxDistanceJump: maxDistanceJump,
+      )) {
+        return false; // Point was filtered out
+      }
+    }
 
     final location = app_location.Location(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -101,10 +229,24 @@ class LocationService {
     );
 
     _locations.add(location);
+    _lastAcceptedPosition = position;
+    _currentPosition = position;
+    return true;
   }
 
   void clearLocations() {
     _locations.clear();
+    _lastAcceptedPosition = null;
+    _currentPosition = null;
+  }
+
+  /// Dispose resources
+  void dispose() {
+    _positionSubscription?.cancel();
+    _positionSubscription = null;
+    _locations.clear();
+    _lastAcceptedPosition = null;
+    _currentPosition = null;
   }
 
   double calculateDistance() {
@@ -143,4 +285,3 @@ class LocationService {
     return elevationGain;
   }
 }
-

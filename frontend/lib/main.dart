@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/providers/activity_provider.dart';
 import 'package:syntrak/screens/auth/login_screen.dart';
@@ -13,8 +14,16 @@ void main() {
   runApp(const SyntrakApp());
 }
 
-class SyntrakApp extends StatelessWidget {
+class SyntrakApp extends StatefulWidget {
   const SyntrakApp({super.key});
+
+  @override
+  State<SyntrakApp> createState() => _SyntrakAppState();
+}
+
+class _SyntrakAppState extends State<SyntrakApp> {
+  // Global key for Navigator to maintain state across rebuilds
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   Widget build(BuildContext context) {
@@ -73,41 +82,47 @@ class SyntrakApp extends StatelessWidget {
               previous ?? ActivityProvider(ApiService()),
         ),
       ],
-      child: MaterialApp(
-        title: 'Syntrak',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          primarySwatch: Colors.orange,
-          primaryColor: const Color(0xFFFF4500),
-          scaffoldBackgroundColor: Colors.white,
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black,
-            elevation: 0,
-          ),
-        ),
-        home: Consumer<AuthProvider>(
-          builder: (context, authProvider, _) {
-            print(
-                '🔍 [Main] Building home. isLoading: ${authProvider.isLoading}, isAuthenticated: ${authProvider.isAuthenticated}');
-            // Safety timeout: if loading takes more than 10 seconds, show login
-            if (authProvider.isLoading) {
-              print('🔍 [Main] Showing loading screen');
-              return _LoadingScreenWithTimeout(
-                authProvider: authProvider,
+      child: Consumer<AuthProvider>(
+        builder: (context, authProvider, _) {
+          print(
+              '🔍 [Main] Building MaterialApp. isLoading: ${authProvider.isLoading}, isAuthenticated: ${authProvider.isAuthenticated}');
+          return MaterialApp(
+            navigatorKey: _navigatorKey,
+            title: 'Syntrak',
+            debugShowCheckedModeBanner: false,
+            theme: SyntrakTheme.lightTheme,
+            darkTheme: SyntrakTheme.darkTheme,
+            themeMode: ThemeMode.light,
+            // Use onGenerateRoute to ensure stable Navigator
+            onGenerateRoute: (settings) {
+              return MaterialPageRoute(
+                builder: (context) => _AppWrapper(authProvider: authProvider),
               );
-            }
-            if (authProvider.isAuthenticated) {
-              print('🔍 [Main] Showing HomeScreen');
-              return const HomeScreen();
-            } else {
-              print('🔍 [Main] Showing LoginScreen');
-              return const LoginScreen();
-            }
-          },
-        ),
+            },
+          );
+        },
       ),
     );
+  }
+}
+
+// Wrapper widget to maintain stable Navigator identity
+class _AppWrapper extends StatelessWidget {
+  final AuthProvider authProvider;
+
+  const _AppWrapper({required this.authProvider});
+
+  @override
+  Widget build(BuildContext context) {
+    // Use the same logic as _buildHome but in a stable widget
+    if (authProvider.isLoading) {
+      return _LoadingScreenWithTimeout(authProvider: authProvider);
+    }
+    if (authProvider.isAuthenticated) {
+      return const HomeScreen();
+    } else {
+      return const LoginScreen();
+    }
   }
 }
 

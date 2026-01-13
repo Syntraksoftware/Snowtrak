@@ -92,3 +92,10 @@ iOSInjectionProject/
 # macOS
 .DS_Store
 
+# Environment variables
+.env
+frontend/.env
+*.env
+local.properties
+frontend/android/local.properties
+
