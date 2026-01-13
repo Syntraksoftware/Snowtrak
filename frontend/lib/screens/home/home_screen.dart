@@ -18,10 +18,10 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
+  int _currentIndex = 2; // Start on Home (Activities Feed)
   final LocationService _locationService = LocationService();
   bool _hasCheckedPermission = false;
-  final PageController _pageController = PageController();
+  final PageController _pageController = PageController(initialPage: 2);
 
   // Restructured navigation order: Map, Community, Home, Groups/Activities, You
   final List<Widget> _screens = [
