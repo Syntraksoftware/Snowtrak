@@ -182,145 +182,137 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
     final user = Provider.of<AuthProvider>(context, listen: false).user;
 
     if (_isLoading) {
-      return CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: _buildSearchBar(),
-          ),
-          const SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(
-              child: CircularProgressIndicator(),
-            ),
-          ),
+      return NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          _buildPinnedSearchBar(innerBoxIsScrolled),
         ],
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
       );
     }
 
     if (_filteredActivities.isEmpty && _searchQuery.isNotEmpty) {
-      return CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: _buildSearchBar(),
-          ),
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.search_off,
-                    size: 64,
-                    color: SyntrakColors.textTertiary,
-                  ),
-                  const SizedBox(height: SyntrakSpacing.md),
-                  Text(
-                    'No activities found',
-                    style: SyntrakTypography.headlineSmall.copyWith(
-                      color: SyntrakColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: SyntrakSpacing.sm),
-                  Text(
-                    'Try a different search term',
-                    style: SyntrakTypography.bodyMedium.copyWith(
-                      color: SyntrakColors.textTertiary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+      return NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          _buildPinnedSearchBar(innerBoxIsScrolled),
         ],
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.search_off,
+                size: 64,
+                color: SyntrakColors.textTertiary,
+              ),
+              const SizedBox(height: SyntrakSpacing.md),
+              Text(
+                'No activities found',
+                style: SyntrakTypography.headlineSmall.copyWith(
+                  color: SyntrakColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: SyntrakSpacing.sm),
+              Text(
+                'Try a different search term',
+                style: SyntrakTypography.bodyMedium.copyWith(
+                  color: SyntrakColors.textTertiary,
+                ),
+              ),
+            ],
+          ),
+        ),
       );
     }
 
     if (_filteredActivities.isEmpty) {
-      return CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: _buildSearchBar(),
-          ),
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(SyntrakSpacing.xl),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.downhill_skiing,
-                      size: 80,
-                      color: SyntrakColors.textTertiary,
-                    ),
-                    const SizedBox(height: SyntrakSpacing.lg),
-                    Text(
-                      'No activities yet',
-                      style: SyntrakTypography.headlineMedium.copyWith(
-                        color: SyntrakColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: SyntrakSpacing.sm),
-                    Text(
-                      'Start recording your first skiing activity!',
-                      style: SyntrakTypography.bodyMedium.copyWith(
-                        color: SyntrakColors.textTertiary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+      return NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          _buildPinnedSearchBar(innerBoxIsScrolled),
+        ],
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(SyntrakSpacing.xl),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.downhill_skiing,
+                  size: 80,
+                  color: SyntrakColors.textTertiary,
                 ),
-              ),
+                const SizedBox(height: SyntrakSpacing.lg),
+                Text(
+                  'No activities yet',
+                  style: SyntrakTypography.headlineMedium.copyWith(
+                    color: SyntrakColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: SyntrakSpacing.sm),
+                Text(
+                  'Start recording your first skiing activity!',
+                  style: SyntrakTypography.bodyMedium.copyWith(
+                    color: SyntrakColors.textTertiary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadActivities,
-      color: SyntrakColors.primary,
-      child: CustomScrollView(
-        slivers: [
-          // Search bar as scrollable header
-          SliverToBoxAdapter(
-            child: _buildSearchBar(),
-          ),
-          // Activities list
-          SliverPadding(
-            padding: const EdgeInsets.all(SyntrakSpacing.md),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final activity = _filteredActivities[index];
-                  // First activity (index 0) is the most recent and should show kudos card
-                  final isFirstActivity = index == 0;
-                  return Padding(
-                    padding: EdgeInsets.only(
-                      bottom: index < _filteredActivities.length - 1
-                          ? SyntrakSpacing.md
-                          : 0,
-                    ),
-                    child: _ActivityCard(
-                      activity: activity,
-                      user: user,
-                      isFirstActivity: isFirstActivity,
-                      hasKudos: _kudosMap[activity.id] ?? false,
-                      kudosCount: _kudosCountMap[activity.id] ?? 0,
-                      onKudosToggle: () => _toggleKudos(activity.id),
-                      onShare: () => _shareActivity(activity.id),
-                      onComment: () => _commentActivity(activity.id),
-                    ),
-                  );
-                },
-                childCount: _filteredActivities.length,
+    return NestedScrollView(
+      headerSliverBuilder: (context, innerBoxIsScrolled) => [
+        _buildPinnedSearchBar(innerBoxIsScrolled),
+      ],
+      body: RefreshIndicator(
+        onRefresh: _loadActivities,
+        color: SyntrakColors.primary,
+        child: ListView.builder(
+          padding: const EdgeInsets.all(SyntrakSpacing.md),
+          itemCount: _filteredActivities.length,
+          itemBuilder: (context, index) {
+            final activity = _filteredActivities[index];
+            // First activity (index 0) is the most recent and should show kudos card
+            final isFirstActivity = index == 0;
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: index < _filteredActivities.length - 1
+                    ? SyntrakSpacing.md
+                    : 0,
               ),
-            ),
-          ),
-        ],
+              child: _ActivityCard(
+                activity: activity,
+                user: user,
+                isFirstActivity: isFirstActivity,
+                hasKudos: _kudosMap[activity.id] ?? false,
+                kudosCount: _kudosCountMap[activity.id] ?? 0,
+                onKudosToggle: () => _toggleKudos(activity.id),
+                onShare: () => _shareActivity(activity.id),
+                onComment: () => _commentActivity(activity.id),
+              ),
+            );
+          },
+        ),
       ),
+    );
+  }
+
+  // Pinned search bar that stays fixed at top
+  SliverAppBar _buildPinnedSearchBar(bool innerBoxIsScrolled) {
+    return SliverAppBar(
+      pinned: true,
+      floating: false,
+      automaticallyImplyLeading: false,
+      backgroundColor: SyntrakColors.background,
+      surfaceTintColor: Colors.transparent,
+      elevation: innerBoxIsScrolled ? 2 : 0,
+      shadowColor: Colors.black26,
+      toolbarHeight: 72,
+      flexibleSpace: _buildSearchBar(),
     );
   }
 
