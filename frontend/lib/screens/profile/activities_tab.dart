@@ -114,10 +114,12 @@ class ActivitiesTab extends StatefulWidget {
 class _ActivitiesTabState extends State<ActivitiesTab> {
   final ActivityService _activityService = ActivityService();
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   String _searchQuery = '';
   List<Activity> _activities = [];
   List<Activity> _filteredActivities = [];
   bool _isLoading = true;
+  bool _isSearchFocused = false;
   final Map<String, bool> _kudosMap = {}; // activityId -> hasKudos
   final Map<String, int> _kudosCountMap = {}; // activityId -> count
 
@@ -126,6 +128,11 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
     super.initState();
     _loadActivities();
     _searchController.addListener(_onSearchChanged);
+    _searchFocusNode.addListener(() {
+      setState(() {
+        _isSearchFocused = _searchFocusNode.hasFocus;
+      });
+    });
   }
 
   Future<void> _loadActivities() async {
@@ -155,6 +162,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -307,7 +315,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
       pinned: true,
       floating: false,
       automaticallyImplyLeading: false,
-      backgroundColor: SyntrakColors.background,
+      backgroundColor: SyntrakColors.surface,
       surfaceTintColor: Colors.transparent,
       elevation: innerBoxIsScrolled ? 2 : 0,
       shadowColor: Colors.black26,
@@ -318,47 +326,71 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
 
   Widget _buildSearchBar() {
     return Container(
+      color: SyntrakColors.surface,
       padding: const EdgeInsets.fromLTRB(
-        SyntrakSpacing.lg,
         SyntrakSpacing.md,
-        SyntrakSpacing.lg,
         SyntrakSpacing.md,
+        SyntrakSpacing.md,
+        SyntrakSpacing.sm,
       ),
-      color: SyntrakColors.background,
-      child: Container(
-        height: 44,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
+          color: _isSearchFocused
+              ? SyntrakColors.surface
+              : SyntrakColors.surfaceVariant,
+          borderRadius: BorderRadius.circular(SyntrakRadius.round),
           border: Border.all(
-            color: SyntrakColors.textTertiary.withOpacity(0.3),
-            width: 1,
+            color: _isSearchFocused
+                ? SyntrakColors.primary
+                : Colors.transparent,
+            width: 2,
           ),
+          boxShadow: _isSearchFocused
+              ? [
+                  BoxShadow(
+                    color: SyntrakColors.primary.withAlpha(30),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: TextField(
           controller: _searchController,
+          focusNode: _searchFocusNode,
+          style: SyntrakTypography.bodyMedium.copyWith(
+            color: SyntrakColors.textPrimary,
+          ),
           decoration: InputDecoration(
-            hintText: '',
-            suffixIcon: Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: Icon(
-                Icons.search,
-                color: SyntrakColors.textTertiary,
-                size: 22,
-              ),
+            hintText: 'Search activities...',
+            hintStyle: SyntrakTypography.bodyMedium.copyWith(
+              color: SyntrakColors.textTertiary,
             ),
-            suffixIconConstraints: const BoxConstraints(
-              minWidth: 40,
-              minHeight: 40,
+            prefixIcon: Icon(
+              Icons.search,
+              color: _isSearchFocused
+                  ? SyntrakColors.primary
+                  : SyntrakColors.textTertiary,
             ),
+            suffixIcon: _searchController.text.isNotEmpty
+                ? IconButton(
+                    icon: Icon(
+                      Icons.close,
+                      color: SyntrakColors.textSecondary,
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      _searchController.clear();
+                      _onSearchChanged();
+                    },
+                  )
+                : null,
             border: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: SyntrakSpacing.md,
-              vertical: 12,
+              vertical: 14,
             ),
-          ),
-          style: SyntrakTypography.bodyMedium.copyWith(
-            color: SyntrakColors.textPrimary,
           ),
         ),
       ),
