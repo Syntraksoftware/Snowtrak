@@ -205,27 +205,37 @@ class _TrailsTabState extends State<TrailsTab> {
       );
     }
 
-    return Column(
-      children: [
-        // Strava-style search bar
-        _buildSearchSection(),
-        // Results count and sort
-        _buildResultsHeader(),
-        // Trail list
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: _loadTrails,
-            color: SyntrakColors.primary,
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
-              itemCount: _filteredTrails.length,
-              itemBuilder: (context, index) {
-                return _TrailCard(trail: _filteredTrails[index]);
-              },
+    return RefreshIndicator(
+      onRefresh: _loadTrails,
+      color: SyntrakColors.primary,
+      child: CustomScrollView(
+        slivers: [
+          // Search section - scrolls with content
+          SliverToBoxAdapter(
+            child: _buildSearchSection(),
+          ),
+          // Results header - scrolls with content
+          SliverToBoxAdapter(
+            child: _buildResultsHeader(),
+          ),
+          // Trail list
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  return _TrailCard(trail: _filteredTrails[index]);
+                },
+                childCount: _filteredTrails.length,
+              ),
             ),
           ),
-        ),
-      ],
+          // Bottom padding
+          const SliverToBoxAdapter(
+            child: SizedBox(height: SyntrakSpacing.lg),
+          ),
+        ],
+      ),
     );
   }
 
@@ -310,12 +320,14 @@ class _TrailsTabState extends State<TrailsTab> {
             height: 44,
             child: ListView(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
               children: [
                 _buildDifficultyChip(),
                 const SizedBox(width: SyntrakSpacing.sm),
                 _buildCountryChip(),
-                if (_selectedDifficulty != null || _selectedCountry != null) ...[
+                if (_selectedDifficulty != null ||
+                    _selectedCountry != null) ...[
                   const SizedBox(width: SyntrakSpacing.sm),
                   _buildClearFiltersChip(),
                 ],
@@ -350,7 +362,8 @@ class _TrailsTabState extends State<TrailsTab> {
       label: Text(
         isSelected ? _selectedDifficulty!.shortName : 'Difficulty',
         style: SyntrakTypography.labelMedium.copyWith(
-          color: isSelected ? SyntrakColors.primary : SyntrakColors.textSecondary,
+          color:
+              isSelected ? SyntrakColors.primary : SyntrakColors.textSecondary,
           fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
         ),
       ),
@@ -376,7 +389,8 @@ class _TrailsTabState extends State<TrailsTab> {
       label: Text(
         isSelected ? _selectedCountry! : 'Country',
         style: SyntrakTypography.labelMedium.copyWith(
-          color: isSelected ? SyntrakColors.primary : SyntrakColors.textSecondary,
+          color:
+              isSelected ? SyntrakColors.primary : SyntrakColors.textSecondary,
           fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
         ),
       ),
@@ -408,7 +422,8 @@ class _TrailsTabState extends State<TrailsTab> {
       context: context,
       backgroundColor: SyntrakColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(SyntrakRadius.xl)),
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(SyntrakRadius.xl)),
       ),
       builder: (context) => SafeArea(
         child: Column(
@@ -450,7 +465,8 @@ class _TrailsTabState extends State<TrailsTab> {
                     child: Center(
                       child: Text(
                         d.icon,
-                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 12),
                       ),
                     ),
                   ),
@@ -474,7 +490,8 @@ class _TrailsTabState extends State<TrailsTab> {
       context: context,
       backgroundColor: SyntrakColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(SyntrakRadius.xl)),
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(SyntrakRadius.xl)),
       ),
       builder: (context) => SafeArea(
         child: Column(
@@ -691,7 +708,8 @@ class _TrailCard extends StatelessWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.star, color: Colors.amber, size: 16),
+                            const Icon(Icons.star,
+                                color: Colors.amber, size: 16),
                             const SizedBox(width: 4),
                             Text(
                               trail.rating!.toStringAsFixed(1),
@@ -750,7 +768,8 @@ class _TrailCard extends StatelessWidget {
                       ),
                     ],
                     // Features tags
-                    if (trail.features != null && trail.features!.isNotEmpty) ...[
+                    if (trail.features != null &&
+                        trail.features!.isNotEmpty) ...[
                       const SizedBox(height: SyntrakSpacing.md),
                       Wrap(
                         spacing: SyntrakSpacing.xs,
@@ -764,11 +783,13 @@ class _TrailCard extends StatelessWidget {
                                   ),
                                   decoration: BoxDecoration(
                                     color: SyntrakColors.surfaceVariant,
-                                    borderRadius: BorderRadius.circular(SyntrakRadius.round),
+                                    borderRadius: BorderRadius.circular(
+                                        SyntrakRadius.round),
                                   ),
                                   child: Text(
                                     f,
-                                    style: SyntrakTypography.labelSmall.copyWith(
+                                    style:
+                                        SyntrakTypography.labelSmall.copyWith(
                                       color: SyntrakColors.textSecondary,
                                     ),
                                   ),
