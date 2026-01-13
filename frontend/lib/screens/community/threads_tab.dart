@@ -245,46 +245,54 @@ class _ThreadsTabState extends State<ThreadsTab> {
       );
     }
 
-    return Column(
-      children: [
-        _buildSearchBar(),
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: _handleRefresh,
-            color: SyntrakColors.primary,
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.only(top: SyntrakSpacing.sm),
-              itemCount: _filteredPosts.length + 1,
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  return CompactComposer(
-                    onPost: _handlePost,
-                    maxCharacters: 280,
+    return Scaffold(
+      backgroundColor: SyntrakColors.background,
+      body: Column(
+        children: [
+          // Search bar 
+          Material(
+            color: SyntrakColors.surface,
+            elevation: 1,
+            child: _buildSearchBar(),
+          ),
+          // Posts list 
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _handleRefresh,
+              color: SyntrakColors.primary,
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.only(top: SyntrakSpacing.sm),
+                itemCount: _filteredPosts.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return CompactComposer(
+                      onPost: _handlePost,
+                      maxCharacters: 280,
+                    );
+                  }
+                  final post = _filteredPosts[index - 1];
+                  return MessageCard(
+                    post: post,
+                    isExpanded: _expandedPostId == post.id,
+                    onTap: () => _handlePostTap(post),
+                    onLike: _handleLike,
+                    onRepost: _handleRepost,
+                    onReply: _handleReply,
+                    onShare: _handleShare,
                   );
-                }
-                final post = _filteredPosts[index - 1];
-                return MessageCard(
-                  post: post,
-                  isExpanded: _expandedPostId == post.id,
-                  onTap: () => _handlePostTap(post),
-                  onLike: _handleLike,
-                  onRepost: _handleRepost,
-                  onReply: _handleReply,
-                  onShare: _handleShare,
-                );
-              },
+                },
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   // Fixed search bar at top
   Widget _buildSearchBar() {
-    return Container(
-      color: SyntrakColors.surface,
+    return Padding(
       padding: const EdgeInsets.fromLTRB(
         SyntrakSpacing.md,
         SyntrakSpacing.md,
@@ -299,9 +307,8 @@ class _ThreadsTabState extends State<ThreadsTab> {
               : SyntrakColors.surfaceVariant,
           borderRadius: BorderRadius.circular(SyntrakRadius.round),
           border: Border.all(
-            color: _isSearchFocused
-                ? SyntrakColors.primary
-                : Colors.transparent,
+            color:
+                _isSearchFocused ? SyntrakColors.primary : Colors.transparent,
             width: 2,
           ),
           boxShadow: _isSearchFocused
