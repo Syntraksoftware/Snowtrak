@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
+import 'package:flutter/cupertino.dart';
 
 class ActivitySettingsScreen extends StatefulWidget {
   const ActivitySettingsScreen({super.key});
@@ -9,20 +9,13 @@ class ActivitySettingsScreen extends StatefulWidget {
 }
 
 class _ActivitySettingsScreenState extends State<ActivitySettingsScreen> {
-  // Default settings
   String _defaultActivityType = 'Alpine';
   String _gpsAccuracy = 'High';
-
-  // Auto features
   bool _autoPause = true;
   bool _autoUpload = true;
   bool _wifiOnly = true;
-
-  // Live tracking
   bool _liveTracking = false;
   bool _voiceAnnouncements = false;
-
-  // Units
   String _distanceUnit = 'Kilometers';
   String _elevationUnit = 'Meters';
   String _temperatureUnit = 'Celsius';
@@ -31,146 +24,154 @@ class _ActivitySettingsScreenState extends State<ActivitySettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SyntrakColors.background,
+      backgroundColor: const Color(0xFFF2F2F7),
       appBar: AppBar(
-        backgroundColor: SyntrakColors.surface,
+        backgroundColor: const Color(0xFFF2F2F7),
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios),
+          icon: const Icon(Icons.arrow_back_ios, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Activity & Recording'),
+        title: const Text(
+          'Activity & Recording',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+        ),
         centerTitle: true,
       ),
       body: ListView(
         children: [
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: 24),
 
-          // Default Settings Section
-          _buildSectionHeader('Defaults'),
+          // Defaults
+          _buildSectionHeader('DEFAULTS'),
           _SettingsGroup(
             children: [
               _SettingsSelectionRow(
-                icon: Icons.downhill_skiing,
-                label: 'Default activity type',
+                label: 'Activity Type',
                 value: _defaultActivityType,
-                options: const [
-                  'Alpine',
-                  'Backcountry',
-                  'Cross-Country',
-                  'Freestyle'
-                ],
-                onChanged: (value) =>
-                    setState(() => _defaultActivityType = value),
+                onTap: () => _showOptions(
+                  'Default Activity Type',
+                  ['Alpine', 'Backcountry', 'Cross-Country', 'Freestyle'],
+                  _defaultActivityType,
+                  (v) => setState(() => _defaultActivityType = v),
+                ),
               ),
               _SettingsSelectionRow(
-                icon: Icons.gps_fixed,
-                label: 'GPS accuracy',
+                label: 'GPS Accuracy',
                 value: _gpsAccuracy,
-                options: const ['High', 'Balanced', 'Battery Saver'],
-                onChanged: (value) => setState(() => _gpsAccuracy = value),
+                onTap: () => _showOptions(
+                  'GPS Accuracy',
+                  ['High', 'Balanced', 'Battery Saver'],
+                  _gpsAccuracy,
+                  (v) => setState(() => _gpsAccuracy = v),
+                ),
               ),
             ],
           ),
+          _buildSectionFooter(
+            'Higher GPS accuracy uses more battery but provides better tracking.',
+          ),
 
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: 24),
 
-          // Auto Features Section
-          _buildSectionHeader('Automatic Features'),
+          // Automatic Features
+          _buildSectionHeader('AUTOMATIC FEATURES'),
           _SettingsGroup(
             children: [
               _SettingsToggleRow(
-                icon: Icons.pause_circle_outline,
-                label: 'Auto-pause',
-                subtitle: 'Pause recording when you stop moving',
+                label: 'Auto-Pause',
+                subtitle: 'Pause when you stop moving',
                 value: _autoPause,
-                onChanged: (value) => setState(() => _autoPause = value),
+                onChanged: (v) => setState(() => _autoPause = v),
               ),
               _SettingsToggleRow(
-                icon: Icons.cloud_upload_outlined,
-                label: 'Auto-upload activities',
+                label: 'Auto-Upload',
                 subtitle: 'Upload when activity ends',
                 value: _autoUpload,
-                onChanged: (value) => setState(() => _autoUpload = value),
+                onChanged: (v) => setState(() => _autoUpload = v),
               ),
               if (_autoUpload)
                 _SettingsToggleRow(
-                  icon: Icons.wifi,
-                  label: 'WiFi only',
-                  subtitle: 'Only upload when connected to WiFi',
+                  label: 'WiFi Only',
+                  subtitle: 'Only upload on WiFi',
                   value: _wifiOnly,
-                  onChanged: (value) => setState(() => _wifiOnly = value),
+                  onChanged: (v) => setState(() => _wifiOnly = v),
                 ),
             ],
           ),
 
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: 24),
 
-          // Live Features Section
-          _buildSectionHeader('Live Features'),
+          // Live Features
+          _buildSectionHeader('LIVE FEATURES'),
           _SettingsGroup(
             children: [
               _SettingsToggleRow(
-                icon: Icons.share_location,
-                label: 'Live tracking',
-                subtitle: 'Let friends track you during activities',
+                label: 'Live Tracking',
+                subtitle: 'Share your location during activities',
                 value: _liveTracking,
-                onChanged: (value) {
-                  setState(() => _liveTracking = value);
-                  if (value) {
-                    _showToast('Friends can now see your live location');
-                  }
-                },
+                onChanged: (v) => setState(() => _liveTracking = v),
               ),
               _SettingsToggleRow(
-                icon: Icons.record_voice_over_outlined,
-                label: 'Voice announcements',
-                subtitle: 'Audio cues for pace, distance, time',
+                label: 'Voice Announcements',
+                subtitle: 'Audio cues for pace and distance',
                 value: _voiceAnnouncements,
-                onChanged: (value) =>
-                    setState(() => _voiceAnnouncements = value),
+                onChanged: (v) => setState(() => _voiceAnnouncements = v),
               ),
             ],
           ),
 
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: 24),
 
-          // Units Section
-          _buildSectionHeader('Units'),
+          // Units
+          _buildSectionHeader('UNITS'),
           _SettingsGroup(
             children: [
               _SettingsSelectionRow(
-                icon: Icons.straighten,
                 label: 'Distance',
                 value: _distanceUnit,
-                options: const ['Kilometers', 'Miles'],
-                onChanged: (value) => setState(() => _distanceUnit = value),
+                onTap: () => _showOptions(
+                  'Distance',
+                  ['Kilometers', 'Miles'],
+                  _distanceUnit,
+                  (v) => setState(() => _distanceUnit = v),
+                ),
               ),
               _SettingsSelectionRow(
-                icon: Icons.height,
                 label: 'Elevation',
                 value: _elevationUnit,
-                options: const ['Meters', 'Feet'],
-                onChanged: (value) => setState(() => _elevationUnit = value),
+                onTap: () => _showOptions(
+                  'Elevation',
+                  ['Meters', 'Feet'],
+                  _elevationUnit,
+                  (v) => setState(() => _elevationUnit = v),
+                ),
               ),
               _SettingsSelectionRow(
-                icon: Icons.thermostat_outlined,
                 label: 'Temperature',
                 value: _temperatureUnit,
-                options: const ['Celsius', 'Fahrenheit'],
-                onChanged: (value) => setState(() => _temperatureUnit = value),
+                onTap: () => _showOptions(
+                  'Temperature',
+                  ['Celsius', 'Fahrenheit'],
+                  _temperatureUnit,
+                  (v) => setState(() => _temperatureUnit = v),
+                ),
               ),
               _SettingsSelectionRow(
-                icon: Icons.speed,
                 label: 'Speed',
                 value: _speedUnit,
-                options: const ['km/h', 'mph'],
-                onChanged: (value) => setState(() => _speedUnit = value),
+                onTap: () => _showOptions(
+                  'Speed',
+                  ['km/h', 'mph'],
+                  _speedUnit,
+                  (v) => setState(() => _speedUnit = v),
+                ),
               ),
             ],
           ),
 
-          const SizedBox(height: SyntrakSpacing.xl),
+          const SizedBox(height: 32),
         ],
       ),
     );
@@ -178,33 +179,68 @@ class _ActivitySettingsScreenState extends State<ActivitySettingsScreen> {
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SyntrakSpacing.lg,
-        vertical: SyntrakSpacing.sm,
-      ),
+      padding: const EdgeInsets.only(left: 32, bottom: 6),
       child: Text(
-        title.toUpperCase(),
-        style: SyntrakTypography.labelSmall.copyWith(
-          color: SyntrakColors.textTertiary,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
+        title,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w400,
+          color: Colors.grey[600],
         ),
       ),
     );
   }
 
-  void _showToast(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
+  Widget _buildSectionFooter(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 32, right: 32, top: 6),
+      child: Text(
+        text,
+        style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+      ),
+    );
+  }
+
+  void _showOptions(
+    String title,
+    List<String> options,
+    String currentValue,
+    ValueChanged<String> onChanged,
+  ) {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (context) => CupertinoActionSheet(
+        title: Text(title),
+        actions: options
+            .map((option) => CupertinoActionSheetAction(
+                  onPressed: () {
+                    onChanged(option);
+                    Navigator.pop(context);
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(option),
+                      if (option == currentValue) ...[
+                        const SizedBox(width: 8),
+                        const Icon(CupertinoIcons.checkmark,
+                            size: 18, color: Color(0xFF007AFF)),
+                      ],
+                    ],
+                  ),
+                ))
+            .toList(),
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(context),
+          isDefaultAction: true,
+          child: const Text('Cancel'),
+        ),
       ),
     );
   }
 }
 
-// Reusable widgets (same as other settings screens)
+// Reusable widgets
 class _SettingsGroup extends StatelessWidget {
   final List<Widget> children;
 
@@ -213,20 +249,19 @@ class _SettingsGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: SyntrakColors.surface,
-        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         children: [
           for (int i = 0; i < children.length; i++) ...[
             children[i],
             if (i < children.length - 1)
-              Divider(
-                height: 1,
-                indent: 56,
-                color: SyntrakColors.surfaceVariant,
+              Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: Divider(height: 0.5, thickness: 0.5, color: Colors.grey[300]),
               ),
           ],
         ],
@@ -236,14 +271,12 @@ class _SettingsGroup extends StatelessWidget {
 }
 
 class _SettingsToggleRow extends StatelessWidget {
-  final IconData icon;
   final String label;
   final String? subtitle;
   final bool value;
   final ValueChanged<bool> onChanged;
 
   const _SettingsToggleRow({
-    required this.icon,
     required this.label,
     this.subtitle,
     required this.value,
@@ -253,46 +286,27 @@ class _SettingsToggleRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SyntrakSpacing.md,
-        vertical: SyntrakSpacing.sm,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: SyntrakColors.surfaceVariant,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 20, color: SyntrakColors.textSecondary),
-          ),
-          const SizedBox(width: SyntrakSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: SyntrakTypography.bodyMedium
-                      .copyWith(fontWeight: FontWeight.w500),
-                ),
+                Text(label,
+                    style: const TextStyle(fontSize: 17, color: Colors.black)),
                 if (subtitle != null) ...[
                   const SizedBox(height: 2),
-                  Text(
-                    subtitle!,
-                    style: SyntrakTypography.bodySmall
-                        .copyWith(color: SyntrakColors.textTertiary),
-                  ),
+                  Text(subtitle!,
+                      style: TextStyle(fontSize: 13, color: Colors.grey[500])),
                 ],
               ],
             ),
           ),
-          Switch.adaptive(
+          CupertinoSwitch(
             value: value,
             onChanged: onChanged,
-            activeColor: SyntrakColors.primary,
+            activeColor: const Color(0xFF34C759),
           ),
         ],
       ),
@@ -301,101 +315,35 @@ class _SettingsToggleRow extends StatelessWidget {
 }
 
 class _SettingsSelectionRow extends StatelessWidget {
-  final IconData icon;
   final String label;
   final String value;
-  final List<String> options;
-  final ValueChanged<String> onChanged;
+  final VoidCallback onTap;
 
   const _SettingsSelectionRow({
-    required this.icon,
     required this.label,
     required this.value,
-    required this.options,
-    required this.onChanged,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => _showOptionsSheet(context),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SyntrakSpacing.md,
-          vertical: SyntrakSpacing.md,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: SyntrakColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, size: 20, color: SyntrakColors.textSecondary),
-            ),
-            const SizedBox(width: SyntrakSpacing.md),
-            Expanded(
-              child: Text(
-                label,
-                style: SyntrakTypography.bodyMedium
-                    .copyWith(fontWeight: FontWeight.w500),
-              ),
-            ),
-            Text(
-              value,
-              style: SyntrakTypography.bodySmall
-                  .copyWith(color: SyntrakColors.textTertiary),
-            ),
-            const SizedBox(width: SyntrakSpacing.xs),
-            Icon(Icons.chevron_right,
-                size: 20, color: SyntrakColors.textTertiary),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showOptionsSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: SyntrakColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: SyntrakSpacing.md),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: SyntrakColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: SyntrakSpacing.lg),
-            Text(
-              label,
-              style: SyntrakTypography.headlineSmall
-                  .copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: SyntrakSpacing.md),
-            ...options.map((option) => ListTile(
-                  title: Text(option),
-                  trailing: option == value
-                      ? Icon(Icons.check, color: SyntrakColors.primary)
-                      : null,
-                  onTap: () {
-                    onChanged(option);
-                    Navigator.pop(context);
-                  },
-                )),
-            const SizedBox(height: SyntrakSpacing.lg),
-          ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Text(label,
+                  style: const TextStyle(fontSize: 17, color: Colors.black)),
+              const Spacer(),
+              Text(value,
+                  style: TextStyle(fontSize: 17, color: Colors.grey[500])),
+              const SizedBox(width: 4),
+              Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+            ],
+          ),
         ),
       ),
     );

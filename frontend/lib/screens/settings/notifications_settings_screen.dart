@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
+import 'package:flutter/cupertino.dart';
 
 class NotificationsSettingsScreen extends StatefulWidget {
   const NotificationsSettingsScreen({super.key});
@@ -32,109 +32,109 @@ class _NotificationsSettingsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SyntrakColors.background,
+      backgroundColor: const Color(0xFFF2F2F7),
       appBar: AppBar(
-        backgroundColor: SyntrakColors.surface,
+        backgroundColor: const Color(0xFFF2F2F7),
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios),
+          icon: const Icon(Icons.arrow_back_ios, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Notifications'),
+        title: const Text(
+          'Notifications',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+        ),
         centerTitle: true,
       ),
       body: ListView(
         children: [
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: 24),
 
-          // Push Notifications Section
-          _buildSectionHeader('Push Notifications'),
+          // Allow Notifications
           _SettingsGroup(
             children: [
               _SettingsToggleRow(
-                icon: Icons.notifications_active_outlined,
-                label: 'Enable Push Notifications',
-                subtitle: 'Receive notifications on your device',
+                label: 'Allow Notifications',
+                subtitle: 'Receive push notifications',
                 value: _pushEnabled,
-                onChanged: (value) {
-                  setState(() => _pushEnabled = value);
-                  if (value) {
-                    _showToast('Push notifications enabled');
-                  }
-                },
+                onChanged: (value) => setState(() => _pushEnabled = value),
               ),
             ],
           ),
 
           if (_pushEnabled) ...[
-            const SizedBox(height: SyntrakSpacing.md),
+            const SizedBox(height: 24),
+
+            // Activity Notifications
+            _buildSectionHeader('ACTIVITY'),
             _SettingsGroup(
               children: [
                 _SettingsToggleRow(
-                  icon: Icons.favorite_outline,
                   label: 'Kudos',
-                  subtitle: 'When someone gives kudos to your activity',
+                  subtitle: 'When someone gives kudos',
                   value: _kudosNotifications,
                   onChanged: (value) =>
                       setState(() => _kudosNotifications = value),
                 ),
                 _SettingsToggleRow(
-                  icon: Icons.chat_bubble_outline,
                   label: 'Comments',
-                  subtitle: 'When someone comments on your activity',
+                  subtitle: 'When someone comments',
                   value: _commentsNotifications,
                   onChanged: (value) =>
                       setState(() => _commentsNotifications = value),
                 ),
                 _SettingsToggleRow(
-                  icon: Icons.person_add_outlined,
                   label: 'New Followers',
                   subtitle: 'When someone follows you',
                   value: _newFollowers,
                   onChanged: (value) => setState(() => _newFollowers = value),
                 ),
                 _SettingsToggleRow(
-                  icon: Icons.group_outlined,
                   label: "Friend's Activities",
-                  subtitle: 'When friends complete an activity',
+                  subtitle: 'When friends complete activities',
                   value: _friendActivities,
                   onChanged: (value) =>
                       setState(() => _friendActivities = value),
                 ),
               ],
             ),
-            const SizedBox(height: SyntrakSpacing.md),
+
+            const SizedBox(height: 24),
+
+            // Social Notifications
+            _buildSectionHeader('SOCIAL'),
             _SettingsGroup(
               children: [
                 _SettingsToggleRow(
-                  icon: Icons.emoji_events_outlined,
                   label: 'Challenge Updates',
-                  subtitle: 'Progress and completion notifications',
+                  subtitle: 'Progress and completions',
                   value: _challengeUpdates,
                   onChanged: (value) =>
                       setState(() => _challengeUpdates = value),
                 ),
                 _SettingsToggleRow(
-                  icon: Icons.groups_outlined,
                   label: 'Group Activity',
-                  subtitle: 'Updates from your groups and clubs',
+                  subtitle: 'Updates from your groups',
                   value: _groupActivity,
                   onChanged: (value) => setState(() => _groupActivity = value),
                 ),
               ],
             ),
-            const SizedBox(height: SyntrakSpacing.md),
+
+            const SizedBox(height: 24),
+
+            // Weather Notifications
+            _buildSectionHeader('WEATHER'),
             _SettingsGroup(
               children: [
                 _SettingsToggleRow(
-                  icon: Icons.cloud_outlined,
                   label: 'Weather Alerts',
-                  subtitle: 'Severe weather at favorite resorts',
+                  subtitle: 'Severe weather warnings',
                   value: _weatherAlerts,
                   onChanged: (value) => setState(() => _weatherAlerts = value),
                 ),
                 _SettingsToggleRow(
-                  icon: Icons.ac_unit,
                   label: 'Powder Day Alerts',
                   subtitle: 'Fresh snow notifications',
                   value: _powderDayAlerts,
@@ -145,15 +145,14 @@ class _NotificationsSettingsScreenState
             ),
           ],
 
-          const SizedBox(height: SyntrakSpacing.xl),
+          const SizedBox(height: 24),
 
-          // Email Notifications Section
-          _buildSectionHeader('Email Notifications'),
+          // Email Notifications
+          _buildSectionHeader('EMAIL'),
           _SettingsGroup(
             children: [
               _SettingsToggleRow(
-                icon: Icons.email_outlined,
-                label: 'Enable Email Notifications',
+                label: 'Email Notifications',
                 subtitle: 'Receive emails from Syntrak',
                 value: _emailEnabled,
                 onChanged: (value) => setState(() => _emailEnabled = value),
@@ -162,32 +161,28 @@ class _NotificationsSettingsScreenState
           ),
 
           if (_emailEnabled) ...[
-            const SizedBox(height: SyntrakSpacing.md),
+            const SizedBox(height: 16),
             _SettingsGroup(
               children: [
                 _SettingsToggleRow(
-                  icon: Icons.calendar_today_outlined,
                   label: 'Weekly Summary',
-                  subtitle: 'Your activity highlights every week',
+                  subtitle: 'Your activity highlights',
                   value: _weeklySummary,
                   onChanged: (value) => setState(() => _weeklySummary = value),
                 ),
                 _SettingsToggleRow(
-                  icon: Icons.insights_outlined,
                   label: 'Monthly Progress Report',
                   subtitle: 'Detailed stats and achievements',
                   value: _monthlyReport,
                   onChanged: (value) => setState(() => _monthlyReport = value),
                 ),
                 _SettingsToggleRow(
-                  icon: Icons.campaign_outlined,
                   label: 'Marketing & Promotions',
-                  subtitle: 'Special offers and partner deals',
+                  subtitle: 'Special offers and deals',
                   value: _marketing,
                   onChanged: (value) => setState(() => _marketing = value),
                 ),
                 _SettingsToggleRow(
-                  icon: Icons.new_releases_outlined,
                   label: 'Product Updates',
                   subtitle: 'New features and improvements',
                   value: _productUpdates,
@@ -197,7 +192,7 @@ class _NotificationsSettingsScreenState
             ),
           ],
 
-          const SizedBox(height: SyntrakSpacing.xl),
+          const SizedBox(height: 32),
         ],
       ),
     );
@@ -205,33 +200,21 @@ class _NotificationsSettingsScreenState
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SyntrakSpacing.lg,
-        vertical: SyntrakSpacing.sm,
-      ),
+      padding: const EdgeInsets.only(left: 32, bottom: 6),
       child: Text(
-        title.toUpperCase(),
-        style: SyntrakTypography.labelSmall.copyWith(
-          color: SyntrakColors.textTertiary,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
+        title,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w400,
+          color: Colors.grey[600],
+          letterSpacing: -0.1,
         ),
-      ),
-    );
-  }
-
-  void _showToast(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
       ),
     );
   }
 }
 
-// Reusable Settings Group Container
+// iOS-style Settings Group
 class _SettingsGroup extends StatelessWidget {
   final List<Widget> children;
 
@@ -240,20 +223,23 @@ class _SettingsGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: SyntrakColors.surface,
-        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         children: [
           for (int i = 0; i < children.length; i++) ...[
             children[i],
             if (i < children.length - 1)
-              Divider(
-                height: 1,
-                indent: 56,
-                color: SyntrakColors.surfaceVariant,
+              Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: Divider(
+                  height: 0.5,
+                  thickness: 0.5,
+                  color: Colors.grey[300],
+                ),
               ),
           ],
         ],
@@ -262,16 +248,14 @@ class _SettingsGroup extends StatelessWidget {
   }
 }
 
-// Toggle Row with switch
+// iOS-style Toggle Row
 class _SettingsToggleRow extends StatelessWidget {
-  final IconData icon;
   final String label;
   final String? subtitle;
   final bool value;
   final ValueChanged<bool> onChanged;
 
   const _SettingsToggleRow({
-    required this.icon,
     required this.label,
     this.subtitle,
     required this.value,
@@ -281,55 +265,38 @@ class _SettingsToggleRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SyntrakSpacing.md,
-        vertical: SyntrakSpacing.sm,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          // Icon
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: SyntrakColors.surfaceVariant,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: SyntrakColors.textSecondary,
-            ),
-          ),
-          const SizedBox(width: SyntrakSpacing.md),
-          // Label and subtitle
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   label,
-                  style: SyntrakTypography.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w500,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black,
                   ),
                 ),
                 if (subtitle != null) ...[
                   const SizedBox(height: 2),
                   Text(
                     subtitle!,
-                    style: SyntrakTypography.bodySmall.copyWith(
-                      color: SyntrakColors.textTertiary,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[500],
                     ),
                   ),
                 ],
               ],
             ),
           ),
-          // Switch
-          Switch.adaptive(
+          CupertinoSwitch(
             value: value,
             onChanged: onChanged,
-            activeColor: SyntrakColors.primary,
+            activeColor: const Color(0xFF34C759),
           ),
         ],
       ),

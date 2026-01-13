@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
+import 'package:flutter/cupertino.dart';
 
 class HelpSupportScreen extends StatelessWidget {
   const HelpSupportScreen({super.key});
@@ -7,101 +7,108 @@ class HelpSupportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SyntrakColors.background,
+      backgroundColor: const Color(0xFFF2F2F7),
       appBar: AppBar(
-        backgroundColor: SyntrakColors.surface,
+        backgroundColor: const Color(0xFFF2F2F7),
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios),
+          icon: const Icon(Icons.arrow_back_ios, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Help & Support'),
+        title: const Text(
+          'Help & Support',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+        ),
         centerTitle: true,
       ),
       body: ListView(
         children: [
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: 24),
 
-          // Help Section
-          _buildSectionHeader('Get Help'),
+          // Get Help
+          _buildSectionHeader('GET HELP'),
           _SettingsGroup(
             children: [
-              _SettingsNavigationRow(
-                icon: Icons.menu_book_outlined,
+              _SettingsRow(
+                icon: Icons.menu_book,
+                iconBackground: const Color(0xFF007AFF),
                 label: 'Help Center',
-                subtitle: 'FAQ, guides, and tutorials',
+                subtitle: 'FAQ, guides, tutorials',
                 onTap: () => _showToast(context, 'Opening Help Center...'),
               ),
-              _SettingsNavigationRow(
-                icon: Icons.chat_bubble_outline,
+              _SettingsRow(
+                icon: Icons.chat_bubble,
+                iconBackground: const Color(0xFF34C759),
                 label: 'Contact Support',
                 subtitle: 'Get help from our team',
                 onTap: () => _showContactOptions(context),
               ),
-              _SettingsNavigationRow(
-                icon: Icons.forum_outlined,
+              _SettingsRow(
+                icon: Icons.forum,
+                iconBackground: const Color(0xFFFF9500),
                 label: 'Community Forum',
                 subtitle: 'Ask questions, share tips',
-                onTap: () => _showToast(context, 'Opening Community Forum...'),
+                onTap: () => _showToast(context, 'Opening Community...'),
               ),
             ],
           ),
 
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: 24),
 
-          // Feedback Section
-          _buildSectionHeader('Feedback'),
+          // Feedback
+          _buildSectionHeader('FEEDBACK'),
           _SettingsGroup(
             children: [
-              _SettingsNavigationRow(
-                icon: Icons.bug_report_outlined,
+              _SettingsRow(
+                icon: Icons.bug_report,
+                iconBackground: const Color(0xFFFF3B30),
                 label: 'Report a Problem',
-                subtitle: 'Help us fix issues',
                 onTap: () => _showReportDialog(context),
               ),
-              _SettingsNavigationRow(
-                icon: Icons.lightbulb_outline,
+              _SettingsRow(
+                icon: Icons.lightbulb,
+                iconBackground: const Color(0xFFFFCC00),
                 label: 'Feature Request',
-                subtitle: 'Suggest improvements',
                 onTap: () => _showFeatureRequestDialog(context),
               ),
-              _SettingsNavigationRow(
-                icon: Icons.star_outline,
+              _SettingsRow(
+                icon: Icons.star,
+                iconBackground: const Color(0xFF5856D6),
                 label: 'Rate Syntrak',
-                subtitle: 'Share your experience',
                 onTap: () => _showRateDialog(context),
               ),
             ],
           ),
 
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: 24),
 
-          // Troubleshooting Section
-          _buildSectionHeader('Troubleshooting'),
+          // Troubleshooting
+          _buildSectionHeader('TROUBLESHOOTING'),
           _SettingsGroup(
             children: [
-              _SettingsNavigationRow(
+              _SettingsRow(
                 icon: Icons.gps_fixed,
+                iconBackground: const Color(0xFF8E8E93),
                 label: 'GPS Issues',
-                subtitle: 'Fix location problems',
                 onTap: () => _showGPSHelp(context),
               ),
-              _SettingsNavigationRow(
-                icon: Icons.sync_problem_outlined,
+              _SettingsRow(
+                icon: Icons.sync_problem,
+                iconBackground: const Color(0xFF8E8E93),
                 label: 'Sync Issues',
-                subtitle: 'Resolve sync problems',
                 onTap: () => _showSyncHelp(context),
               ),
-              _SettingsNavigationRow(
-                icon: Icons.battery_alert_outlined,
+              _SettingsRow(
+                icon: Icons.battery_alert,
+                iconBackground: const Color(0xFF8E8E93),
                 label: 'Battery Optimization',
-                subtitle: 'Improve battery life',
                 onTap: () => _showBatteryHelp(context),
               ),
             ],
           ),
 
-          const SizedBox(height: SyntrakSpacing.xl),
+          const SizedBox(height: 32),
         ],
       ),
     );
@@ -109,130 +116,70 @@ class HelpSupportScreen extends StatelessWidget {
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SyntrakSpacing.lg,
-        vertical: SyntrakSpacing.sm,
-      ),
+      padding: const EdgeInsets.only(left: 32, bottom: 6),
       child: Text(
-        title.toUpperCase(),
-        style: SyntrakTypography.labelSmall.copyWith(
-          color: SyntrakColors.textTertiary,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
-        ),
+        title,
+        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
       ),
     );
   }
 
   void _showToast(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-      ),
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
   }
 
   void _showContactOptions(BuildContext context) {
-    showModalBottomSheet(
+    showCupertinoModalPopup(
       context: context,
-      backgroundColor: SyntrakColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: SyntrakSpacing.md),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: SyntrakColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: SyntrakSpacing.lg),
-            Text(
-              'Contact Support',
-              style: SyntrakTypography.headlineSmall.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: SyntrakSpacing.md),
-            ListTile(
-              leading: const Icon(Icons.email_outlined),
-              title: const Text('Email'),
-              subtitle: const Text('support@syntrak.app'),
-              onTap: () {
-                Navigator.pop(context);
-                _showToast(context, 'Opening email...');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.chat_outlined),
-              title: const Text('Live Chat'),
-              subtitle: const Text('Available 9am - 5pm EST'),
-              onTap: () {
-                Navigator.pop(context);
-                _showToast(context, 'Starting chat...');
-              },
-            ),
-            const SizedBox(height: SyntrakSpacing.lg),
-          ],
+      builder: (ctx) => CupertinoActionSheet(
+        title: const Text('Contact Support'),
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _showToast(context, 'Opening email...');
+            },
+            child: const Text('Email (support@syntrak.app)'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _showToast(context, 'Starting chat...');
+            },
+            child: const Text('Live Chat'),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(ctx),
+          isDefaultAction: true,
+          child: const Text('Cancel'),
         ),
       ),
     );
   }
 
   void _showReportDialog(BuildContext context) {
-    showDialog(
+    showCupertinoDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => CupertinoAlertDialog(
         title: const Text('Report a Problem'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Please describe the issue you\'re experiencing:',
-              style: SyntrakTypography.bodySmall.copyWith(
-                color: SyntrakColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: SyntrakSpacing.md),
-            TextField(
-              maxLines: 4,
-              decoration: InputDecoration(
-                hintText: 'Describe the problem...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-            const SizedBox(height: SyntrakSpacing.sm),
-            Row(
-              children: [
-                Checkbox(value: true, onChanged: (_) {}),
-                Expanded(
-                  child: Text(
-                    'Include device logs',
-                    style: SyntrakTypography.bodySmall,
-                  ),
-                ),
-              ],
-            ),
-          ],
+        content: Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: CupertinoTextField(
+            placeholder: 'Describe the issue...',
+            maxLines: 4,
+          ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          CupertinoDialogAction(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(ctx);
               _showToast(context, 'Report submitted. Thank you!');
             },
             child: const Text('Submit'),
@@ -243,39 +190,25 @@ class HelpSupportScreen extends StatelessWidget {
   }
 
   void _showFeatureRequestDialog(BuildContext context) {
-    showDialog(
+    showCupertinoDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => CupertinoAlertDialog(
         title: const Text('Feature Request'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'What feature would you like to see?',
-              style: SyntrakTypography.bodySmall.copyWith(
-                color: SyntrakColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: SyntrakSpacing.md),
-            TextField(
-              maxLines: 4,
-              decoration: InputDecoration(
-                hintText: 'Describe your idea...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          ],
+        content: Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: CupertinoTextField(
+            placeholder: 'Describe your idea...',
+            maxLines: 4,
+          ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          CupertinoDialogAction(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(ctx);
               _showToast(context, 'Thanks for your suggestion!');
             },
             child: const Text('Submit'),
@@ -286,42 +219,19 @@ class HelpSupportScreen extends StatelessWidget {
   }
 
   void _showRateDialog(BuildContext context) {
-    showDialog(
+    showCupertinoDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => CupertinoAlertDialog(
         title: const Text('Rate Syntrak'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Enjoying Syntrak? Please rate us on the App Store!',
-              style: SyntrakTypography.bodyMedium,
-            ),
-            const SizedBox(height: SyntrakSpacing.md),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                5,
-                (index) => IconButton(
-                  icon: Icon(
-                    index < 4 ? Icons.star : Icons.star_border,
-                    color: Colors.amber,
-                    size: 32,
-                  ),
-                  onPressed: () {},
-                ),
-              ),
-            ),
-          ],
-        ),
+        content: const Text('Enjoying Syntrak? Please rate us on the App Store!'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(ctx),
             child: const Text('Not Now'),
           ),
-          TextButton(
+          CupertinoDialogAction(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(ctx);
               _showToast(context, 'Opening App Store...');
             },
             child: const Text('Rate'),
@@ -332,24 +242,24 @@ class HelpSupportScreen extends StatelessWidget {
   }
 
   void _showGPSHelp(BuildContext context) {
-    showDialog(
+    showCupertinoDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => CupertinoAlertDialog(
         title: const Text('GPS Troubleshooting'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHelpItem('1. Check location permissions in Settings'),
-            _buildHelpItem('2. Enable High Accuracy GPS mode'),
-            _buildHelpItem('3. Wait for GPS signal before starting'),
-            _buildHelpItem('4. Avoid tall buildings and dense forests'),
-            _buildHelpItem('5. Restart your device if issues persist'),
-          ],
+        content: const Padding(
+          padding: EdgeInsets.only(top: 16),
+          child: Text(
+            '1. Check location permissions\n'
+            '2. Enable High Accuracy mode\n'
+            '3. Wait for GPS signal before starting\n'
+            '4. Avoid tall buildings\n'
+            '5. Restart device if issues persist',
+            textAlign: TextAlign.left,
+          ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(ctx),
             child: const Text('Got It'),
           ),
         ],
@@ -358,24 +268,24 @@ class HelpSupportScreen extends StatelessWidget {
   }
 
   void _showSyncHelp(BuildContext context) {
-    showDialog(
+    showCupertinoDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => CupertinoAlertDialog(
         title: const Text('Sync Troubleshooting'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHelpItem('1. Check your internet connection'),
-            _buildHelpItem('2. Try switching between WiFi and cellular'),
-            _buildHelpItem('3. Force close and reopen the app'),
-            _buildHelpItem('4. Check for app updates'),
-            _buildHelpItem('5. Try logging out and back in'),
-          ],
+        content: const Padding(
+          padding: EdgeInsets.only(top: 16),
+          child: Text(
+            '1. Check internet connection\n'
+            '2. Try WiFi or cellular\n'
+            '3. Force close and reopen app\n'
+            '4. Check for updates\n'
+            '5. Try logging out and back in',
+            textAlign: TextAlign.left,
+          ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(ctx),
             child: const Text('Got It'),
           ),
         ],
@@ -384,37 +294,27 @@ class HelpSupportScreen extends StatelessWidget {
   }
 
   void _showBatteryHelp(BuildContext context) {
-    showDialog(
+    showCupertinoDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => CupertinoAlertDialog(
         title: const Text('Battery Tips'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHelpItem('1. Use "Battery Saver" GPS mode'),
-            _buildHelpItem('2. Disable live tracking when not needed'),
-            _buildHelpItem('3. Lower screen brightness'),
-            _buildHelpItem('4. Close other apps while recording'),
-            _buildHelpItem('5. Keep your phone warm in cold weather'),
-          ],
+        content: const Padding(
+          padding: EdgeInsets.only(top: 16),
+          child: Text(
+            '1. Use "Battery Saver" GPS mode\n'
+            '2. Disable live tracking\n'
+            '3. Lower screen brightness\n'
+            '4. Close other apps\n'
+            '5. Keep phone warm in cold weather',
+            textAlign: TextAlign.left,
+          ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(ctx),
             child: const Text('Got It'),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildHelpItem(String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Text(
-        text,
-        style: SyntrakTypography.bodySmall,
       ),
     );
   }
@@ -429,20 +329,19 @@ class _SettingsGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: SyntrakColors.surface,
-        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         children: [
           for (int i = 0; i < children.length; i++) ...[
             children[i],
             if (i < children.length - 1)
-              Divider(
-                height: 1,
-                indent: 56,
-                color: SyntrakColors.surfaceVariant,
+              Padding(
+                padding: const EdgeInsets.only(left: 52),
+                child: Divider(height: 0.5, thickness: 0.5, color: Colors.grey[300]),
               ),
           ],
         ],
@@ -451,14 +350,16 @@ class _SettingsGroup extends StatelessWidget {
   }
 }
 
-class _SettingsNavigationRow extends StatelessWidget {
+class _SettingsRow extends StatelessWidget {
   final IconData icon;
+  final Color iconBackground;
   final String label;
   final String? subtitle;
   final VoidCallback onTap;
 
-  const _SettingsNavigationRow({
+  const _SettingsRow({
     required this.icon,
+    required this.iconBackground,
     required this.label,
     this.subtitle,
     required this.onTap,
@@ -466,48 +367,41 @@ class _SettingsNavigationRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SyntrakSpacing.md,
-          vertical: SyntrakSpacing.md,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: SyntrakColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(8),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+          child: Row(
+            children: [
+              Container(
+                width: 29,
+                height: 29,
+                decoration: BoxDecoration(
+                  color: iconBackground,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(icon, color: Colors.white, size: 18),
               ),
-              child: Icon(icon, size: 20, color: SyntrakColors.textSecondary),
-            ),
-            const SizedBox(width: SyntrakSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: SyntrakTypography.bodyMedium
-                        .copyWith(fontWeight: FontWeight.w500),
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle!,
-                      style: SyntrakTypography.bodySmall
-                          .copyWith(color: SyntrakColors.textTertiary),
-                    ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label,
+                        style: const TextStyle(fontSize: 17, color: Colors.black)),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 1),
+                      Text(subtitle!,
+                          style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-            Icon(Icons.chevron_right,
-                size: 20, color: SyntrakColors.textTertiary),
-          ],
+              Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+            ],
+          ),
         ),
       ),
     );

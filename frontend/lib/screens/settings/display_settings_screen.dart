@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
+import 'package:flutter/cupertino.dart';
 
 class DisplaySettingsScreen extends StatefulWidget {
   const DisplaySettingsScreen({super.key});
@@ -18,100 +18,115 @@ class _DisplaySettingsScreenState extends State<DisplaySettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SyntrakColors.background,
+      backgroundColor: const Color(0xFFF2F2F7),
       appBar: AppBar(
-        backgroundColor: SyntrakColors.surface,
+        backgroundColor: const Color(0xFFF2F2F7),
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios),
+          icon: const Icon(Icons.arrow_back_ios, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Display'),
+        title: const Text(
+          'Display & Appearance',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+        ),
         centerTitle: true,
       ),
       body: ListView(
         children: [
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: 24),
 
-          // Appearance Section
-          _buildSectionHeader('Appearance'),
+          // Appearance
+          _buildSectionHeader('APPEARANCE'),
           _SettingsGroup(
             children: [
               _SettingsSelectionRow(
-                icon: Icons.brightness_6_outlined,
                 label: 'Theme',
                 value: _theme,
-                options: const ['Light', 'Dark', 'System'],
-                onChanged: (value) {
-                  setState(() => _theme = value);
-                  _showToast('Theme changed to $value');
-                },
+                onTap: () => _showOptions(
+                  'Theme',
+                  ['Light', 'Dark', 'System'],
+                  _theme,
+                  (v) {
+                    setState(() => _theme = v);
+                    _showToast('Theme changed to $v');
+                  },
+                ),
               ),
               _SettingsNavigationRow(
-                icon: Icons.app_shortcut,
-                label: 'App icon',
-                subtitle: 'Choose your preferred icon',
+                label: 'App Icon',
+                value: 'Default',
                 onTap: () => _showToast('App icon customization coming soon'),
               ),
             ],
           ),
+          _buildSectionFooter(
+            'Choose System to match your device settings.',
+          ),
 
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: 24),
 
-          // Language & Region Section
-          _buildSectionHeader('Language & Region'),
+          // Language & Region
+          _buildSectionHeader('LANGUAGE & REGION'),
           _SettingsGroup(
             children: [
               _SettingsSelectionRow(
-                icon: Icons.language,
                 label: 'Language',
                 value: _language,
-                options: const [
-                  'English',
-                  'Spanish',
-                  'French',
-                  'German',
-                  'Japanese'
-                ],
-                onChanged: (value) {
-                  setState(() => _language = value);
-                  _showToast('Language will change on restart');
-                },
+                onTap: () => _showOptions(
+                  'Language',
+                  ['English', 'Spanish', 'French', 'German', 'Japanese'],
+                  _language,
+                  (v) {
+                    setState(() => _language = v);
+                    _showToast('Language will change on restart');
+                  },
+                ),
               ),
               _SettingsSelectionRow(
-                icon: Icons.calendar_today_outlined,
-                label: 'Date format',
+                label: 'Date Format',
                 value: _dateFormat,
-                options: const ['MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD'],
-                onChanged: (value) => setState(() => _dateFormat = value),
+                onTap: () => _showOptions(
+                  'Date Format',
+                  ['MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD'],
+                  _dateFormat,
+                  (v) => setState(() => _dateFormat = v),
+                ),
               ),
               _SettingsSelectionRow(
-                icon: Icons.view_week_outlined,
-                label: 'Start of week',
+                label: 'Start of Week',
                 value: _startOfWeek,
-                options: const ['Sunday', 'Monday', 'Saturday'],
-                onChanged: (value) => setState(() => _startOfWeek = value),
+                onTap: () => _showOptions(
+                  'Start of Week',
+                  ['Sunday', 'Monday', 'Saturday'],
+                  _startOfWeek,
+                  (v) => setState(() => _startOfWeek = v),
+                ),
               ),
             ],
           ),
 
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: 24),
 
-          // Map Section
-          _buildSectionHeader('Maps'),
+          // Maps
+          _buildSectionHeader('MAPS'),
           _SettingsGroup(
             children: [
               _SettingsSelectionRow(
-                icon: Icons.map_outlined,
-                label: 'Map style',
+                label: 'Map Style',
                 value: _mapStyle,
-                options: const ['Standard', 'Satellite', 'Terrain', 'Dark'],
-                onChanged: (value) => setState(() => _mapStyle = value),
+                onTap: () => _showOptions(
+                  'Map Style',
+                  ['Standard', 'Satellite', 'Terrain', 'Dark'],
+                  _mapStyle,
+                  (v) => setState(() => _mapStyle = v),
+                ),
               ),
             ],
           ),
 
-          const SizedBox(height: SyntrakSpacing.xl),
+          const SizedBox(height: 32),
         ],
       ),
     );
@@ -119,16 +134,57 @@ class _DisplaySettingsScreenState extends State<DisplaySettingsScreen> {
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SyntrakSpacing.lg,
-        vertical: SyntrakSpacing.sm,
-      ),
+      padding: const EdgeInsets.only(left: 32, bottom: 6),
       child: Text(
-        title.toUpperCase(),
-        style: SyntrakTypography.labelSmall.copyWith(
-          color: SyntrakColors.textTertiary,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
+        title,
+        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+      ),
+    );
+  }
+
+  Widget _buildSectionFooter(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 32, right: 32, top: 6),
+      child: Text(
+        text,
+        style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+      ),
+    );
+  }
+
+  void _showOptions(
+    String title,
+    List<String> options,
+    String currentValue,
+    ValueChanged<String> onChanged,
+  ) {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (context) => CupertinoActionSheet(
+        title: Text(title),
+        actions: options
+            .map((option) => CupertinoActionSheetAction(
+                  onPressed: () {
+                    onChanged(option);
+                    Navigator.pop(context);
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(option),
+                      if (option == currentValue) ...[
+                        const SizedBox(width: 8),
+                        const Icon(CupertinoIcons.checkmark,
+                            size: 18, color: Color(0xFF007AFF)),
+                      ],
+                    ],
+                  ),
+                ))
+            .toList(),
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(context),
+          isDefaultAction: true,
+          child: const Text('Cancel'),
         ),
       ),
     );
@@ -136,11 +192,7 @@ class _DisplaySettingsScreenState extends State<DisplaySettingsScreen> {
 
   void _showToast(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-      ),
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
   }
 }
@@ -154,20 +206,19 @@ class _SettingsGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: SyntrakColors.surface,
-        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         children: [
           for (int i = 0; i < children.length; i++) ...[
             children[i],
             if (i < children.length - 1)
-              Divider(
-                height: 1,
-                indent: 56,
-                color: SyntrakColors.surfaceVariant,
+              Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: Divider(height: 0.5, thickness: 0.5, color: Colors.grey[300]),
               ),
           ],
         ],
@@ -177,101 +228,35 @@ class _SettingsGroup extends StatelessWidget {
 }
 
 class _SettingsSelectionRow extends StatelessWidget {
-  final IconData icon;
   final String label;
   final String value;
-  final List<String> options;
-  final ValueChanged<String> onChanged;
+  final VoidCallback onTap;
 
   const _SettingsSelectionRow({
-    required this.icon,
     required this.label,
     required this.value,
-    required this.options,
-    required this.onChanged,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => _showOptionsSheet(context),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SyntrakSpacing.md,
-          vertical: SyntrakSpacing.md,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: SyntrakColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, size: 20, color: SyntrakColors.textSecondary),
-            ),
-            const SizedBox(width: SyntrakSpacing.md),
-            Expanded(
-              child: Text(
-                label,
-                style: SyntrakTypography.bodyMedium
-                    .copyWith(fontWeight: FontWeight.w500),
-              ),
-            ),
-            Text(
-              value,
-              style: SyntrakTypography.bodySmall
-                  .copyWith(color: SyntrakColors.textTertiary),
-            ),
-            const SizedBox(width: SyntrakSpacing.xs),
-            Icon(Icons.chevron_right,
-                size: 20, color: SyntrakColors.textTertiary),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showOptionsSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: SyntrakColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: SyntrakSpacing.md),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: SyntrakColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: SyntrakSpacing.lg),
-            Text(
-              label,
-              style: SyntrakTypography.headlineSmall
-                  .copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: SyntrakSpacing.md),
-            ...options.map((option) => ListTile(
-                  title: Text(option),
-                  trailing: option == value
-                      ? Icon(Icons.check, color: SyntrakColors.primary)
-                      : null,
-                  onTap: () {
-                    onChanged(option);
-                    Navigator.pop(context);
-                  },
-                )),
-            const SizedBox(height: SyntrakSpacing.lg),
-          ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Text(label,
+                  style: const TextStyle(fontSize: 17, color: Colors.black)),
+              const Spacer(),
+              Text(value,
+                  style: TextStyle(fontSize: 17, color: Colors.grey[500])),
+              const SizedBox(width: 4),
+              Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+            ],
+          ),
         ),
       ),
     );
@@ -279,62 +264,36 @@ class _SettingsSelectionRow extends StatelessWidget {
 }
 
 class _SettingsNavigationRow extends StatelessWidget {
-  final IconData icon;
   final String label;
-  final String? subtitle;
+  final String? value;
   final VoidCallback onTap;
 
   const _SettingsNavigationRow({
-    required this.icon,
     required this.label,
-    this.subtitle,
+    this.value,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SyntrakSpacing.md,
-          vertical: SyntrakSpacing.md,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: SyntrakColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, size: 20, color: SyntrakColors.textSecondary),
-            ),
-            const SizedBox(width: SyntrakSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: SyntrakTypography.bodyMedium
-                        .copyWith(fontWeight: FontWeight.w500),
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle!,
-                      style: SyntrakTypography.bodySmall
-                          .copyWith(color: SyntrakColors.textTertiary),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right,
-                size: 20, color: SyntrakColors.textTertiary),
-          ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Text(label,
+                  style: const TextStyle(fontSize: 17, color: Colors.black)),
+              const Spacer(),
+              if (value != null)
+                Text(value!,
+                    style: TextStyle(fontSize: 17, color: Colors.grey[500])),
+              const SizedBox(width: 4),
+              Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+            ],
+          ),
         ),
       ),
     );

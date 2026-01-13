@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/providers/auth_provider.dart';
 
 class AccountSettingsScreen extends StatefulWidget {
@@ -20,168 +20,184 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     final email = user?.email ?? 'Not set';
 
     return Scaffold(
-      backgroundColor: SyntrakColors.background,
+      backgroundColor: const Color(0xFFF2F2F7),
       appBar: AppBar(
-        backgroundColor: SyntrakColors.surface,
+        backgroundColor: const Color(0xFFF2F2F7),
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios),
+          icon: const Icon(Icons.arrow_back_ios, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Account'),
+        title: const Text(
+          'Account',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+        ),
         centerTitle: true,
       ),
       body: ListView(
         children: [
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: 24),
 
-          // Email & Phone Section
-          _buildSectionHeader('Contact Information'),
+          // Contact Information
+          _buildSectionHeader('CONTACT INFORMATION'),
           _SettingsGroup(
             children: [
-              _SettingsInfoRow(
-                icon: Icons.email_outlined,
+              _SettingsDetailRow(
                 label: 'Email',
                 value: email,
-                trailing: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withAlpha(30),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    'Verified',
-                    style: SyntrakTypography.labelSmall.copyWith(
-                      color: Colors.green,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+                trailing: _buildVerifiedBadge(),
                 onTap: () => _showChangeEmailDialog(),
               ),
-              _SettingsInfoRow(
-                icon: Icons.phone_outlined,
-                label: 'Phone number',
+              _SettingsDetailRow(
+                label: 'Phone',
                 value: 'Not set',
                 onTap: () => _showAddPhoneDialog(),
               ),
             ],
           ),
 
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: 24),
 
-          // Security Section
-          _buildSectionHeader('Security'),
+          // Security
+          _buildSectionHeader('SECURITY'),
           _SettingsGroup(
             children: [
               _SettingsNavigationRow(
-                icon: Icons.lock_outline,
-                label: 'Change password',
-                subtitle: 'Update your password',
+                label: 'Change Password',
                 onTap: () => _showChangePasswordDialog(),
               ),
               _SettingsToggleRow(
-                icon: Icons.security_outlined,
-                label: 'Two-factor authentication',
-                subtitle: _twoFactorEnabled ? 'Enabled' : 'Add extra security',
+                label: 'Two-Factor Authentication',
                 value: _twoFactorEnabled,
                 onChanged: (value) {
                   setState(() => _twoFactorEnabled = value);
-                  if (value) {
-                    _showSetup2FADialog();
-                  }
+                  if (value) _showSetup2FADialog();
                 },
               ),
             ],
           ),
+          _buildSectionFooter(
+            'Two-factor authentication adds an extra layer of security to your account.',
+          ),
 
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: 24),
 
-          // Connected Accounts Section
-          _buildSectionHeader('Connected Accounts'),
+          // Connected Accounts
+          _buildSectionHeader('CONNECTED ACCOUNTS'),
           _SettingsGroup(
             children: [
-              _SettingsConnectedAccountRow(
-                icon: Icons.g_mobiledata,
+              _SettingsConnectedRow(
                 label: 'Google',
+                icon: Icons.g_mobiledata,
                 isConnected: false,
                 onTap: () => _showToast('Google connection coming soon'),
               ),
-              _SettingsConnectedAccountRow(
-                icon: Icons.apple,
+              _SettingsConnectedRow(
                 label: 'Apple',
+                icon: Icons.apple,
                 isConnected: false,
                 onTap: () => _showToast('Apple connection coming soon'),
               ),
             ],
           ),
+          _buildSectionFooter(
+            'Connect accounts for easier sign-in.',
+          ),
 
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: 24),
 
-          // Sessions Section
-          _buildSectionHeader('Sessions'),
+          // Sessions
+          _buildSectionHeader('SESSIONS'),
           _SettingsGroup(
             children: [
               _SettingsNavigationRow(
-                icon: Icons.devices_outlined,
-                label: 'Active sessions',
-                subtitle: '1 device logged in',
+                label: 'Active Sessions',
+                value: '1 device',
                 onTap: () => _showToast('Active sessions coming soon'),
               ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          _SettingsGroup(
+            children: [
               _SettingsActionRow(
-                icon: Icons.logout,
-                label: 'Log out of all devices',
+                label: 'Sign Out of All Devices',
+                textColor: const Color(0xFF007AFF),
                 onTap: () => _showLogoutAllConfirmation(),
               ),
             ],
           ),
 
-          const SizedBox(height: SyntrakSpacing.xl),
+          const SizedBox(height: 32),
         ],
+      ),
+    );
+  }
+
+  Widget _buildVerifiedBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: const Color(0xFF34C759).withAlpha(30),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: const Text(
+        'Verified',
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: Color(0xFF34C759),
+        ),
       ),
     );
   }
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SyntrakSpacing.lg,
-        vertical: SyntrakSpacing.sm,
-      ),
+      padding: const EdgeInsets.only(left: 32, bottom: 6),
       child: Text(
-        title.toUpperCase(),
-        style: SyntrakTypography.labelSmall.copyWith(
-          color: SyntrakColors.textTertiary,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
+        title,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w400,
+          color: Colors.grey[600],
+          letterSpacing: -0.1,
         ),
       ),
     );
   }
 
+  Widget _buildSectionFooter(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 32, right: 32, top: 6),
+      child: Text(
+        text,
+        style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+      ),
+    );
+  }
+
   void _showChangeEmailDialog() {
-    final controller = TextEditingController();
-    showDialog(
+    showCupertinoDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => CupertinoAlertDialog(
         title: const Text('Change Email'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.emailAddress,
-          decoration: const InputDecoration(
-            labelText: 'New email address',
-            border: OutlineInputBorder(),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: CupertinoTextField(
+            placeholder: 'New email address',
+            keyboardType: TextInputType.emailAddress,
           ),
         ),
         actions: [
-          TextButton(
+          CupertinoDialogAction(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          CupertinoDialogAction(
             onPressed: () {
               Navigator.pop(context);
               _showToast('Verification email sent');
@@ -194,26 +210,27 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   }
 
   void _showAddPhoneDialog() {
-    final controller = TextEditingController();
-    showDialog(
+    showCupertinoDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => CupertinoAlertDialog(
         title: const Text('Add Phone Number'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.phone,
-          decoration: const InputDecoration(
-            labelText: 'Phone number',
-            border: OutlineInputBorder(),
-            prefixText: '+1 ',
+        content: Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: CupertinoTextField(
+            placeholder: 'Phone number',
+            keyboardType: TextInputType.phone,
+            prefix: const Padding(
+              padding: EdgeInsets.only(left: 8),
+              child: Text('+1'),
+            ),
           ),
         ),
         actions: [
-          TextButton(
+          CupertinoDialogAction(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          CupertinoDialogAction(
             onPressed: () {
               Navigator.pop(context);
               _showToast('Verification code sent');
@@ -226,47 +243,40 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   }
 
   void _showChangePasswordDialog() {
-    showDialog(
+    showCupertinoDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => CupertinoAlertDialog(
         title: const Text('Change Password'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Current password',
-                border: OutlineInputBorder(),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: Column(
+            children: const [
+              CupertinoTextField(
+                placeholder: 'Current password',
+                obscureText: true,
               ),
-            ),
-            const SizedBox(height: SyntrakSpacing.md),
-            TextField(
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'New password',
-                border: OutlineInputBorder(),
+              SizedBox(height: 8),
+              CupertinoTextField(
+                placeholder: 'New password',
+                obscureText: true,
               ),
-            ),
-            const SizedBox(height: SyntrakSpacing.md),
-            TextField(
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Confirm new password',
-                border: OutlineInputBorder(),
+              SizedBox(height: 8),
+              CupertinoTextField(
+                placeholder: 'Confirm new password',
+                obscureText: true,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
-          TextButton(
+          CupertinoDialogAction(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          CupertinoDialogAction(
             onPressed: () {
               Navigator.pop(context);
-              _showToast('Password updated successfully');
+              _showToast('Password updated');
             },
             child: const Text('Update'),
           ),
@@ -276,66 +286,54 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   }
 
   void _showSetup2FADialog() {
-    showDialog(
+    showCupertinoModalPopup(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => CupertinoActionSheet(
         title: const Text('Set Up Two-Factor Authentication'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Choose a method to receive verification codes:',
-              style: SyntrakTypography.bodyMedium,
-            ),
-            const SizedBox(height: SyntrakSpacing.md),
-            ListTile(
-              leading: const Icon(Icons.sms),
-              title: const Text('SMS'),
-              subtitle: const Text('Receive codes via text message'),
-              onTap: () {
-                Navigator.pop(context);
-                _showToast('SMS 2FA setup coming soon');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.app_registration),
-              title: const Text('Authenticator App'),
-              subtitle: const Text('Use Google Authenticator or similar'),
-              onTap: () {
-                Navigator.pop(context);
-                _showToast('Authenticator setup coming soon');
-              },
-            ),
-          ],
-        ),
+        message: const Text('Choose a verification method'),
         actions: [
-          TextButton(
+          CupertinoActionSheetAction(
             onPressed: () {
               Navigator.pop(context);
-              setState(() => _twoFactorEnabled = false);
+              _showToast('SMS setup coming soon');
             },
-            child: const Text('Cancel'),
+            child: const Text('SMS'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              _showToast('Authenticator setup coming soon');
+            },
+            child: const Text('Authenticator App'),
           ),
         ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () {
+            Navigator.pop(context);
+            setState(() => _twoFactorEnabled = false);
+          },
+          isDestructiveAction: true,
+          child: const Text('Cancel'),
+        ),
       ),
     );
   }
 
   void _showLogoutAllConfirmation() {
-    showDialog(
+    showCupertinoDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Log Out of All Devices'),
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('Sign Out of All Devices'),
         content: const Text(
-          'This will log you out of all devices including this one. You will need to log in again.',
+          'You will be signed out of all devices including this one.',
         ),
         actions: [
-          TextButton(
+          CupertinoDialogAction(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          CupertinoDialogAction(
+            isDestructiveAction: true,
             onPressed: () {
               Navigator.pop(context);
               final authProvider =
@@ -343,10 +341,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
               authProvider.logout();
               Navigator.of(context).popUntil((route) => route.isFirst);
             },
-            child: Text(
-              'Log Out All',
-              style: TextStyle(color: SyntrakColors.primary),
-            ),
+            child: const Text('Sign Out All'),
           ),
         ],
       ),
@@ -355,16 +350,12 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
 
   void _showToast(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-      ),
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
   }
 }
 
-// Reusable Settings Group Container
+// Reusable widgets
 class _SettingsGroup extends StatelessWidget {
   final List<Widget> children;
 
@@ -373,20 +364,23 @@ class _SettingsGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: SyntrakColors.surface,
-        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         children: [
           for (int i = 0; i < children.length; i++) ...[
             children[i],
             if (i < children.length - 1)
-              Divider(
-                height: 1,
-                indent: 56,
-                color: SyntrakColors.surfaceVariant,
+              Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: Divider(
+                  height: 0.5,
+                  thickness: 0.5,
+                  color: Colors.grey[300],
+                ),
               ),
           ],
         ],
@@ -395,16 +389,13 @@ class _SettingsGroup extends StatelessWidget {
   }
 }
 
-// Info Row (displays a value)
-class _SettingsInfoRow extends StatelessWidget {
-  final IconData icon;
+class _SettingsDetailRow extends StatelessWidget {
   final String label;
   final String value;
   final Widget? trailing;
   final VoidCallback? onTap;
 
-  const _SettingsInfoRow({
-    required this.icon,
+  const _SettingsDetailRow({
     required this.label,
     required this.value,
     this.trailing,
@@ -413,77 +404,99 @@ class _SettingsInfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SyntrakSpacing.md,
-          vertical: SyntrakSpacing.md,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: SyntrakColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                icon,
-                size: 20,
-                color: SyntrakColors.textSecondary,
-              ),
-            ),
-            const SizedBox(width: SyntrakSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: SyntrakTypography.bodySmall.copyWith(
-                      color: SyntrakColors.textTertiary,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(fontSize: 13, color: Colors.grey[500]),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    value,
-                    style: SyntrakTypography.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w500,
+                    const SizedBox(height: 2),
+                    Text(
+                      value,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.black,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            if (trailing != null) trailing!,
-            if (onTap != null) ...[
-              const SizedBox(width: SyntrakSpacing.xs),
-              Icon(
-                Icons.chevron_right,
-                size: 20,
-                color: SyntrakColors.textTertiary,
-              ),
+              if (trailing != null) trailing!,
+              if (onTap != null) ...[
+                const SizedBox(width: 8),
+                Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-// Toggle Row
-class _SettingsToggleRow extends StatelessWidget {
-  final IconData icon;
+class _SettingsNavigationRow extends StatelessWidget {
   final String label;
-  final String? subtitle;
+  final String? value;
+  final VoidCallback onTap;
+
+  const _SettingsNavigationRow({
+    required this.label,
+    this.value,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.black,
+                ),
+              ),
+              const Spacer(),
+              if (value != null)
+                Text(
+                  value!,
+                  style: TextStyle(fontSize: 17, color: Colors.grey[500]),
+                ),
+              const SizedBox(width: 4),
+              Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsToggleRow extends StatelessWidget {
+  final String label;
   final bool value;
   final ValueChanged<bool> onChanged;
 
   const _SettingsToggleRow({
-    required this.icon,
     required this.label,
-    this.subtitle,
     required this.value,
     required this.onChanged,
   });
@@ -491,52 +504,22 @@ class _SettingsToggleRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SyntrakSpacing.md,
-        vertical: SyntrakSpacing.sm,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: SyntrakColors.surfaceVariant,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: SyntrakColors.textSecondary,
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w400,
+              color: Colors.black,
             ),
           ),
-          const SizedBox(width: SyntrakSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: SyntrakTypography.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle!,
-                    style: SyntrakTypography.bodySmall.copyWith(
-                      color: SyntrakColors.textTertiary,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          Switch.adaptive(
+          const Spacer(),
+          CupertinoSwitch(
             value: value,
             onChanged: onChanged,
-            activeColor: SyntrakColors.primary,
+            activeColor: const Color(0xFF34C759),
           ),
         ],
       ),
@@ -544,198 +527,96 @@ class _SettingsToggleRow extends StatelessWidget {
   }
 }
 
-// Navigation Row
-class _SettingsNavigationRow extends StatelessWidget {
-  final IconData icon;
+class _SettingsConnectedRow extends StatelessWidget {
   final String label;
-  final String? subtitle;
-  final VoidCallback onTap;
-
-  const _SettingsNavigationRow({
-    required this.icon,
-    required this.label,
-    this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SyntrakSpacing.md,
-          vertical: SyntrakSpacing.md,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: SyntrakColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                icon,
-                size: 20,
-                color: SyntrakColors.textSecondary,
-              ),
-            ),
-            const SizedBox(width: SyntrakSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: SyntrakTypography.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle!,
-                      style: SyntrakTypography.bodySmall.copyWith(
-                        color: SyntrakColors.textTertiary,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right,
-              size: 20,
-              color: SyntrakColors.textTertiary,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// Action Row
-class _SettingsActionRow extends StatelessWidget {
   final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _SettingsActionRow({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SyntrakSpacing.md,
-          vertical: SyntrakSpacing.md,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: SyntrakColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                icon,
-                size: 20,
-                color: SyntrakColors.textSecondary,
-              ),
-            ),
-            const SizedBox(width: SyntrakSpacing.md),
-            Text(
-              label,
-              style: SyntrakTypography.bodyMedium.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// Connected Account Row
-class _SettingsConnectedAccountRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
   final bool isConnected;
   final VoidCallback onTap;
 
-  const _SettingsConnectedAccountRow({
-    required this.icon,
+  const _SettingsConnectedRow({
     required this.label,
+    required this.icon,
     required this.isConnected,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SyntrakSpacing.md,
-          vertical: SyntrakSpacing.md,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: SyntrakColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                icon,
-                size: 20,
-                color: SyntrakColors.textSecondary,
-              ),
-            ),
-            const SizedBox(width: SyntrakSpacing.md),
-            Expanded(
-              child: Text(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Icon(icon, size: 24, color: Colors.grey[700]),
+              const SizedBox(width: 12),
+              Text(
                 label,
-                style: SyntrakTypography.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w500,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.black,
                 ),
               ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 6,
-              ),
-              decoration: BoxDecoration(
-                color: isConnected
-                    ? SyntrakColors.surfaceVariant
-                    : SyntrakColors.primary,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Text(
-                isConnected ? 'Connected' : 'Connect',
-                style: SyntrakTypography.labelSmall.copyWith(
+              const Spacer(),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
                   color: isConnected
-                      ? SyntrakColors.textSecondary
-                      : Colors.white,
-                  fontWeight: FontWeight.w600,
+                      ? Colors.grey[200]
+                      : const Color(0xFF007AFF),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  isConnected ? 'Connected' : 'Connect',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isConnected ? Colors.grey[600] : Colors.white,
+                  ),
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsActionRow extends StatelessWidget {
+  final String label;
+  final Color textColor;
+  final VoidCallback onTap;
+
+  const _SettingsActionRow({
+    required this.label,
+    required this.textColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w400,
+                color: textColor,
+              ),
             ),
-          ],
+          ),
         ),
       ),
     );

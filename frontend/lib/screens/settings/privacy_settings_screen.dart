@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
+import 'package:flutter/cupertino.dart';
 
 class PrivacySettingsScreen extends StatefulWidget {
   const PrivacySettingsScreen({super.key});
@@ -9,17 +9,11 @@ class PrivacySettingsScreen extends StatefulWidget {
 }
 
 class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
-  // Profile visibility
   String _profileVisibility = 'Everyone';
   String _activityVisibility = 'Followers';
-
-  // Location privacy
   bool _hideStartEnd = true;
-  double _privacyZoneRadius = 500; // meters
   bool _hideExactLocation = false;
   bool _showActivityMaps = true;
-
-  // Discovery
   bool _discoverableByEmail = true;
   bool _discoverableByPhone = false;
   bool _hideFromLeaderboards = false;
@@ -27,118 +21,109 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SyntrakColors.background,
+      backgroundColor: const Color(0xFFF2F2F7),
       appBar: AppBar(
-        backgroundColor: SyntrakColors.surface,
+        backgroundColor: const Color(0xFFF2F2F7),
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios),
+          icon: const Icon(Icons.arrow_back_ios, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Privacy'),
+        title: const Text(
+          'Privacy & Security',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+        ),
         centerTitle: true,
       ),
       body: ListView(
         children: [
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: 24),
 
-          // Profile Visibility Section
-          _buildSectionHeader('Profile Visibility'),
+          // Profile Visibility
+          _buildSectionHeader('PROFILE VISIBILITY'),
           _SettingsGroup(
             children: [
               _SettingsSelectionRow(
-                icon: Icons.visibility_outlined,
-                label: 'Who can see your profile',
+                label: 'Profile',
                 value: _profileVisibility,
-                options: const ['Everyone', 'Followers', 'Only Me'],
-                onChanged: (value) =>
-                    setState(() => _profileVisibility = value),
+                onTap: () => _showOptions(
+                  'Who can see your profile',
+                  ['Everyone', 'Followers', 'Only Me'],
+                  _profileVisibility,
+                  (value) => setState(() => _profileVisibility = value),
+                ),
               ),
               _SettingsSelectionRow(
-                icon: Icons.directions_run,
-                label: 'Who can see your activities',
+                label: 'Activities',
                 value: _activityVisibility,
-                options: const ['Everyone', 'Followers', 'Only Me'],
-                onChanged: (value) =>
-                    setState(() => _activityVisibility = value),
+                onTap: () => _showOptions(
+                  'Who can see your activities',
+                  ['Everyone', 'Followers', 'Only Me'],
+                  _activityVisibility,
+                  (value) => setState(() => _activityVisibility = value),
+                ),
               ),
             ],
           ),
+          _buildSectionFooter(
+            'Control who can see your profile and activities.',
+          ),
 
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: 24),
 
-          // Location Privacy Section
-          _buildSectionHeader('Location Privacy'),
+          // Location Privacy
+          _buildSectionHeader('LOCATION PRIVACY'),
           _SettingsGroup(
             children: [
               _SettingsToggleRow(
-                icon: Icons.location_off_outlined,
-                label: 'Hide start & end points',
-                subtitle: 'Protect your home and frequent locations',
+                label: 'Hide Start & End Points',
+                subtitle: 'Protects your home location',
                 value: _hideStartEnd,
-                onChanged: (value) {
-                  setState(() => _hideStartEnd = value);
-                  if (value) {
-                    _showToast('Your start and end points will be hidden');
-                  }
-                },
+                onChanged: (value) => setState(() => _hideStartEnd = value),
               ),
-              if (_hideStartEnd)
-                _SettingsSliderRow(
-                  icon: Icons.radar,
-                  label: 'Privacy zone radius',
-                  subtitle: '${_privacyZoneRadius.toInt()}m around start/end',
-                  value: _privacyZoneRadius,
-                  min: 200,
-                  max: 1000,
-                  divisions: 8,
-                  onChanged: (value) =>
-                      setState(() => _privacyZoneRadius = value),
-                ),
               _SettingsToggleRow(
-                icon: Icons.my_location_outlined,
-                label: 'Hide exact location in posts',
-                subtitle: 'Show general area instead of precise location',
+                label: 'Hide Exact Location',
+                subtitle: 'Show general area instead',
                 value: _hideExactLocation,
                 onChanged: (value) =>
                     setState(() => _hideExactLocation = value),
               ),
               _SettingsToggleRow(
-                icon: Icons.map_outlined,
-                label: 'Show activity maps',
-                subtitle: 'Display route maps on public activities',
+                label: 'Show Activity Maps',
+                subtitle: 'Display route on activities',
                 value: _showActivityMaps,
                 onChanged: (value) =>
                     setState(() => _showActivityMaps = value),
               ),
             ],
           ),
+          _buildSectionFooter(
+            'Your start and end points will be hidden within 500m to protect your privacy.',
+          ),
 
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: 24),
 
-          // Discovery Section
-          _buildSectionHeader('Discoverability'),
+          // Discoverability
+          _buildSectionHeader('DISCOVERABILITY'),
           _SettingsGroup(
             children: [
               _SettingsToggleRow(
-                icon: Icons.email_outlined,
-                label: 'Find by email',
-                subtitle: 'Let others find you using your email',
+                label: 'Find by Email',
+                subtitle: 'Let others find you by email',
                 value: _discoverableByEmail,
                 onChanged: (value) =>
                     setState(() => _discoverableByEmail = value),
               ),
               _SettingsToggleRow(
-                icon: Icons.phone_outlined,
-                label: 'Find by phone number',
-                subtitle: 'Let others find you using your phone',
+                label: 'Find by Phone',
+                subtitle: 'Let others find you by phone',
                 value: _discoverableByPhone,
                 onChanged: (value) =>
                     setState(() => _discoverableByPhone = value),
               ),
               _SettingsToggleRow(
-                icon: Icons.leaderboard_outlined,
-                label: 'Hide from leaderboards',
+                label: 'Hide from Leaderboards',
                 subtitle: 'Opt out of public rankings',
                 value: _hideFromLeaderboards,
                 onChanged: (value) =>
@@ -147,34 +132,26 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
             ],
           ),
 
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: 24),
 
-          // Blocked Users Section
-          _buildSectionHeader('Blocked & Muted'),
+          // Blocked Users
+          _buildSectionHeader('BLOCKED ACCOUNTS'),
           _SettingsGroup(
             children: [
               _SettingsNavigationRow(
-                icon: Icons.block,
-                label: 'Blocked users',
-                subtitle: '0 users blocked',
-                onTap: () {
-                  // TODO: Navigate to blocked users
-                  _showToast('Blocked users list coming soon');
-                },
+                label: 'Blocked Users',
+                value: '0 users',
+                onTap: () => _showToast('Blocked users coming soon'),
               ),
               _SettingsNavigationRow(
-                icon: Icons.volume_off_outlined,
-                label: 'Muted users',
-                subtitle: '0 users muted',
-                onTap: () {
-                  // TODO: Navigate to muted users
-                  _showToast('Muted users list coming soon');
-                },
+                label: 'Muted Users',
+                value: '0 users',
+                onTap: () => _showToast('Muted users coming soon'),
               ),
             ],
           ),
 
-          const SizedBox(height: SyntrakSpacing.xl),
+          const SizedBox(height: 32),
         ],
       ),
     );
@@ -182,16 +159,68 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SyntrakSpacing.lg,
-        vertical: SyntrakSpacing.sm,
-      ),
+      padding: const EdgeInsets.only(left: 32, bottom: 6),
       child: Text(
-        title.toUpperCase(),
-        style: SyntrakTypography.labelSmall.copyWith(
-          color: SyntrakColors.textTertiary,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
+        title,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w400,
+          color: Colors.grey[600],
+          letterSpacing: -0.1,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionFooter(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 32, right: 32, top: 6),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 13,
+          color: Colors.grey[500],
+        ),
+      ),
+    );
+  }
+
+  void _showOptions(
+    String title,
+    List<String> options,
+    String currentValue,
+    ValueChanged<String> onChanged,
+  ) {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (context) => CupertinoActionSheet(
+        title: Text(title),
+        actions: options
+            .map((option) => CupertinoActionSheetAction(
+                  onPressed: () {
+                    onChanged(option);
+                    Navigator.pop(context);
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(option),
+                      if (option == currentValue) ...[
+                        const SizedBox(width: 8),
+                        const Icon(
+                          CupertinoIcons.checkmark,
+                          size: 18,
+                          color: Color(0xFF007AFF),
+                        ),
+                      ],
+                    ],
+                  ),
+                ))
+            .toList(),
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(context),
+          isDefaultAction: true,
+          child: const Text('Cancel'),
         ),
       ),
     );
@@ -201,14 +230,13 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
       ),
     );
   }
 }
 
-// Reusable Settings Group Container
+// Reusable widgets
 class _SettingsGroup extends StatelessWidget {
   final List<Widget> children;
 
@@ -217,20 +245,23 @@ class _SettingsGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: SyntrakColors.surface,
-        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         children: [
           for (int i = 0; i < children.length; i++) ...[
             children[i],
             if (i < children.length - 1)
-              Divider(
-                height: 1,
-                indent: 56,
-                color: SyntrakColors.surfaceVariant,
+              Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: Divider(
+                  height: 0.5,
+                  thickness: 0.5,
+                  color: Colors.grey[300],
+                ),
               ),
           ],
         ],
@@ -239,16 +270,13 @@ class _SettingsGroup extends StatelessWidget {
   }
 }
 
-// Toggle Row with switch
 class _SettingsToggleRow extends StatelessWidget {
-  final IconData icon;
   final String label;
   final String? subtitle;
   final bool value;
   final ValueChanged<bool> onChanged;
 
   const _SettingsToggleRow({
-    required this.icon,
     required this.label,
     this.subtitle,
     required this.value,
@@ -258,52 +286,35 @@ class _SettingsToggleRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SyntrakSpacing.md,
-        vertical: SyntrakSpacing.sm,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: SyntrakColors.surfaceVariant,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: SyntrakColors.textSecondary,
-            ),
-          ),
-          const SizedBox(width: SyntrakSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   label,
-                  style: SyntrakTypography.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w500,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black,
                   ),
                 ),
                 if (subtitle != null) ...[
                   const SizedBox(height: 2),
                   Text(
                     subtitle!,
-                    style: SyntrakTypography.bodySmall.copyWith(
-                      color: SyntrakColors.textTertiary,
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.grey[500]),
                   ),
                 ],
               ],
             ),
           ),
-          Switch.adaptive(
+          CupertinoSwitch(
             value: value,
             onChanged: onChanged,
-            activeColor: SyntrakColors.primary,
+            activeColor: const Color(0xFF34C759),
           ),
         ],
       ),
@@ -311,281 +322,89 @@ class _SettingsToggleRow extends StatelessWidget {
   }
 }
 
-// Selection Row (opens bottom sheet with options)
 class _SettingsSelectionRow extends StatelessWidget {
-  final IconData icon;
   final String label;
   final String value;
-  final List<String> options;
-  final ValueChanged<String> onChanged;
-
-  const _SettingsSelectionRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.options,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => _showOptionsSheet(context),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SyntrakSpacing.md,
-          vertical: SyntrakSpacing.md,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: SyntrakColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                icon,
-                size: 20,
-                color: SyntrakColors.textSecondary,
-              ),
-            ),
-            const SizedBox(width: SyntrakSpacing.md),
-            Expanded(
-              child: Text(
-                label,
-                style: SyntrakTypography.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            Text(
-              value,
-              style: SyntrakTypography.bodySmall.copyWith(
-                color: SyntrakColors.textTertiary,
-              ),
-            ),
-            const SizedBox(width: SyntrakSpacing.xs),
-            Icon(
-              Icons.chevron_right,
-              size: 20,
-              color: SyntrakColors.textTertiary,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showOptionsSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: SyntrakColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: SyntrakSpacing.md),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: SyntrakColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: SyntrakSpacing.lg),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.lg),
-              child: Text(
-                label,
-                style: SyntrakTypography.headlineSmall.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const SizedBox(height: SyntrakSpacing.md),
-            ...options.map((option) => ListTile(
-                  title: Text(option),
-                  trailing: option == value
-                      ? Icon(Icons.check, color: SyntrakColors.primary)
-                      : null,
-                  onTap: () {
-                    onChanged(option);
-                    Navigator.pop(context);
-                  },
-                )),
-            const SizedBox(height: SyntrakSpacing.lg),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// Slider Row
-class _SettingsSliderRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String? subtitle;
-  final double value;
-  final double min;
-  final double max;
-  final int divisions;
-  final ValueChanged<double> onChanged;
-
-  const _SettingsSliderRow({
-    required this.icon,
-    required this.label,
-    this.subtitle,
-    required this.value,
-    required this.min,
-    required this.max,
-    required this.divisions,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SyntrakSpacing.md,
-        vertical: SyntrakSpacing.sm,
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: SyntrakColors.surfaceVariant,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  icon,
-                  size: 20,
-                  color: SyntrakColors.textSecondary,
-                ),
-              ),
-              const SizedBox(width: SyntrakSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: SyntrakTypography.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle!,
-                        style: SyntrakTypography.bodySmall.copyWith(
-                          color: SyntrakColors.textTertiary,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
-          SliderTheme(
-            data: SliderThemeData(
-              activeTrackColor: SyntrakColors.primary,
-              inactiveTrackColor: SyntrakColors.surfaceVariant,
-              thumbColor: SyntrakColors.primary,
-              overlayColor: SyntrakColors.primary.withAlpha(30),
-            ),
-            child: Slider(
-              value: value,
-              min: min,
-              max: max,
-              divisions: divisions,
-              onChanged: onChanged,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Navigation Row
-class _SettingsNavigationRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String? subtitle;
   final VoidCallback onTap;
 
-  const _SettingsNavigationRow({
-    required this.icon,
+  const _SettingsSelectionRow({
     required this.label,
-    this.subtitle,
+    required this.value,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SyntrakSpacing.md,
-          vertical: SyntrakSpacing.md,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.black,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                value,
+                style: TextStyle(fontSize: 17, color: Colors.grey[500]),
+              ),
+              const SizedBox(width: 4),
+              Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+            ],
+          ),
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: SyntrakColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(8),
+      ),
+    );
+  }
+}
+
+class _SettingsNavigationRow extends StatelessWidget {
+  final String label;
+  final String? value;
+  final VoidCallback onTap;
+
+  const _SettingsNavigationRow({
+    required this.label,
+    this.value,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.black,
+                ),
               ),
-              child: Icon(
-                icon,
-                size: 20,
-                color: SyntrakColors.textSecondary,
-              ),
-            ),
-            const SizedBox(width: SyntrakSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: SyntrakTypography.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle!,
-                      style: SyntrakTypography.bodySmall.copyWith(
-                        color: SyntrakColors.textTertiary,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right,
-              size: 20,
-              color: SyntrakColors.textTertiary,
-            ),
-          ],
+              const Spacer(),
+              if (value != null)
+                Text(
+                  value!,
+                  style: TextStyle(fontSize: 17, color: Colors.grey[500]),
+                ),
+              const SizedBox(width: 4),
+              Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+            ],
+          ),
         ),
       ),
     );

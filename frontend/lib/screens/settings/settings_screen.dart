@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/screens/settings/notifications_settings_screen.dart';
 import 'package:syntrak/screens/settings/privacy_settings_screen.dart';
@@ -24,69 +23,90 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final user = authProvider.user;
 
     return Scaffold(
-      backgroundColor: SyntrakColors.background,
+      backgroundColor: const Color(0xFFF2F2F7), // iOS system background
       appBar: AppBar(
-        backgroundColor: SyntrakColors.surface,
+        backgroundColor: const Color(0xFFF2F2F7),
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios),
+          icon: const Icon(Icons.arrow_back_ios, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Settings'),
+        title: const Text(
+          'Settings',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         centerTitle: true,
       ),
       body: ListView(
         children: [
-          // Profile Card at top
+          const SizedBox(height: 8),
+
+          // Profile Card - iOS Style (like Apple ID card)
           _buildProfileCard(user),
 
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: 24),
 
-          // Account Section
-          _buildSectionHeader('Account'),
+          // Most Important First: Notifications & Privacy
           _SettingsGroup(
             children: [
-              _SettingsNavigationRow(
-                icon: Icons.person_outline,
-                label: 'Account',
-                subtitle: 'Password, email, connected accounts',
-                onTap: () => _navigateTo(const AccountSettingsScreen()),
-              ),
-              _SettingsNavigationRow(
-                icon: Icons.lock_outline,
-                label: 'Privacy',
-                subtitle: 'Profile visibility, blocked users',
-                onTap: () => _navigateTo(const PrivacySettingsScreen()),
-              ),
-              _SettingsNavigationRow(
-                icon: Icons.notifications_outlined,
+              _SettingsRow(
+                icon: Icons.notifications,
+                iconBackground: const Color(0xFFFF3B30), // iOS Red
                 label: 'Notifications',
-                subtitle: 'Push, email, activity alerts',
                 onTap: () => _navigateTo(const NotificationsSettingsScreen()),
+              ),
+              _SettingsRow(
+                icon: Icons.lock,
+                iconBackground: const Color(0xFF34C759), // iOS Green
+                label: 'Privacy & Security',
+                onTap: () => _navigateTo(const PrivacySettingsScreen()),
               ),
             ],
           ),
 
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: 24),
 
-          // Preferences Section
-          _buildSectionHeader('Preferences'),
+          // Account & Personalization
+          _buildSectionHeader('ACCOUNT'),
           _SettingsGroup(
             children: [
-              _SettingsNavigationRow(
-                icon: Icons.sports_outlined,
+              _SettingsRow(
+                icon: Icons.person,
+                iconBackground: const Color(0xFF007AFF), // iOS Blue
+                label: 'Account',
+                subtitle: 'Password, email, security',
+                onTap: () => _navigateTo(const AccountSettingsScreen()),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 24),
+
+          // App Settings
+          _buildSectionHeader('APP'),
+          _SettingsGroup(
+            children: [
+              _SettingsRow(
+                icon: Icons.downhill_skiing,
+                iconBackground: const Color(0xFFFF9500), // iOS Orange
                 label: 'Activity & Recording',
                 subtitle: 'GPS, units, auto-pause',
                 onTap: () => _navigateTo(const ActivitySettingsScreen()),
               ),
-              _SettingsNavigationRow(
-                icon: Icons.palette_outlined,
-                label: 'Display',
+              _SettingsRow(
+                icon: Icons.display_settings,
+                iconBackground: const Color(0xFF5856D6), // iOS Purple
+                label: 'Display & Appearance',
                 subtitle: 'Theme, language, date format',
                 onTap: () => _navigateTo(const DisplaySettingsScreen()),
               ),
-              _SettingsNavigationRow(
-                icon: Icons.storage_outlined,
+              _SettingsRow(
+                icon: Icons.storage,
+                iconBackground: const Color(0xFF8E8E93), // iOS Gray
                 label: 'Data & Storage',
                 subtitle: 'Cache, offline maps, export',
                 onTap: () => _navigateTo(const DataStorageScreen()),
@@ -94,74 +114,73 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
 
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: 24),
 
-          // Support Section
-          _buildSectionHeader('Support'),
+          // Support
+          _buildSectionHeader('SUPPORT'),
           _SettingsGroup(
             children: [
-              _SettingsNavigationRow(
-                icon: Icons.help_outline,
+              _SettingsRow(
+                icon: Icons.help,
+                iconBackground: const Color(0xFF007AFF), // iOS Blue
                 label: 'Help & Support',
-                subtitle: 'FAQ, contact us, report issue',
                 onTap: () => _navigateTo(const HelpSupportScreen()),
               ),
-              _SettingsNavigationRow(
-                icon: Icons.info_outline,
-                label: 'About',
+              _SettingsRow(
+                icon: Icons.info,
+                iconBackground: const Color(0xFF8E8E93), // iOS Gray
+                label: 'About Syntrak',
                 subtitle: 'Version 1.0.0',
                 onTap: () => _showAboutDialog(),
               ),
             ],
           ),
 
-          const SizedBox(height: SyntrakSpacing.xl),
+          const SizedBox(height: 32),
 
-          // Danger Zone
-          _buildSectionHeader(''),
+          // Sign Out - separate group at bottom
           _SettingsGroup(
             children: [
               _SettingsActionRow(
-                icon: Icons.logout,
-                label: 'Log Out',
-                iconColor: SyntrakColors.primary,
-                labelColor: SyntrakColors.primary,
+                label: 'Sign Out',
+                textColor: const Color(0xFF007AFF),
                 onTap: () => _showLogoutConfirmation(),
               ),
             ],
           ),
 
-          const SizedBox(height: SyntrakSpacing.md),
+          const SizedBox(height: 16),
 
+          // Delete Account - dangerous action at very bottom
           _SettingsGroup(
             children: [
               _SettingsActionRow(
-                icon: Icons.delete_outline,
                 label: 'Delete Account',
-                iconColor: Colors.red,
-                labelColor: Colors.red,
+                textColor: const Color(0xFFFF3B30),
                 onTap: () => _showDeleteAccountConfirmation(),
               ),
             ],
           ),
 
-          const SizedBox(height: SyntrakSpacing.xl),
+          const SizedBox(height: 32),
 
           // Footer
           Center(
             child: Text(
-              'Syntrak v1.0.0',
-              style: SyntrakTypography.bodySmall.copyWith(
-                color: SyntrakColors.textTertiary,
+              'Syntrak v1.0.0 (Build 1)',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey[500],
               ),
             ),
           ),
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: 32),
         ],
       ),
     );
   }
 
+  // iOS-style profile card (like Apple ID)
   Widget _buildProfileCard(dynamic user) {
     final displayName = user?.firstName != null && user?.lastName != null
         ? '${user.firstName} ${user.lastName}'
@@ -170,76 +189,105 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U';
 
     return Container(
-      margin: const EdgeInsets.all(SyntrakSpacing.md),
-      padding: const EdgeInsets.all(SyntrakSpacing.md),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: SyntrakColors.surface,
-        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
-        children: [
-          // Avatar
-          CircleAvatar(
-            radius: 32,
-            backgroundColor: SyntrakColors.primary.withAlpha(30),
-            child: Text(
-              initial,
-              style: SyntrakTypography.headlineMedium.copyWith(
-                color: SyntrakColors.primary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          const SizedBox(width: SyntrakSpacing.md),
-          // Name and email
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            // TODO: Navigate to profile editing
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
               children: [
-                Text(
-                  displayName,
-                  style: SyntrakTypography.headlineSmall.copyWith(
-                    fontWeight: FontWeight.w600,
+                // Large avatar like Apple ID
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        const Color(0xFF007AFF),
+                        const Color(0xFF5856D6),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Center(
+                    child: Text(
+                      initial,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  email,
-                  style: SyntrakTypography.bodySmall.copyWith(
-                    color: SyntrakColors.textSecondary,
+                const SizedBox(width: 12),
+                // Name and details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayName,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        email,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Profile, Subscriptions & more',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+                // Chevron
+                Icon(
+                  Icons.chevron_right,
+                  color: Colors.grey[400],
+                  size: 22,
                 ),
               ],
             ),
           ),
-          // Edit button
-          IconButton(
-            icon: Icon(
-              Icons.edit_outlined,
-              color: SyntrakColors.textSecondary,
-            ),
-            onPressed: () {
-              // TODO: Navigate to edit profile
-            },
-          ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildSectionHeader(String title) {
-    if (title.isEmpty) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SyntrakSpacing.lg,
-        vertical: SyntrakSpacing.sm,
-      ),
+      padding: const EdgeInsets.only(left: 32, bottom: 6),
       child: Text(
-        title.toUpperCase(),
-        style: SyntrakTypography.labelSmall.copyWith(
-          color: SyntrakColors.textTertiary,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
+        title,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w400,
+          color: Colors.grey[600],
+          letterSpacing: -0.1,
         ),
       ),
     );
@@ -256,43 +304,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         title: const Text('About Syntrak'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Version 1.0.0',
-              style: SyntrakTypography.bodyMedium,
+            const Text(
+              'Version 1.0.0 (Build 1)',
+              style: TextStyle(fontSize: 15),
             ),
-            const SizedBox(height: SyntrakSpacing.sm),
+            const SizedBox(height: 12),
             Text(
               'A skiing-focused fitness tracking and social community app.',
-              style: SyntrakTypography.bodySmall.copyWith(
-                color: SyntrakColors.textSecondary,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
               ),
             ),
-            const SizedBox(height: SyntrakSpacing.md),
+            const SizedBox(height: 16),
             GestureDetector(
-              onTap: () {
-                // TODO: Open terms of service
-              },
-              child: Text(
+              onTap: () {},
+              child: const Text(
                 'Terms of Service',
-                style: SyntrakTypography.bodySmall.copyWith(
-                  color: SyntrakColors.primary,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF007AFF),
                 ),
               ),
             ),
-            const SizedBox(height: SyntrakSpacing.xs),
+            const SizedBox(height: 8),
             GestureDetector(
-              onTap: () {
-                // TODO: Open privacy policy
-              },
-              child: Text(
+              onTap: () {},
+              child: const Text(
                 'Privacy Policy',
-                style: SyntrakTypography.bodySmall.copyWith(
-                  color: SyntrakColors.primary,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF007AFF),
                 ),
               ),
             ),
@@ -301,7 +349,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: const Text(
+              'Done',
+              style: TextStyle(color: Color(0xFF007AFF)),
+            ),
           ),
         ],
       ),
@@ -312,12 +363,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Log Out'),
-        content: const Text('Are you sure you want to log out?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: const Text('Sign Out'),
+        content: const Text('Are you sure you want to sign out?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Color(0xFF007AFF)),
+            ),
           ),
           TextButton(
             onPressed: () {
@@ -327,9 +382,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               authProvider.logout();
               Navigator.of(context).popUntil((route) => route.isFirst);
             },
-            child: Text(
-              'Log Out',
-              style: TextStyle(color: SyntrakColors.primary),
+            child: const Text(
+              'Sign Out',
+              style: TextStyle(color: Color(0xFFFF3B30)),
             ),
           ),
         ],
@@ -341,28 +396,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         title: const Text('Delete Account'),
         content: const Text(
-          'Are you sure you want to delete your account? This action cannot be undone. All your data will be permanently removed after 30 days.',
+          'This will permanently delete your account and all data. This action cannot be undone.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Color(0xFF007AFF)),
+            ),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              // TODO: Implement account deletion
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Account deletion request submitted'),
+                  behavior: SnackBarBehavior.floating,
                 ),
               );
             },
             child: const Text(
               'Delete',
-              style: TextStyle(color: Colors.red),
+              style: TextStyle(color: Color(0xFFFF3B30)),
             ),
           ),
         ],
@@ -371,7 +430,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-// Reusable Settings Group Container
+// iOS-style Settings Group (white rounded container)
 class _SettingsGroup extends StatelessWidget {
   final List<Widget> children;
 
@@ -380,20 +439,23 @@ class _SettingsGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: SyntrakColors.surface,
-        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         children: [
           for (int i = 0; i < children.length; i++) ...[
             children[i],
             if (i < children.length - 1)
-              Divider(
-                height: 1,
-                indent: 56,
-                color: SyntrakColors.surfaceVariant,
+              Padding(
+                padding: const EdgeInsets.only(left: 52),
+                child: Divider(
+                  height: 0.5,
+                  thickness: 0.5,
+                  color: Colors.grey[300],
+                ),
               ),
           ],
         ],
@@ -402,145 +464,118 @@ class _SettingsGroup extends StatelessWidget {
   }
 }
 
-// Navigation Row (leads to another screen)
-class _SettingsNavigationRow extends StatelessWidget {
+// iOS-style Settings Row with colored icon
+class _SettingsRow extends StatelessWidget {
   final IconData icon;
+  final Color iconBackground;
   final String label;
   final String? subtitle;
-  final String? value;
   final VoidCallback onTap;
 
-  const _SettingsNavigationRow({
+  const _SettingsRow({
     required this.icon,
+    required this.iconBackground,
     required this.label,
     this.subtitle,
-    this.value,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SyntrakSpacing.md,
-          vertical: SyntrakSpacing.md,
-        ),
-        child: Row(
-          children: [
-            // Icon
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: SyntrakColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                icon,
-                size: 20,
-                color: SyntrakColors.textSecondary,
-              ),
-            ),
-            const SizedBox(width: SyntrakSpacing.md),
-            // Label and subtitle
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: SyntrakTypography.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle!,
-                      style: SyntrakTypography.bodySmall.copyWith(
-                        color: SyntrakColors.textTertiary,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            // Value or chevron
-            if (value != null)
-              Text(
-                value!,
-                style: SyntrakTypography.bodySmall.copyWith(
-                  color: SyntrakColors.textTertiary,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+          child: Row(
+            children: [
+              // Colored icon container (iOS style)
+              Container(
+                width: 29,
+                height: 29,
+                decoration: BoxDecoration(
+                  color: iconBackground,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(
+                  icon,
+                  color: Colors.white,
+                  size: 18,
                 ),
               ),
-            const SizedBox(width: SyntrakSpacing.xs),
-            Icon(
-              Icons.chevron_right,
-              size: 20,
-              color: SyntrakColors.textTertiary,
-            ),
-          ],
+              const SizedBox(width: 12),
+              // Label and subtitle
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.black,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 1),
+                      Text(
+                        subtitle!,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              // Chevron
+              Icon(
+                Icons.chevron_right,
+                color: Colors.grey[400],
+                size: 20,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-// Action Row (performs an action, like logout)
+// iOS-style Action Row (centered text, no icon)
 class _SettingsActionRow extends StatelessWidget {
-  final IconData icon;
   final String label;
-  final Color? iconColor;
-  final Color? labelColor;
+  final Color textColor;
   final VoidCallback onTap;
 
   const _SettingsActionRow({
-    required this.icon,
     required this.label,
-    this.iconColor,
-    this.labelColor,
+    required this.textColor,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SyntrakSpacing.md,
-          vertical: SyntrakSpacing.md,
-        ),
-        child: Row(
-          children: [
-            // Icon
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: (iconColor ?? SyntrakColors.textSecondary).withAlpha(20),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                icon,
-                size: 20,
-                color: iconColor ?? SyntrakColors.textSecondary,
-              ),
-            ),
-            const SizedBox(width: SyntrakSpacing.md),
-            // Label
-            Text(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Center(
+            child: Text(
               label,
-              style: SyntrakTypography.bodyMedium.copyWith(
-                fontWeight: FontWeight.w500,
-                color: labelColor,
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w400,
+                color: textColor,
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
