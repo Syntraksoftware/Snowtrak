@@ -3,6 +3,49 @@ import 'package:provider/provider.dart';
 import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/screens/auth/register_screen.dart';
 
+/// Social login button widget
+class _SocialLoginButton extends StatelessWidget {
+  final VoidCallback onPressed;
+  final Widget icon;
+  final String label;
+
+  const _SocialLoginButton({
+    required this.onPressed,
+    required this.icon,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        side: BorderSide(color: Colors.grey[300]!),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        backgroundColor: Colors.white,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          icon,
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -129,6 +172,29 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  // Google "G" icon widget
+  Widget _buildGoogleIcon() {
+    return Container(
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Center(
+        child: Text(
+          'G',
+          style: TextStyle(
+            color: Colors.red[600],
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Roboto',
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildLoginForm(BuildContext context) {
     return Scaffold(
       body: SafeArea(
@@ -230,7 +296,74 @@ class _LoginScreenState extends State<LoginScreen> {
                             style: TextStyle(fontSize: 16),
                           ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
+
+                  // Divider with "or"
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Divider(color: Colors.grey[400]),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          'or continue with',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Divider(color: Colors.grey[400]),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Social login buttons
+                  Row(
+                    children: [
+                      // Google button
+                      Expanded(
+                        child: _SocialLoginButton(
+                          onPressed: () {
+                            // TODO: Implement Google Sign-In
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Google Sign-In coming soon!'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                          icon: _buildGoogleIcon(),
+                          label: 'Google',
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Facebook button
+                      Expanded(
+                        child: _SocialLoginButton(
+                          onPressed: () {
+                            // TODO: Implement Facebook Sign-In
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Facebook Sign-In coming soon!'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.facebook,
+                            color: Color(0xFF1877F2),
+                            size: 24,
+                          ),
+                          label: 'Facebook',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
 
                   // Register link
                   TextButton(
