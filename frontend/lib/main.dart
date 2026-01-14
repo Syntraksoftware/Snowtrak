@@ -89,21 +89,15 @@ class _SyntrakAppState extends State<SyntrakApp> {
           create: (_) => NotificationProvider()..loadNotifications(),
         ),
       ],
-      child: Consumer<AuthProvider>(
-        builder: (context, authProvider, _) {
-          print(
-              '🔍 [Main] Building MaterialApp. isLoading: ${authProvider.isLoading}, isAuthenticated: ${authProvider.isAuthenticated}');
-          return MaterialApp(
-            navigatorKey: _navigatorKey,
-            title: 'Syntrak',
-            debugShowCheckedModeBanner: false,
-            theme: SyntrakTheme.lightTheme,
-            darkTheme: SyntrakTheme.darkTheme,
-            themeMode: ThemeMode.light,
-            // Use home for simpler navigation that handles hot reload better
-            home: _AppWrapper(authProvider: authProvider),
-          );
-        },
+      child: MaterialApp(
+        navigatorKey: _navigatorKey,
+        title: 'Syntrak',
+        debugShowCheckedModeBanner: false,
+        theme: SyntrakTheme.lightTheme,
+        darkTheme: SyntrakTheme.darkTheme,
+        themeMode: ThemeMode.light,
+        // Use home for simpler navigation that handles hot reload better
+        home: const _AppWrapper(),
       ),
     );
   }
@@ -111,9 +105,7 @@ class _SyntrakAppState extends State<SyntrakApp> {
 
 // Wrapper widget to maintain stable Navigator identity and set up notifications
 class _AppWrapper extends StatefulWidget {
-  final AuthProvider authProvider;
-
-  const _AppWrapper({required this.authProvider});
+  const _AppWrapper();
 
   @override
   State<_AppWrapper> createState() => _AppWrapperState();
@@ -149,15 +141,24 @@ class _AppWrapperState extends State<_AppWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    // Use the same logic as _buildHome but in a stable widget
-    if (widget.authProvider.isLoading) {
-      return _LoadingScreenWithTimeout(authProvider: widget.authProvider);
-    }
-    if (widget.authProvider.isAuthenticated) {
-      return const HomeScreen();
-    } else {
-      return const LoginScreen();
-    }
+    // Use Consumer to properly listen to auth state changes
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, _) {
+        print(
+            '🔍 [AppWrapper] Building. isLoading: ${authProvider.isLoading}, isAuthenticated: ${authProvider.isAuthenticated}');
+        
+        if (authProvider.isLoading) {
+          return _LoadingScreenWithTimeout(authProvider: authProvider);
+        }
+        if (authProvider.isAuthenticated) {
+          print('🔍 [AppWrapper] Showing HomeScreen');
+          return const HomeScreen();
+        } else {
+          print('🔍 [AppWrapper] Showing LoginScreen');
+          return const LoginScreen();
+        }
+      },
+    );
   }
 }
 

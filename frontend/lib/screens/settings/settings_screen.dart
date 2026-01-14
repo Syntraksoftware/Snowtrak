@@ -362,25 +362,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showLogoutConfirmation() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         title: const Text('Sign Out'),
         content: const Text('Are you sure you want to sign out?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text(
               'Cancel',
               style: TextStyle(color: Color(0xFF007AFF)),
             ),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
+            onPressed: () async {
+              // Close the dialog first
+              Navigator.pop(dialogContext);
+              
+              // Get auth provider and logout
               final authProvider =
                   Provider.of<AuthProvider>(context, listen: false);
-              authProvider.logout();
-              Navigator.of(context).popUntil((route) => route.isFirst);
+              await authProvider.logout();
+              
+              // Pop all routes to return to root - the main Consumer will
+              // automatically show LoginScreen when isAuthenticated is false
+              if (context.mounted) {
+                Navigator.of(context, rootNavigator: true)
+                    .popUntil((route) => route.isFirst);
+              }
             },
             child: const Text(
               'Sign Out',
