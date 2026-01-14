@@ -35,15 +35,7 @@ class _CommunityScreenState extends State<CommunityScreen>
         elevation: 0,
         backgroundColor: SyntrakColors.surface,
         foregroundColor: SyntrakColors.textPrimary,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {
-              // TODO: Implement notifications
-            },
-            tooltip: 'Notifications',
-          ),
-        ],
+        actions: const [],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(52),
           child: Container(

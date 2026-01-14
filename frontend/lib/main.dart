@@ -2,11 +2,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:syntrak/core/theme.dart';
+import 'package:syntrak/models/notification.dart';
 import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/providers/activity_provider.dart';
+import 'package:syntrak/providers/notification_provider.dart';
 import 'package:syntrak/screens/auth/login_screen.dart';
 import 'package:syntrak/screens/home/home_screen.dart';
 import 'package:syntrak/services/api_service.dart';
+import 'package:syntrak/services/notification_service.dart';
 import 'package:syntrak/services/storage_service.dart';
 
 void main() {
@@ -81,6 +84,10 @@ class _SyntrakAppState extends State<SyntrakApp> {
           update: (_, storage, previous) =>
               previous ?? ActivityProvider(ApiService()),
         ),
+        // Notification Provider
+        ChangeNotifierProvider(
+          create: (_) => NotificationProvider()..loadNotifications(),
+        ),
       ],
       child: Consumer<AuthProvider>(
         builder: (context, authProvider, _) {
@@ -102,19 +109,51 @@ class _SyntrakAppState extends State<SyntrakApp> {
   }
 }
 
-// Wrapper widget to maintain stable Navigator identity
-class _AppWrapper extends StatelessWidget {
+// Wrapper widget to maintain stable Navigator identity and set up notifications
+class _AppWrapper extends StatefulWidget {
   final AuthProvider authProvider;
 
   const _AppWrapper({required this.authProvider});
 
   @override
+  State<_AppWrapper> createState() => _AppWrapperState();
+}
+
+class _AppWrapperState extends State<_AppWrapper> {
+  @override
+  void initState() {
+    super.initState();
+    // Set up notification callback for showing banners
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _setupNotificationCallback();
+    });
+  }
+
+  void _setupNotificationCallback() {
+    final notificationProvider = context.read<NotificationProvider>();
+    notificationProvider.onNewNotification = (AppNotification notification) {
+      // Show banner notification when a new notification is received from backend
+      if (mounted) {
+        NotificationService.showBanner(
+          context,
+          notification: notification,
+          onTap: () {
+            // Optional: Navigate to notification details or related screen
+            NotificationService.showToast(
+                context, 'Tapped: ${notification.title}');
+          },
+        );
+      }
+    };
+  }
+
+  @override
   Widget build(BuildContext context) {
     // Use the same logic as _buildHome but in a stable widget
-    if (authProvider.isLoading) {
-      return _LoadingScreenWithTimeout(authProvider: authProvider);
+    if (widget.authProvider.isLoading) {
+      return _LoadingScreenWithTimeout(authProvider: widget.authProvider);
     }
-    if (authProvider.isAuthenticated) {
+    if (widget.authProvider.isAuthenticated) {
       return const HomeScreen();
     } else {
       return const LoginScreen();

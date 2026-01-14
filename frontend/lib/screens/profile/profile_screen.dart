@@ -6,6 +6,7 @@ import 'package:syntrak/providers/activity_provider.dart';
 import 'package:syntrak/screens/profile/progress_tab.dart';
 import 'package:syntrak/screens/profile/activities_tab.dart';
 import 'package:syntrak/screens/settings/settings_screen.dart';
+import 'package:syntrak/widgets/notification_bell_icon.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -37,6 +38,8 @@ class _ProfileScreenState extends State<ProfileScreen>
       appBar: AppBar(
         title: const Text('You'),
         actions: [
+          // Notification bell with badge
+          const NotificationBellIcon(),
           IconButton(
             icon: const Icon(Icons.add_circle_outline),
             onPressed: () {

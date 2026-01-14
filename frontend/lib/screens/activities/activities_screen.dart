@@ -278,16 +278,9 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
           // Left side - can add logo or menu here
           const SizedBox(width: 40),
 
-          // Right side - bell icon and profile picture
+          // Right side - profile picture
           Row(
             children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined),
-                onPressed: () {
-                  // TODO: Navigate to notifications
-                },
-                tooltip: 'Notifications',
-              ),
               Consumer<AuthProvider>(
                 builder: (context, authProvider, _) {
                   final user = authProvider.user;
