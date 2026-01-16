@@ -65,8 +65,6 @@ async def trigger_test_notification(request: TestNotificationRequest):
       -H "Content-Type: application/json" \\
       -d '{"type": "kudos", "title": "New Kudos!", "message": "Sarah liked your activity"}'
     ```
-    
-    **Notification Types:**
     - kudos: Someone gave kudos
     - comment: New comment
     - follow: New follower

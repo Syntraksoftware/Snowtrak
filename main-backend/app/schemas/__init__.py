@@ -6,7 +6,7 @@ from typing import Optional
 from datetime import datetime
 
 
-# ===== User Schemas =====
+# User Schemas 
 
 class UserBase(BaseModel):
     """Shared user properties."""
@@ -48,7 +48,7 @@ class UserResponse(BaseModel):
     last_name: Optional[str] = None
 
 
-# ===== Auth Schemas =====
+# Auth Schemas 
 
 class Token(BaseModel):
     """JWT token response."""
@@ -82,7 +82,7 @@ class RefreshTokenRequest(BaseModel):
     refresh_token: str
 
 
-# ===== Generic Responses =====
+#  Generic Responses 
 
 class MessageResponse(BaseModel):
     """Generic message response."""
@@ -93,3 +93,4 @@ class ErrorResponse(BaseModel):
     """Error response."""
     error: str
     detail: Optional[str] = None
+

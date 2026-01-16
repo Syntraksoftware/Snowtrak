@@ -17,7 +17,7 @@ Community Tables:
 - posts: User posts within subthreads
 - comments: Comments on posts (supports nesting)
 
-This module initializes a Supabase client from environment settings and
+initializes a Supabase client from environment settings and
 exposes convenience methods for CRUD operations on all tables.
 """
 from __future__ import annotations
@@ -239,7 +239,7 @@ class SupabaseClient:
             logger.exception("Supabase update failed: %s", exc)
             return None
 
-    # ========== Subthread Operations ==========
+    # Subthread Operations
     
     def create_subthread(
         self,
@@ -544,7 +544,7 @@ class SupabaseClient:
             logger.exception(f"Failed to delete post {post_id}: {exc}")
             return False
     
-    # ========== Comment Operations ==========
+    # Comment Operations
     
     def create_comment(
         self,

@@ -63,7 +63,7 @@ class TestData {
     return Activity(
       id: id ?? 'activity_123',
       userId: userId ?? 'test_user_123',
-      type: type ?? ActivityType.run,
+      type: type ?? ActivityType.snowboard,
       startTime: start,
       endTime: end,
       distance: distance ?? 5000.0,

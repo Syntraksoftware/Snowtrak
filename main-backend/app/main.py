@@ -22,7 +22,7 @@ async def lifespan(app: FastAPI):
         print("💾 Using Supabase database (persistent storage)")
     else:
         print("💾 Using in-memory storage (data resets on restart)")
-        print("⚠️  Warning: Supabase not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env")
+        print("⚠️ Warning: Supabase not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env")
     
     yield
     
