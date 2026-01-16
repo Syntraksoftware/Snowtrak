@@ -94,3 +94,14 @@ class ErrorResponse(BaseModel):
     error: str
     detail: Optional[str] = None
 
+
+# Activity Schemas
+from app.schemas.activity import (
+    ActivityType,
+    LocationCreate,
+    LocationResponse,
+    ActivityCreate,
+    ActivityUpdate,
+    ActivityResponse,
+)
+
