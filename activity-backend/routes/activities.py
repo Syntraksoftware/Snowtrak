@@ -1,7 +1,9 @@
 """Activity routes for skiing activity records (minimal FastAPI implementation)."""
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 import logging
+from datetime import datetime
+import math
 
 from middleware.auth import get_current_user, get_optional_user
 from services.supabase_client import get_activity_client
@@ -16,6 +18,9 @@ from models import (
     ToggleKudosResponse,
     ShareLinkResponse,
     DeleteResponse,
+    FrontendActivityCreate,
+    FrontendActivityResponse,
+    LocationPoint,
 )
 
 logger = logging.getLogger(__name__)
@@ -25,28 +30,115 @@ router = APIRouter(prefix="/api/v1/activities", tags=["activities"])
 # -----------------------
 # Routes
 # -----------------------
-@router.post("", response_model=ActivityResponse, status_code=status.HTTP_201_CREATED)
+def _parse_iso(ts: str) -> datetime:
+    # Accept 'Z' suffix by converting to offset-aware ISO
+    return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+
+def _haversine_distance_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    R = 6371000.0  # meters
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+    a = math.sin(dphi/2)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda/2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
+
+def _compute_metrics_from_locations(locations: List[Dict[str, Any]]) -> Dict[str, float]:
+    distance = 0.0
+    elevation_gain = 0.0
+    for i in range(1, len(locations)):
+        p1 = locations[i-1]
+        p2 = locations[i]
+        distance += _haversine_distance_m(p1["latitude"], p1["longitude"], p2["latitude"], p2["longitude"])
+        alt1 = p1.get("altitude")
+        alt2 = p2.get("altitude")
+        if alt1 is not None and alt2 is not None:
+            delta = float(alt2) - float(alt1)
+            if delta > 0:
+                elevation_gain += delta
+    return {"distance_meters": distance, "elevation_gain_meters": elevation_gain}
+
+def _to_location_points(locations: List[Dict[str, Any]]) -> List[LocationPoint]:
+    return [
+        LocationPoint(
+            lat=loc["latitude"],
+            lng=loc["longitude"],
+            elevation=loc.get("altitude"),
+            timestamp=loc.get("timestamp"),
+        )
+        for loc in locations
+    ]
+
+def _to_frontend_locations(activity_id: str, gps_path: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    return [
+        {
+            "id": None,
+            "activity_id": activity_id,
+            "latitude": p.get("lat"),
+            "longitude": p.get("lng"),
+            "altitude": p.get("elevation"),
+            "accuracy": None,
+            "speed": None,
+            "timestamp": p.get("timestamp"),
+        }
+        for p in gps_path
+    ]
+
+@router.post("", response_model=FrontendActivityResponse, status_code=status.HTTP_201_CREATED)
 async def create_activity(
-    data: ActivityCreate,
+    data: FrontendActivityCreate,
     user_id: str = Depends(get_current_user)
 ):
-    """Create a new activity (authenticated)."""
+    """Create a new activity (authenticated) aligned to frontend payload and response."""
     client = get_activity_client()
     try:
+        # Derive metrics
+        start_dt = _parse_iso(data.start_time)
+        end_dt = _parse_iso(data.end_time)
+        duration_seconds = max(0, int((end_dt - start_dt).total_seconds()))
+        metrics = _compute_metrics_from_locations([loc.model_dump() for loc in data.locations])
+        gps_path = [pt.model_dump() for pt in _to_location_points([loc.model_dump() for loc in data.locations])]
+        visibility = "public" if data.is_public else "private"
+
         result = client.create_activity(
             user_id=user_id,
-            name=data.name,
-            activity_type=data.activity_type,
-            gps_path=[point.model_dump() for point in data.gps_path],
-            duration_seconds=data.duration_seconds,
-            distance_meters=data.distance_meters,
-            elevation_gain_meters=data.elevation_gain_meters,
-            visibility=data.visibility,
+            name=data.name or "Untitled Activity",
+            activity_type=data.type,
+            gps_path=gps_path,
+            duration_seconds=duration_seconds,
+            distance_meters=metrics["distance_meters"],
+            elevation_gain_meters=metrics["elevation_gain_meters"],
+            visibility=visibility,
             description=data.description,
         )
         if not result:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create activity")
-        return result
+
+        # Shape response for the frontend
+        distance_meters = result.get("distance_meters", metrics["distance_meters"])  # type: ignore
+        duration_s = result.get("duration_seconds", duration_seconds)  # type: ignore
+        avg_pace = (duration_s / (distance_meters/1000)) if distance_meters and distance_meters > 0 else None
+
+        frontend_resp = {
+            "id": result.get("id"),
+            "user_id": result.get("user_id"),
+            "type": result.get("activity_type", data.type),
+            "name": result.get("name"),
+            "description": result.get("description"),
+            "distance": distance_meters,
+            "duration": duration_s,
+            "elevation_gain": result.get("elevation_gain_meters", metrics["elevation_gain_meters"]),
+            "start_time": data.start_time,
+            "end_time": data.end_time,
+            "average_pace": avg_pace,
+            "max_pace": None,
+            "calories": None,
+            "is_public": (result.get("visibility") == "public"),
+            "created_at": result.get("created_at"),
+            "locations": _to_frontend_locations(result.get("id"), result.get("gps_path", [])),
+        }
+        return FrontendActivityResponse(**frontend_resp)
     except HTTPException:
         raise
     except Exception as exc:
