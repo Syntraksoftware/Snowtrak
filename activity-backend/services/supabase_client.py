@@ -46,6 +46,8 @@ class ActivitySupabaseClient:
         self,
         user_id: str,
         name: str,
+        start_time: str,
+        end_time: str,
         activity_type: str,
         gps_path: List[Dict[str, float]],
         duration_seconds: int,
@@ -57,6 +59,8 @@ class ActivitySupabaseClient:
         payload = {
             "user_id": user_id,
             "name": name,
+            "start_time": start_time,
+            "end_time": end_time,
             "activity_type": activity_type,
             "gps_path": gps_path,
             "duration_seconds": duration_seconds,
