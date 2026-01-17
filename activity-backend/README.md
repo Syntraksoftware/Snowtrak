@@ -29,7 +29,9 @@ source venv/bin/activate
 pip install -r requirements.txt
 cp ../community-backend/.env.example .env  # or create your own
 # Update .env: set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, JWT_SECRET
-HOST=127.0.0.1 PORT=5100 uvicorn main:app --reload
+export HOST=127.0.0.1
+export PORT=5100
+python main.py
 ```
 
 ## Project Structure
