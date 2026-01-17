@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:syntrak/models/activity.dart';
 import 'package:syntrak/models/user.dart';
+import 'package:syntrak/models/profile.dart';
 
 class ApiService {
   final Dio _dio = Dio();
@@ -160,7 +161,7 @@ class ApiService {
     return User.fromJson(response.data);
   }
 
-  Future<User> updateProfile({
+  Future<User> updateUserProfile({
     String? firstName,
     String? lastName,
   }) async {
@@ -208,5 +209,67 @@ class ApiService {
 
   Future<void> deleteActivity(String id) async {
     await _dio.delete('/activities/$id');
+  }
+
+  // Profile endpoints
+  Future<Profile> getCurrentUserProfile() async {
+    final response = await _dio.get('/users/me/profile');
+    return Profile.fromJson(response.data);
+  }
+
+  Future<Profile> updateProfile({
+    String? fullName,
+    String? username,
+    String? bio,
+    String? avatarUrl,
+    String? pushToken,
+    String? skiLevel,
+    String? home,
+  }) async {
+    final response = await _dio.put('/users/me/profile', data: {
+      if (fullName != null) 'full_name': fullName,
+      if (username != null) 'username': username,
+      if (bio != null) 'bio': bio,
+      if (avatarUrl != null) 'avatar_url': avatarUrl,
+      if (pushToken != null) 'push_token': pushToken,
+      if (skiLevel != null) 'ski_level': skiLevel,
+      if (home != null) 'home': home,
+    });
+    return Profile.fromJson(response.data);
+  }
+
+  Future<Profile> getProfileById(String userId) async {
+    final response = await _dio.get('/users/$userId/profile');
+    return Profile.fromJson(response.data);
+  }
+
+  // Posts endpoints (community backend)
+  Future<List<Map<String, dynamic>>> getPostsByUserId(
+    String userId, {
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    // Note: This calls the community backend, not main backend
+    // You may need to adjust the base URL or create a separate service
+    final communityBaseUrl = 'http://127.0.0.1:5001/api';
+    final dio = Dio(BaseOptions(baseUrl: communityBaseUrl));
+    
+    // Copy auth token if available
+    if (_token != null) {
+      dio.options.headers['Authorization'] = 'Bearer $_token';
+    }
+    
+    final response = await dio.get(
+      '/posts/user/$userId',
+      queryParameters: {
+        'limit': limit,
+        'offset': offset,
+      },
+    );
+    
+    if (response.data is Map && response.data['posts'] != null) {
+      return List<Map<String, dynamic>>.from(response.data['posts']);
+    }
+    return [];
   }
 }

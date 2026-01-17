@@ -56,6 +56,31 @@ def get_post(post_id):
         return jsonify({"error": str(e)}), 500
 
 
+@posts_bp.route("/user/<user_id>", methods=["GET"])
+@optional_token
+def list_posts_by_user(user_id):
+    """List posts by user ID."""
+    try:
+        limit = request.args.get("limit", 20, type=int)
+        offset = request.args.get("offset", 0, type=int)
+        
+        client = get_community_client()
+        
+        posts = client.list_posts_by_user_id(
+            user_id=user_id,
+            limit=limit,
+            offset=offset
+        )
+        
+        return jsonify({
+            "posts": posts,
+            "page": offset // limit + 1,
+            "page_size": limit
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @posts_bp.route("/<post_id>/comments", methods=["GET"])
 def list_post_comments(post_id):
     """List all comments for a post."""

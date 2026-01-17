@@ -4,7 +4,7 @@
 
 Syntrak combines the activity tracking features of Strava with social community features similar to Reddit and Threads, specifically designed for skiing enthusiasts.
 
-## 🎯 Overview
+##  Overview
 
 Syntrak is a comprehensive mobile application that enables users to:
 - **Track Activities**: Record skiing activities with GPS tracking, route visualization, and detailed metrics
@@ -12,7 +12,7 @@ Syntrak is a comprehensive mobile application that enables users to:
 - **Groups & Clubs**: Join skiing groups, participate in challenges, and build your skiing community
 - **Profile & Analytics**: View detailed statistics, activity history, and progress over time
 
-## 🏗️ Architecture
+##  Architecture
 
 This is a monorepo containing three main components:
 
@@ -32,7 +32,7 @@ syntrak-app/
 - **Maps**: Google Maps Flutter SDK
 - **Location**: Geolocator for GPS tracking
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Prerequisites
 
@@ -119,7 +119,7 @@ cd frontend
 flutter run
 ```
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 syntrak-app/
@@ -152,7 +152,7 @@ syntrak-app/
 └── docs/                       # Root-level documentation
 ```
 
-## 📚 Documentation
+## Documentation
 
 ### Frontend Documentation
 - [Frontend README](frontend/README.md) - Setup and development guide
@@ -165,7 +165,7 @@ syntrak-app/
 - [Main Backend README](main-backend/README.md) - Authentication API setup
 - [Community Backend README](community-backend/README.md) - Community features
 
-## 🔑 Key Features
+##  Key Features
 
 ### Activity Tracking
 - Real-time GPS tracking with route visualization
@@ -194,7 +194,7 @@ syntrak-app/
 - Token refresh mechanism
 - Supabase integration for user management
 
-## 🛠️ Development
+##  Development
 
 ### Running Tests
 
@@ -225,16 +225,12 @@ cd community-backend
 
 Each backend has its own `.env` file. See respective README files for configuration details.
 
-## 🤝 Contributing
+## Contributing
 
 1. Create a feature branch from `main`
 2. Make your changes
 3. Write/update tests
 4. Submit a pull request
-
-## 📝 License
-
-[Add your license here]
 
 ## 🔗 Links
 
@@ -243,10 +239,3 @@ Each backend has its own `.env` file. See respective README files for configurat
 - **Community Backend**: [Flask Documentation](https://flask.palletsprojects.com/)
 - **Supabase**: [Supabase Documentation](https://supabase.com/docs)
 
-## 📧 Support
-
-For questions or issues, please open an issue on GitHub or contact the development team.
-
----
-
-**Built with ❄️ for the skiing community**

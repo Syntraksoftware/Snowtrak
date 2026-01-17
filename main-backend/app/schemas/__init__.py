@@ -48,6 +48,46 @@ class UserResponse(BaseModel):
     last_name: Optional[str] = None
 
 
+# Profile Schemas
+
+class ProfileBase(BaseModel):
+    """Shared profile properties."""
+    full_name: Optional[str] = None
+    username: Optional[str] = None
+    bio: Optional[str] = None
+    avatar_url: Optional[str] = None
+    push_token: Optional[str] = None
+    ski_level: Optional[str] = None
+    home: Optional[str] = None
+
+
+class ProfileUpdate(BaseModel):
+    """Schema for profile updates."""
+    full_name: Optional[str] = None
+    username: Optional[str] = None
+    bio: Optional[str] = None
+    avatar_url: Optional[str] = None
+    push_token: Optional[str] = None
+    ski_level: Optional[str] = None
+    home: Optional[str] = None
+
+
+class ProfileResponse(BaseModel):
+    """Profile data returned to API clients (frontend)."""
+    model_config = ConfigDict(from_attributes=True)
+    
+    id: str
+    full_name: Optional[str] = None
+    username: Optional[str] = None
+    bio: Optional[str] = None
+    avatar_url: Optional[str] = None
+    push_token: Optional[str] = None
+    ski_level: Optional[str] = None
+    home: Optional[str] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+
 # Auth Schemas 
 
 class Token(BaseModel):

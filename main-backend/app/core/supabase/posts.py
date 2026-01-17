@@ -140,6 +140,40 @@ class PostOperations(SupabaseBase):
             logger.exception(f"Failed to count posts: {exc}")
             return 0
     
+    def list_posts_by_user_id(
+        self,
+        user_id: str,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> List[Dict[str, Any]]:
+        """List posts by user ID with author information."""
+        if not self.is_configured():
+            logger.warning("Supabase not configured; skipping list_posts_by_user_id.")
+            return []
+        
+        client = self._client
+        if client is None:
+            return []
+        
+        try:
+            resp = client.table("posts").select(
+                "*, user_info!posts_user_id_fkey(email, first_name, last_name)"
+            ).eq("user_id", user_id).order("created_at", desc=True).range(offset, offset + limit - 1).execute()
+            data = getattr(resp, "data", None)
+            if isinstance(data, list):
+                # Flatten author info for each post
+                for post in data:
+                    if "user_info" in post and post["user_info"]:
+                        author = post.pop("user_info")
+                        post["author_email"] = author.get("email")
+                        post["author_first_name"] = author.get("first_name")
+                        post["author_last_name"] = author.get("last_name")
+                return data
+            return []
+        except Exception as exc:
+            logger.exception(f"Failed to list posts for user {user_id}: {exc}")
+            return []
+    
     def delete_post(self, post_id: str, user_id: str) -> bool:
         """
         Delete a post and all its comments (via CASCADE).

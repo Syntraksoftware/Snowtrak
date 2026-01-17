@@ -6,6 +6,7 @@ classes into a single unified client while keeping code organized in separate fi
 
 Database Tables:
 - user_info: User authentication and profile data
+- profiles: Extended user profile data (1-1 with auth.users)
 - subthreads: Community topics/categories
 - posts: User posts within subthreads
 - comments: Comments on posts (supports nesting)
@@ -16,6 +17,7 @@ from __future__ import annotations
 
 from .base import SupabaseBase
 from .users import UserOperations
+from .profiles import ProfileOperations
 from .subthreads import SubthreadOperations
 from .posts import PostOperations
 from .comments import CommentOperations
@@ -24,6 +26,7 @@ from .activities import ActivityOperations
 
 class SupabaseClient(
     UserOperations,
+    ProfileOperations,
     SubthreadOperations,
     PostOperations,
     CommentOperations,
@@ -34,6 +37,7 @@ class SupabaseClient(
     
     Uses multiple inheritance (mixin pattern) to combine:
     - UserOperations: user_info table CRUD
+    - ProfileOperations: profiles table CRUD
     - SubthreadOperations: subthreads table CRUD
     - PostOperations: posts table CRUD
     - CommentOperations: comments table CRUD
@@ -53,6 +57,7 @@ __all__ = [
     "SupabaseClient",
     "SupabaseBase",
     "UserOperations",
+    "ProfileOperations",
     "SubthreadOperations",
     "PostOperations",
     "CommentOperations",

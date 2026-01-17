@@ -7,6 +7,7 @@ import 'package:syntrak/models/weather.dart';
 import 'package:syntrak/providers/activity_provider.dart';
 import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/screens/activities/activity_detail_screen.dart';
+import 'package:syntrak/screens/profile/user_profile_screen.dart';
 import 'package:syntrak/services/weather_service.dart';
 import 'package:syntrak/services/location_service.dart';
 import 'package:intl/intl.dart';
@@ -286,7 +287,12 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
                   final user = authProvider.user;
                   return GestureDetector(
                     onTap: () {
-                      // TODO: Navigate to profile
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const UserProfileScreen(),
+                        ),
+                      );
                     },
                     child: CircleAvatar(
                       radius: 20,
