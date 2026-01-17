@@ -104,6 +104,8 @@ async def create_activity(
         result = client.create_activity(
             user_id=user_id,
             name=data.name or "Untitled Activity",
+            start_time=start_dt.isoformat(),
+            end_time=end_dt.isoformat(),
             activity_type=data.type,
             gps_path=gps_path,
             duration_seconds=duration_seconds,
