@@ -20,6 +20,7 @@ from models import (
     DeleteResponse,
     FrontendActivityCreate,
     FrontendActivityResponse,
+    FrontendActivityUpdate,
     LocationPoint,
 )
 
@@ -71,19 +72,69 @@ def _to_location_points(locations: List[Dict[str, Any]]) -> List[LocationPoint]:
     ]
 
 def _to_frontend_locations(activity_id: str, gps_path: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    return [
-        {
-            "id": None,
-            "activity_id": activity_id,
-            "latitude": p.get("lat"),
-            "longitude": p.get("lng"),
-            "altitude": p.get("elevation"),
-            "accuracy": None,
-            "speed": None,
-            "timestamp": p.get("timestamp"),
-        }
-        for p in gps_path
-    ]
+    frontend_locs = []
+    for p in gps_path:
+        lat = p.get("lat") if isinstance(p, dict) else None
+        lng = p.get("lng") if isinstance(p, dict) else None
+        if lat is None or lng is None:
+            continue
+        frontend_locs.append(
+            {
+                "id": None,
+                "activity_id": activity_id,
+                "latitude": lat,
+                "longitude": lng,
+                "altitude": p.get("elevation") if isinstance(p, dict) else None,
+                "accuracy": None,
+                "speed": None,
+                "timestamp": p.get("timestamp") if isinstance(p, dict) else None,
+            }
+        )
+    return frontend_locs
+
+def _activity_to_frontend(activity: Dict[str, Any], fallback_start: Optional[str] = None, fallback_end: Optional[str] = None) -> Dict[str, Any]:
+    """Map a backend activity record into the frontend-facing schema."""
+    distance_meters = activity.get("distance_meters") or activity.get("distance") or 0
+    duration_seconds = activity.get("duration_seconds") or activity.get("duration") or 0
+    elevation_gain = activity.get("elevation_gain_meters") or activity.get("elevation_gain") or 0
+    start_time = activity.get("start_time") or fallback_start or activity.get("created_at") or datetime.utcnow().isoformat()
+    end_time = activity.get("end_time") or fallback_end or activity.get("created_at") or datetime.utcnow().isoformat()
+    if isinstance(start_time, datetime):
+        start_time = start_time.isoformat()
+    if isinstance(end_time, datetime):
+        end_time = end_time.isoformat()
+
+    avg_pace = None
+    try:
+        if distance_meters and distance_meters > 0:
+            avg_pace = duration_seconds / (distance_meters / 1000)
+    except Exception:
+        avg_pace = None
+
+    created_at = activity.get("created_at")
+    if isinstance(created_at, datetime):
+        created_at = created_at.isoformat()
+
+    gps_path = activity.get("gps_path", []) or []
+
+    return {
+        "id": activity.get("id"),
+        "user_id": activity.get("user_id"),
+        "type": activity.get("activity_type") or activity.get("type") or "other",
+        "name": activity.get("name"),
+        "description": activity.get("description"),
+        "distance": distance_meters,
+        "duration": duration_seconds,
+        "elevation_gain": elevation_gain,
+        "start_time": start_time,
+        "end_time": end_time,
+        "average_pace": avg_pace,
+        "max_pace": activity.get("max_pace"),
+        "calories": activity.get("calories"),
+        "is_public": (activity.get("visibility") == "public"),
+        "created_at": created_at,
+        "locations": _to_frontend_locations(activity.get("id"), gps_path),
+    }
 
 @router.post("", response_model=FrontendActivityResponse, status_code=status.HTTP_201_CREATED)
 async def create_activity(
@@ -148,22 +199,23 @@ async def create_activity(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
 
 
-@router.get("", response_model=ActivitiesListResponse)
+@router.get("", response_model=List[FrontendActivityResponse])
 async def list_activities(
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0)
 ):
-    """List activities (public feed)."""
+    """List activities (public feed) formatted for frontend."""
     client = get_activity_client()
     try:
         resp = client.list_activities(limit=limit, offset=offset)
-        return ActivitiesListResponse(items=resp["items"], total=resp["total"])
+        items = resp["items"] if isinstance(resp, dict) else resp
+        return [FrontendActivityResponse(**_activity_to_frontend(item)) for item in items]
     except Exception as exc:
         logger.error(f"Error listing activities: {exc}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
 
 
-@router.get("/me", response_model=ActivitiesListResponse)
+@router.get("/me", response_model=List[FrontendActivityResponse])
 async def list_my_activities(
     search: Optional[str] = None,
     activity_type: Optional[str] = None,
@@ -173,7 +225,7 @@ async def list_my_activities(
     offset: int = Query(0, ge=0),
     user_id: str = Depends(get_current_user),
 ):
-    """List current user's activities with optional filters."""
+    """List current user's activities with optional filters, frontend shape."""
     client = get_activity_client()
     try:
         resp = client.list_user_activities(
@@ -185,22 +237,22 @@ async def list_my_activities(
             start_date=start_date,
             end_date=end_date,
         )
-        return ActivitiesListResponse(items=resp["items"], total=resp["total"])
+        items = resp["items"] if isinstance(resp, dict) else resp
+        return [FrontendActivityResponse(**_activity_to_frontend(item)) for item in items]
     except Exception as exc:
         logger.error(f"Error listing user activities: {exc}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
 
 
-@router.get("/{activity_id}", response_model=ActivityResponse)
+@router.get("/{activity_id}", response_model=FrontendActivityResponse)
 async def get_activity(activity_id: str, user_id: Optional[str] = Depends(get_optional_user)):
-    """Get activity details."""
+    """Get activity details formatted for frontend."""
     client = get_activity_client()
     try:
         activity = client.get_activity_by_id(activity_id)
         if not activity:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Activity not found")
-        # Visibility checks could be added here (visibility vs user_id)
-        return activity
+        return FrontendActivityResponse(**_activity_to_frontend(activity))
     except HTTPException:
         raise
     except Exception as exc:
@@ -208,25 +260,31 @@ async def get_activity(activity_id: str, user_id: Optional[str] = Depends(get_op
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
 
 
-@router.put("/{activity_id}", response_model=ActivityResponse)
+@router.put("/{activity_id}", response_model=FrontendActivityResponse)
 async def update_activity(
     activity_id: str,
-    data: ActivityUpdate,
+    data: FrontendActivityUpdate,
     user_id: str = Depends(get_current_user)
 ):
-    """Update an activity (owner only)."""
+    """Update an activity (owner only) and return frontend shape."""
     client = get_activity_client()
     try:
+        visibility = None
+        if data.is_public is True:
+            visibility = "public"
+        elif data.is_public is False:
+            visibility = "private"
+
         updated = client.update_activity(
             activity_id=activity_id,
             user_id=user_id,
             name=data.name,
             description=data.description,
-            visibility=data.visibility,
+            visibility=visibility,
         )
         if not updated:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Activity not found or not authorized")
-        return updated
+        return FrontendActivityResponse(**_activity_to_frontend(updated))
     except HTTPException:
         raise
     except Exception as exc:
