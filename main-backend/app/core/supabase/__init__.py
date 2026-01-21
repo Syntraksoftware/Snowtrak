@@ -1,7 +1,7 @@
 """
 Unified Supabase client for interacting with all database tables.
 
-This module uses composition (multiple inheritance) to combine all operation
+Modulse uses composition (multiple inheritance) to combine all operation
 classes into a single unified client while keeping code organized in separate files.
 
 Database Tables:
@@ -13,6 +13,7 @@ Database Tables:
 - activities: User activities (skiing, etc.)
 - activity_locations: GPS points for activities
 """
+
 from __future__ import annotations
 
 from .base import SupabaseBase

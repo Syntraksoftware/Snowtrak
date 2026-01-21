@@ -22,7 +22,7 @@ class UserProfileScreen extends StatefulWidget {
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
   List<Post> _posts = [];
-  bool _isLoading = true;
+  bool _isLoading = false; // Start as false - will be set when loading starts
   bool _isLoadingMore = false;
   String? _error;
   int _offset = 0;
@@ -32,15 +32,29 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _loadPosts();
+    // Use addPostFrameCallback to ensure widget is fully built before loading
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadPosts();
+      }
+    });
   }
 
   Future<void> _loadPosts({bool refresh = false}) async {
-    // Prevent multiple simultaneous loads
-    if ((_isLoading && !refresh) || (_isLoadingMore && !refresh)) return;
+    // Prevent multiple simultaneous loads (but allow refresh)
+    if (!refresh && (_isLoading || _isLoadingMore)) {
+      print('🔍 [UserProfileScreen] Skipping load - already loading');
+      return;
+    }
 
-    if (!mounted) return;
+    if (!mounted) {
+      print('🔍 [UserProfileScreen] Not mounted, skipping load');
+      return;
+    }
 
+    print('🔍 [UserProfileScreen] Loading posts (refresh: $refresh)');
+    
+    // Set loading state BEFORE making the API call
     setState(() {
       if (refresh) {
         _offset = 0;
@@ -48,7 +62,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         _posts.clear();
         _isLoading = true;
         _isLoadingMore = false;
+      } else if (!_isLoading) {
+        // Initial load or load more
+        _isLoading = true;
+        _isLoadingMore = false;
       } else {
+        // Already loading, set load more flag
         _isLoadingMore = true;
       }
       _error = null;
@@ -58,13 +77,36 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final apiService = ApiService();
       
-      // Set token if available
+      // Check session and refresh token if needed
+      if (authProvider.session == null) {
+        setState(() {
+          _error = 'Not authenticated';
+          _isLoading = false;
+          _isLoadingMore = false;
+        });
+        return;
+      }
+
+      // Refresh token if expired
+      final tokenRefreshed = await authProvider.refreshTokenIfNeeded();
+      if (!tokenRefreshed) {
+        setState(() {
+          _error = 'Session expired. Please login again.';
+          _isLoading = false;
+          _isLoadingMore = false;
+        });
+        return;
+      }
+
+      // Set token
       if (authProvider.session != null) {
         apiService.setToken(authProvider.session!.accessToken);
       }
 
       final userId = widget.userId ?? authProvider.user?.id;
+      print('🔍 [UserProfileScreen] UserId: $userId');
       if (userId == null) {
+        print('🔍 [UserProfileScreen] User ID is null');
         setState(() {
           _error = 'User not found';
           _isLoading = false;
@@ -73,11 +115,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         return;
       }
 
+      print('🔍 [UserProfileScreen] Fetching posts for user: $userId');
       final postsData = await apiService.getPostsByUserId(
         userId,
         limit: _limit,
         offset: _offset,
       );
+      print('🔍 [UserProfileScreen] Received ${postsData.length} posts');
 
       final newPosts = postsData.map((postJson) {
         // Convert backend post format to frontend Post model
@@ -115,14 +159,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           _isLoading = false;
           _isLoadingMore = false;
         });
+        print('🔍 [UserProfileScreen] Posts loaded: ${_posts.length} total');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('🔍 [UserProfileScreen] Error loading posts: $e');
+      print('🔍 [UserProfileScreen] Stack trace: $stackTrace');
       if (mounted) {
         setState(() {
           _error = e.toString();
           _isLoading = false;
           _isLoadingMore = false;
         });
+        print('🔍 [UserProfileScreen] Error state set: $_error');
       }
     }
   }
@@ -150,6 +198,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print('🔍 [UserProfileScreen] Building screen. isLoading: $_isLoading, error: $_error, posts: ${_posts.length}');
+    
     return Scaffold(
       backgroundColor: SyntrakColors.background,
       appBar: AppBar(

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:syntrak/models/activity.dart';
 import 'package:syntrak/models/user.dart';
@@ -8,7 +9,7 @@ class ApiService {
   String? _token;
 
   // Use 127.0.0.1 instead of localhost for iOS simulator compatibility
-  // For physical device, use your Mac's IP address (e.g., http://192.168.1.100:8080)
+
   static const String baseUrl = 'http://127.0.0.1:8080/api/v1';
 
   ApiService() {
@@ -239,8 +240,57 @@ class ApiService {
   }
 
   Future<Profile> getProfileById(String userId) async {
-    final response = await _dio.get('/users/$userId/profile');
-    return Profile.fromJson(response.data);
+    try {
+      print('🔍 [ApiService] Getting profile for userId: $userId');
+      //try to get profile by user id
+      final response = await _dio
+          .get(
+        '/users/$userId/profile',
+        options: Options(
+          receiveTimeout: const Duration(seconds: 10),
+        ),
+      )
+          .timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          throw Exception('Request timeout. Please check your connection.');
+        },
+      );
+      print(
+          '🔍 [ApiService] Profile response received: ${response.statusCode}');
+      return Profile.fromJson(response.data);
+    } on DioException catch (e) {
+      print('🔍 [ApiService] DioException: ${e.type} - ${e.message}');
+      print(
+          '🔍 [ApiService] Response: ${e.response?.statusCode} - ${e.response?.data}');
+      // Extract error message from response
+      if (e.response != null && e.response!.data != null) {
+        final errorData = e.response!.data;
+        if (errorData is Map && errorData['detail'] != null) {
+          throw Exception(errorData['detail']);
+        }
+      }
+      // Default error messages
+      if (e.response?.statusCode == 401) {
+        throw Exception('Authentication failed. Please login again.');
+      } else if (e.response?.statusCode == 404) {
+        throw Exception('Profile not found');
+      } else if (e.response?.statusCode == 503) {
+        throw Exception('Database not configured');
+      } else if (e.response?.statusCode == 500) {
+        throw Exception('Server error. Please try again later.');
+      } else if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        throw Exception(
+            'Connection timeout. Please check your internet connection.');
+      } else if (e.type == DioExceptionType.connectionError) {
+        throw Exception('Cannot connect to server. Is the backend running?');
+      }
+      throw Exception('Failed to get profile: ${e.message ?? "Unknown error"}');
+    } catch (e) {
+      print('🔍 [ApiService] General exception: $e');
+      rethrow;
+    }
   }
 
   // Posts endpoints (community backend)
@@ -249,27 +299,75 @@ class ApiService {
     int limit = 20,
     int offset = 0,
   }) async {
-    // Note: This calls the community backend, not main backend
-    // You may need to adjust the base URL or create a separate service
-    final communityBaseUrl = 'http://127.0.0.1:5001/api';
-    final dio = Dio(BaseOptions(baseUrl: communityBaseUrl));
-    
-    // Copy auth token if available
-    if (_token != null) {
-      dio.options.headers['Authorization'] = 'Bearer $_token';
+    try {
+      print('🔍 [ApiService] Getting posts for userId: $userId');
+      // Note: This calls the community backend, not main backend
+      // You may need to adjust the base URL or create a separate service
+      final communityBaseUrl = 'http://127.0.0.1:5001/api';
+      final dio = Dio(BaseOptions(
+        baseUrl: communityBaseUrl,
+        receiveTimeout: const Duration(seconds: 10),
+      ));
+
+      // Copy auth token if available
+      if (_token != null) {
+        dio.options.headers['Authorization'] = 'Bearer $_token';
+        print('🔍 [ApiService] Token set for posts request');
+      } else {
+        print('🔍 [ApiService] No token available for posts request');
+      }
+
+      final response = await dio.get(
+        '/posts/user/$userId',
+        queryParameters: {
+          'limit': limit,
+          'offset': offset,
+        },
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          throw Exception('Request timeout. Please check your connection.');
+        },
+      );
+
+      print('🔍 [ApiService] Posts response received: ${response.statusCode}');
+      if (response.data is Map && response.data['posts'] != null) {
+        final posts = List<Map<String, dynamic>>.from(response.data['posts']);
+        print('🔍 [ApiService] Returning ${posts.length} posts');
+        return posts;
+      }
+      print('🔍 [ApiService] No posts in response, returning empty list');
+      return [];
+    } on DioException catch (e) {
+      print(
+          '🔍 [ApiService] DioException getting posts: ${e.type} - ${e.message}');
+      print(
+          '🔍 [ApiService] Response: ${e.response?.statusCode} - ${e.response?.data}');
+      // Return empty list on error instead of throwing
+      return [];
+    } catch (e) {
+      print('🔍 [ApiService] General exception getting posts: $e');
+      return [];
     }
-    
-    final response = await dio.get(
-      '/posts/user/$userId',
-      queryParameters: {
-        'limit': limit,
-        'offset': offset,
-      },
+  }
+
+  // Avatar upload endpoint
+  Future<Profile> uploadAvatar(File imageFile) async {
+    final formData = FormData.fromMap({
+      'file': await MultipartFile.fromFile(
+        imageFile.path,
+        filename: imageFile.path.split('/').last,
+      ),
+    });
+
+    final response = await _dio.post(
+      '/users/me/profile/avatar',
+      data: formData,
+      options: Options(
+        contentType: 'multipart/form-data',
+      ),
     );
-    
-    if (response.data is Map && response.data['posts'] != null) {
-      return List<Map<String, dynamic>>.from(response.data['posts']);
-    }
-    return [];
+
+    return Profile.fromJson(response.data);
   }
 }

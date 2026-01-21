@@ -2,7 +2,7 @@
 User API endpoints.
 Handles user profile management.
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from app.schemas import UserResponse, UserUpdate, ProfileResponse, ProfileUpdate
 from app.core.storage import User
 from app.core.supabase import supabase_client
@@ -243,4 +243,115 @@ def get_user_profile_by_id(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get user profile"
+        )
+
+
+@router.post("/me/profile/avatar", response_model=ProfileResponse)
+async def upload_avatar(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+) -> ProfileResponse:
+    """
+    Upload avatar image for current user.
+    
+    Accepts image files (jpg, png, etc.) and uploads to Supabase storage bucket 'avatars'.
+    Updates the user's profile with the new avatar URL.
+    
+    arguments: 
+    - file: UploadFile, the image file to upload
+    - current_user: User, the current user
+    
+    Expected Return:
+    - ProfileResponse: the profile response containing the new avatar URL
+    - e.g. {
+        "id": "123",
+        "full_name": "John Doe",
+        "username": "johndoe",
+        "bio": "I am a software engineer",
+        "avatar_url": "https://example.com/avatar.jpg",
+        "push_token": "1234567890",
+        "ski_level": "beginner",
+        "home": "New York",
+        "created_at": "2021-01-01 12:00:00",
+        "updated_at": "2021-01-01 12:00:00"
+    }
+    """
+    if not supabase_client.is_configured():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database not configured"
+        )
+    
+    # Validate file type
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be an image"
+        )
+    
+    # Get file extension
+    file_extension = file.filename.split(".")[-1] if "." in file.filename else "jpg"
+    if file_extension not in ["jpg", "jpeg", "png", "gif", "webp"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported image format. Use jpg, png, gif, or webp"
+        )
+    
+    try:
+        # Read file content
+        file_content = await file.read()
+        
+        # Check file size (max 5MB)
+        max_size = 5 * 1024 * 1024  # 5MB
+        if len(file_content) > max_size:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File size exceeds 5MB limit"
+            )
+        
+        # Get existing profile to delete old avatar if exists
+        existing_profile = supabase_client.get_profile_by_id(current_user.id)
+        old_avatar_url = None
+        if existing_profile and existing_profile.get("avatar_url"):
+            old_avatar_url = existing_profile["avatar_url"]
+        
+        # Upload new avatar
+        new_avatar_url = supabase_client.upload_avatar(
+            user_id=current_user.id,
+            file_content=file_content,
+            file_extension=file_extension,
+        )
+        
+        if new_avatar_url is None:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to upload avatar"
+            )
+        
+        # Delete old avatar if it exists
+        if old_avatar_url and old_avatar_url != new_avatar_url:
+            supabase_client.delete_avatar(current_user.id, old_avatar_url)
+        
+        # Update profile with new avatar URL
+        updated_profile = supabase_client.update_profile(
+            user_id=current_user.id,
+            avatar_url=new_avatar_url,
+        )
+        
+        if updated_profile is None:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update profile with new avatar"
+            )
+        
+        logger.info(f"User {current_user.id} uploaded new avatar")
+        return ProfileResponse(**updated_profile)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Error uploading avatar: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to upload avatar"
         )

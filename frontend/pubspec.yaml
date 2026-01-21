@@ -28,6 +28,9 @@ dependencies:
   # Storage
   shared_preferences: ^2.2.2
 
+  # Image handling
+  image_picker: ^1.0.7
+
   # UI
   cupertino_icons: ^1.0.6
   intl: ^0.20.2

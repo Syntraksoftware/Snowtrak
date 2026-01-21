@@ -287,12 +287,17 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
                   final user = authProvider.user;
                   return GestureDetector(
                     onTap: () {
+                      print(
+                          '🔍 [ActivitiesScreen] Avatar tapped, navigating to profile');
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => const UserProfileScreen(),
                         ),
-                      );
+                      ).then((_) {
+                        print(
+                            '🔍 [ActivitiesScreen] Returned from profile screen');
+                      });
                     },
                     child: CircleAvatar(
                       radius: 20,

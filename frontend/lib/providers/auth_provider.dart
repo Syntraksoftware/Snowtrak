@@ -223,6 +223,47 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Refresh the access token using the refresh token
+  /// Returns true if refresh was successful, false otherwise
+  Future<bool> refreshTokenIfNeeded() async {
+    if (_session == null) {
+      print('🔍 [AuthProvider] No session to refresh');
+      return false;
+    }
+
+    // Check if token is expired
+    if (!_session!.isExpired) {
+      print('🔍 [AuthProvider] Token is still valid');
+      return true;
+    }
+
+    if (_session!.refreshToken == null) {
+      print('🔍 [AuthProvider] No refresh token available');
+      return false;
+    }
+
+    try {
+      print('🔍 [AuthProvider] Token expired, refreshing...');
+      final newSession = await _refreshSession(_session!);
+      _session = newSession;
+      _apiService.setToken(newSession.accessToken);
+      await _saveSession(newSession);
+      _isAuthenticated = true;
+      notifyListeners();
+      print('🔍 [AuthProvider] Token refreshed successfully');
+      return true;
+    } catch (e) {
+      print('🔍 [AuthProvider] Token refresh failed: $e');
+      // Clear session on refresh failure
+      _session = null;
+      _isAuthenticated = false;
+      _apiService.setToken(null);
+      await _clearSession();
+      notifyListeners();
+      return false;
+    }
+  }
+
   // Session management helpers
 
   Future<AuthSession?> _restoreSession() async {
