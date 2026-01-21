@@ -37,7 +37,7 @@ echo "TOKEN set: ${TOKEN:0:16}..."
 ```
 
 ## POST /activities (create)
-Aligned to the frontend payload. Server computes distance/elevation/duration and responds in the frontend shape.
+Aligned to the frontend payload. Server computes distance/elevation/duration and responds in the frontend shape. Called from [frontend/lib/services/api_service.dart](frontend/lib/services/api_service.dart#L174-L188).
 
 ```bash
 curl -sS -X POST \
@@ -53,40 +53,55 @@ curl -sS -X POST \
   "end_time": "2026-01-17T09:10:30Z",
   "is_public": true,
   "locations": [
-    {
-      "latitude": 46.8201,
-      "longitude": 9.2870,
-      "altitude": 1500.0,
-      "timestamp": "2026-01-17T08:00:10Z"
-    },
-    {
-      "latitude": 46.8210,
-      "longitude": 9.2890,
-      "altitude": 1520.0,
-      "timestamp": "2026-01-17T08:15:10Z"
-    },
-    {
-      "latitude": 46.8230,
-      "longitude": 9.2920,
-      "altitude": 1555.0,
-      "timestamp": "2026-01-17T08:30:10Z"
-    }
+    { "latitude": 46.8201, "longitude": 9.2870, "altitude": 1500.0, "timestamp": "2026-01-17T08:00:10Z" },
+    { "latitude": 46.8210, "longitude": 9.2890, "altitude": 1520.0, "timestamp": "2026-01-17T08:15:10Z" },
+    { "latitude": 46.8230, "longitude": 9.2920, "altitude": 1555.0, "timestamp": "2026-01-17T08:30:10Z" }
   ]
 }
 JSON
 ```
 
-Expected response (shape):
-- `id`, `user_id`, `type`, `name`, `description`
-- `distance` (meters), `duration` (seconds), `elevation_gain` (meters)
-- `start_time`, `end_time`, `average_pace` (sec/km), `is_public`, `created_at`
-- `locations` (array: latitude/longitude/altitude/timestamp)
+## GET /activities (feed)
+Returns an array of frontend-shaped activities. Frontend call: [frontend/lib/services/api_service.dart](frontend/lib/services/api_service.dart#L180-L188).
 
-## Placeholders for future tests
-- GET /activities (feed): will add page/limit examples after alignment
-- GET /activities/{id}
-- PUT /activities/{id}
-- DELETE /activities/{id}
+```bash
+curl -sS "http://127.0.0.1:5100/api/v1/activities?limit=20&offset=0" \
+  -H "Authorization: Bearer $TOKEN" | jq '.'
+```
+
+## GET /activities/{id}
+Returns a frontend-shaped activity. Frontend call: [frontend/lib/services/api_service.dart](frontend/lib/services/api_service.dart#L190-L193).
+
+```bash
+ACTIVITY_ID="REPLACE_ME"
+curl -sS "http://127.0.0.1:5100/api/v1/activities/$ACTIVITY_ID" \
+  -H "Authorization: Bearer $TOKEN" | jq '.'
+```
+
+## PUT /activities/{id}
+Frontend sends `name`, `description`, `is_public`; backend maps to `visibility` and returns frontend shape. Frontend call: [frontend/lib/services/api_service.dart](frontend/lib/services/api_service.dart#L195-L207).
+
+```bash
+ACTIVITY_ID="REPLACE_ME"
+curl -sS -X PUT \
+  "http://127.0.0.1:5100/api/v1/activities/$ACTIVITY_ID" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  --data '{"name":"Updated name","description":"Updated desc","is_public":false}' | jq '.'
+```
+
+## DELETE /activities/{id}
+Deletes an activity. Frontend call: [frontend/lib/services/api_service.dart](frontend/lib/services/api_service.dart#L209-L211).
+
+```bash
+ACTIVITY_ID="REPLACE_ME"
+curl -sS -X DELETE \
+  "http://127.0.0.1:5100/api/v1/activities/$ACTIVITY_ID" \
+  -H "Authorization: Bearer $TOKEN" | jq '.'
+```
+
+## Notes on kudos/comments/share
+Frontend currently does not call these endpoints. Add curls here if UI starts using:
 - POST /activities/{id}/kudos
 - GET/POST /activities/{id}/comments
 - POST /activities/{id}/share
