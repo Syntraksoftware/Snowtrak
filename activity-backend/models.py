@@ -53,6 +53,13 @@ class ActivityUpdate(BaseModel):
     visibility: Optional[str] = None
 
 
+class FrontendActivityUpdate(BaseModel):
+    """Frontend update payload (maps is_public -> visibility)."""
+    name: Optional[str] = None
+    description: Optional[str] = None
+    is_public: Optional[bool] = None
+
+
 class ActivityResponse(BaseModel):
     """Schema for activity response."""
     id: str
