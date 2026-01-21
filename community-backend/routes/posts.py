@@ -1,69 +1,145 @@
 """Post routes."""
-from flask import Blueprint, request, jsonify
-from middleware.auth import token_required, optional_token
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from typing import Optional, List
+from pydantic import BaseModel
+import logging
+
+from middleware.auth import get_current_user, get_optional_user
 from services.supabase_client import get_community_client
 
-posts_bp = Blueprint("posts", __name__)
+logger = logging.getLogger(__name__)
+router = APIRouter()
 
 
-@posts_bp.route("", methods=["POST"])
-@token_required
-def create_post(user_id):
+# Pydantic models
+class PostCreate(BaseModel):
+    """Schema for creating a post."""
+    subthread_id: str
+    title: str
+    content: str
+
+
+class PostResponse(BaseModel):
+    """Schema for post response."""
+    post_id: str
+    user_id: str
+    subthread_id: str
+    title: str
+    content: str
+    created_at: str
+    author_email: Optional[str] = None
+    author_first_name: Optional[str] = None
+    author_last_name: Optional[str] = None
+
+
+class CommentResponse(BaseModel):
+    """Schema for comment response."""
+    id: str
+    user_id: str
+    post_id: str
+    parent_id: Optional[str] = None
+    content: str
+    has_parent: bool
+    created_at: str
+    author_email: Optional[str] = None
+    author_first_name: Optional[str] = None
+    author_last_name: Optional[str] = None
+
+
+class CommentsListResponse(BaseModel):
+    """Schema for comments list response."""
+    comments: List[CommentResponse]
+    total: int
+    post_id: str
+
+
+class PostsListResponse(BaseModel):
+    """Schema for posts list response."""
+    posts: List[PostResponse]
+    page: int
+    page_size: int
+
+
+class DeleteResponse(BaseModel):
+    """Schema for delete response."""
+    message: str
+    deleted_post_id: Optional[str] = None
+
+
+@router.post("", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
+async def create_post(
+    data: PostCreate,
+    user_id: str = Depends(get_current_user)
+):
     """Create a new post (authenticated)."""
     try:
-        data = request.get_json()
-        
-        # Validate required fields
-        required_fields = ["subthread_id", "title", "content"]
-        for field in required_fields:
-            if not data or field not in data:
-                return jsonify({"error": f"{field} is required"}), 400
-        
         client = get_community_client()
         
         # Verify subthread exists
-        subthread = client.get_subthread_by_id(data["subthread_id"])
+        subthread = client.get_subthread_by_id(data.subthread_id)
         if not subthread:
-            return jsonify({"error": "Subthread not found"}), 404
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Subthread not found"
+            )
         
         result = client.create_post(
             user_id=user_id,
-            subthread_id=data["subthread_id"],
-            title=data["title"],
-            content=data["content"]
+            subthread_id=data.subthread_id,
+            title=data.title,
+            content=data.content
         )
         
         if not result:
-            return jsonify({"error": "Failed to create post"}), 500
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create post"
+            )
         
-        return jsonify(result), 201
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return result
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error(f"Error creating post")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Server Error"
+        )
 
 
-@posts_bp.route("/<post_id>", methods=["GET"])
-def get_post(post_id):
+@router.get("/{post_id}", response_model=PostResponse)
+async def get_post(post_id: str):
     """Get post by ID."""
     try:
         client = get_community_client()
         post = client.get_post_by_id(post_id)
         
         if not post:
-            return jsonify({"error": "Post not found"}), 404
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Post not found"
+            )
         
-        return jsonify(post), 200
+        return post
+    except HTTPException:
+        raise
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Error getting post: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
 
 
-@posts_bp.route("/user/<user_id>", methods=["GET"])
-@optional_token
-def list_posts_by_user(user_id):
-    """List posts by user ID."""
+@router.get("/user/{user_id}", response_model=PostsListResponse)
+async def list_posts_by_user(
+    user_id: str,
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_user: Optional[str] = Depends(get_optional_user)
+):
+    """List posts by user ID (optional authentication)."""
     try:
-        limit = request.args.get("limit", 20, type=int)
-        offset = request.args.get("offset", 0, type=int)
-        
         client = get_community_client()
         
         posts = client.list_posts_by_user_id(
@@ -72,17 +148,26 @@ def list_posts_by_user(user_id):
             offset=offset
         )
         
-        return jsonify({
-            "posts": posts,
-            "page": offset // limit + 1,
-            "page_size": limit
-        }), 200
+        # Convert dicts to Pydantic models
+        post_models = [PostResponse(**post) for post in posts]
+        
+        return PostsListResponse(
+            posts=post_models,
+            page=offset // limit + 1,
+            page_size=limit
+        )
+    except HTTPException:
+        raise
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Error listing posts by user: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Server Error"
+        )
 
 
-@posts_bp.route("/<post_id>/comments", methods=["GET"])
-def list_post_comments(post_id):
+@router.get("/{post_id}/comments", response_model=CommentsListResponse)
+async def list_post_comments(post_id: str):
     """List all comments for a post."""
     try:
         client = get_community_client()
@@ -90,23 +175,37 @@ def list_post_comments(post_id):
         # Verify post exists
         post = client.get_post_by_id(post_id)
         if not post:
-            return jsonify({"error": "Post not found"}), 404
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Post not found"
+            )
         
         comments = client.list_comments_by_post(post_id)
         total = client.count_comments_by_post(post_id)
         
-        return jsonify({
-            "comments": comments,
-            "total": total,
-            "post_id": post_id
-        }), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        # Convert dicts to Pydantic models
+        comment_models = [CommentResponse(**comment) for comment in comments]
+        
+        return CommentsListResponse(
+            comments=comment_models,
+            total=total,
+            post_id=post_id
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error(f"Error listing post comments")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Server Error"
+        )
 
 
-@posts_bp.route("/<post_id>", methods=["DELETE"])
-@token_required
-def delete_post(user_id, post_id):
+@router.delete("/{post_id}", response_model=DeleteResponse)
+async def delete_post(
+    post_id: str,
+    user_id: str = Depends(get_current_user)
+):
     """Delete a post and all its comments (authenticated)."""
     try:
         client = get_community_client()
@@ -115,11 +214,20 @@ def delete_post(user_id, post_id):
         success = client.delete_post(post_id, user_id)
         
         if not success:
-            return jsonify({"error": "Post not found or unauthorized"}), 404
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Post not found or unauthorized"
+            )
         
-        return jsonify({
-            "message": "Post and all comments deleted successfully",
-            "deleted_post_id": post_id
-        }), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return DeleteResponse(
+            message="Post and all comments deleted successfully",
+            deleted_post_id=post_id
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error(f"Error deleting post")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Server Error"
+        )

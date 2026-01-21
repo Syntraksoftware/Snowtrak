@@ -1,69 +1,123 @@
 """Comment routes."""
-from flask import Blueprint, request, jsonify
-from middleware.auth import token_required
+from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Optional
+from pydantic import BaseModel
+import logging
+
+from middleware.auth import get_current_user
 from services.supabase_client import get_community_client
 
-comments_bp = Blueprint("comments", __name__)
+logger = logging.getLogger(__name__)
+router = APIRouter()
 
 
-@comments_bp.route("", methods=["POST"])
-@token_required
-def create_comment(user_id):
+# Pydantic models
+class CommentCreate(BaseModel):
+    """Schema for creating a comment."""
+    post_id: str
+    content: str
+    parent_id: Optional[str] = None
+
+
+class CommentResponse(BaseModel):
+    """Schema for comment response."""
+    id: str
+    user_id: str
+    post_id: str
+    parent_id: Optional[str] = None
+    content: str
+    has_parent: bool
+    created_at: str
+    author_email: Optional[str] = None #TODO: review whether to include email
+    author_first_name: Optional[str] = None
+    author_last_name: Optional[str] = None
+
+
+class DeleteResponse(BaseModel):
+    """Schema for delete response."""
+    message: str
+    deleted_comment_id: Optional[str] = None
+
+
+@router.post("", response_model=CommentResponse, status_code=status.HTTP_201_CREATED)
+async def create_comment(
+    data: CommentCreate,
+    user_id: str = Depends(get_current_user)
+):
     """Create a new comment (authenticated)."""
     try:
-        data = request.get_json()
-        
-        # Validate required fields
-        if not data or "post_id" not in data or "content" not in data:
-            return jsonify({"error": "post_id and content are required"}), 400
-        
         client = get_community_client()
         
         # Verify post exists
-        post = client.get_post_by_id(data["post_id"])
+        post = client.get_post_by_id(data.post_id)
         if not post:
-            return jsonify({"error": "Post not found"}), 404
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Post not found"
+            )
         
         # If parent_id is provided, verify it exists
-        parent_id = data.get("parent_id")
-        if parent_id:
-            parent = client.get_comment_by_id(parent_id)
+        if data.parent_id:
+            parent = client.get_comment_by_id(data.parent_id)
             if not parent:
-                return jsonify({"error": "Parent comment not found"}), 404
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Parent comment not found"
+                )
         
         result = client.create_comment(
             user_id=user_id,
-            post_id=data["post_id"],
-            content=data["content"],
-            parent_id=parent_id
+            post_id=data.post_id,
+            content=data.content,
+            parent_id=data.parent_id
         )
         
         if not result:
-            return jsonify({"error": "Failed to create comment"}), 500
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create comment"
+            )
         
-        return jsonify(result), 201
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return result
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error(f"Error creating comment")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Server Error"
+        )
 
 
-@comments_bp.route("/<comment_id>", methods=["GET"])
-def get_comment(comment_id):
+@router.get("/{comment_id}", response_model=CommentResponse)
+async def get_comment(comment_id: str):
     """Get comment by ID."""
     try:
         client = get_community_client()
         comment = client.get_comment_by_id(comment_id)
         
         if not comment:
-            return jsonify({"error": "Comment not found"}), 404
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Comment not found"
+            )
         
-        return jsonify(comment), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return comment
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error(f"Error getting comment")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Server Error"
+        )
 
 
-@comments_bp.route("/<comment_id>", methods=["DELETE"])
-@token_required
-def delete_comment(user_id, comment_id):
+@router.delete("/{comment_id}", response_model=DeleteResponse)
+async def delete_comment(
+    comment_id: str,
+    user_id: str = Depends(get_current_user)
+):
     """Delete a comment and all its nested replies (authenticated)."""
     try:
         client = get_community_client()
@@ -72,11 +126,20 @@ def delete_comment(user_id, comment_id):
         success = client.delete_comment(comment_id, user_id)
         
         if not success:
-            return jsonify({"error": "Comment not found or unauthorized"}), 404
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Comment not found or unauthorized"
+            )
         
-        return jsonify({
-            "message": "Comment and nested replies deleted successfully",
-            "deleted_comment_id": comment_id
-        }), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return DeleteResponse(
+            message="Comment and nested replies deleted successfully",
+            deleted_comment_id=comment_id
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error(f"Error deleting comment")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Server Error"
+        )
