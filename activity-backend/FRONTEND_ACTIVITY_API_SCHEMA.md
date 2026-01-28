@@ -40,7 +40,7 @@ Base URL configured in the frontend: `http://127.0.0.1:8080/api/v1`.
 
 ## PUT /activities/{id}
 - Frontend sends: optional `name`, `description`, `is_public`.
-- Backend expects: optional `name`, `description`, `visibility`.
+- Backend expects (`FrontendActivityUpdate`): optional `name`, `description`, `is_public`.
 - Frontend expects response shaped like `Activity.fromJson`.
 - Data provenance: update payload assembled from edit UI; backend enforces ownership via auth dependency.
 
