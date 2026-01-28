@@ -11,6 +11,18 @@ class LocationPoint(BaseModel):
     timestamp: Optional[str] = None  # ISO string
 
 
+class FrontendLocation(BaseModel):
+    """Frontend location schema (as sent/expected by the Flutter app)."""
+    id: Optional[str] = None
+    activity_id: Optional[str] = None
+    latitude: float
+    longitude: float
+    altitude: Optional[float] = None
+    accuracy: Optional[float] = None
+    speed: Optional[float] = None
+    timestamp: Optional[str] = None  # ISO string
+
+
 class ActivityCreate(BaseModel):
     """Schema for creating an activity."""
     name: str = Field(..., description="Activity name")
@@ -23,11 +35,29 @@ class ActivityCreate(BaseModel):
     description: Optional[str] = None
 
 
+class FrontendActivityCreate(BaseModel):
+    """Schema for creating an activity as sent by the frontend app."""
+    type: str
+    name: Optional[str] = None
+    description: Optional[str] = None
+    start_time: str  # ISO 8601
+    end_time: str    # ISO 8601
+    locations: List[FrontendLocation] = Field(default_factory=list)
+    is_public: bool = True
+
+
 class ActivityUpdate(BaseModel):
     """Schema for updating an activity."""
     name: Optional[str] = None
     description: Optional[str] = None
     visibility: Optional[str] = None
+
+
+class FrontendActivityUpdate(BaseModel):
+    """Frontend update payload (maps is_public -> visibility)."""
+    name: Optional[str] = None
+    description: Optional[str] = None
+    is_public: Optional[bool] = None
 
 
 class ActivityResponse(BaseModel):
@@ -43,6 +73,26 @@ class ActivityResponse(BaseModel):
     visibility: Optional[str] = None
     description: Optional[str] = None
     created_at: Optional[str] = None
+
+
+class FrontendActivityResponse(BaseModel):
+    """Activity response formatted for the frontend app expectations."""
+    id: str
+    user_id: str
+    type: str
+    name: Optional[str] = None
+    description: Optional[str] = None
+    distance: float
+    duration: int
+    elevation_gain: float
+    start_time: str
+    end_time: str
+    average_pace: Optional[float] = None
+    max_pace: Optional[float] = None
+    calories: Optional[int] = None
+    is_public: bool
+    created_at: Optional[str] = None
+    locations: List[FrontendLocation] = Field(default_factory=list)
 
 
 class ActivitiesListResponse(BaseModel):
