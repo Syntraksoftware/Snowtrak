@@ -13,16 +13,12 @@ Base URL configured in the frontend: `http://127.0.0.1:8080/api/v1`.
   - `end_time` (ISO 8601 string)
   - `locations` (array of objects: latitude, longitude, altitude?, accuracy?, speed?, timestamp)
   - `is_public` (bool)
-- What the backend expects (`ActivityCreate`):
-  - `name` (string, required)
-  - `activity_type` (string, required)
-  - `gps_path` (array of objects: lat, lng, elevation?, timestamp?)
-  - `duration_seconds` (int)
-  - `distance_meters` (float)
-  - `elevation_gain_meters` (float)
-  - `visibility` (private|followers|public)
-  - `description` (string, optional)
+- What the backend accepts (`FrontendActivityCreate`):
+  - Payload shape is the **same** as the frontend payload above (`type`, `name`, `description`, `start_time`, `end_time`, `locations`, `is_public`).
+  - The backend maps these fields to its internal models and computes server-side metrics such as distance, duration, and elevation gain before persisting and returning them.
 - What the frontend expects back (`Activity.fromJson`):
+  - `id`, `user_id`, `type`, `name`, `description`, `distance`, `duration`, `elevation_gain`, `start_time`, `end_time`, `average_pace`, `max_pace`, `calories`, `is_public`, `created_at`, `locations` (array of location objects)
+- Data provenance (frontend): activity objects are assembled in the record/create flow; location points come from device GPS; visibility flag from UI; timing fields come from the recording session. The frontend does **not** compute or send distance/duration/elevation—those must be inferred or calculated server-side before echoing them back.
   - `id`, `user_id`, `type`, `name`, `description`, `distance`, `duration`, `elevation_gain`, `start_time`, `end_time`, `average_pace`, `max_pace`, `calories`, `is_public`, `created_at`, `locations` (array of location objects)
 - Data provenance (frontend): activity objects are assembled in the record/create flow; location points come from device GPS; visibility flag from UI; timing fields come from the recording session. The frontend does **not** compute or send distance/duration/elevation—those must be inferred or calculated server-side before echoing them back.
 
