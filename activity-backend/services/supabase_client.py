@@ -49,7 +49,7 @@ class ActivitySupabaseClient:
         start_time: str,
         end_time: str,
         activity_type: str,
-        gps_path: List[Dict[str, float]],
+        gps_path: List[Dict[str, Any]],
         duration_seconds: int,
         distance_meters: float,
         elevation_gain_meters: float,
