@@ -168,29 +168,12 @@ async def create_activity(
         if not result:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create activity")
 
-        # Shape response for the frontend
-        distance_meters = result.get("distance_meters", metrics["distance_meters"])  # type: ignore
-        duration_s = result.get("duration_seconds", duration_seconds)  # type: ignore
-        avg_pace = (duration_s / (distance_meters/1000)) if distance_meters and distance_meters > 0 else None
-
-        frontend_resp = {
-            "id": result.get("id"),
-            "user_id": result.get("user_id"),
-            "type": result.get("activity_type", data.type),
-            "name": result.get("name"),
-            "description": result.get("description"),
-            "distance": distance_meters,
-            "duration": duration_s,
-            "elevation_gain": result.get("elevation_gain_meters", metrics["elevation_gain_meters"]),
-            "start_time": data.start_time,
-            "end_time": data.end_time,
-            "average_pace": avg_pace,
-            "max_pace": None,
-            "calories": None,
-            "is_public": (result.get("visibility") == "public"),
-            "created_at": result.get("created_at"),
-            "locations": _to_frontend_locations(result.get("id"), result.get("gps_path", [])),
-        }
+        # Shape response for the frontend using the shared helper
+        frontend_resp = _activity_to_frontend(
+            result,
+            fallback_start=data.start_time,
+            fallback_end=data.end_time,
+        )
         return FrontendActivityResponse(**frontend_resp)
     except HTTPException:
         raise
