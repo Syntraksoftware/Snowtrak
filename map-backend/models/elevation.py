@@ -1,0 +1,27 @@
+"""Pydantic schemas for elevation endpoints."""
+from typing import List
+from pydantic import BaseModel, Field
+
+
+class CoordinatePoint(BaseModel):
+    """Coordinate point model."""
+    latitude: float = Field(..., ge=-90, le=90)
+    longitude: float = Field(..., ge=-180, le=180)
+
+
+class ElevationRequest(BaseModel):
+    """Request model for elevation lookup."""
+    locations: List[CoordinatePoint] = Field(..., min_items=1, max_items=1000)
+
+
+class ElevationResult(BaseModel):
+    """Result model for a single elevation point."""
+    latitude: float
+    longitude: float
+    elevation: float
+
+
+class ElevationResponse(BaseModel):
+    """Response model for elevation lookup."""
+    results: List[ElevationResult]
+    count: int
