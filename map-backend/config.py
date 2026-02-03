@@ -37,9 +37,10 @@ class Config:
         "http://localhost:5173",
     ]
 
-    # Map API Configuration
-    MAPBOX_ACCESS_TOKEN = os.getenv("MAPBOX_ACCESS_TOKEN", "")
-    OPEN_ELEVATION_API_URL = os.getenv("OPEN_ELEVATION_API_URL", "https://api.open-elevation.com/api/v1/lookup")
+    # Google Maps API Configuration
+    GOOGLE_MAPS_API_KEY = _require_env("GOOGLE_MAPS_API_KEY")
+    GOOGLE_MAPS_STATIC_API_URL = os.getenv("GOOGLE_MAPS_STATIC_API_URL", "https://maps.googleapis.com/maps/api/staticmap")
+    GOOGLE_MAPS_ELEVATION_API_URL = os.getenv("GOOGLE_MAPS_ELEVATION_API_URL", "https://maps.googleapis.com/maps/api/elevation/json")
     
     # Static Map Configuration
     STATIC_MAP_WIDTH = int(os.getenv("STATIC_MAP_WIDTH", 600))
