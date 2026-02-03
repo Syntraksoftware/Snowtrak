@@ -1,4 +1,4 @@
-"""HTTP client service for static map API (Mapbox)."""
+"""HTTP client service for static map API (Google Maps)."""
 import logging
 from typing import Optional, List, Tuple
 import httpx
@@ -10,12 +10,11 @@ logger = logging.getLogger(__name__)
 
 
 class StaticMapClient:
-    """Client for generating static map images using Mapbox."""
+    """Client for generating static map images using Google Maps Static API."""
 
     def __init__(self):
-        self.access_token = config.MAPBOX_ACCESS_TOKEN
-        self.base_url = "https://api.mapbox.com/styles/v1"
-        self.default_style = "mapbox/outdoors-v12"
+        self.api_key = config.GOOGLE_MAPS_API_KEY
+        self.base_url = config.GOOGLE_MAPS_STATIC_API_URL
         
     async def generate_static_map_url(
         self,
@@ -28,7 +27,7 @@ class StaticMapClient:
         markers: Optional[List[Tuple[float, float]]] = None,
     ) -> str:
         """
-        Generate a static map image URL using Mapbox Static Images API.
+        Generate a static map image URL using Google Maps Static API.
         
         Args:
             center_lat: Latitude of map center
@@ -46,46 +45,30 @@ class StaticMapClient:
         width = width or config.STATIC_MAP_WIDTH
         height = height or config.STATIC_MAP_HEIGHT
         
-        # Build overlay string for path and markers
-        overlay = ""
-        
-        if path and len(path) > 0:
-            # Create path overlay: path-{strokeWidth}+{strokeColor}-{opacity}({coordinates})
-            path_coords = ",".join([f"{lng},{lat}" for lat, lng in path])
-            overlay += f"path-2+3b82f6-0.8({path_coords}),"
-        
-        if markers and len(markers) > 0:
-            # Create markers overlay
-            for lat, lng in markers:
-                overlay += f"pin-s+3b82f6({lng},{lat}),"
-        
-        # Remove trailing comma
-        overlay = overlay.rstrip(",")
-        
-        # Build URL
-        # Format: /styles/v1/{style}/static/{overlay}/{lon},{lat},{zoom}/{width}x{height}
-        if overlay:
-            url = (
-                f"{self.base_url}/{self.default_style}/static/"
-                f"{overlay}/{center_lng},{center_lat},{zoom}/{width}x{height}"
-            )
-        else:
-            url = (
-                f"{self.base_url}/{self.default_style}/static/"
-                f"{center_lng},{center_lat},{zoom}/{width}x{height}"
-            )
-        
-        # Add parameters
+        # Build query parameters
         params = {
-            "access_token": self.access_token,
-            "attribution": "false",
-            "logo": "false"
+            "center": f"{center_lat},{center_lng}",
+            "zoom": str(zoom),
+            "size": f"{width}x{height}",
+            "key": self.api_key,
+            "style": "feature:all|element:labels|visibility:off"
         }
         
-        param_str = "&".join([f"{k}={v}" for k, v in params.items()])
-        final_url = f"{url}?{param_str}"
+        # Add markers if provided
+        if markers and len(markers) > 0:
+            marker_strings = [f"{lat},{lng}" for lat, lng in markers]
+            params["markers"] = "|".join(marker_strings)
         
-        logger.info(f"Generated static map URL: {final_url[:100]}...")
+        # Add path if provided
+        if path and len(path) > 0:
+            path_coords = "|".join([f"{lat},{lng}" for lat, lng in path])
+            params["path"] = f"color:0x3b82f6|weight:2|{path_coords}"
+        
+        # Build URL
+        param_str = "&".join([f"{k}={v}" for k, v in params.items()])
+        final_url = f"{self.base_url}?{param_str}"
+        
+        logger.info(f"Generated static map URL for center ({center_lat}, {center_lng})")
         return final_url
     
     async def fetch_static_map_image(
