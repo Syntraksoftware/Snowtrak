@@ -1,4 +1,4 @@
-"""HTTP client service for elevation data API."""
+"""HTTP client service for elevation data API (Google Maps)."""
 import logging
 from typing import List, Tuple, Dict, Any
 import httpx
@@ -10,10 +10,11 @@ logger = logging.getLogger(__name__)
 
 
 class ElevationClient:
-    """Client for fetching elevation data from Open Elevation API."""
+    """Client for fetching elevation data from Google Maps Elevation API."""
 
     def __init__(self):
-        self.api_url = config.OPEN_ELEVATION_API_URL
+        self.api_url = config.GOOGLE_MAPS_ELEVATION_API_URL
+        self.api_key = config.GOOGLE_MAPS_API_KEY
         
     async def get_elevation(
         self,
@@ -31,24 +32,41 @@ class ElevationClient:
         if not coordinates:
             return []
         
-        # Convert coordinates to API format
-        locations = [
-            {"latitude": lat, "longitude": lng}
-            for lat, lng in coordinates
-        ]
+        # Google Maps Elevation API accepts locations as pipe-separated lat,lng pairs
+        locations = "|".join([f"{lat},{lng}" for lat, lng in coordinates])
         
-        payload = {"locations": locations}
+        params = {
+            "locations": locations,
+            "key": self.api_key
+        }
         
         async with httpx.AsyncClient(timeout=30.0) as client:
             try:
-                response = await client.post(self.api_url, json=payload)
+                response = await client.get(self.api_url, params=params)
                 response.raise_for_status()
                 
                 data = response.json()
+                
+                # Check for API errors
+                if data.get("status") != "OK":
+                    error_msg = data.get("error_message", "Unknown error")
+                    logger.error(f"Google Maps Elevation API error: {error_msg}")
+                    raise ValueError(f"API error: {error_msg}")
+                
                 results = data.get("results", [])
                 
-                logger.info(f"Fetched elevation for {len(results)} coordinates")
-                return results
+                # Convert Google Maps format to standard format
+                formatted_results = []
+                for result in results:
+                    location = result.get("location", {})
+                    formatted_results.append({
+                        "latitude": location.get("lat"),
+                        "longitude": location.get("lng"),
+                        "elevation": result.get("elevation")
+                    })
+                
+                logger.info(f"Fetched elevation for {len(formatted_results)} coordinates")
+                return formatted_results
                 
             except httpx.HTTPError as e:
                 logger.error(f"Failed to fetch elevation data: {e}")
