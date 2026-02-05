@@ -41,6 +41,8 @@ class Config:
     GOOGLE_MAPS_API_KEY = _require_env("GOOGLE_MAPS_API_KEY")
     GOOGLE_MAPS_STATIC_API_URL = os.getenv("GOOGLE_MAPS_STATIC_API_URL", "https://maps.googleapis.com/maps/api/staticmap")
     GOOGLE_MAPS_ELEVATION_API_URL = os.getenv("GOOGLE_MAPS_ELEVATION_API_URL", "https://maps.googleapis.com/maps/api/elevation/json")
+    GOOGLE_MAPS_JS_API_URL = os.getenv("GOOGLE_MAPS_JS_API_URL", "https://maps.googleapis.com/maps/api/js")
+    GOOGLE_MAPS_MAP_ID = os.getenv("GOOGLE_MAPS_MAP_ID", "")
     
     # Static Map Configuration
     STATIC_MAP_WIDTH = int(os.getenv("STATIC_MAP_WIDTH", 600))
