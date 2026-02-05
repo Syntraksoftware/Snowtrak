@@ -57,10 +57,10 @@ app.add_middleware(
 )
 
 # Routers
-from routes.static_maps import router as static_maps_router
+from routes.maps import router as maps_router
 from routes.elevation import router as elevation_router
 
-app.include_router(static_maps_router)
+app.include_router(maps_router)
 app.include_router(elevation_router)
 
 
