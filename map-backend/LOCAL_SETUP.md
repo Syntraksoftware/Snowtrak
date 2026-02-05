@@ -111,6 +111,37 @@ cp .env.example .env
 # Edit .env with your values
 ```
 
+### Google Maps: "RefererNotAllowedMapError" or "This page can't load Google Maps correctly"
+
+This happens when opening the dynamic map HTML via `file://` or when the API key is
+restricted to specific HTTP referrers. The Google Maps JS API **requires an HTTP(S) origin**.
+
+**Option A: Serve the HTML via a local web server**
+
+```bash
+curl -X POST "http://localhost:5200/api/maps/dynamic/html" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "center_lat": 37.7749,
+    "center_lng": -122.4194,
+    "zoom": 12,
+    "width": 900,
+    "height": 600
+  }' > map.html
+
+python3 -m http.server 8088
+```
+
+Open: `http://localhost:8088/map.html`
+
+**Option B: Allow localhost in API key restrictions**
+
+Google Cloud Console → APIs & Services → Credentials → your API key:
+- Application restrictions: **HTTP referrers**
+- Add: `http://localhost:*/*`
+
+Also ensure **Maps JavaScript API** is enabled for the project.
+
 ### Port 5200 already in use
 
 Either:

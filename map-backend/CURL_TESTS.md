@@ -148,9 +148,51 @@ curl -X GET "${MAP_BACKEND_URL}/api/maps/static/simple?lat=37.7749&lng=-122.4194
 }
 ```
 
+## Dynamic Map Endpoints (Interactive)
+
+**Important:** Do **not** open the HTML via `file://` or you'll hit
+`RefererNotAllowedMapError`. Serve it via HTTP.
+
+### 7. Dynamic Map HTML (POST)
+
+Returns interactive map HTML (Google Maps JS API).
+
+```bash
+curl -X POST "${MAP_BACKEND_URL}/api/maps/dynamic/html" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "center_lat": 37.7749,
+    "center_lng": -122.4194,
+    "zoom": 12,
+    "width": 900,
+    "height": 600,
+    "markers": [[37.7749, -122.4194]]
+  }' > map.html
+
+python3 -m http.server 8088
+```
+
+Open: `http://localhost:8088/map.html`
+
+### 8. Dynamic Map JSON (POST)
+
+Returns JSON containing HTML.
+
+```bash
+curl -X POST "${MAP_BACKEND_URL}/api/maps/dynamic" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "center_lat": 37.7749,
+    "center_lng": -122.4194,
+    "zoom": 12,
+    "width": 900,
+    "height": 600
+  }'
+```
+
 ## Elevation Endpoints
 
-### 7. Bulk Elevation Lookup (POST)
+### 9. Bulk Elevation Lookup (POST)
 
 Get elevation data for multiple coordinates (up to 1000).
 
@@ -199,7 +241,7 @@ curl -X POST "${MAP_BACKEND_URL}/api/elevation/lookup" \
 }
 ```
 
-### 8. Single Point Elevation Lookup (GET)
+### 10. Single Point Elevation Lookup (GET)
 
 Get elevation data for a single coordinate using a simple GET endpoint.
 
