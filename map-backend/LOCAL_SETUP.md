@@ -25,7 +25,8 @@ python3 -m venv venv
 source venv/bin/activate
 
 # On Windows:
-venv\Scripts\activate
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process // Bypass Power Shell security restriction
+venv\Scripts\Activate.ps1
 ```
 
 ### 3. Install dependencies
@@ -111,6 +112,28 @@ cp .env.example .env
 # Edit .env with your values
 ```
 
+### Windows: "Could not install packages due to an OSError: [WinError 2]"
+
+This happens when installing packages globally instead of in the virtual environment.
+
+**Fix:** Ensure virtual environment is activated before installing:
+
+```cmd
+# Command Prompt
+venv\Scripts\activate.bat
+pip install -r requirements.txt
+
+# PowerShell
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
+venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+Verify activation by checking for `(venv)` in your prompt:
+```
+(venv) D:\...\map-backend>
+```
+
 ### Google Maps: "RefererNotAllowedMapError" or "This page can't load Google Maps correctly"
 
 This happens when opening the dynamic map HTML via `file://` or when the API key is
@@ -155,6 +178,22 @@ kill -9 <PID>
 ```env
 PORT=5201
 ```
+
+### "This IP, site or mobile application is not authorized to use this API key"
+
+Your Google Maps API key has restrictions blocking your server IP or backend requests.
+
+**Quick fix (development):**
+1. Go to [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials
+2. Click your API key
+3. Set **Application restrictions** to **None**
+4. Ensure **Maps Elevation API**, **Maps JavaScript API**, and **Maps Static API** are enabled
+5. Click **Save** and wait ~1 minute
+
+**Production fix:**
+1. Set **Application restrictions** to **IP addresses**
+2. Add your server IP (check error message for IP) and `127.0.0.1`
+3. Save and restart the backend
 
 ### Virtual environment not activating
 
