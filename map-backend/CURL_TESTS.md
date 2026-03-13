@@ -170,7 +170,7 @@ curl -X GET "${MAP_BACKEND_URL}/api/maps/static/simple?lat=37.7749&lng=-122.4194
 
 ### 7. Dynamic Map HTML (POST)
 
-Returns interactive map HTML (Google Maps JS API).
+Returns interactive map HTML (Google Maps JS API) with markers and a polyline path.
 
 ```bash
 curl -X POST "${MAP_BACKEND_URL}/api/maps/dynamic/html" \
@@ -181,7 +181,15 @@ curl -X POST "${MAP_BACKEND_URL}/api/maps/dynamic/html" \
     "zoom": 12,
     "width": 900,
     "height": 600,
-    "markers": [[37.7749, -122.4194]]
+    "markers": [
+      [37.7749, -122.4194],
+      [37.7849, -122.4094]
+    ],
+    "path": [
+      [37.7749, -122.4194],
+      [37.7790, -122.4140],
+      [37.7849, -122.4094]
+    ]
   }' > map.html
 
 python3 -m http.server 8088
@@ -191,7 +199,7 @@ Open: `http://localhost:8088/map.html`
 
 ### 8. Dynamic Map JSON (POST)
 
-Returns JSON containing HTML.
+Returns JSON containing HTML with a polyline path.
 
 ```bash
 curl -X POST "${MAP_BACKEND_URL}/api/maps/dynamic" \
@@ -201,7 +209,16 @@ curl -X POST "${MAP_BACKEND_URL}/api/maps/dynamic" \
     "center_lng": -122.4194,
     "zoom": 12,
     "width": 900,
-    "height": 600
+    "height": 600,
+    "markers": [
+      [37.7749, -122.4194],
+      [37.7849, -122.4094]
+    ],
+    "path": [
+      [37.7749, -122.4194],
+      [37.7790, -122.4140],
+      [37.7849, -122.4094]
+    ]
   }'
 ```
 
@@ -426,7 +443,16 @@ $dynamicBody = @{
   zoom = 12
   width = 900
   height = 600
-  markers = @(, @(37.7749, -122.4194))  # unary comma prevents array flattening
+  # Unary comma prevents nested arrays from flattening during JSON conversion.
+  markers = @(
+    , @(37.7749, -122.4194)
+    , @(37.7849, -122.4094)
+  )
+  path = @(
+    , @(37.7749, -122.4194)
+    , @(37.7790, -122.4140)
+    , @(37.7849, -122.4094)
+  )
 } | ConvertTo-Json -Depth 10 -Compress
 
 Step "6. Dynamic Map HTML (POST)"
@@ -450,7 +476,7 @@ Step "9. Bulk Elevation Lookup (POST)"
 Invoke-RestMethod -Method Post -Uri "$BASE_URL/api/elevation/lookup" -ContentType "application/json" -Body $elevationBody | ConvertTo-Json -Depth 10
 
 Write-Host "`n========== Tests Complete ==========" -ForegroundColor Green
-Write-Host "To view dynamic map: run 'py -m http.server 8088' and open http://localhost:8088/map.html"
+Write-Host "To view dynamic map: run 'py -m http.server 8088' and open http://localhost:8088/dynamic_map.html"
 ```
 
 Run it:
