@@ -1,5 +1,6 @@
 """Configuration for Map Backend (FastAPI)."""
 import os
+from functools import lru_cache
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -50,6 +51,6 @@ class Config:
     STATIC_MAP_ZOOM = int(os.getenv("STATIC_MAP_ZOOM", 12))
 
 
+@lru_cache(maxsize=1)
 def get_config() -> Config:
-    env = os.getenv("FASTAPI_ENV", "development")
     return Config()
