@@ -11,7 +11,7 @@ class CoordinatePoint(BaseModel):
 
 class ElevationRequest(BaseModel):
     """Request model for elevation lookup."""
-    locations: List[CoordinatePoint] = Field(..., min_items=1, max_items=1000)
+    locations: List[CoordinatePoint] = Field(..., min_length=1, max_length=1000)
 
 
 class ElevationResult(BaseModel):
