@@ -98,3 +98,6 @@ frontend/.env
 *.env
 local.properties
 frontend/android/local.properties
+
+*.html
+*.png
