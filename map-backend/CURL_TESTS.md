@@ -2,6 +2,16 @@
 
 This file contains cURL commands to test all endpoints in the Map Backend API.
 
+## Important: macOS/Linux vs Windows Commands
+
+`curl` examples in this document are split by shell type and are not interchangeable.
+
+- `bash` blocks are for macOS/Linux shells and use `\` for line continuation.
+- `powershell` blocks are for Windows PowerShell and use backtick `` ` `` for line continuation.
+- In Windows PowerShell, `curl` maps to `Invoke-WebRequest`, so GNU-style flags (`-X`, `-H`, `-d`) behave differently unless you use `curl.exe`.
+
+If you are on Windows, use the dedicated PowerShell examples/scripts below.
+
 ## Prerequisites
 
 - Map Backend running on `http://localhost:5200`
@@ -14,6 +24,11 @@ This file contains cURL commands to test all endpoints in the Map Backend API.
 # Export base URL for convenience
 export MAP_BACKEND_URL="http://localhost:5200"
 export GOOGLE_MAPS_API_KEY="your_google_maps_api_key_here"
+```
+
+```powershell
+# Set base URL for this PowerShell session
+$env:MAP_BACKEND_URL = "http://localhost:5200"
 ```
 
 ## Health & Status Endpoints
@@ -314,7 +329,9 @@ If the Google Maps API key is invalid or the API service is unavailable, you may
 
 ## Testing Script
 
-Save this as `test_map_backend.sh` to run all tests:
+### Option A: macOS/Linux (Bash)
+
+Save this as `test_map_backend.sh` to run all tests in macOS/Linux:
 
 ```bash
 #!/bin/bash
@@ -365,6 +382,84 @@ Make it executable and run:
 ```bash
 chmod +x test_map_backend.sh
 ./test_map_backend.sh
+```
+
+### Option B: Windows (PowerShell)
+
+Save this as `test_map_backend.ps1` to run all tests in Windows PowerShell:
+
+```powershell
+$ErrorActionPreference = "Stop"
+$BASE_URL = "http://localhost:5200"
+
+function Step([string]$Title) {
+  Write-Host "`n========== $Title ==========" -ForegroundColor Cyan
+}
+
+Step "1. Health Check"
+Invoke-RestMethod -Method Get -Uri "$BASE_URL/health" | ConvertTo-Json -Depth 10
+
+Step "2. Root Endpoint"
+Invoke-RestMethod -Method Get -Uri "$BASE_URL/" | ConvertTo-Json -Depth 10
+
+Step "3. Simple Static Map (GET)"
+Invoke-RestMethod -Method Get -Uri "$BASE_URL/api/maps/static/simple?lat=37.7749&lng=-122.4194&zoom=12&width=600&height=400" | ConvertTo-Json -Depth 10
+
+$staticBody = @{
+  center_lat = 37.7749
+  center_lng = -122.4194
+  zoom = 12
+  width = 600
+  height = 400
+} | ConvertTo-Json -Depth 10 -Compress
+
+Step "4. Static Map URL (POST)"
+Invoke-RestMethod -Method Post -Uri "$BASE_URL/api/maps/static" -ContentType "application/json" -Body $staticBody | ConvertTo-Json -Depth 10
+
+Step "5. Static Map Image (POST)"
+Invoke-WebRequest -Method Post -Uri "$BASE_URL/api/maps/static/image" -ContentType "application/json" -Body $staticBody -OutFile "map_image.png"
+Write-Host "Saved map_image.png"
+
+$dynamicBody = @{
+  center_lat = 37.7749
+  center_lng = -122.4194
+  zoom = 12
+  width = 900
+  height = 600
+  markers = @(, @(37.7749, -122.4194))  # unary comma prevents array flattening
+} | ConvertTo-Json -Depth 10 -Compress
+
+Step "6. Dynamic Map HTML (POST)"
+Invoke-WebRequest -Method Post -Uri "$BASE_URL/api/maps/dynamic/html" -ContentType "application/json" -Body $dynamicBody -OutFile "dynamic_map.html"
+Write-Host "Saved dynamic_map.html"
+
+Step "7. Dynamic Map JSON (POST)"
+Invoke-RestMethod -Method Post -Uri "$BASE_URL/api/maps/dynamic" -ContentType "application/json" -Body $dynamicBody | ConvertTo-Json -Depth 10
+
+Step "8. Single Point Elevation (GET)"
+Invoke-RestMethod -Method Get -Uri "$BASE_URL/api/elevation/point?lat=40.7128&lng=-74.0060" | ConvertTo-Json -Depth 10
+
+$elevationBody = @{
+  locations = @(
+    @{ latitude = 40.7128; longitude = -74.0060 }
+    @{ latitude = 34.0522; longitude = -118.2437 }
+  )
+} | ConvertTo-Json -Depth 10 -Compress
+
+Step "9. Bulk Elevation Lookup (POST)"
+Invoke-RestMethod -Method Post -Uri "$BASE_URL/api/elevation/lookup" -ContentType "application/json" -Body $elevationBody | ConvertTo-Json -Depth 10
+
+Write-Host "`n========== Tests Complete ==========" -ForegroundColor Green
+Write-Host "To view dynamic map: run 'py -m http.server 8088' and open http://localhost:8088/map.html"
+```
+
+Run it:
+
+```powershell
+# If script execution is blocked for this session
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
+
+.\test_map_backend.ps1
 ```
 
 ## Real-World Examples
