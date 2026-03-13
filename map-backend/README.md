@@ -4,16 +4,16 @@ Map Backend is a FastAPI microservice that provides static map image generation 
 
 ## Features
 
-- **Static Map Generation**: Generate static map images with optional paths and markers using Mapbox
-- **Elevation Lookup**: Get elevation data for coordinates using Open Elevation API
+- **Static Map Generation**: Generate static map images with optional paths and markers using the Google Maps Static API
+- **Elevation Lookup**: Get elevation data for coordinates using the Google Maps Elevation API
 - **JWT Authentication**: Optional authentication for API tracking
 - **Docker Support**: Fully containerized with Docker
 
 ## Tech Stack
 
 - **FastAPI**: Modern, fast web framework
-- **Mapbox Static Images API**: For generating static maps
-- **Open Elevation API**: For elevation data
+- **Google Maps Static API**: For generating static maps
+- **Google Maps Elevation API**: For elevation data
 - **Supabase**: Database and authentication
 - **Docker**: Containerization
 
@@ -153,12 +153,12 @@ map-backend/
 ├── middleware/
 │   └── auth.py           # JWT authentication
 ├── routes/
-│   ├── static_maps.py    # Static map routes
+│   ├── maps.py           # Static map routes
 │   └── elevation.py      # Elevation routes
 └── services/
     ├── supabase_client.py    # Supabase client
-    ├── static_map_client.py  # Mapbox client
-    └── elevation_client.py   # Elevation API client
+    ├── static_map_client.py  # Google Maps Static API client
+    └── elevation_client.py   # Google Maps Elevation API client
 ```
 
 ### Testing
