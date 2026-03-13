@@ -379,15 +379,16 @@ map-backend/
 │   └── auth.py                # JWT authentication
 ├── routes/
 │   ├── __init__.py
-│   ├── static_maps.py         # Static map routes
+│   ├── maps.py                # Map routes
 │   └── elevation.py           # Elevation routes
-├── schemas/
-│   ├── static_maps.py         # Static map models
+├── models/
+│   ├── maps.py                # Map models
 │   └── elevation.py           # Elevation models
 └── services/
     ├── __init__.py
     ├── supabase_client.py     # Supabase initialization
     ├── static_map_client.py   # Google Maps Static API
+    ├── dynamic_map_client.py  # Google Maps Dynamic API
     └── elevation_client.py    # Google Maps Elevation API
 ```
 
