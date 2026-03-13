@@ -1,4 +1,4 @@
-"""Pydantic schemas for static map endpoints."""
+"""Pydantic schemas for static and dynamic map endpoints."""
 from typing import Optional, List
 from pydantic import BaseModel, Field
 
