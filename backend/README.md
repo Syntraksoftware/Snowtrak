@@ -117,19 +117,6 @@ if __name__ == "__main__":
     )
 ```
 
-### Application Files (NOT Entry Points)
-
-- **`main.py`**: Application definition (FastAPI/Flask app)
-  - ⚠️ **DO NOT run directly** - this is the app module, not an entry point
-  - Used by `run.py` to start the server
-  - Contains route definitions, middleware, lifespan hooks
-
-### Deprecated Files (Legacy)
-
-- **`run.sh`**: Shell script (deprecated)
-  - Old bash-based startup script
-  - ⚠️ Use `python run.py` instead
-  - Will be removed in a future version
 
 ## ✅ Health Checks
 
@@ -196,10 +183,33 @@ cd community-backend && pytest
 # See individual service READMEs for more details
 ```
 
-## 🐳 Docker (Optional)
+## 🐳 Docker
 
-Services can be containerized. See individual service Dockerfiles for details.
+Run all backend services with Docker Compose:
 
----
+```bash
+cd backend
+docker compose up --build
+```
 
-**Best Practice**: Always use `python run.py` as the standard way to start any backend service.
+Run in detached mode:
+
+```bash
+cd backend
+docker compose up --build -d
+```
+
+Stop services:
+
+```bash
+cd backend
+docker compose down
+```
+
+If you want to start only one service:
+
+```bash
+cd backend
+docker compose up --build map-backend
+```
+
