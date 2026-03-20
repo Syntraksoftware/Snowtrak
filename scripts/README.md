@@ -1,5 +1,15 @@
 # Syntrak Notification Testing Scripts
 
+## Secret Safety Check
+
+Before pushing changes, run:
+
+```bash
+./scripts/check_secrets.sh
+```
+
+This scans tracked files for common leaked-key patterns (Google API keys, JWT-like tokens, and high-risk env assignments).
+
 Test in-app notifications by triggering them from the terminal.
 
 ## Prerequisites
