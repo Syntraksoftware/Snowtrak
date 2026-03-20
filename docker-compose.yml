@@ -1,0 +1,35 @@
+services:
+  main-backend:
+    extends:
+      file: ./backend/docker-compose.yml
+      service: main-backend
+
+  community-backend:
+    extends:
+      file: ./backend/docker-compose.yml
+      service: community-backend
+
+  activity-backend:
+    extends:
+      file: ./backend/docker-compose.yml
+      service: activity-backend
+
+  map-backend:
+    extends:
+      file: ./backend/docker-compose.yml
+      service: map-backend
+
+  frontend-web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: syntrak-frontend-web
+    ports:
+      - "8088:80"
+    depends_on:
+      - main-backend
+      - community-backend
+      - activity-backend
+      - map-backend
+    profiles:
+      - web

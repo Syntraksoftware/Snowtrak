@@ -1,0 +1,142 @@
+name: Docker Images
+
+on:
+  push:
+    branches: [main, develop, restructure]
+  pull_request:
+    branches: [main, develop, restructure]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+
+concurrency:
+  group: docker-images-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-scan-push:
+    name: Build, Scan, Push (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: main-backend
+            context: ./backend/main-backend
+            dockerfile: ./backend/main-backend/Dockerfile
+          - service: community-backend
+            context: ./backend/community-backend
+            dockerfile: ./backend/community-backend/Dockerfile
+          - service: activity-backend
+            context: ./backend/activity-backend
+            dockerfile: ./backend/activity-backend/Dockerfile
+          - service: map-backend
+            context: ./backend/map-backend
+            dockerfile: ./backend/map-backend/Dockerfile
+          - service: frontend-web
+            context: ./frontend
+            dockerfile: ./frontend/Dockerfile
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Prepare image names and tags
+        id: vars
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo_lc="${GITHUB_REPOSITORY,,}"
+          image="ghcr.io/${repo_lc}-${{ matrix.service }}"
+          sha_tag="${image}:sha-${GITHUB_SHA}"
+
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            tags="${sha_tag}"
+          else
+            branch_tag="${image}:${GITHUB_REF_NAME}"
+            if [[ "${GITHUB_REF_NAME}" == "main" ]]; then
+              tags="${sha_tag}\n${branch_tag}\n${image}:latest"
+            else
+              tags="${sha_tag}\n${branch_tag}"
+            fi
+          fi
+
+          {
+            echo "image=${image}"
+            echo "sha_tag=${sha_tag}"
+            echo "tags<<EOF"
+            echo -e "${tags}"
+            echo "EOF"
+            if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+              echo "push=false"
+            else
+              echo "push=true"
+            fi
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build image (local for scan)
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: false
+          load: true
+          tags: ${{ steps.vars.outputs.sha_tag }}
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan image with Trivy (SARIF)
+        id: trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ steps.vars.outputs.sha_tag }}
+          format: sarif
+          output: trivy-${{ matrix.service }}.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
+          timeout: 10m
+
+      - name: Upload Trivy scan to GitHub Security tab
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-${{ matrix.service }}.sarif
+
+      - name: Upload scan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-${{ matrix.service }}
+          path: trivy-${{ matrix.service }}.sarif
+          if-no-files-found: error
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push image tags to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.vars.outputs.tags }}
+          platforms: linux/amd64
+          cache-from: type=gha
+
+# Triggers on push, pull_request, and manual dispatch(workflow_dispatch) for main, develop, and restructure branches.
+# Scans each built image with Trivy for HIGH and CRITICAL vulnerabilities.
+# Uploads SARIF results to GitHub Security tab (with fork-safe condition).
+# Pushes images to GHCR only for non-PR runs (so PRs build+scan only).

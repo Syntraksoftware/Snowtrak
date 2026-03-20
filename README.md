@@ -149,6 +149,32 @@ curl http://127.0.0.1:5100/health     # Activity backend
 curl http://127.0.0.1:5200/health     # Map backend
 ```
 
+### Run With Docker Compose
+
+Start all backend containers from the repository root:
+
+```bash
+docker compose up --build
+```
+
+Run backend containers in background:
+
+```bash
+docker compose up --build -d
+```
+
+Start frontend web container as well (served on http://localhost:8088):
+
+```bash
+docker compose --profile web up --build
+```
+
+Stop all containers:
+
+```bash
+docker compose down
+```
+
 ## 📁 Project Structure
 
 ```
