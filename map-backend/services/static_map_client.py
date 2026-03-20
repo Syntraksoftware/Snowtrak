@@ -2,6 +2,7 @@
 import logging
 from typing import Optional, List, Tuple
 import httpx
+from urllib.parse import urlencode
 
 from config import get_config
 
@@ -64,8 +65,8 @@ class StaticMapClient:
             path_coords = "|".join([f"{lat},{lng}" for lat, lng in path])
             params["path"] = f"color:0x3b82f6|weight:2|{path_coords}"
         
-        # Build URL
-        param_str = "&".join([f"{k}={v}" for k, v in params.items()])
+        # Build URL with proper URL-encoding of query parameters
+        param_str = urlencode(params)
         final_url = f"{self.base_url}?{param_str}"
         
         logger.info(f"Generated static map URL for center ({center_lat}, {center_lng})")
