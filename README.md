@@ -1,10 +1,10 @@
 # Syntrak
 
-> A skiing-focused fitness tracking and social community app built with Flutter, FastAPI, and Flask.
+> A skiing-focused fitness tracking and social community app built with Flutter, FastAPI, and Supabase.
 
 Syntrak combines the activity tracking features of Strava with social community features similar to Reddit and Threads, specifically designed for skiing enthusiasts.
 
-## Overview
+## 🎯 Overview
 
 Syntrak is a comprehensive mobile application that enables users to:
 
@@ -13,255 +13,198 @@ Syntrak is a comprehensive mobile application that enables users to:
 - **Groups & Clubs**: Join skiing groups, participate in challenges, and build your skiing community
 - **Profile & Analytics**: View detailed statistics, activity history, and progress over time
 
-## Architecture
+## 🏗️ Architecture
 
 This is a monorepo containing three main components:
 
 ```
-syntrak-app/
-├── frontend/              # Flutter mobile app (iOS & Android)
-├── main-backend/          # FastAPI backend (Authentication & Core API)
-└── community-backend/     # Flask backend (Community features)
+syntrak-application/
+├── frontend/                       # Flutter mobile app (iOS & Android)
+├── backend/                        # All backend services (unified setup)
+│   ├── main-backend/               # FastAPI (Auth & Core APIs)
+│   ├── community-backend/          # FastAPI (Posts, threads, comments)
+│   ├── activity-backend/           # FastAPI (GPS & activity tracking)
+│   ├── map-backend/                # FastAPI (Maps & elevation)
+│   ├── .venv/                      # Shared Python environment
+│   ├── requirements.txt            # Unified dependencies
+│   └── run.py                      # Master orchestrator
+└── docs/                           # Documentation
 ```
 
-### Tech Stack
+### 💻 Tech Stack
 
-- **Frontend**: Flutter (Dart) with Provider for state management
-- **Main Backend**: FastAPI (Python) with Supabase integration
-- **Community Backend**: Flask (Python) with Supabase integration
+- **Frontend**: Flutter (Dart) with Provider state management
+- **Backend**: FastAPI microservices with Supabase integration
 - **Database**: Supabase (PostgreSQL)
 - **Maps**: Google Maps Flutter SDK
 - **Location**: Geolocator for GPS tracking
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- **Flutter**: 3.0+ ([Install Flutter](https://flutter.dev/docs/get-started/install))
-- **Python**: 3.11+ ([Install Python](https://www.python.org/downloads/))
-- **Supabase Account**: ([Sign up](https://supabase.com)) - Optional but recommended
-- **Google Maps API Key**: ([Get API Key](https://console.cloud.google.com/)) - For map features
+- **Flutter**: 3.0+ ([Install](https://flutter.dev/docs/get-started/install))
+- **Python**: 3.11+ ([Install](https://www.python.org/downloads/))
+- **Supabase Account**: ([Sign up](https://supabase.com)) - Optional
+- **Google Maps API Key**: ([Get key](https://console.cloud.google.com/)) - For map features
 
-### 1. Clone the Repository
+### 1. Clone Repository
 
 ```bash
 git clone https://github.com/Syntraksoftware/syntrak-application.git
 cd syntrak-application
 ```
 
-### 2. Frontend Setup
+### 2. Backend Setup (One-time)
+
+The backend uses a **shared Python environment** at `backend/.venv` for all 4 microservices.
+
+```bash
+cd backend
+python3.11 -m venv .venv
+./.venv/bin/pip install -r requirements.txt
+```
+
+**Configure Environment Variables** (optional, defaults provided):
+
+```bash
+cp main-backend/.env.example main-backend/.env
+cp community-backend/.env.example community-backend/.env
+cp activity-backend/.env.example activity-backend/.env
+cp map-backend/.env.example map-backend/.env
+```
+
+See [Backend README](backend/README.md) for detailed configuration.
+
+### 3. Frontend Setup
 
 ```bash
 cd frontend
 flutter pub get
 ```
 
-**Configure Google Maps** (for map features):
+**Configure Google Maps:**
 
 - iOS: Add API key to `ios/Runner/AppDelegate.swift`
 - Android: Add API key to `android/app/src/main/AndroidManifest.xml`
 
-See [Frontend README](frontend/README.md) for detailed setup instructions.
+See [Frontend README](frontend/README.md) for detailed setup.
 
-### 3. Main Backend Setup
+## ▶️ Running the Application
 
-```bash
-cd main-backend
-python3 -m venv .venv
-source .venv/bin/activate   # macOS/Linux (use .venv\Scripts\activate on Windows)
-.venv/bin/pip install -r requirements.txt
-```
+### Start All Backend Services
 
-Use the venv’s pip (e.g. `pip install` after activation or `.venv/bin/pip`) so you don’t hit the system “externally-managed-environment” error. Activate with `source .venv/bin/activate` before running the app.
-
-**Configure Supabase** (optional):
+Start all 4 microservices with a single command:
 
 ```bash
-cp .env.example .env
-# Edit .env with your Supabase credentials
-```
-
-See [Main Backend README](main-backend/README.md) for detailed setup.
-
-### 4. Community Backend Setup
-
-The first time you run the community backend, `./run.sh` will create a `venv`, install dependencies, and start the server. No separate setup step is required.
-
-To set up manually (optional):
-
-```bash
-cd community-backend
-python3 -m venv venv
-venv/bin/pip install -r requirements.txt
-```
-
-If install fails (e.g. on Python 3.13 with an old venv), remove the venv and run again: `rm -rf venv && ./run.sh`.
-
-See [Community Backend README](community-backend/README.md) for detailed setup.
-
-### 5. Run the Application
-
-## Start Menu (macOS)
-
-Use this section when you want the fastest path to boot everything locally.
-
-### Option A: Start all services (4 terminals)
-
-Terminal 1 - Main backend (FastAPI on 8080):
-
-```bash
-cd main-backend
-source .venv/bin/activate
+cd backend
 python run.py
 ```
 
-Terminal 2 - Community backend (Flask on 5001):
+This launches:
+
+- 🔐 **main-backend** (port 8080) - Authentication & core APIs
+- 👥 **community-backend** (port 5001) - Posts, threads, comments
+- 🎿 **activity-backend** (port 5100) - GPS tracking, kudos
+- 🗺️ **map-backend** (port 5200) - Maps, elevation APIs
+
+Press `Ctrl+C` to stop all services gracefully.
+
+### Start Individual Backend Service
 
 ```bash
-cd community-backend
-./run.sh
+cd backend
+python run.py --service <service-name>
 ```
 
-Terminal 3 - Activity backend (FastAPI on 5100):
+Available services: `main`, `community`, `activity`, `map`
+
+Example: `python run.py --service main` (authentication only)
+
+### Start Frontend (iOS Simulator)
+
+Prerequisites: Xcode installed with command-line tools (`xcode-select --install`)
 
 ```bash
-cd activity-backend
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python main.py
-```
+# Start iOS Simulator (if not already running)
+open -a Simulator
 
-Terminal 4 - Flutter app:
-
-```bash
-cd frontend
-flutter pub get
-flutter run
-```
-
-### Option B: Start only app + auth backend
-
-Terminal 1:
-
-```bash
-cd main-backend
-source .venv/bin/activate
-python run.py
-```
-
-Terminal 2:
-
-```bash
+# Run the Flutter app
 cd frontend
 flutter run
 ```
 
-### Health checks
+Then press `r` for hot reload, `R` for hot restart, or `q` to quit.
 
-- Main backend: `http://127.0.0.1:8080/health`
-- Community backend: `http://127.0.0.1:5001/health`
-- Activity backend: `http://127.0.0.1:5100/health`
+For other devices: `flutter devices` to list available, then `flutter run -d <device_id>`
 
-### Run Frontend on iOS Simulator (optional details)
+### Health Checks
 
-Prerequisites: Xcode installed (from the Mac App Store) and Xcode command-line tools set up (`xcode-select --install` if needed).
-
-1. Open the iOS Simulator (optional; Flutter can open it for you):
-
-   - In Xcode: **Xcode → Open Developer Tool → Simulator**
-   - Or from terminal: `open -a Simulator`
-2. Boot a simulator device if none is running: in the Simulator app, use **File → Open Simulator** and choose an iPhone (e.g. iPhone 16). Wait until the home screen appears.
-3. From the project root, go to the frontend and run:
+Verify all services are running:
 
 ```bash
-cd frontend
-flutter run
+curl http://127.0.0.1:8080/health     # Main backend
+curl http://127.0.0.1:5001/health     # Community backend
+curl http://127.0.0.1:5100/health     # Activity backend
+curl http://127.0.0.1:5200/health     # Map backend
 ```
 
-Flutter will detect the running simulator and build and launch the app there. To target a specific device (e.g. a certain iPhone model), list devices first:
-
-```bash
-flutter devices
-```
-
-Then run on a chosen device:
-
-```bash
-flutter run -d <device_id>
-```
-
-Example: `flutter run -d "iPhone 16 Pro"` or use the device ID from `flutter devices`.
-
-4. While the app is running you can press `r` in the terminal for hot reload and `R` for hot restart. Press `q` to quit.
-
-If the simulator is already open and no other devices are connected, `flutter run` from the `frontend` directory is enough; Flutter will pick the iOS simulator by default.
-
-## Project Structure
+## 📁 Project Structure
 
 ```
-syntrak-app/
-├── frontend/                    # Flutter mobile application
+syntrak-application/
+├── frontend/                    # Flutter mobile app
 │   ├── lib/
 │   │   ├── core/               # Theme, helpers
 │   │   ├── models/             # Data models
 │   │   ├── providers/          # State management
 │   │   ├── screens/            # UI screens
-│   │   ├── services/           # API, location, storage services
-│   │   └── widgets/             # Reusable widgets
+│   │   ├── services/           # API, location, storage
+│   │   └── widgets/            # Reusable widgets
 │   ├── doc/                    # Frontend documentation
 │   └── README.md
 │
-├── main-backend/                # FastAPI backend (Auth & Core)
-│   ├── app/
-│   │   ├── api/v1/            # API endpoints
-│   │   ├── core/              # Config, security, storage
-│   │   └── schemas/           # Pydantic models
-│   ├── doc/                   # Backend documentation
-│   └── README.md
+├── backend/                    # All microservices (unified)
+│   ├── main-backend/           # FastAPI (Auth & Core)
+│   ├── community-backend/      # FastAPI (Community)
+│   ├── activity-backend/       # FastAPI (Activities)
+│   ├── map-backend/            # FastAPI (Maps)
+│   ├── .venv/                  # Shared Python environment
+│   ├── requirements.txt        # Unified dependencies
+│   ├── run.py                  # Master orchestrator
+│   ├── README.md               # Backend documentation
+│   └── (service READMEs)
 │
-├── community-backend/           # Flask backend (Community)
-│   ├── routes/                # API routes
-│   ├── models/                # Data models
-│   ├── services/              # Business logic
-│   ├── doc/                   # Community backend docs
-│   └── README.md
-│
-└── docs/                       # Root-level documentation
+└── docs/                       # Root documentation
 ```
 
-## Documentation
+## 📚 Documentation
 
-### Frontend Documentation
+- **[Backend README](backend/README.md)** - Backend services, startup, configuration
+- **[Frontend README](frontend/README.md)** - Frontend setup, development
+- **[Main Backend](backend/main-backend/README.md)** - Authentication API
+- **[Community Backend](backend/community-backend/README.md)** - Social features
+- **Frontend Docs**:
+  - [Map Services](frontend/doc/map.md) - GPS & map implementation
+  - [Architecture](frontend/doc/architecture_map_service.md) - Service architecture
+  - [Testing](frontend/doc/testing.md) - Testing guide
 
-- [Frontend README](frontend/README.md) - Setup and development guide
-- [Map Services](frontend/doc/map.md) - Map implementation and GPS tracking
-- [Architecture](frontend/doc/architecture_map_service.md) - Service architecture
-- [UI/UX Guidelines](frontend/doc/ui_ux_prompt.md) - Design system
-- [Testing Guide](frontend/doc/testing.md) - Testing best practices
-
-### Backend Documentation
-
-- [Main Backend README](main-backend/README.md) - Authentication API setup
-- [Community Backend README](community-backend/README.md) - Community features
-
-## Key Features
+## ✨ Key Features
 
 ### Activity Tracking
 
 - Real-time GPS tracking with route visualization
-- Multiple activity types (Alpine, Cross-Country, Freestyle, Backcountry, Snowboard)
+- Multiple activity types (Alpine, Cross-Country, Freestyle, Backcountry)
 - Live metrics (distance, speed, elevation, duration)
-- Activity history and detailed analytics
+- Activity history and analytics
 - Offline recording support
 
-### Map Services
+### Maps & Location
 
-- Google Maps integration
-- Real-time route polyline rendering
+- Google Maps integration with real-time polyline rendering
 - GPS point filtering and smoothing
-- Route calculation (distance, elevation, pace)
-- Activity detail maps with start/end markers
+- Elevation data correction
+- Route distance and pace calculations
 
 ### Social Features
 
@@ -271,27 +214,14 @@ syntrak-app/
 - Groups and clubs
 - User profiles and activity sharing
 
-### Authentication
+### Authentication & Security
 
 - JWT-based authentication
-- Secure password hashing (bcrypt)
+- Bcrypt password hashing
 - Token refresh mechanism
-- Supabase integration for user management
+- Supabase user management
 
-```bash
-cd frontend
-flutter test
-```
-
-## Development
-
-### Security Checks
-
-Run this before commit/push to catch accidentally committed secrets in tracked files:
-
-```bash
-./scripts/check_secrets.sh
-```
+## 🧪 Development
 
 ### Running Tests
 
@@ -302,39 +232,29 @@ cd frontend
 flutter test
 ```
 
-**Main Backend:**
+**Backend:**
 
 ```bash
-cd main-backend
+cd backend/<service>
 pytest
-```
-
-**Community Backend:**
-
-```bash
-cd community-backend
-# See community-backend/doc/TEST_RESULTS.md
 ```
 
 ### Code Style
 
-- **Flutter**: Follow [Dart style guide](https://dart.dev/guides/language/effective-dart/style)
-- **Python**: Follow [PEP 8](https://pep8.org/) (use `black` formatter)
+- **Flutter**: [Dart style guide](https://dart.dev/guides/language/effective-dart/style)
+- **Python**: [PEP 8](https://pep8.org/) (use `black` formatter)
 
-### Environment Variables
+### Security
 
-Each backend has its own `.env` file. See respective README files for configuration details.
+Run before committing to detect accidentally committed secrets:
 
-## Contributing
+```bash
+./scripts/check_secrets.sh
+```
 
-1. Create a feature branch from `main`
-2. Make your changes
-3. Write/update tests
-4. Submit a pull request
+## 🔗 Resources
 
-## 🔗 Links
-
-- **Frontend**: [Flutter Documentation](https://flutter.dev/docs)
-- **Main Backend**: [FastAPI Documentation](https://fastapi.tiangolo.com/)
-- **Community Backend**: [Flask Documentation](https://flask.palletsprojects.com/)
-- **Supabase**: [Supabase Documentation](https://supabase.com/docs)
+- [Flutter Documentation](https://flutter.dev/docs)
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [Supabase Documentation](https://supabase.com/docs)
+- [Google Maps API](https://console.cloud.google.com/)
