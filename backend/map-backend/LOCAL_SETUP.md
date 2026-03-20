@@ -8,10 +8,10 @@
 
 ## Setup Steps
 
-### 1. Navigate to map-backend directory
+### 1. Navigate to backend/map-backend directory
 
 ```bash
-cd map-backend
+cd backend/map-backend
 ```
 
 ### 2. Create a virtual environment
@@ -43,7 +43,7 @@ cp .env.example .env
 
 ### 5. Configure `.env` with your credentials
 
-Edit `map-backend/.env`:
+Edit `backend/map-backend/.env`:
 
 ```env
 SUPABASE_URL=https://your-project.supabase.co
@@ -265,7 +265,7 @@ curl "http://localhost:5200/api/elevation/point?lat=40.7128&lng=-74.0060"
 
 ### Use the test script
 
-From project root (not map-backend):
+From project root (not backend/map-backend):
 
 ```bash
 # Copy the test script from CURL_TESTS.md
@@ -290,7 +290,7 @@ If you want to run all backends locally:
 ### Terminal 1 - Map Backend
 
 ```bash
-cd map-backend
+cd backend/map-backend
 source venv/bin/activate
 python main.py
 ```
@@ -298,7 +298,7 @@ python main.py
 ### Terminal 2 - Activity Backend
 
 ```bash
-cd activity-backend
+cd backend/activity-backend
 source venv/bin/activate
 python main.py
 ```
@@ -306,7 +306,7 @@ python main.py
 ### Terminal 3 - Community Backend
 
 ```bash
-cd community-backend
+cd backend/community-backend
 source venv/bin/activate
 python main.py
 ```
@@ -362,7 +362,7 @@ python3 -c "from config import get_config; print('Config OK')"
 ## File Structure
 
 ```
-map-backend/
+backend/map-backend/
 ├── main.py                      # FastAPI app entry point
 ├── config.py                    # Configuration & env vars
 ├── requirements.txt             # Python dependencies

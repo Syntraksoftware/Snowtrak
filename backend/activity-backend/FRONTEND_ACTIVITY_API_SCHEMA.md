@@ -1,6 +1,6 @@
 # Frontend ↔ Activity Backend API Schemas
 
-Source files: frontend calls are implemented in [frontend/lib/services/api_service.dart](frontend/lib/services/api_service.dart) and rely on models in [frontend/lib/models/activity.dart](frontend/lib/models/activity.dart) and [frontend/lib/models/location.dart](frontend/lib/models/location.dart). Backend contracts are defined in [activity-backend/models.py](activity-backend/models.py) and routes in [activity-backend/routes/activities.py](activity-backend/routes/activities.py).
+Source files: frontend calls are implemented in [frontend/lib/services/api_service.dart](frontend/lib/services/api_service.dart) and rely on models in [frontend/lib/models/activity.dart](frontend/lib/models/activity.dart) and [frontend/lib/models/location.dart](frontend/lib/models/location.dart). Backend contracts are defined in [backend/activity-backend/models.py](backend/activity-backend/models.py) and routes in [backend/activity-backend/routes/activities.py](backend/activity-backend/routes/activities.py).
 
 Base URL configured in the frontend: `http://127.0.0.1:8080/api/v1`.
 

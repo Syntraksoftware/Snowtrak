@@ -23,7 +23,7 @@ This creates:
 ### 2. Install & Run
 
 ```bash
-cd activity-backend
+cd backend/activity-backend
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -37,7 +37,7 @@ python main.py
 ## Project Structure
 
 ```
-activity-backend/
+backend/activity-backend/
   config.py                    # Environment & settings
   main.py                      # FastAPI app + lifespan
   models.py                    # Pydantic schemas
@@ -170,7 +170,7 @@ Base path: `/api/v1/activities`
 
 ## Structure
 ```
-activity-backend/
+backend/activity-backend/
   config.py              # env + settings
   main.py                # FastAPI app + lifespan
   middleware/auth.py     # JWT dependencies

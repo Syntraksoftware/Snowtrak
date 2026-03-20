@@ -70,7 +70,7 @@
 
 ## Proposed Backend Services
 
-### 1. Activity API (`main-backend/app/api/v1/activities.py`)
+### 1. Activity API (`backend/main-backend/app/api/v1/activities.py`)
 
 ```python
 @router.post("/activities", response_model=ActivityResponse)
@@ -97,7 +97,7 @@ async def create_activity(
     return activity
 ```
 
-### 2. Route Processing Service (`main-backend/app/services/route_service.py`)
+### 2. Route Processing Service (`backend/main-backend/app/services/route_service.py`)
 
 ```python
 class RouteService:
@@ -141,7 +141,7 @@ class RouteService:
         pass
 ```
 
-### 3. Activity Storage (`main-backend/app/core/activity_storage.py`)
+### 3. Activity Storage (`backend/main-backend/app/core/activity_storage.py`)
 
 ```python
 class ActivityStorage:
@@ -262,9 +262,9 @@ This hybrid approach gives you:
 
 ## Next Steps
 
-1. **Create Backend Activity API** (`main-backend/app/api/v1/activities.py`)
-2. **Create Route Service** (`main-backend/app/services/route_service.py`)
-3. **Add Activity Storage** (`main-backend/app/core/activity_storage.py`)
+1. **Create Backend Activity API** (`backend/main-backend/app/api/v1/activities.py`)
+2. **Create Route Service** (`backend/main-backend/app/services/route_service.py`)
+3. **Add Activity Storage** (`backend/main-backend/app/core/activity_storage.py`)
 4. **Update Frontend** to sync with backend after recording
 5. **Add Validation** to ensure data quality
 

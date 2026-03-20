@@ -16,7 +16,7 @@ Test in-app notifications by triggering them from the terminal.
 
 1. **Backend Running**: Start the main backend server
    ```bash
-   cd main-backend
+  cd backend/main-backend
    source venv/bin/activate
    python run.py
    ```
@@ -154,5 +154,5 @@ curl -X POST "http://127.0.0.1:8080/api/v1/notifications/test/powder-day?resort=
 - For physical devices, update the base URL in `notification_provider.dart` to your Mac's IP address
 
 **Connection refused?**
-- Backend might not be running: `cd main-backend && python run.py`
+- Backend might not be running: `cd backend/main-backend && python run.py`
 - Check if port 8080 is available: `lsof -i :8080`

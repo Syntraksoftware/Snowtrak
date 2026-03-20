@@ -29,7 +29,7 @@ Map Backend is a FastAPI microservice that provides static map image generation 
 
 1. Install dependencies:
 ```bash
-cd map-backend
+cd backend/map-backend
 pip install -r requirements.txt
 ```
 
@@ -143,7 +143,7 @@ curl "http://localhost:5200/api/elevation/point?lat=37.7749&lng=-122.4194"
 ### Project Structure
 
 ```
-map-backend/
+backend/map-backend/
 ├── main.py                 # FastAPI app & lifecycle
 ├── config.py              # Configuration
 ├── requirements.txt       # Python dependencies

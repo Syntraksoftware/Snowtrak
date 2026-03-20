@@ -83,7 +83,7 @@ send_custom() {
         echo -e "${BLUE}Response:${NC} $BODY"
     else
         echo -e "${RED}❌ Failed to send notification (HTTP $HTTP_CODE)${NC}"
-        echo -e "${RED}Make sure the backend is running: cd main-backend && python run.py${NC}"
+        echo -e "${RED}Make sure the backend is running: cd backend/main-backend && python run.py${NC}"
     fi
 }
 

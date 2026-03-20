@@ -20,7 +20,7 @@ This is a separate Flask-based microservice handling all community operations:
 ## Project Structure
 
 ```
-community-backend/
+backend/community-backend/
 ├── app.py                  # Flask application entry point
 ├── config.py              # Configuration settings
 ├── requirements.txt       # Python dependencies
@@ -43,7 +43,7 @@ community-backend/
 ### 1. Install Dependencies
 
 ```bash
-cd community-backend
+cd backend/community-backend
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
