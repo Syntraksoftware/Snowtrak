@@ -10,14 +10,10 @@ if [ ! -d "venv" ]; then
     python3 -m venv venv
 fi
 
-# Activate virtual environment
-echo "🔌 Activating virtual environment..."
-source venv/bin/activate
-
-# Install dependencies
+# Install dependencies (use venv's pip so we don't hit system/externally-managed)
 echo "📥 Installing dependencies..."
-pip install -r requirements.txt
+venv/bin/pip install -r requirements.txt
 
-# Start FastAPI server
+# Start FastAPI server (use venv's uvicorn)
 echo "⚡ Starting FastAPI server..."
-uvicorn main:app --host 0.0.0.0 --port 5001 --reload
+exec venv/bin/uvicorn main:app --host 0.0.0.0 --port 5001 --reload
