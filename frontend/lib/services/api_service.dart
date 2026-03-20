@@ -119,8 +119,9 @@ class ApiService {
     required String password,
   }) async {
     try {
+      final normalizedEmail = email.trim().toLowerCase();
       final response = await _dio.post('/auth/login', data: {
-        'email': email,
+        'email': normalizedEmail,
         'password': password,
       });
       return response.data;
@@ -128,15 +129,33 @@ class ApiService {
       // Extract error message from response
       if (e.response != null && e.response!.data != null) {
         final errorData = e.response!.data;
-        if (errorData is Map && errorData['error'] != null) {
-          throw Exception(errorData['error']);
+        if (errorData is Map) {
+          if (errorData['error'] != null) {
+            throw Exception(errorData['error']);
+          }
+          if (errorData['detail'] != null) {
+            final detail = errorData['detail'];
+            if (detail is String) {
+              throw Exception(detail);
+            }
+            if (detail is List && detail.isNotEmpty) {
+              throw Exception(detail.first.toString());
+            }
+            throw Exception(detail.toString());
+          }
         }
       }
       // Default error messages
       if (e.response?.statusCode == 401) {
         throw Exception('Invalid email or password. Please try again.');
+      } else if (e.response?.statusCode == 403) {
+        throw Exception('Account is disabled. Please contact support.');
       } else if (e.response?.statusCode == 400) {
         throw Exception('Invalid login data. Please check your input.');
+      } else if (e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        throw Exception('Cannot connect to auth server at 127.0.0.1:8080. Please start main-backend.');
       }
       throw Exception('Login failed: ${e.message}');
     }

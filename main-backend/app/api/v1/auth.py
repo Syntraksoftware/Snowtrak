@@ -38,16 +38,18 @@ def register(user_data: UserCreate) -> AuthSession:
     
     Returns authentication session with access/refresh tokens.
     """
+    normalized_email = user_data.email.strip().lower()
+
     # Check if email exists in Supabase
     if supabase_client.is_configured():
-        if supabase_client.email_exists(user_data.email):
+        if supabase_client.email_exists(normalized_email):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="An account with this email already exists"
             )
     else:
         # Fallback to user_store if Supabase not configured
-        if user_store.exists_by_email(user_data.email):
+        if user_store.exists_by_email(normalized_email):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="An account with this email already exists"
@@ -56,7 +58,7 @@ def register(user_data: UserCreate) -> AuthSession:
     # Create user locally for session data
     hashed_pwd = hash_password(user_data.password)
     user = User(
-        email=user_data.email,
+        email=normalized_email,
         hashed_password=hashed_pwd,
         first_name=user_data.first_name,
         last_name=user_data.last_name,
@@ -115,11 +117,14 @@ def login(credentials: LoginRequest) -> AuthSession:
     
     Returns authentication session with access/refresh tokens.
     """
+    normalized_email = credentials.email.strip().lower()
+
     # Fetch user from Supabase
     if supabase_client.is_configured():
-        supabase_user = supabase_client.get_user_info_by_email(credentials.email)
+        supabase_user = supabase_client.get_user_info_by_email(normalized_email)
         
         if not supabase_user:
+            logger.info("Login failed: user not found for email=%s", normalized_email)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password"
@@ -127,6 +132,7 @@ def login(credentials: LoginRequest) -> AuthSession:
         
         # Verify password
         if not verify_password(credentials.password, supabase_user.get("hashed_password", "")):
+            logger.info("Login failed: invalid password for email=%s", normalized_email)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password"
@@ -176,9 +182,10 @@ def login(credentials: LoginRequest) -> AuthSession:
     
     else:
         # Fallback to user_store if Supabase not configured
-        user = user_store.get_by_email(credentials.email)
+        user = user_store.get_by_email(normalized_email)
         
         if not user or not verify_password(credentials.password, user.hashed_password):
+            logger.info("Login failed in fallback store for email=%s", normalized_email)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password"

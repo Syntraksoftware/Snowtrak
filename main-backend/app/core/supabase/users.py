@@ -104,7 +104,14 @@ class UserOperations(SupabaseBase):
         if client is None:
             return None
         try:
-            resp = client.table("user_info").select("*").eq("email", email).limit(1).execute()
+            normalized_email = email.strip().lower()
+            resp = (
+                client.table("user_info")
+                .select("*")
+                .ilike("email", normalized_email)
+                .limit(1)
+                .execute()
+            )
             data = getattr(resp, "data", None)
             if isinstance(data, list) and data:
                 return data[0]
