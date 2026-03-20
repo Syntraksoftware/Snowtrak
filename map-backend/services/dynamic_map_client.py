@@ -33,9 +33,9 @@ class DynamicMapClient:
         """
         Generate an interactive Google Maps HTML document.
         """
-        zoom = zoom or config.STATIC_MAP_ZOOM
-        width = width or config.STATIC_MAP_WIDTH
-        height = height or config.STATIC_MAP_HEIGHT
+        zoom = zoom or getattr(config, "DYNAMIC_MAP_ZOOM", config.STATIC_MAP_ZOOM)
+        width = width or getattr(config, "DYNAMIC_MAP_WIDTH", config.STATIC_MAP_WIDTH)
+        height = height or getattr(config, "DYNAMIC_MAP_HEIGHT", config.STATIC_MAP_HEIGHT)
         resolved_map_id = map_id or self.default_map_id
 
         markers = markers or []
