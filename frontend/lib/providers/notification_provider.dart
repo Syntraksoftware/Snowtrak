@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:dio/dio.dart';
 import 'package:syntrak/models/notification.dart';
+import 'package:syntrak/services/apis/notifications_api.dart';
 
 /// Provider for managing notification state
 /// Handles the list of notifications, unread count, and notification operations
@@ -11,19 +11,13 @@ class NotificationProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   Timer? _pollingTimer;
-  final Dio _dio = Dio();
-
-  // Backend URL for notification polling
-  static const String _baseUrl = 'http://127.0.0.1:8080/api/v1';
+  final NotificationsApi _notificationsApi;
 
   // Callback for showing banner notifications (set by the app)
   Function(AppNotification)? onNewNotification;
 
-  NotificationProvider() {
-    _dio.options.baseUrl = _baseUrl;
-    _dio.options.connectTimeout = const Duration(seconds: 5);
-    _dio.options.receiveTimeout = const Duration(seconds: 5);
-  }
+  NotificationProvider({NotificationsApi? notificationsApi})
+      : _notificationsApi = notificationsApi ?? NotificationsApi();
 
   // Getters
   List<AppNotification> get notifications => _notifications;
@@ -86,24 +80,10 @@ class NotificationProvider extends ChangeNotifier {
   /// Fetch pending notifications from backend
   Future<void> _fetchPendingNotifications() async {
     try {
-      final response = await _dio.get('/notifications/pending');
+      final pending = await _notificationsApi.getPending();
 
-      if (response.data is List && (response.data as List).isNotEmpty) {
-        final List<dynamic> data = response.data;
-
-        for (final json in data) {
-          final notification = AppNotification(
-            id: json['id'],
-            type: _parseNotificationType(json['type']),
-            title: json['title'],
-            message: json['message'],
-            createdAt: DateTime.parse(json['created_at']),
-            isRead: json['is_read'] ?? false,
-            senderName: json['sender_name'],
-            avatarUrl: json['avatar_url'],
-            actionRoute: json['action_route'],
-          );
-
+      if (pending.isNotEmpty) {
+        for (final notification in pending) {
           // Add to list
           _notifications.insert(0, notification);
 
@@ -126,32 +106,6 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
-  /// Parse notification type from string
-  NotificationType _parseNotificationType(String type) {
-    switch (type) {
-      case 'kudos':
-        return NotificationType.kudos;
-      case 'comment':
-        return NotificationType.comment;
-      case 'follow':
-        return NotificationType.follow;
-      case 'friendActivity':
-        return NotificationType.friendActivity;
-      case 'challenge':
-        return NotificationType.challenge;
-      case 'group':
-        return NotificationType.group;
-      case 'weather':
-        return NotificationType.weather;
-      case 'powderDay':
-        return NotificationType.powderDay;
-      case 'achievement':
-        return NotificationType.achievement;
-      default:
-        return NotificationType.system;
-    }
-  }
-
   /// Load notifications (from API or mock data)
   Future<void> loadNotifications() async {
     _isLoading = true;
@@ -161,35 +115,22 @@ class NotificationProvider extends ChangeNotifier {
     try {
       // Try to load from backend history first
       try {
-        final response = await _dio.get('/notifications/history');
-        if (response.data is List && (response.data as List).isNotEmpty) {
-          _notifications = (response.data as List)
-              .map((json) => AppNotification(
-                    id: json['id'],
-                    type: _parseNotificationType(json['type']),
-                    title: json['title'],
-                    message: json['message'],
-                    createdAt: DateTime.parse(json['created_at']),
-                    isRead: json['is_read'] ?? false,
-                    senderName: json['sender_name'],
-                    avatarUrl: json['avatar_url'],
-                    actionRoute: json['action_route'],
-                  ))
-              .toList();
-          _isLoading = false;
-          notifyListeners();
-          return;
+        final history = await _notificationsApi.getHistory();
+        if (history.isNotEmpty) {
+          _notifications = history;
         }
       } catch (e) {
         // Backend not available, use mock data
       }
 
-      // Fallback to mock data
-      _notifications = _generateMockNotifications();
+      if (_notifications.isEmpty) {
+        _notifications = _generateMockNotifications();
+      }
+
       _isLoading = false;
       notifyListeners();
 
-      // Start polling for test notifications
+      // Start polling for incoming notifications
       startPolling();
     } catch (e) {
       _error = 'Failed to load notifications';

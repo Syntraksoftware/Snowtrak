@@ -1,11 +1,17 @@
 """Subthread routes."""
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from typing import Optional, List
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
+from typing import Optional, List, Union
 from pydantic import BaseModel
 import logging
+import sys
+import os
+
+# Add backend directory to path for shared imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from middleware.auth import get_current_user, get_optional_user
 from services.supabase_client import get_community_client
+from shared import ListResponse, ListMeta, PaginationMeta, ResponseMeta, get_request_id
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -32,9 +38,18 @@ class SubthreadsListResponse(BaseModel):
     total: int
 
 
-@router.get("", response_model=SubthreadsListResponse)
-async def list_subthreads(limit: int = Query(50, ge=1, le=200)):
-    """List all subthreads."""
+@router.get("", response_model=Union[ListResponse, SubthreadsListResponse])
+async def list_subthreads(
+    request: Request,
+    limit: int = Query(50, ge=1, le=200),
+    format: Optional[str] = Query(None, description="Response format: 'standard' for {items, meta} or 'legacy' for {subthreads, total}")
+):
+    """
+    List all subthreads.
+    
+    Supports both new standardized format and legacy response format.
+    Default is new standardized format for new clients.
+    """
     try:
         client = get_community_client()
         subthreads = client.list_subthreads(limit=limit)
@@ -42,10 +57,29 @@ async def list_subthreads(limit: int = Query(50, ge=1, le=200)):
         # Convert dicts to Pydantic models
         subthread_models = [SubthreadResponse(**sub) for sub in subthreads]
         
-        return SubthreadsListResponse(
-            subthreads=subthread_models,
-            total=len(subthread_models)
+        # Support legacy format for backward compatibility
+        if format == "legacy":
+            return SubthreadsListResponse(
+                subthreads=subthread_models,
+                total=len(subthread_models)
+            )
+        
+        # Return standardized list response
+        request_id = get_request_id(request)
+        total = len(subthread_models)
+        pagination_meta = PaginationMeta(
+            limit=limit,
+            offset=0,
+            total=total,
+            next_cursor=None,
+            has_next=False,
         )
+        response_meta = ListMeta(
+            request_id=request_id,
+            pagination=pagination_meta,
+        )
+        
+        return ListResponse(items=subthread_models, meta=response_meta)
     except Exception as e:
         logger.error(f"Error listing subthreads: {str(e)}")
         raise HTTPException(
@@ -129,13 +163,20 @@ class PostsListResponse(BaseModel):
     page_size: int
 
 
-@router.get("/{subthread_id}/posts", response_model=PostsListResponse)
+@router.get("/{subthread_id}/posts", response_model=Union[ListResponse, PostsListResponse])
 async def list_subthread_posts(
+    request: Request,
     subthread_id: str,
     limit: int = Query(20, ge=1, le=100),
-    offset: int = Query(0, ge=0)
+    offset: int = Query(0, ge=0),
+    format: Optional[str] = Query(None, description="Response format: 'standard' for {items, meta} or 'legacy' for {posts, total, page, page_size}")
 ):
-    """List posts in a subthread."""
+    """
+    List posts in a subthread.
+    
+    Supports both new standardized format and legacy response format.
+    Default is new standardized format for new clients.
+    """
     try:
         client = get_community_client()
         
@@ -157,12 +198,30 @@ async def list_subthread_posts(
         # Convert dicts to Pydantic models
         post_models = [PostResponse(**post) for post in posts]
         
-        return PostsListResponse(
-            posts=post_models,
+        # Support legacy format for backward compatibility
+        if format == "legacy":
+            return PostsListResponse(
+                posts=post_models,
+                total=total,
+                page=offset // limit + 1,
+                page_size=limit
+            )
+        
+        # Return standardized list response
+        request_id = get_request_id(request)
+        pagination_meta = PaginationMeta(
+            limit=limit,
+            offset=offset,
             total=total,
-            page=offset // limit + 1,
-            page_size=limit
+            next_cursor=None,
+            has_next=offset + limit < total,
         )
+        response_meta = ListMeta(
+            request_id=request_id,
+            pagination=pagination_meta,
+        )
+        
+        return ListResponse(items=post_models, meta=response_meta)
     except HTTPException:
         raise
     except Exception:

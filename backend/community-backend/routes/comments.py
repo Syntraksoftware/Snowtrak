@@ -3,9 +3,15 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Optional
 from pydantic import BaseModel
 import logging
+import sys
+import os
+
+# Add backend directory to path for shared imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from middleware.auth import get_current_user
 from services.supabase_client import get_community_client
+from shared import get_request_id
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

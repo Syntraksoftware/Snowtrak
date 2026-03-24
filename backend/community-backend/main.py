@@ -9,14 +9,20 @@ Community Backend - FastAPI Application
 
 A standalone microservice for Reddit-like community features.
 """
-import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
+import sys
+import os
+
+# Add backend directory to path for shared imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from config import get_config
 from services.supabase_client import initialize_community_client
+from shared import add_request_id_middleware, setup_exception_handlers
+from shared.deprecation import add_deprecation_middleware, COMMUNITY_BACKEND_DEPRECATIONS
 
 # Configure logging
 logging.basicConfig(
@@ -26,6 +32,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 config = get_config()
+
+
+def _log_owned_domains_banner() -> None:
+    """Log owned domains and canonical routes at startup."""
+    logger.info("=" * 64)
+    logger.info("SERVICE OWNERSHIP: community-backend")
+    logger.info("domains: community (subthreads/posts/comments)")
+    logger.info("routes: /api/subthreads, /api/posts, /api/comments")
+    logger.info("=" * 64)
 
 
 @asynccontextmanager
@@ -40,6 +55,7 @@ async def lifespan(app: FastAPI):
     try:
         initialize_community_client()
         logger.info("✅ Supabase Global Client Instance initialized successfully")
+        _log_owned_domains_banner()
     except Exception as e:
         logger.error(f"❌ Failed to initialize services: {e}")
         raise
@@ -58,13 +74,22 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# Add request ID middleware (must be before other middleware)
+add_request_id_middleware(app)
+
+# Setup exception handlers for standardized error responses
+setup_exception_handlers(app)
+
+# Add deprecation middleware for legacy /api/* routes
+add_deprecation_middleware(app, COMMUNITY_BACKEND_DEPRECATIONS)
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=config.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
+    allow_headers=["Content-Type", "Authorization", "X-Request-ID"],
 )
 
 # Import and include routers
@@ -72,9 +97,17 @@ from routes.subthreads import router as subthreads_router
 from routes.posts import router as posts_router
 from routes.comments import router as comments_router
 
-app.include_router(subthreads_router, prefix="/api/subthreads", tags=["subthreads"])
-app.include_router(posts_router, prefix="/api/posts", tags=["posts"])
-app.include_router(comments_router, prefix="/api/comments", tags=["comments"])
+# Mount routers at /api/v1 (new version - standard)
+app.include_router(subthreads_router, prefix="/api/v1/subthreads", tags=["subthreads"])
+app.include_router(posts_router, prefix="/api/v1/posts", tags=["posts"])
+app.include_router(comments_router, prefix="/api/v1/comments", tags=["comments"])
+
+# Legacy /api/* routes deprecated (will be supported for 1 release cycle with deprecation headers)
+# These are mounted after v1 routes so v1 takes precedence in routing
+# Deprecation headers will be added via middleware or response handlers
+app.include_router(subthreads_router, prefix="/api/subthreads", tags=["subthreads_deprecated"])
+app.include_router(posts_router, prefix="/api/posts", tags=["posts_deprecated"])
+app.include_router(comments_router, prefix="/api/comments", tags=["comments_deprecated"])
 
 
 @app.get("/")

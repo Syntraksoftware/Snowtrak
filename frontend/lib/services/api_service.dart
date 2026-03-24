@@ -3,37 +3,32 @@ import 'package:dio/dio.dart';
 import 'package:syntrak/models/activity.dart';
 import 'package:syntrak/models/user.dart';
 import 'package:syntrak/models/profile.dart';
+import 'package:syntrak/services/apis/activities_api.dart';
+import 'package:syntrak/services/apis/auth_api.dart';
+import 'package:syntrak/services/apis/community_api.dart';
+import 'package:syntrak/services/apis/users_api.dart';
+import 'package:syntrak/services/service_registry.dart';
 
 class ApiService {
-  final Dio _dio = Dio();
-  String? _token;
+  final AuthApi _authApi;
+  final UsersApi _usersApi;
+  final ActivitiesApi _activitiesApi;
+  final CommunityApi _communityApi;
 
-  // Use 127.0.0.1 instead of localhost for iOS simulator compatibility
-
-  static const String baseUrl = 'http://127.0.0.1:8080/api/v1';
-
-  ApiService() {
-    _dio.options.baseUrl = baseUrl;
-    _dio.options.connectTimeout = const Duration(seconds: 30);
-    _dio.options.receiveTimeout = const Duration(seconds: 30);
-    _dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) {
-        if (_token != null) {
-          options.headers['Authorization'] = 'Bearer $_token';
-        }
-        return handler.next(options);
-      },
-      onError: (error, handler) {
-        return handler.next(error);
-      },
-    ));
-  }
+  ApiService({
+    AuthApi? authApi,
+    UsersApi? usersApi,
+    ActivitiesApi? activitiesApi,
+    CommunityApi? communityApi,
+  })  : _authApi = authApi ?? AuthApi(),
+        _usersApi = usersApi ?? UsersApi(),
+        _activitiesApi = activitiesApi ?? ActivitiesApi(),
+        _communityApi = communityApi ?? CommunityApi();
 
   void setToken(String? token) {
-    _token = token;
+    ServiceRegistry.instance.setToken(token);
   }
 
-  // Auth endpoints
   Future<Map<String, dynamic>> register({
     required String email,
     required String password,
@@ -41,75 +36,21 @@ class ApiService {
     String? lastName,
   }) async {
     try {
-      // Build request data, only including non-null optional fields
-      final data = <String, dynamic>{
-        'email': email,
-        'password': password,
-      };
-
-      // Only add optional fields if they are not null and not empty
-      if (firstName != null && firstName.isNotEmpty) {
-        data['first_name'] = firstName;
-      }
-      if (lastName != null && lastName.isNotEmpty) {
-        data['last_name'] = lastName;
-      }
-
-      final response = await _dio.post('/auth/register', data: data);
-      return response.data;
+      return _authApi.register(
+        email: email,
+        password: password,
+        firstName: firstName,
+        lastName: lastName,
+      );
     } on DioException catch (e) {
-      // Log the full error for debugging
-      print('🔴 Registration error: ${e.response?.statusCode}');
-      print('🔴 Response data: ${e.response?.data}');
-
-      // Extract error message from response
-      if (e.response != null && e.response!.data != null) {
-        final errorData = e.response!.data;
-
-        // Try to extract error message
-        if (errorData is Map) {
-          // Try different error message fields
-          String? errorMessage;
-          if (errorData['error'] != null) {
-            errorMessage = errorData['error'].toString();
-          } else if (errorData['detail'] != null) {
-            if (errorData['detail'] is String) {
-              errorMessage = errorData['detail'];
-            } else if (errorData['detail'] is List) {
-              // Pydantic validation errors
-              final errors = (errorData['detail'] as List).map((e) {
-                if (e is Map) {
-                  final loc = e['loc']?.join('.') ?? '';
-                  final msg = e['msg'] ?? e.toString();
-                  return '$loc: $msg';
-                }
-                return e.toString();
-              }).join(', ');
-              errorMessage = 'Validation error: $errors';
-            }
-          } else if (errorData['message'] != null) {
-            errorMessage = errorData['message'].toString();
-          }
-
-          if (errorMessage != null) {
-            throw Exception(errorMessage);
-          }
-        }
-      }
-
-      // Default error messages based on status code
       if (e.response?.statusCode == 409) {
         throw Exception(
             'An account with this email already exists. Please login instead.');
-      } else if (e.response?.statusCode == 400) {
-        throw Exception('Invalid registration data. Please check your input.');
-      } else if (e.response?.statusCode == 422) {
+      }
+      if (e.response?.statusCode == 422) {
         throw Exception(
             'Invalid registration data. Please check that your email is valid and password is at least 8 characters.');
-      } else if (e.response?.statusCode == 500) {
-        throw Exception('Server error. Please try again later.');
       }
-
       throw Exception('Registration failed: ${e.message ?? "Unknown error"}');
     }
   }
@@ -119,98 +60,45 @@ class ApiService {
     required String password,
   }) async {
     try {
-      final normalizedEmail = email.trim().toLowerCase();
-      final response = await _dio.post('/auth/login', data: {
-        'email': normalizedEmail,
-        'password': password,
-      });
-      return response.data;
+      return _authApi.login(email: email, password: password);
     } on DioException catch (e) {
-      // Extract error message from response
-      if (e.response != null && e.response!.data != null) {
-        final errorData = e.response!.data;
-        if (errorData is Map) {
-          if (errorData['error'] != null) {
-            throw Exception(errorData['error']);
-          }
-          if (errorData['detail'] != null) {
-            final detail = errorData['detail'];
-            if (detail is String) {
-              throw Exception(detail);
-            }
-            if (detail is List && detail.isNotEmpty) {
-              throw Exception(detail.first.toString());
-            }
-            throw Exception(detail.toString());
-          }
-        }
-      }
-      // Default error messages
       if (e.response?.statusCode == 401) {
         throw Exception('Invalid email or password. Please try again.');
-      } else if (e.response?.statusCode == 403) {
-        throw Exception('Account is disabled. Please contact support.');
-      } else if (e.response?.statusCode == 400) {
-        throw Exception('Invalid login data. Please check your input.');
-      } else if (e.type == DioExceptionType.connectionError ||
+      }
+      if (e.type == DioExceptionType.connectionError ||
           e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
-        throw Exception('Cannot connect to auth server at 127.0.0.1:8080. Please start main-backend.');
+        throw Exception('Cannot connect to auth server at 127.0.0.1:8080.');
       }
       throw Exception('Login failed: ${e.message}');
     }
   }
 
   Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
-    try {
-      final response = await _dio.post('/auth/refresh', data: {
-        'refresh_token': refreshToken,
-      });
-      return response.data;
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 401) {
-        throw Exception('Refresh token expired. Please login again.');
-      }
-      throw Exception('Token refresh failed: ${e.message}');
-    }
+    return _authApi.refreshToken(refreshToken);
   }
 
-  // User endpoints
   Future<User> getCurrentUser() async {
-    final response = await _dio.get('/users/me');
-    return User.fromJson(response.data);
+    return _usersApi.getCurrentUser();
   }
 
   Future<User> updateUserProfile({
     String? firstName,
     String? lastName,
   }) async {
-    final response = await _dio.put('/users/me', data: {
-      if (firstName != null) 'first_name': firstName,
-      if (lastName != null) 'last_name': lastName,
-    });
-    return User.fromJson(response.data);
+    return _usersApi.updateUserProfile(firstName: firstName, lastName: lastName);
   }
 
-  // Activity endpoints
   Future<Activity> createActivity(Activity activity) async {
-    final response = await _dio.post('/activities', data: activity.toJson());
-    return Activity.fromJson(response.data);
+    return _activitiesApi.createActivity(activity);
   }
 
   Future<List<Activity>> getActivities({int page = 1, int limit = 20}) async {
-    final response = await _dio.get('/activities', queryParameters: {
-      'page': page,
-      'limit': limit,
-    });
-    return (response.data as List)
-        .map((json) => Activity.fromJson(json))
-        .toList();
+    return _activitiesApi.getActivities(page: page, limit: limit);
   }
 
   Future<Activity> getActivity(String id) async {
-    final response = await _dio.get('/activities/$id');
-    return Activity.fromJson(response.data);
+    return _activitiesApi.getActivity(id);
   }
 
   Future<Activity> updateActivity(
@@ -219,22 +107,20 @@ class ApiService {
     String? description,
     bool? isPublic,
   }) async {
-    final response = await _dio.put('/activities/$id', data: {
-      if (name != null) 'name': name,
-      if (description != null) 'description': description,
-      if (isPublic != null) 'is_public': isPublic,
-    });
-    return Activity.fromJson(response.data);
+    return _activitiesApi.updateActivity(
+      id,
+      name: name,
+      description: description,
+      isPublic: isPublic,
+    );
   }
 
   Future<void> deleteActivity(String id) async {
-    await _dio.delete('/activities/$id');
+    await _activitiesApi.deleteActivity(id);
   }
 
-  // Profile endpoints
   Future<Profile> getCurrentUserProfile() async {
-    final response = await _dio.get('/users/me/profile');
-    return Profile.fromJson(response.data);
+    return _usersApi.getCurrentUserProfile();
   }
 
   Future<Profile> updateProfile({
@@ -246,147 +132,40 @@ class ApiService {
     String? skiLevel,
     String? home,
   }) async {
-    final response = await _dio.put('/users/me/profile', data: {
-      if (fullName != null) 'full_name': fullName,
-      if (username != null) 'username': username,
-      if (bio != null) 'bio': bio,
-      if (avatarUrl != null) 'avatar_url': avatarUrl,
-      if (pushToken != null) 'push_token': pushToken,
-      if (skiLevel != null) 'ski_level': skiLevel,
-      if (home != null) 'home': home,
-    });
-    return Profile.fromJson(response.data);
+    return _usersApi.updateProfile(
+      fullName: fullName,
+      username: username,
+      bio: bio,
+      avatarUrl: avatarUrl,
+      pushToken: pushToken,
+      skiLevel: skiLevel,
+      home: home,
+    );
   }
 
   Future<Profile> getProfileById(String userId) async {
-    try {
-      print('🔍 [ApiService] Getting profile for userId: $userId');
-      //try to get profile by user id
-      final response = await _dio
-          .get(
-        '/users/$userId/profile',
-        options: Options(
-          receiveTimeout: const Duration(seconds: 10),
-        ),
-      )
-          .timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          throw Exception('Request timeout. Please check your connection.');
-        },
-      );
-      print(
-          '🔍 [ApiService] Profile response received: ${response.statusCode}');
-      return Profile.fromJson(response.data);
-    } on DioException catch (e) {
-      print('🔍 [ApiService] DioException: ${e.type} - ${e.message}');
-      print(
-          '🔍 [ApiService] Response: ${e.response?.statusCode} - ${e.response?.data}');
-      // Extract error message from response
-      if (e.response != null && e.response!.data != null) {
-        final errorData = e.response!.data;
-        if (errorData is Map && errorData['detail'] != null) {
-          throw Exception(errorData['detail']);
-        }
-      }
-      // Default error messages
-      if (e.response?.statusCode == 401) {
-        throw Exception('Authentication failed. Please login again.');
-      } else if (e.response?.statusCode == 404) {
-        throw Exception('Profile not found');
-      } else if (e.response?.statusCode == 503) {
-        throw Exception('Database not configured');
-      } else if (e.response?.statusCode == 500) {
-        throw Exception('Server error. Please try again later.');
-      } else if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout) {
-        throw Exception(
-            'Connection timeout. Please check your internet connection.');
-      } else if (e.type == DioExceptionType.connectionError) {
-        throw Exception('Cannot connect to server. Is the backend running?');
-      }
-      throw Exception('Failed to get profile: ${e.message ?? "Unknown error"}');
-    } catch (e) {
-      print('🔍 [ApiService] General exception: $e');
-      rethrow;
-    }
+    return _usersApi.getProfileById(userId);
   }
 
-  // Posts endpoints (community backend)
   Future<List<Map<String, dynamic>>> getPostsByUserId(
     String userId, {
     int limit = 20,
     int offset = 0,
   }) async {
     try {
-      print('🔍 [ApiService] Getting posts for userId: $userId');
-      // Note: This calls the community backend, not main backend
-      // You may need to adjust the base URL or create a separate service
-      final communityBaseUrl = 'http://127.0.0.1:5001/api';
-      final dio = Dio(BaseOptions(
-        baseUrl: communityBaseUrl,
-        receiveTimeout: const Duration(seconds: 10),
-      ));
-
-      // Copy auth token if available
-      if (_token != null) {
-        dio.options.headers['Authorization'] = 'Bearer $_token';
-        print('🔍 [ApiService] Token set for posts request');
-      } else {
-        print('🔍 [ApiService] No token available for posts request');
-      }
-
-      final response = await dio.get(
-        '/posts/user/$userId',
-        queryParameters: {
-          'limit': limit,
-          'offset': offset,
-        },
-      ).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          throw Exception('Request timeout. Please check your connection.');
-        },
+      return _communityApi.getPostsByUserId(
+        userId,
+        limit: limit,
+        offset: offset,
       );
-
-      print('🔍 [ApiService] Posts response received: ${response.statusCode}');
-      if (response.data is Map && response.data['posts'] != null) {
-        final posts = List<Map<String, dynamic>>.from(response.data['posts']);
-        print('🔍 [ApiService] Returning ${posts.length} posts');
-        return posts;
-      }
-      print('🔍 [ApiService] No posts in response, returning empty list');
+    } on DioException {
       return [];
-    } on DioException catch (e) {
-      print(
-          '🔍 [ApiService] DioException getting posts: ${e.type} - ${e.message}');
-      print(
-          '🔍 [ApiService] Response: ${e.response?.statusCode} - ${e.response?.data}');
-      // Return empty list on error instead of throwing
-      return [];
-    } catch (e) {
-      print('🔍 [ApiService] General exception getting posts: $e');
+    } catch (_) {
       return [];
     }
   }
 
-  // Avatar upload endpoint
   Future<Profile> uploadAvatar(File imageFile) async {
-    final formData = FormData.fromMap({
-      'file': await MultipartFile.fromFile(
-        imageFile.path,
-        filename: imageFile.path.split('/').last,
-      ),
-    });
-
-    final response = await _dio.post(
-      '/users/me/profile/avatar',
-      data: formData,
-      options: Options(
-        contentType: 'multipart/form-data',
-      ),
-    );
-
-    return Profile.fromJson(response.data);
+    return _usersApi.uploadAvatar(imageFile);
   }
 }
