@@ -2,9 +2,9 @@
 
 This guide registers/logs in a test user, then exercises all Activity API endpoints using that identity.
 
-- Auth API: http://localhost:8080
-- Activity API: http://127.0.0.1:5100
-- Requires `jq` (install with `brew install jq` on macOS)
+- [ ] Auth API: http://localhost:8080
+- [ ] Activity API: http://127.0.0.1:5100
+- [ ] Requires `jq` (install with `brew install jq` on macOS)
 
 Note on password length: the Auth API requires a minimum of 8 characters. The requested password "test" is too short, so this guide uses "test12345" instead. If you need a different password, adjust the `PASSWORD` variable.
 

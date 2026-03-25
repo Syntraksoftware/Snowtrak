@@ -4,8 +4,7 @@ Shared API Contract Models
 Standardized request/response envelopes, error formats, and pagination models
 across all backend services (main-backend, activity-backend, community-backend).
 
-This module defines the canonical API contract to ensure consistent behavior
-across service boundaries and prevent frontend drift.
+Defines canonical API contract to ensure consistent behavior across service boundaries and prevent frontend drift.
 
 Usage:
     from shared.contracts import ErrorResponse, SuccessResponse, PaginationMeta

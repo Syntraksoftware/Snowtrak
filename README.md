@@ -188,7 +188,7 @@ syntrak-application/
   - [Architecture](frontend/doc/architecture_map_service.md) - Service architecture
   - [Testing](frontend/doc/testing.md) - Testing guide
 
-## Key Features
+Key Features
 
 ### Activity Tracking
 
