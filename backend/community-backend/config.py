@@ -1,5 +1,5 @@
 """
-Configuration for Community Backend Flask app.
+Configuration for Community Backend FastAPI app.
 """
 import os
 from dotenv import load_dotenv

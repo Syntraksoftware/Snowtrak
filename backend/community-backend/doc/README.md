@@ -1,6 +1,6 @@
 # Community Backend Documentation
 
-This directory contains documentation specific to the community backend (Flask).
+This directory contains documentation specific to the community backend (FastAPI).
 
 ## Available Documentation
 

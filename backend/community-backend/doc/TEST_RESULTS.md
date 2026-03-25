@@ -1,7 +1,7 @@
 # Community Backend API Test Results
 
 **Date:** December 12, 2025  
-**Flask Backend Port:** 5001  
+**Community Backend Port:** 5001  
 **FastAPI Auth Backend Port:** 8080
 
 ## Testing Overview
@@ -311,7 +311,7 @@ curl http://localhost:5001/api/posts/c106e1a8-3bf8-47f2-97c6-cbc9fd86b4f0/commen
 
 ## Key Validations
 
-1. ✅ **JWT Authentication** - Tokens from FastAPI backend (port 8080) successfully validated by Flask backend (port 5001)
+1. ✅ **JWT Authentication** - Tokens from FastAPI backend (port 8080) successfully validated by community backend (port 5001)
 2. ✅ **Database Joins** - Author information properly joined from `user_info` table
 3. ✅ **Nested Comments** - Parent-child relationships work correctly via `parent_id` and `has_parent` fields
 4. ✅ **CORS** - Cross-origin requests handled properly
@@ -333,7 +333,7 @@ curl http://localhost:5001/api/posts/c106e1a8-3bf8-47f2-97c6-cbc9fd86b4f0/commen
            │ (Syntrak-secret)
            ▼
 ┌─────────────────────┐
-│   Flask Backend     │
+│ Community Backend   │
 │     Port: 5001      │
 │   (Community API)   │
 └──────────┬──────────┘
@@ -359,7 +359,7 @@ curl http://localhost:5001/api/posts/c106e1a8-3bf8-47f2-97c6-cbc9fd86b4f0/commen
    
 2. **Create Content:**
    - Client sends JWT token in `Authorization: Bearer <token>` header
-   - Flask middleware validates token and extracts `user_id`
+  - Community middleware validates token and extracts `user_id`
    - Content created with `user_id` reference
    
 3. **Retrieve Content:**

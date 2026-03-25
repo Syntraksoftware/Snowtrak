@@ -1,17 +1,17 @@
-# Community Backend - Flask Microservice
+# Community Backend - FastAPI Microservice
 
-A standalone Flask backend for the community feature (Reddit-like functionality).
+A standalone FastAPI backend for the community feature (Reddit-like functionality).
 
 ## Overview
 
-This is a separate Flask-based microservice handling all community operations:
+This is a separate FastAPI-based microservice handling all community operations:
 - Subthreads (topic categories)
 - Posts (user content)
 - Comments (with nesting support)
 
 ## Features
 
-- 🔥 Flask REST API
+- 🔥 FastAPI REST API
 - 🗄️ Supabase integration
 - 🔐 JWT authentication
 - 📝 Complete CRUD operations
@@ -21,7 +21,8 @@ This is a separate Flask-based microservice handling all community operations:
 
 ```
 backend/community-backend/
-├── app.py                  # Flask application entry point
+├── main.py                 # FastAPI application entry point
+├── run.py                  # Standardized runtime entry point
 ├── config.py              # Configuration settings
 ├── requirements.txt       # Python dependencies
 ├── .env.example          # Environment variables template
@@ -62,7 +63,7 @@ Edit `.env`:
 SUPABASE_URL=your-supabase-url
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 JWT_SECRET=your-jwt-secret
-FLASK_ENV=development
+FASTAPI_ENV=development
 PORT=5001
 ```
 
@@ -81,7 +82,7 @@ python3.12 -m venv venv
 source venv/bin/activate
 pip install --upgrade pip setuptools wheel
 pip install -r requirements.txt
-./run.sh
+python run.py
 ```
 
 The server will start on `http://localhost:5001`
@@ -168,8 +169,8 @@ curl -X POST http://localhost:5001/api/comments \
 ### Running in Development Mode
 
 ```bash
-export FLASK_ENV=development
-python app.py
+export FASTAPI_ENV=development
+python run.py
 ```
 
 This enables:
@@ -212,7 +213,7 @@ gunicorn -w 4 -b 0.0.0.0:5001 app:app
 | `SUPABASE_URL` | Supabase project URL | Yes |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key | Yes |
 | `JWT_SECRET` | Secret for JWT verification | Yes |
-| `FLASK_ENV` | Environment (development/production) | No |
+| `FASTAPI_ENV` | Environment (development/production) | No |
 | `PORT` | Server port | No (default: 5001) |
 
 ## CORS
@@ -221,7 +222,7 @@ CORS is configured to allow requests from:
 - `http://localhost:3000` (Flutter web dev)
 - `http://localhost:8080` (FastAPI backend)
 
-Update `app.py` to add more origins if needed.
+Update `main.py` to add more origins if needed.
 
 ## License
 

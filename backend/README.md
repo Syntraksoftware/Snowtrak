@@ -109,7 +109,7 @@ from config import Config
 if __name__ == "__main__":
     config = Config()
     uvicorn.run(
-        "main:app",              # FastAPI/Flask app module
+        "main:app",              # FastAPI app module
         host=config.HOST,        # From config
         port=config.PORT,        # From config
         reload=config.DEBUG,     # Auto-reload in development
