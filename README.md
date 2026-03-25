@@ -12,7 +12,7 @@ Syntrak combines the activity tracking features of Strava with social community 
 - **Maps**: Google Maps Flutter SDK
 - **Location**: Geolocator for GPS tracking
 
-##Q Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 
@@ -111,6 +111,49 @@ Then press `r` for hot reload, `R` for hot restart, or `q` to quit.
 
 For other devices: `flutter devices` to list available, then `flutter run -d <device_id>`
 
+### Deploy Frontend UI to Vercel (Marketing Review)
+
+This flow deploys the Flutter Web build as a static site so your team can review UI quickly.
+
+1) Build the web app locally:
+
+```bash
+cd frontend
+flutter pub get
+flutter build web --release
+```
+
+2) Install Vercel CLI (one-time):
+
+```bash
+npm i -g vercel
+```
+
+3) Deploy from the `frontend` folder:
+
+```bash
+cd frontend
+vercel
+```
+
+Use the prompts:
+- Set up and deploy? `Y`
+- Scope: select your account/team
+- Link to existing project? `N` (first time)
+- Project name: e.g. `syntrak-ui-review`
+- In which directory is your code? `./`
+- Override settings? `N` (the included `frontend/vercel.json` handles output and SPA rewrites)
+
+4) Share preview URL with marketing. For production URL:
+
+```bash
+vercel --prod
+```
+
+Notes:
+- This deploy is intended for UI review; backend-dependent features may need API/base URL config before full functionality.
+- If routes return 404 on refresh, ensure deploy is from `frontend` so `frontend/vercel.json` is picked up.
+
 ### Health Checks
 
 Verify all services are running:
@@ -188,7 +231,7 @@ syntrak-application/
   - [Architecture](frontend/doc/architecture_map_service.md) - Service architecture
   - [Testing](frontend/doc/testing.md) - Testing guide
 
-Key Features
+## ✨ Key Features
 
 ### Activity Tracking
 
@@ -220,7 +263,7 @@ Key Features
 - Token refresh mechanism
 - Supabase user management
 
-## Development
+## 🧪 Development
 
 ### Running Tests
 
@@ -250,3 +293,10 @@ Run before committing to detect accidentally committed secrets:
 ```bash
 ./scripts/check_secrets.sh
 ```
+
+## 🔗 Resources
+
+- [Flutter Documentation](https://flutter.dev/docs)
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [Supabase Documentation](https://supabase.com/docs)
+- [Google Maps API](https://console.cloud.google.com/)
