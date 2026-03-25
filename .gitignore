@@ -99,5 +99,9 @@ frontend/.env
 local.properties
 frontend/android/local.properties
 
-*.html
-*.png
+# Python virtual environments (local only)
+**/.venv/
+**/venv/
+
+*.html/
+*.png/

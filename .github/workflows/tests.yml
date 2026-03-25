@@ -21,18 +21,18 @@ jobs:
       
       - name: Install dependencies
         run: |
-          cd main-backend
+          cd backend/main-backend
           pip install -r requirements.txt -r requirements-test.txt
       
       - name: Run tests with coverage
         run: |
-          cd main-backend
+          cd backend/main-backend
           pytest --cov=app --cov-report=xml --cov-report=term
       
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
-          files: ./main-backend/coverage.xml
+          files: ./backend/main-backend/coverage.xml
           flags: backend
           name: backend-coverage
 

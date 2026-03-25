@@ -31,7 +31,7 @@
         <!-- For production, use a build script to inject from local.properties or .env -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyDbOPJEa9T5ZfU7dpYevsfraDLCz1iP8_c"/>
+            android:value="YOUR_GOOGLE_MAPS_API_KEY"/>
     </application>
 </manifest>
 
