@@ -4,34 +4,7 @@
 
 Syntrak combines the activity tracking features of Strava with social community features similar to Reddit and Threads, specifically designed for skiing enthusiasts.
 
-## 🎯 Overview
-
-Syntrak is a comprehensive mobile application that enables users to:
-
-- **Track Activities**: Record skiing activities with GPS tracking, route visualization, and detailed metrics
-- **Social Community**: Engage in community-driven discussions, share activities, and connect with other skiers
-- **Groups & Clubs**: Join skiing groups, participate in challenges, and build your skiing community
-- **Profile & Analytics**: View detailed statistics, activity history, and progress over time
-
-## 🏗️ Architecture
-
-This is a monorepo containing three main components:
-
-```
-syntrak-application/
-├── frontend/                       # Flutter mobile app (iOS & Android)
-├── backend/                        # All backend services (unified setup)
-│   ├── main-backend/               # FastAPI (Auth & Core APIs)
-│   ├── community-backend/          # FastAPI (Posts, threads, comments)
-│   ├── activity-backend/           # FastAPI (GPS & activity tracking)
-│   ├── map-backend/                # FastAPI (Maps & elevation)
-│   ├── .venv/                      # Shared Python environment
-│   ├── requirements.txt            # Unified dependencies
-│   └── run.py                      # Master orchestrator
-└── docs/                           # Documentation
-```
-
-### 💻 Tech Stack
+## Tech Stack
 
 - **Frontend**: Flutter (Dart) with Provider state management
 - **Backend**: FastAPI microservices with Supabase integration
@@ -39,7 +12,7 @@ syntrak-application/
 - **Maps**: Google Maps Flutter SDK
 - **Location**: Geolocator for GPS tracking
 
-## 🚀 Quick Start
+##Q Quick Start
 
 ### Prerequisites
 
@@ -215,7 +188,7 @@ syntrak-application/
   - [Architecture](frontend/doc/architecture_map_service.md) - Service architecture
   - [Testing](frontend/doc/testing.md) - Testing guide
 
-## ✨ Key Features
+## Key Features
 
 ### Activity Tracking
 
@@ -247,7 +220,7 @@ syntrak-application/
 - Token refresh mechanism
 - Supabase user management
 
-## 🧪 Development
+## Development
 
 ### Running Tests
 
@@ -277,10 +250,3 @@ Run before committing to detect accidentally committed secrets:
 ```bash
 ./scripts/check_secrets.sh
 ```
-
-## 🔗 Resources
-
-- [Flutter Documentation](https://flutter.dev/docs)
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
-- [Supabase Documentation](https://supabase.com/docs)
-- [Google Maps API](https://console.cloud.google.com/)
