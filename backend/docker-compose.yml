@@ -1,8 +1,8 @@
 services:
   main-backend:
     build:
-      context: ./main-backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./main-backend/Dockerfile
     container_name: syntrak-main-backend
     env_file:
       - ./main-backend/.env
@@ -17,8 +17,8 @@ services:
 
   community-backend:
     build:
-      context: ./community-backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./community-backend/Dockerfile
     container_name: syntrak-community-backend
     env_file:
       - ./community-backend/.env
@@ -33,8 +33,8 @@ services:
 
   activity-backend:
     build:
-      context: ./activity-backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./activity-backend/Dockerfile
     container_name: syntrak-activity-backend
     env_file:
       - ./activity-backend/.env
