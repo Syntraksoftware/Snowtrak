@@ -25,6 +25,24 @@ class CommentCreate(BaseModel):
     parent_id: Optional[str] = None
 
 
+class CommentUpdate(BaseModel):
+    """Schema for updating a comment."""
+    content: str
+
+
+class VoteRequest(BaseModel):
+    """Schema for voting on a comment."""
+    vote_type: int  # -1, 0, 1
+
+
+class VoteResponse(BaseModel):
+    """Schema for vote response."""
+    comment_id: str
+    user_id: str
+    vote_value: int
+    score: int
+
+
 class CommentResponse(BaseModel):
     """Schema for comment response."""
     id: str
@@ -116,6 +134,72 @@ async def get_comment(comment_id: str):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error"
+        )
+
+
+@router.patch("/{comment_id}", response_model=CommentResponse)
+async def update_comment(
+    comment_id: str,
+    data: CommentUpdate,
+    user_id: str = Depends(get_current_user),
+):
+    """Update a comment (authenticated, owner only)."""
+    try:
+        client = get_community_client()
+        updated = client.update_comment(
+            comment_id=comment_id,
+            user_id=user_id,
+            content=data.content,
+        )
+        if not updated:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Comment not found or unauthorized",
+            )
+        return updated
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error("Error updating comment")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Server Error",
+        )
+
+
+@router.post("/{comment_id}/vote", response_model=VoteResponse)
+async def vote_comment(
+    comment_id: str,
+    data: VoteRequest,
+    user_id: str = Depends(get_current_user),
+):
+    """Vote on a comment (authenticated). vote_type: -1, 0, 1."""
+    if data.vote_type not in (-1, 0, 1):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="vote_type must be one of: -1, 0, 1",
+        )
+
+    try:
+        client = get_community_client()
+        result = client.set_comment_vote(
+            comment_id=comment_id,
+            user_id=user_id,
+            vote_type=data.vote_type,
+        )
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Comment not found or vote operation failed",
+            )
+        return result
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error("Error voting comment")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Server Error",
         )
 
 

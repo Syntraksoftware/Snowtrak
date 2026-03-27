@@ -216,6 +216,9 @@ class _ThreadsTabState extends State<ThreadsTab> {
   }
 
   void _handleLike(Post post) {
+    final nextLiked = !post.likedByCurrentUser;
+    final nextVoteType = nextLiked ? 1 : 0;
+
     setState(() {
       final index = _posts.indexWhere((p) => p.id == post.id);
       if (index != -1) {
@@ -229,6 +232,8 @@ class _ThreadsTabState extends State<ThreadsTab> {
         _filterPosts();
       }
     });
+
+    _syncPostVote(postId: post.id, voteType: nextVoteType);
   }
 
   void _handleRepost(Post post) {
@@ -392,6 +397,11 @@ class _ThreadsTabState extends State<ThreadsTab> {
             postId: (operation.payload['post_id'] ?? '').toString(),
             content: (operation.payload['content'] ?? '').toString(),
           );
+        } else if (operation.type == 'vote_post') {
+          await _apiService.voteCommunityPost(
+            postId: (operation.payload['post_id'] ?? '').toString(),
+            voteType: (operation.payload['vote_type'] as num?)?.toInt() ?? 0,
+          );
         }
       } catch (_) {
         pending.add(operation.copyWith(retryCount: operation.retryCount + 1));
@@ -519,6 +529,32 @@ class _ThreadsTabState extends State<ThreadsTab> {
     if (diff.inHours < 1) return '${diff.inMinutes}m';
     if (diff.inDays < 1) return '${diff.inHours}h';
     return '${diff.inDays}d';
+  }
+
+  Future<void> _syncPostVote({
+    required String postId,
+    required int voteType,
+  }) async {
+    try {
+      await _apiService.voteCommunityPost(postId: postId, voteType: voteType);
+    } catch (_) {
+      await _outbox.enqueue(
+        CommunityOutboxOperation(
+          id: 'vote_${DateTime.now().millisecondsSinceEpoch}_$postId',
+          type: 'vote_post',
+          payload: {
+            'post_id': postId,
+            'vote_type': voteType,
+          },
+        ),
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vote queued offline. Will retry automatically.'),
+        ),
+      );
+    }
   }
 
   @override

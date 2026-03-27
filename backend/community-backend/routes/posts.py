@@ -25,6 +25,25 @@ class PostCreate(BaseModel):
     content: str
 
 
+class PostUpdate(BaseModel):
+    """Schema for updating a post."""
+    title: Optional[str] = None
+    content: Optional[str] = None
+
+
+class VoteRequest(BaseModel):
+    """Schema for voting on a post."""
+    vote_type: int  # -1, 0, 1
+
+
+class VoteResponse(BaseModel):
+    """Schema for vote response."""
+    post_id: str
+    user_id: str
+    vote_value: int
+    score: int
+
+
 class PostResponse(BaseModel):
     """Schema for post response."""
     post_id: str
@@ -134,6 +153,73 @@ async def get_post(post_id: str):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
+        )
+
+
+@router.patch("/{post_id}", response_model=PostResponse)
+async def update_post(
+    post_id: str,
+    data: PostUpdate,
+    user_id: str = Depends(get_current_user),
+):
+    """Update a post (authenticated, owner only)."""
+    try:
+        client = get_community_client()
+        updated = client.update_post(
+            post_id=post_id,
+            user_id=user_id,
+            title=data.title,
+            content=data.content,
+        )
+        if not updated:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Post not found or unauthorized",
+            )
+        return updated
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error("Error updating post")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Server Error",
+        )
+
+
+@router.post("/{post_id}/vote", response_model=VoteResponse)
+async def vote_post(
+    post_id: str,
+    data: VoteRequest,
+    user_id: str = Depends(get_current_user),
+):
+    """Vote on a post (authenticated). vote_type: -1, 0, 1."""
+    if data.vote_type not in (-1, 0, 1):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="vote_type must be one of: -1, 0, 1",
+        )
+
+    try:
+        client = get_community_client()
+        result = client.set_post_vote(
+            post_id=post_id,
+            user_id=user_id,
+            vote_type=data.vote_type,
+        )
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Post not found or vote operation failed",
+            )
+        return result
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error("Error voting post")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Server Error",
         )
 
 

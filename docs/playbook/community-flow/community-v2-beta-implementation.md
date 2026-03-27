@@ -398,7 +398,20 @@ Alerts:
    - Startup retry pass added to re-attempt queued operations and reconcile feed.
 
 - Remaining in Wave 2+:
-   - vote APIs and backend persistence
    - edit/delete flows with conflict handling
    - cursor pagination contract rollout
    - feature-flag handshake from backend response
+
+- 2026-03-27 (Wave 2):
+   - Backend community APIs extended with:
+      - `PATCH /api/v1/posts/{post_id}`
+      - `POST /api/v1/posts/{post_id}/vote`
+      - `PATCH /api/v1/comments/{comment_id}`
+      - `POST /api/v1/comments/{comment_id}/vote`
+   - Backend supabase client extended with:
+      - user post listing implementation
+      - post/comment update helpers
+      - post/comment vote helper methods
+   - Community backend tests expanded for update and vote endpoints.
+   - Frontend community API/repository/service extended with post vote call.
+   - Threads UI now performs optimistic vote with backend sync and outbox fallback.

@@ -111,6 +111,32 @@ class TestPostEndpoints:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
+    def test_update_post_success(self, client):
+        response = client.patch(
+            "/api/v1/posts/post-1",
+            json={"content": "Updated content"},
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["content"] == "Updated content"
+
+    def test_vote_post_success(self, client):
+        response = client.post(
+            "/api/v1/posts/post-1/vote",
+            json={"vote_type": 1},
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["vote_value"] == 1
+
+    def test_vote_post_invalid_type(self, client):
+        response = client.post(
+            "/api/v1/posts/post-1/vote",
+            json={"vote_type": 2},
+        )
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
 
 class TestCommentEndpoints:
     def test_create_comment_success(self, client):
@@ -143,6 +169,24 @@ class TestCommentEndpoints:
         response = client.delete("/api/v1/comments/comment-missing")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_update_comment_success(self, client):
+        response = client.patch(
+            "/api/v1/comments/comment-1",
+            json={"content": "Updated reply"},
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["content"] == "Updated reply"
+
+    def test_vote_comment_success(self, client):
+        response = client.post(
+            "/api/v1/comments/comment-1/vote",
+            json={"vote_type": -1},
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["vote_value"] == -1
 
     def test_requires_auth_when_override_removed(self, client, app):
         app.dependency_overrides.pop(get_current_user, None)

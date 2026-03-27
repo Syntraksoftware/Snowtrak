@@ -99,4 +99,18 @@ class CommunityApi {
     final response = await _dio.post('/comments', data: payload);
     return Map<String, dynamic>.from(response.data as Map);
   }
+
+  Future<Map<String, dynamic>> votePost({
+    required String postId,
+    required int voteType,
+  }) async {
+    final response = await _dio.post(
+      '/posts/$postId/vote',
+      data: {
+        'vote_type': voteType,
+      },
+    );
+
+    return Map<String, dynamic>.from(response.data as Map);
+  }
 }

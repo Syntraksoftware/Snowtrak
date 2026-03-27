@@ -255,6 +255,115 @@ class CommunitySupabaseClient:
         except Exception as exc:
             logger.exception(f"Failed to list posts for subthread {subthread_id}: {exc}")
             return []
+
+    def list_posts_by_user_id(
+        self,
+        user_id: str,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> List[Dict[str, Any]]:
+        """List posts authored by a user with author information."""
+        try:
+            resp = self._client.table("posts").select(
+                "*, user_info!posts_user_id_fkey(email, first_name, last_name)"
+            ).eq("user_id", user_id).order("created_at", desc=True).range(offset, offset + limit - 1).execute()
+            data = getattr(resp, "data", None)
+            if isinstance(data, list):
+                for post in data:
+                    if "user_info" in post and post["user_info"]:
+                        author = post.pop("user_info")
+                        post["author_email"] = author.get("email")
+                        post["author_first_name"] = author.get("first_name")
+                        post["author_last_name"] = author.get("last_name")
+                return data
+            return []
+        except Exception as exc:
+            logger.exception(f"Failed to list posts for user {user_id}: {exc}")
+            return []
+
+    def update_post(
+        self,
+        post_id: str,
+        user_id: str,
+        title: Optional[str] = None,
+        content: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """Update a post if it belongs to the requesting user."""
+        try:
+            current = self.get_post_by_id(post_id)
+            if not current:
+                return None
+            if current.get("user_id") != user_id:
+                return None
+
+            update_data: Dict[str, Any] = {}
+            if title is not None:
+                update_data["title"] = title
+            if content is not None:
+                update_data["content"] = content
+
+            if not update_data:
+                return current
+
+            resp = self._client.table("posts").update(update_data).eq("post_id", post_id).execute()
+            data = getattr(resp, "data", None)
+            if isinstance(data, list) and data:
+                return self.get_post_by_id(post_id)
+            return None
+        except Exception as exc:
+            logger.exception(f"Failed to update post {post_id}: {exc}")
+            return None
+
+    def set_post_vote(
+        self,
+        post_id: str,
+        user_id: str,
+        vote_type: int,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Set post vote for a user.
+
+        vote_type: 1 (upvote), -1 (downvote), 0 (remove vote)
+        Requires a `post_votes` table with unique(post_id, user_id).
+        """
+        try:
+            if vote_type not in (-1, 0, 1):
+                return None
+
+            post = self.get_post_by_id(post_id)
+            if not post:
+                return None
+
+            if vote_type == 0:
+                self._client.table("post_votes").delete().eq("post_id", post_id).eq("user_id", user_id).execute()
+            else:
+                existing_resp = self._client.table("post_votes").select("id").eq("post_id", post_id).eq("user_id", user_id).limit(1).execute()
+                existing = getattr(existing_resp, "data", None)
+                payload = {
+                    "post_id": post_id,
+                    "user_id": user_id,
+                    "vote_value": vote_type,
+                }
+                if isinstance(existing, list) and existing:
+                    self._client.table("post_votes").update({"vote_value": vote_type}).eq("post_id", post_id).eq("user_id", user_id).execute()
+                else:
+                    self._client.table("post_votes").insert(payload).execute()
+
+            score_resp = self._client.table("post_votes").select("vote_value").eq("post_id", post_id).execute()
+            score_rows = getattr(score_resp, "data", None)
+            score = 0
+            if isinstance(score_rows, list):
+                score = sum(int(r.get("vote_value", 0)) for r in score_rows)
+
+            return {
+                "post_id": post_id,
+                "user_id": user_id,
+                "vote_value": vote_type,
+                "score": score,
+            }
+        except Exception as exc:
+            logger.exception(f"Failed to set vote for post {post_id}: {exc}")
+            return None
     
     def count_posts_by_subthread(self, subthread_id: str) -> int:
         """Count total posts in a subthread."""
@@ -338,6 +447,80 @@ class CommunitySupabaseClient:
             return None
         except Exception as exc:
             logger.exception(f"Failed to create comment: {exc}")
+            return None
+
+    def update_comment(
+        self,
+        comment_id: str,
+        user_id: str,
+        content: str,
+    ) -> Optional[Dict[str, Any]]:
+        """Update a comment if it belongs to the requesting user."""
+        try:
+            current = self.get_comment_by_id(comment_id)
+            if not current:
+                return None
+            if current.get("user_id") != user_id:
+                return None
+
+            resp = self._client.table("comments").update({"content": content}).eq("id", comment_id).execute()
+            data = getattr(resp, "data", None)
+            if isinstance(data, list) and data:
+                return self.get_comment_by_id(comment_id)
+            return None
+        except Exception as exc:
+            logger.exception(f"Failed to update comment {comment_id}: {exc}")
+            return None
+
+    def set_comment_vote(
+        self,
+        comment_id: str,
+        user_id: str,
+        vote_type: int,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Set comment vote for a user.
+
+        vote_type: 1 (upvote), -1 (downvote), 0 (remove vote)
+        Requires a `comment_votes` table with unique(comment_id, user_id).
+        """
+        try:
+            if vote_type not in (-1, 0, 1):
+                return None
+
+            comment = self.get_comment_by_id(comment_id)
+            if not comment:
+                return None
+
+            if vote_type == 0:
+                self._client.table("comment_votes").delete().eq("comment_id", comment_id).eq("user_id", user_id).execute()
+            else:
+                existing_resp = self._client.table("comment_votes").select("id").eq("comment_id", comment_id).eq("user_id", user_id).limit(1).execute()
+                existing = getattr(existing_resp, "data", None)
+                payload = {
+                    "comment_id": comment_id,
+                    "user_id": user_id,
+                    "vote_value": vote_type,
+                }
+                if isinstance(existing, list) and existing:
+                    self._client.table("comment_votes").update({"vote_value": vote_type}).eq("comment_id", comment_id).eq("user_id", user_id).execute()
+                else:
+                    self._client.table("comment_votes").insert(payload).execute()
+
+            score_resp = self._client.table("comment_votes").select("vote_value").eq("comment_id", comment_id).execute()
+            score_rows = getattr(score_resp, "data", None)
+            score = 0
+            if isinstance(score_rows, list):
+                score = sum(int(r.get("vote_value", 0)) for r in score_rows)
+
+            return {
+                "comment_id": comment_id,
+                "user_id": user_id,
+                "vote_value": vote_type,
+                "score": score,
+            }
+        except Exception as exc:
+            logger.exception(f"Failed to set vote for comment {comment_id}: {exc}")
             return None
     
     def get_comment_by_id(self, comment_id: str) -> Optional[Dict[str, Any]]:

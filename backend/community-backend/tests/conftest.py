@@ -95,6 +95,29 @@ class StubCommunityClient:
     def delete_post(self, post_id, user_id):
         return post_id == "post-1" and user_id == "user-1"
 
+    def update_post(self, post_id, user_id, title=None, content=None):
+        if post_id != "post-1" or user_id != "user-1":
+            return None
+        updated = dict(self.post)
+        if title is not None:
+            updated["title"] = title
+        if content is not None:
+            updated["content"] = content
+        self.post = updated
+        return updated
+
+    def set_post_vote(self, post_id, user_id, vote_type):
+        if post_id != "post-1":
+            return None
+        if vote_type not in (-1, 0, 1):
+            return None
+        return {
+            "post_id": post_id,
+            "user_id": user_id,
+            "vote_value": vote_type,
+            "score": vote_type,
+        }
+
     def create_comment(self, user_id, post_id, content, parent_id=None):
         if post_id != "post-1":
             return None
@@ -114,6 +137,26 @@ class StubCommunityClient:
 
     def delete_comment(self, comment_id, user_id):
         return comment_id == "comment-1" and user_id == "user-1"
+
+    def update_comment(self, comment_id, user_id, content):
+        if comment_id != "comment-1" or user_id != "user-1":
+            return None
+        updated = dict(self.comment)
+        updated["content"] = content
+        self.comment = updated
+        return updated
+
+    def set_comment_vote(self, comment_id, user_id, vote_type):
+        if comment_id != "comment-1":
+            return None
+        if vote_type not in (-1, 0, 1):
+            return None
+        return {
+            "comment_id": comment_id,
+            "user_id": user_id,
+            "vote_value": vote_type,
+            "score": vote_type,
+        }
 
 
 @pytest.fixture

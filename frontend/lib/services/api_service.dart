@@ -228,6 +228,16 @@ class ApiService {
     );
   }
 
+  Future<Map<String, dynamic>> voteCommunityPost({
+    required String postId,
+    required int voteType,
+  }) async {
+    return _communityRepository.votePost(
+      postId: postId,
+      voteType: voteType,
+    );
+  }
+
   Future<Profile> uploadAvatar(File imageFile) async {
     return _profileRepository.uploadAvatar(imageFile);
   }

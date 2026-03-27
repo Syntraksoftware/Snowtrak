@@ -56,4 +56,11 @@ class CommunityRepository {
       parentId: parentId,
     );
   }
+
+  Future<Map<String, dynamic>> votePost({
+    required String postId,
+    required int voteType,
+  }) {
+    return _api.votePost(postId: postId, voteType: voteType);
+  }
 }
