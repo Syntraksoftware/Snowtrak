@@ -5,11 +5,55 @@ class CommunityRepository {
 
   final CommunityApi _api;
 
+  Future<List<Map<String, dynamic>>> getSubthreads({int limit = 50}) {
+    return _api.getSubthreads(limit: limit);
+  }
+
+  Future<List<Map<String, dynamic>>> getPostsBySubthread(
+    String subthreadId, {
+    int limit = 20,
+    int offset = 0,
+  }) {
+    return _api.getPostsBySubthread(
+      subthreadId,
+      limit: limit,
+      offset: offset,
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getCommentsByPost(String postId) {
+    return _api.getCommentsByPost(postId);
+  }
+
   Future<List<Map<String, dynamic>>> getPostsByUserId(
     String userId, {
     int limit = 20,
     int offset = 0,
   }) {
     return _api.getPostsByUserId(userId, limit: limit, offset: offset);
+  }
+
+  Future<Map<String, dynamic>> createPost({
+    required String subthreadId,
+    required String title,
+    required String content,
+  }) {
+    return _api.createPost(
+      subthreadId: subthreadId,
+      title: title,
+      content: content,
+    );
+  }
+
+  Future<Map<String, dynamic>> createComment({
+    required String postId,
+    required String content,
+    String? parentId,
+  }) {
+    return _api.createComment(
+      postId: postId,
+      content: content,
+      parentId: parentId,
+    );
   }
 }

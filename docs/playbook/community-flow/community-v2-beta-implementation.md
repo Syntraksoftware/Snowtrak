@@ -381,3 +381,24 @@ Alerts:
 4. Add backend PATCH/vote/report endpoints and idempotency support.
 5. Wire backend feature flags into feed bootstrap response.
 6. Add contract and integration tests, then start internal rollout.
+
+## Implementation Progress Log
+
+- 2026-03-27 (Wave 1):
+   - Frontend `CommunityApi` expanded with:
+      - subthread feed read
+      - post list by subthread
+      - comment list by post
+      - create post
+      - create comment
+   - Frontend `CommunityRepository` and `ApiService` expanded to expose the above methods.
+   - Community feed UI (`ThreadsTab`) migrated from mock-only flow to backend-backed loading.
+   - Optimistic create-post and create-reply behavior implemented in `ThreadsTab`.
+   - Persistent outbox skeleton added (`community_outbox_service.dart`) with load/save/enqueue/retry support.
+   - Startup retry pass added to re-attempt queued operations and reconcile feed.
+
+- Remaining in Wave 2+:
+   - vote APIs and backend persistence
+   - edit/delete flows with conflict handling
+   - cursor pagination contract rollout
+   - feature-flag handshake from backend response

@@ -180,6 +180,54 @@ class ApiService {
     }
   }
 
+  Future<List<Map<String, dynamic>>> getCommunitySubthreads({
+    int limit = 50,
+  }) async {
+    return _communityRepository.getSubthreads(limit: limit);
+  }
+
+  Future<List<Map<String, dynamic>>> getCommunityPostsBySubthread(
+    String subthreadId, {
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    return _communityRepository.getPostsBySubthread(
+      subthreadId,
+      limit: limit,
+      offset: offset,
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getCommunityCommentsByPost(
+    String postId,
+  ) async {
+    return _communityRepository.getCommentsByPost(postId);
+  }
+
+  Future<Map<String, dynamic>> createCommunityPost({
+    required String subthreadId,
+    required String title,
+    required String content,
+  }) async {
+    return _communityRepository.createPost(
+      subthreadId: subthreadId,
+      title: title,
+      content: content,
+    );
+  }
+
+  Future<Map<String, dynamic>> createCommunityComment({
+    required String postId,
+    required String content,
+    String? parentId,
+  }) async {
+    return _communityRepository.createComment(
+      postId: postId,
+      content: content,
+      parentId: parentId,
+    );
+  }
+
   Future<Profile> uploadAvatar(File imageFile) async {
     return _profileRepository.uploadAvatar(imageFile);
   }

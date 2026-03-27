@@ -1,7 +1,9 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:syntrak/core/di/service_locator.dart';
 import 'package:syntrak/core/theme.dart';
+import 'package:syntrak/features/community/data/community_outbox_service.dart';
+import 'package:syntrak/services/api_service.dart';
 import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/models/post.dart';
 import 'package:syntrak/widgets/compact_composer.dart';
@@ -15,15 +17,22 @@ class ThreadsTab extends StatefulWidget {
 }
 
 class _ThreadsTabState extends State<ThreadsTab> {
+  static const int _defaultPageSize = 20;
+
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  final CommunityOutboxService _outbox = CommunityOutboxService();
+  final ApiService _apiService = sl<ApiService>();
+
   final List<Post> _posts = [];
   List<Post> _filteredPosts = [];
+
   bool _isRefreshing = false;
   bool _isLoading = false;
   bool _isSearchFocused = false;
   String? _expandedPostId;
+  String? _activeSubthreadId;
 
   @override
   void initState() {
@@ -33,7 +42,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
         _isSearchFocused = _searchFocusNode.hasFocus;
       });
     });
-    _loadFeed();
+    _bootstrapFeed();
   }
 
   @override
@@ -46,17 +55,20 @@ class _ThreadsTabState extends State<ThreadsTab> {
 
   void _filterPosts() {
     final query = _searchController.text.toLowerCase().trim();
-    setState(() {
-      if (query.isEmpty) {
-        _filteredPosts = List.from(_posts);
-      } else {
-        _filteredPosts = _posts.where((post) {
-          return post.text.toLowerCase().contains(query) ||
-              post.author.displayName.toLowerCase().contains(query) ||
-              post.author.username.toLowerCase().contains(query);
-        }).toList();
-      }
-    });
+    if (query.isEmpty) {
+      _filteredPosts = List.from(_posts);
+    } else {
+      _filteredPosts = _posts.where((post) {
+        return post.text.toLowerCase().contains(query) ||
+            post.author.displayName.toLowerCase().contains(query) ||
+            post.author.username.toLowerCase().contains(query);
+      }).toList();
+    }
+  }
+
+  Future<void> _bootstrapFeed() async {
+    await _loadFeed();
+    await _retryOutbox();
   }
 
   Future<void> _loadFeed() async {
@@ -67,13 +79,45 @@ class _ThreadsTabState extends State<ThreadsTab> {
     });
 
     try {
-      // TODO: Fetch from community backend API
-      await Future.delayed(const Duration(milliseconds: 500));
+      final subthreads = await _apiService.getCommunitySubthreads(limit: 50);
+      if (subthreads.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _posts.clear();
+            _filteredPosts = [];
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      _activeSubthreadId = (subthreads.first['id'] ?? '').toString();
+      if (_activeSubthreadId == null || _activeSubthreadId!.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      final postsData = await _apiService.getCommunityPostsBySubthread(
+        _activeSubthreadId!,
+        limit: _defaultPageSize,
+      );
+
+      final mapped = <Post>[];
+      for (final rawPost in postsData) {
+        final comments = await _apiService.getCommunityCommentsByPost(
+          (rawPost['post_id'] ?? '').toString(),
+        );
+        mapped.add(_mapBackendPost(rawPost, comments));
+      }
 
       if (mounted) {
         setState(() {
           _posts.clear();
-          _posts.addAll(_generateMockPosts());
+          _posts.addAll(mapped);
           _filteredPosts = List.from(_posts);
           _isLoading = false;
         });
@@ -103,14 +147,16 @@ class _ThreadsTabState extends State<ThreadsTab> {
     }
   }
 
-  void _handlePost(String text) {
+  Future<void> _handlePost(String text) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final user = authProvider.user;
 
-    if (user == null) return;
+    if (user == null || _activeSubthreadId == null) return;
+
+    final tempId = 'tmp_${DateTime.now().millisecondsSinceEpoch}';
 
     final newPost = Post(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: tempId,
       author: PostAuthor(
         id: user.id,
         displayName: user.firstName != null && user.lastName != null
@@ -126,9 +172,47 @@ class _ThreadsTabState extends State<ThreadsTab> {
 
     setState(() {
       _posts.insert(0, newPost);
+      _filterPosts();
     });
 
-    // TODO: Post to backend API
+    try {
+      final response = await _apiService.createCommunityPost(
+        subthreadId: _activeSubthreadId!,
+        title: text.length > 48 ? '${text.substring(0, 48)}...' : text,
+        content: text,
+      );
+
+      final confirmed = _mapBackendPost(response, const []);
+      if (!mounted) return;
+
+      setState(() {
+        final index = _posts.indexWhere((p) => p.id == tempId);
+        if (index != -1) {
+          _posts[index] = confirmed;
+          _filterPosts();
+        }
+      });
+    } catch (_) {
+      await _outbox.enqueue(
+        CommunityOutboxOperation(
+          id: tempId,
+          type: 'create_post',
+          payload: {
+            'subthread_id': _activeSubthreadId,
+            'title': text.length > 48 ? '${text.substring(0, 48)}...' : text,
+            'content': text,
+            'temp_id': tempId,
+          },
+        ),
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Post queued offline. Will retry automatically.'),
+        ),
+      );
+    }
   }
 
   void _handleLike(Post post) {
@@ -142,6 +226,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
               ? currentPost.likeCount - 1
               : currentPost.likeCount + 1,
         );
+        _filterPosts();
       }
     });
   }
@@ -157,17 +242,43 @@ class _ThreadsTabState extends State<ThreadsTab> {
               ? currentPost.repostCount - 1
               : currentPost.repostCount + 1,
         );
+        _filterPosts();
       }
     });
   }
 
-  void _handleReply(Post post) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Reply functionality coming soon'),
-        duration: Duration(seconds: 1),
-      ),
+  Future<void> _handleReply(Post post) async {
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Reply'),
+          content: TextField(
+            controller: controller,
+            maxLines: 4,
+            decoration: const InputDecoration(
+              hintText: 'Write your reply...',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(controller.text),
+              child: const Text('Reply'),
+            ),
+          ],
+        );
+      },
     );
+
+    final text = (result ?? '').trim();
+    if (text.isEmpty) return;
+
+    await _sendReply(post: post, text: text);
   }
 
   void _handleShare(Post post) {
@@ -185,54 +296,229 @@ class _ThreadsTabState extends State<ThreadsTab> {
     });
   }
 
-  List<Post> _generateMockPosts() {
-    final random = Random();
-    final authors = [
-      PostAuthor(id: '1', displayName: 'Alex Johnson', username: 'alexj'),
-      PostAuthor(id: '2', displayName: 'Sarah Chen', username: 'sarahc'),
-      PostAuthor(id: '3', displayName: 'Mike Davis', username: 'miked'),
-      PostAuthor(id: '4', displayName: 'Emma Wilson', username: 'emmaw'),
-    ];
+  Future<void> _sendReply({required Post post, required String text}) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.user;
+    if (user == null) return;
 
-    final messages = [
-      'Just hit the slopes at Whistler! Fresh powder day ❄️🎿',
-      'Anyone know if Park City has good snow conditions this week?',
-      'New personal best on the black diamond run! 💪',
-      'Looking for ski buddies in the Tahoe area this weekend.',
-      'The views from the summit were incredible today 🏔️',
-      'Finally landed my first 360! Months of practice paid off 🎉',
-    ];
+    final tempReplyId = 'tmp_reply_${DateTime.now().millisecondsSinceEpoch}';
+    final localReply = Post(
+      id: tempReplyId,
+      author: PostAuthor(
+        id: user.id,
+        displayName: user.firstName != null && user.lastName != null
+            ? '${user.firstName} ${user.lastName}'
+            : user.email.split('@')[0],
+        username: user.email.split('@')[0],
+        avatarUrl: null,
+      ),
+      text: text,
+      createdAt: DateTime.now(),
+      timestampLabel: 'now',
+    );
 
-    return List.generate(6, (index) {
-      final author = authors[random.nextInt(authors.length)];
-      final hasReplies = random.nextBool();
-      final replies = hasReplies
-          ? List.generate(
-              random.nextInt(2) + 1,
-              (i) => Post(
-                id: '${index}_reply_$i',
-                author: authors[random.nextInt(authors.length)],
-                text: 'Awesome! Keep shredding! 🤙',
-                createdAt: DateTime.now().subtract(Duration(hours: i)),
-                timestampLabel: '${i + 1}h',
-              ),
-            )
-          : null;
-
-      return Post(
-        id: index.toString(),
-        author: author,
-        text: messages[index],
-        createdAt: DateTime.now().subtract(Duration(hours: index)),
-        timestampLabel: index == 0 ? 'now' : '${index}h',
-        likeCount: random.nextInt(50),
-        replyCount: replies?.length ?? 0,
-        repostCount: random.nextInt(20),
-        likedByCurrentUser: random.nextBool(),
-        repostedByCurrentUser: false,
-        replies: replies,
-      );
+    setState(() {
+      final index = _posts.indexWhere((p) => p.id == post.id);
+      if (index != -1) {
+        final current = _posts[index];
+        final replies = [...(current.replies ?? []), localReply];
+        _posts[index] = current.copyWith(
+          replies: replies,
+          replyCount: replies.length,
+        );
+        _filterPosts();
+      }
     });
+
+    try {
+      final response = await _apiService.createCommunityComment(
+        postId: post.id,
+        content: text,
+      );
+      final confirmedReply = _mapCommentToPost(response);
+      if (!mounted) return;
+
+      setState(() {
+        final index = _posts.indexWhere((p) => p.id == post.id);
+        if (index != -1) {
+          final current = _posts[index];
+          final nextReplies = (current.replies ?? [])
+              .map((reply) => reply.id == tempReplyId ? confirmedReply : reply)
+              .toList();
+          _posts[index] = current.copyWith(
+            replies: nextReplies,
+            replyCount: nextReplies.length,
+          );
+          _filterPosts();
+        }
+      });
+    } catch (_) {
+      await _outbox.enqueue(
+        CommunityOutboxOperation(
+          id: tempReplyId,
+          type: 'create_comment',
+          payload: {
+            'post_id': post.id,
+            'content': text,
+            'temp_id': tempReplyId,
+          },
+        ),
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Reply queued offline. Will retry automatically.'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _retryOutbox() async {
+    final operations = await _outbox.load();
+    if (operations.isEmpty) return;
+
+    final pending = <CommunityOutboxOperation>[];
+    for (final operation in operations) {
+      try {
+        if (operation.type == 'create_post') {
+          await _apiService.createCommunityPost(
+            subthreadId: (operation.payload['subthread_id'] ?? '').toString(),
+            title: (operation.payload['title'] ?? '').toString(),
+            content: (operation.payload['content'] ?? '').toString(),
+          );
+        } else if (operation.type == 'create_comment') {
+          await _apiService.createCommunityComment(
+            postId: (operation.payload['post_id'] ?? '').toString(),
+            content: (operation.payload['content'] ?? '').toString(),
+          );
+        }
+      } catch (_) {
+        pending.add(operation.copyWith(retryCount: operation.retryCount + 1));
+      }
+    }
+
+    await _outbox.replaceAll(pending);
+    if (mounted) {
+      await _loadFeed();
+    }
+  }
+
+  Post _mapBackendPost(
+    Map<String, dynamic> rawPost,
+    List<Map<String, dynamic>> rawComments,
+  ) {
+    final createdAt = DateTime.tryParse((rawPost['created_at'] ?? '').toString()) ??
+        DateTime.now();
+    final authorName = _authorDisplayName(
+      firstName: rawPost['author_first_name']?.toString(),
+      lastName: rawPost['author_last_name']?.toString(),
+      fallback: rawPost['author_email']?.toString() ?? rawPost['user_id']?.toString() ?? 'unknown',
+    );
+
+    final replies = _mapReplies(rawComments);
+
+    return Post(
+      id: (rawPost['post_id'] ?? rawPost['id'] ?? '').toString(),
+      author: PostAuthor(
+        id: (rawPost['user_id'] ?? '').toString(),
+        displayName: authorName,
+        username: _usernameFromEmailOrId(
+          rawPost['author_email']?.toString(),
+          rawPost['user_id']?.toString(),
+        ),
+      ),
+      text: (rawPost['content'] ?? rawPost['title'] ?? '').toString(),
+      createdAt: createdAt,
+      timestampLabel: _timestampLabel(createdAt),
+      likeCount: 0,
+      replyCount: replies.length,
+      repostCount: 0,
+      replies: replies,
+    );
+  }
+
+  List<Post> _mapReplies(List<Map<String, dynamic>> comments) {
+    if (comments.isEmpty) {
+      return const [];
+    }
+
+    final root = comments
+        .where((c) => (c['parent_id'] == null || c['parent_id'].toString().isEmpty))
+        .toList();
+
+    return root.map((comment) {
+      final rootId = (comment['id'] ?? '').toString();
+      final nested = comments
+          .where((c) => (c['parent_id'] ?? '').toString() == rootId)
+          .map(_mapCommentToPost)
+          .toList();
+
+      final mappedRoot = _mapCommentToPost(comment);
+      return mappedRoot.copyWith(
+        replies: nested,
+        replyCount: nested.length,
+      );
+    }).toList();
+  }
+
+  Post _mapCommentToPost(Map<String, dynamic> comment) {
+    final createdAt = DateTime.tryParse((comment['created_at'] ?? '').toString()) ??
+        DateTime.now();
+    final authorName = _authorDisplayName(
+      firstName: comment['author_first_name']?.toString(),
+      lastName: comment['author_last_name']?.toString(),
+      fallback: comment['author_email']?.toString() ?? comment['user_id']?.toString() ?? 'unknown',
+    );
+
+    return Post(
+      id: (comment['id'] ?? '').toString(),
+      author: PostAuthor(
+        id: (comment['user_id'] ?? '').toString(),
+        displayName: authorName,
+        username: _usernameFromEmailOrId(
+          comment['author_email']?.toString(),
+          comment['user_id']?.toString(),
+        ),
+      ),
+      text: (comment['content'] ?? '').toString(),
+      createdAt: createdAt,
+      timestampLabel: _timestampLabel(createdAt),
+    );
+  }
+
+  String _authorDisplayName({
+    String? firstName,
+    String? lastName,
+    required String fallback,
+  }) {
+    final first = (firstName ?? '').trim();
+    final last = (lastName ?? '').trim();
+    if (first.isNotEmpty || last.isNotEmpty) {
+      return '$first $last'.trim();
+    }
+    return _usernameFromEmailOrId(fallback, fallback);
+  }
+
+  String _usernameFromEmailOrId(String? email, String? fallbackId) {
+    final e = (email ?? '').trim();
+    if (e.contains('@')) {
+      return e.split('@').first;
+    }
+
+    final id = (fallbackId ?? '').trim();
+    if (id.isEmpty) {
+      return 'user';
+    }
+    return id.length > 12 ? id.substring(0, 12) : id;
+  }
+
+  String _timestampLabel(DateTime createdAt) {
+    final diff = DateTime.now().difference(createdAt);
+    if (diff.inMinutes < 1) return 'now';
+    if (diff.inHours < 1) return '${diff.inMinutes}m';
+    if (diff.inDays < 1) return '${diff.inHours}h';
+    return '${diff.inDays}d';
   }
 
   @override
@@ -327,7 +613,11 @@ class _ThreadsTabState extends State<ThreadsTab> {
         child: TextField(
           controller: _searchController,
           focusNode: _searchFocusNode,
-          onChanged: (_) => _filterPosts(),
+          onChanged: (_) {
+            setState(() {
+              _filterPosts();
+            });
+          },
           style: SyntrakTypography.bodyMedium.copyWith(
             color: SyntrakColors.textPrimary,
           ),
@@ -350,8 +640,10 @@ class _ThreadsTabState extends State<ThreadsTab> {
                       size: 20,
                     ),
                     onPressed: () {
-                      _searchController.clear();
-                      _filterPosts();
+                      setState(() {
+                        _searchController.clear();
+                        _filterPosts();
+                      });
                     },
                   )
                 : null,
