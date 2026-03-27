@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:syntrak/core/di/service_locator.dart';
 import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/services/api_service.dart';
@@ -47,7 +48,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final apiService = ApiService();
+      final apiService = sl<ApiService>();
 
       if (authProvider.session == null) {
         throw Exception('Not authenticated');
@@ -98,7 +99,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final apiService = ApiService();
+      final apiService = sl<ApiService>();
 
       if (authProvider.session == null) {
         throw Exception('Not authenticated');

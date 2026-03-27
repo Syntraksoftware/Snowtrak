@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:syntrak/core/logging/app_logger.dart';
 import 'package:syntrak/models/activity.dart';
 import 'package:syntrak/services/api_service.dart';
 import 'package:syntrak/helpers/mock_activities.dart';
@@ -49,12 +50,25 @@ class ActivityProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     } catch (e) {
-      // If API fails and we have no activities, load mock data for demonstration
-      if (_activities.isEmpty) {
+      _error = e.toString();
+      _isLoading = false;
+
+      if (_activities.isEmpty && _apiService.isDevEnvironment) {
+        AppLogger.instance.warning(
+          '[ActivityProvider] Activity API unavailable in dev, loading demo data',
+          error: e,
+          notifyUser: true,
+          userMessage: 'Activity service unavailable. Showing demo data.',
+        );
+        _error = 'Activity service unavailable. Showing demo data.';
         loadMockActivities();
       } else {
-        _error = e.toString();
-        _isLoading = false;
+        AppLogger.instance.error(
+          '[ActivityProvider] Failed to load activities',
+          error: e,
+          notifyUser: true,
+          userMessage: 'Unable to load activities. Please try again.',
+        );
         notifyListeners();
       }
     }
@@ -80,6 +94,12 @@ class ActivityProvider extends ChangeNotifier {
     } catch (e) {
       _error = e.toString();
       _isLoadingMore = false;
+      AppLogger.instance.warning(
+        '[ActivityProvider] Failed to load more activities',
+        error: e,
+        notifyUser: true,
+        userMessage: 'Unable to load more activities right now.',
+      );
       notifyListeners();
     }
   }
@@ -98,6 +118,12 @@ class ActivityProvider extends ChangeNotifier {
     } catch (e) {
       _error = e.toString();
       _isLoading = false;
+      AppLogger.instance.error(
+        '[ActivityProvider] Failed to create activity',
+        error: e,
+        notifyUser: true,
+        userMessage: 'Failed to create activity. Please try again.',
+      );
       notifyListeners();
       return null;
     }
@@ -116,6 +142,12 @@ class ActivityProvider extends ChangeNotifier {
     } catch (e) {
       _error = e.toString();
       _isLoading = false;
+      AppLogger.instance.error(
+        '[ActivityProvider] Failed to delete activity',
+        error: e,
+        notifyUser: true,
+        userMessage: 'Failed to delete activity. Please try again.',
+      );
       notifyListeners();
     }
   }
@@ -125,6 +157,10 @@ class ActivityProvider extends ChangeNotifier {
       return await _apiService.getActivity(id);
     } catch (e) {
       _error = e.toString();
+      AppLogger.instance.warning(
+        '[ActivityProvider] Failed to get activity details',
+        error: e,
+      );
       notifyListeners();
       return null;
     }

@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:syntrak/core/logging/app_logger.dart';
+import 'package:syntrak/features/notifications/data/notifications_repository.dart';
 import 'package:syntrak/models/notification.dart';
-import 'package:syntrak/services/apis/notifications_api.dart';
 
 /// Provider for managing notification state
 /// Handles the list of notifications, unread count, and notification operations
@@ -11,13 +12,13 @@ class NotificationProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   Timer? _pollingTimer;
-  final NotificationsApi _notificationsApi;
+  final NotificationsRepository _notificationsRepository;
 
   // Callback for showing banner notifications (set by the app)
   Function(AppNotification)? onNewNotification;
 
-  NotificationProvider({NotificationsApi? notificationsApi})
-      : _notificationsApi = notificationsApi ?? NotificationsApi();
+    NotificationProvider({required NotificationsRepository notificationsRepository})
+      : _notificationsRepository = notificationsRepository;
 
   // Getters
   List<AppNotification> get notifications => _notifications;
@@ -66,7 +67,7 @@ class NotificationProvider extends ChangeNotifier {
   /// Call this when the app starts or user logs in
   void startPolling({Duration interval = const Duration(seconds: 2)}) {
     stopPolling(); // Stop any existing timer
-    print('🔔 Starting notification polling (every ${interval.inSeconds}s)');
+    AppLogger.instance.debug('🔔 Starting notification polling (every ${interval.inSeconds}s)');
     _pollingTimer =
         Timer.periodic(interval, (_) => _fetchPendingNotifications());
   }
@@ -80,7 +81,7 @@ class NotificationProvider extends ChangeNotifier {
   /// Fetch pending notifications from backend
   Future<void> _fetchPendingNotifications() async {
     try {
-      final pending = await _notificationsApi.getPending();
+      final pending = await _notificationsRepository.getPending();
 
       if (pending.isNotEmpty) {
         for (final notification in pending) {
@@ -92,7 +93,7 @@ class NotificationProvider extends ChangeNotifier {
             onNewNotification!(notification);
           }
 
-          print('🔔 Received notification: ${notification.title}');
+          AppLogger.instance.debug('🔔 Received notification: ${notification.title}');
         }
 
         notifyListeners();
@@ -101,7 +102,7 @@ class NotificationProvider extends ChangeNotifier {
       // Silently fail - backend might not be running
       // Only log in debug mode
       if (kDebugMode) {
-        print('📡 Notification polling: ${e.toString().split('\n').first}');
+        AppLogger.instance.debug('📡 Notification polling: ${e.toString().split('\n').first}');
       }
     }
   }
@@ -115,7 +116,7 @@ class NotificationProvider extends ChangeNotifier {
     try {
       // Try to load from backend history first
       try {
-        final history = await _notificationsApi.getHistory();
+        final history = await _notificationsRepository.getHistory();
         if (history.isNotEmpty) {
           _notifications = history;
         }

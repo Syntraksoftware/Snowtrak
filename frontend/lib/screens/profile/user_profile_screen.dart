@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:syntrak/core/di/service_locator.dart';
 import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/models/post.dart';
 import 'package:syntrak/providers/auth_provider.dart';
@@ -75,7 +76,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final apiService = ApiService();
+      final apiService = sl<ApiService>();
       
       // Check session and refresh token if needed
       if (authProvider.session == null) {

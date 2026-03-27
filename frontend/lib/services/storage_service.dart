@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:syntrak/core/logging/app_logger.dart';
 
 class StorageService extends ChangeNotifier {
   static const String _tokenKey = 'auth_token';
@@ -16,7 +17,7 @@ class StorageService extends ChangeNotifier {
   bool get locationPermissionAsked => _locationPermissionAsked;
 
   Future<void> init() async {
-    print('🔍 [StorageService] Starting init');
+    AppLogger.instance.debug('🔍 [StorageService] Starting init');
     try {
       // When SharedPreferences.setMockInitialValues is called (in tests),
       // getInstance() returns immediately. We use a race between the actual
@@ -38,17 +39,17 @@ class StorageService extends ChangeNotifier {
       _token = prefs.getString(_tokenKey);
       _userId = prefs.getString(_userIdKey);
       _locationPermissionAsked = prefs.getBool(_locationPermissionAskedKey) ?? false;
-      print('🔍 [StorageService] Init complete. Token: ${_token != null ? "exists" : "null"}');
+      AppLogger.instance.debug('🔍 [StorageService] Init complete. Token: ${_token != null ? "exists" : "null"}');
       notifyListeners();
     } on TimeoutException {
       // Handle timeout - in production this shouldn't happen, in tests it means not mocked
-      print('🔍 [StorageService] Init error: Timeout');
+      AppLogger.instance.debug('🔍 [StorageService] Init error: Timeout');
       _token = null;
       _userId = null;
       _locationPermissionAsked = false;
       notifyListeners();
     } catch (e) {
-      print('🔍 [StorageService] Init error: $e');
+      AppLogger.instance.debug('🔍 [StorageService] Init error: $e');
       // If SharedPreferences fails, just continue with null values
       _token = null;
       _userId = null;

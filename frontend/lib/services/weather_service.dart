@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:syntrak/core/logging/app_logger.dart';
 import 'package:syntrak/models/weather.dart';
 
 class WeatherService {
@@ -30,11 +31,11 @@ class WeatherService {
         final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
         return WeatherData.fromJson(jsonData);
       } else {
-        print('Weather API error: ${response.statusCode}');
+        AppLogger.instance.debug('Weather API error: ${response.statusCode}');
         return null;
       }
     } catch (e) {
-      print('Error fetching weather: $e');
+      AppLogger.instance.debug('Error fetching weather: $e');
       return null;
     }
   }
