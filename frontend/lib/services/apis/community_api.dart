@@ -1,8 +1,7 @@
 import 'package:dio/dio.dart';
-import 'package:syntrak/services/service_registry.dart';
 
 class CommunityApi {
-  CommunityApi({Dio? dio}) : _dio = dio ?? ServiceRegistry.instance.community;
+  CommunityApi({required Dio dio}) : _dio = dio;
 
   final Dio _dio;
 

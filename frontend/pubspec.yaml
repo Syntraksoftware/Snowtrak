@@ -1,5 +1,5 @@
-name: syntrak
-description: A fitness tracking app similar to Strava
+name: snowtrak
+description: All in one ski tracking and social app
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -12,6 +12,7 @@ dependencies:
 
   # State Management
   provider: ^6.1.1
+  get_it: ^7.7.0
 
   # Networking
   http: ^1.1.0

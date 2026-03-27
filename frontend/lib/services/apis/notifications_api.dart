@@ -1,9 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:syntrak/models/notification.dart';
-import 'package:syntrak/services/service_registry.dart';
 
 class NotificationsApi {
-  NotificationsApi({Dio? dio}) : _dio = dio ?? ServiceRegistry.instance.main;
+  NotificationsApi({required Dio dio}) : _dio = dio;
 
   final Dio _dio;
 
