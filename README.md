@@ -1,4 +1,4 @@
-# Syntrak
+# Snowtrak
 
 > A skiing-focused fitness tracking and social community app built with Flutter, FastAPI, and Supabase.
 
@@ -97,12 +97,11 @@ Example: `python run.py --service main` (authentication only)
 ### Start Frontend (iOS Simulator)
 
 Prerequisites: Xcode installed with command-line tools (`xcode-select --install`)
-
-```bash
-# Start iOS Simulator (if not already running)
 open -a Simulator
 
 # Run the Flutter app
+
+```
 cd frontend
 flutter run
 ```
@@ -137,6 +136,7 @@ vercel
 ```
 
 Use the prompts:
+
 - Set up and deploy? `Y`
 - Scope: select your account/team
 - Link to existing project? `N` (first time)
@@ -151,6 +151,7 @@ vercel --prod
 ```
 
 Notes:
+
 - This deploy is intended for UI review; backend-dependent features may need API/base URL config before full functionality.
 - If routes return 404 on refresh, ensure deploy is from `frontend` so `frontend/vercel.json` is picked up.
 
