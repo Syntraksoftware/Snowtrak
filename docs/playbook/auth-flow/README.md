@@ -44,6 +44,7 @@ registeryfactory//: temporary object (DTO)
 - Registers `AuthApi` with the main Dio client (auth lives on main-backend).
 - Registers AuthRepository → ApiService (facade used by AuthProvider). 
 
+
 > App startup and wiring: 
 In `../config/app_config.dart`: 
 ```dart
@@ -196,26 +197,6 @@ Flutter's main application widget (`MaterialApp`) and its child widgets are trig
 - pOST /auth/refresh
 (paths are relatibe to the main DIO baseURl, which already includes /api/v1)
 
-> Issue tokens: 
-- `backend/main-backend/app/api/v1/auth.py`
-- `POST``
-## Runtime sequence
-
-1. App starts in `frontend/lib/main.dart` via `bootstrapAndRun`.
-2. `setupServiceLocatorWithEnvironment` registers AppConfig, token store, Dio clients, APIs, and repositories.
-3. `AuthProvider` is created in `main.dart` and `checkAuth` runs after storage init.
-4. `AuthProvider` restores session from storage and decides:
-   - validate access token with backend user endpoint if still valid
-   - refresh token if expired
-   - clear local session if invalid
-5. Login/Register actions call `ApiService` -> `AuthRepository` -> `AuthApi`.
-6. `AuthApi` sends requests to:
-   - `POST /auth/register`
-   - `POST /auth/login`
-   - `POST /auth/refresh`
-   under main base URL `/api/v1`.
-7. Backend `auth.py` normalizes email, validates credentials, reads/writes Supabase (or fallback store), and returns `AuthSession`.
-
 
 > Who issue tokens: 
 - `backend/main-backend/app/api/v1/auth.py`
@@ -304,6 +285,35 @@ Backend auth response model:
 - `expires_at`
 - `user`
 
+
+## Runtime sequence
+
+1. App starts in `frontend/lib/main.dart` via `bootstrapAndRun`.
+2. `setupServiceLocatorWithEnvironment` registers AppConfig, token store, Dio clients, APIs, and repositories.
+3. `AuthProvider` is created in `main.dart` and `checkAuth` runs after storage init.
+4. `AuthProvider` restores session from storage and decides:
+   - validate access token with backend user endpoint if still valid
+   - refresh token if expired
+   - clear local session if invalid
+5. Login/Register actions call `ApiService` -> `AuthRepository` -> `AuthApi`.
+- AuthApi: 
+  - Makes raw HTTP calls to auth endpoints (login, register, refresh).
+  - Maps Dart data to/from backend JSON.
+  
+- AuthRepository: 
+  - Middle layer between providers/services and AuthApi.
+  - Adds domain logic, validation, or result shaping.
+- ApiService: 
+  - Handles session, token storage, attaching tokens to requests.
+  - Orchestrates auth flow and may call AuthRepository for operations.
+
+6. `AuthApi` sends requests to:
+   - `POST /auth/register`
+   - `POST /auth/login`
+   - `POST /auth/refresh`
+   under main base URL `/api/v1`.
+7. Backend `auth.py` normalizes email, validates credentials, reads/writes Supabase (or fallback store), and returns `AuthSession`.
+
 ## Implementation details and caveats
 
 - `AuthProvider` stores full session JSON through `StorageService` token field.
@@ -322,5 +332,13 @@ Backend auth response model:
 
 - Domain owner: main-backend
 - Canonical base paths: `/api/v1/auth`, `/api/v1/users`, `/api/v1/notifications`
+
+
+API base URLs & env: appconfig 
+Bearer token on HTTP: DioFactory + AuthTokenStore 
+Login/register/refresh HTTP: AuthApi → AuthRepository → ApiService
+Session state and persistence: AuthProvider + StorageService 
+Token + user payload shape: authsession + backend authsession schema 
+issue/ verify tokens: main-backend, auth.py + JWT helpers 
 
 ## Standard curl commands
