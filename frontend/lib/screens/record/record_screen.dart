@@ -4,12 +4,15 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/core/activity_helpers.dart';
 import 'package:syntrak/models/activity.dart';
 import 'package:syntrak/providers/activity_provider.dart';
-import 'package:syntrak/services/location_service.dart';
-import 'package:syntrak/screens/record/activity_type_selector.dart';
 import 'package:syntrak/screens/activities/activity_detail_screen.dart';
+import 'package:syntrak/screens/record/activity_type_selector.dart';
+import 'package:syntrak/screens/record/record_bottom_sheet.dart';
+import 'package:syntrak/screens/record/record_error_view.dart';
+import 'package:syntrak/screens/record/record_helpers.dart';
+import 'package:syntrak/screens/record/record_map_view.dart';
+import 'package:syntrak/services/location_service.dart';
 import 'package:geolocator/geolocator.dart' hide ActivityType;
 
 class RecordScreen extends StatefulWidget {
@@ -22,6 +25,7 @@ class RecordScreen extends StatefulWidget {
 class _RecordScreenState extends State<RecordScreen> {
   final LocationService _locationService = LocationService();
   final Completer<GoogleMapController> _mapController = Completer();
+  bool _mapCompleterUsed = false;
   ActivityType? _selectedActivityType;
   bool _isRecording = false;
   bool _isPaused = false;
@@ -29,7 +33,7 @@ class _RecordScreenState extends State<RecordScreen> {
   Duration _elapsedTime = Duration.zero;
   Timer? _timer;
   StreamSubscription<Position>? _positionSubscription;
-  List<LatLng> _routePoints = [];
+  final List<LatLng> _routePoints = [];
   CameraPosition? _initialCameraPosition;
   bool _hasError = false;
   String? _errorMessage;
@@ -37,33 +41,25 @@ class _RecordScreenState extends State<RecordScreen> {
   @override
   void initState() {
     super.initState();
-    // Try to initialize location
     _initializeLocation().catchError((e) {
-      print('🔍 [RecordScreen] Error in initState: $e');
       if (mounted) {
         setState(() {
           _hasError = true;
-          _errorMessage = "Failed to initialize map. Please check your location permissions.";
+          _errorMessage =
+              'Failed to initialize map. Please check your location permissions.';
         });
       }
     });
   }
 
   Future<void> _initializeLocation() async {
-    print('🔍 [RecordScreen] Initializing location...');
     try {
-      // Check if we have permission (don't request again, just check)
-      print('🔍 [RecordScreen] Checking permissions...');
       final hasPermission = await _locationService.checkPermissions();
-      print('🔍 [RecordScreen] Permission check result: $hasPermission');
 
       if (!hasPermission && mounted) {
-        print(
-            '🔍 [RecordScreen] Permission not granted, using default location');
-        // If no permission, use a default location (San Francisco as fallback)
         setState(() {
           _initialCameraPosition = const CameraPosition(
-            target: LatLng(37.7749, -122.4194), // Default location
+            target: LatLng(37.7749, -122.4194),
             zoom: 15,
           );
           _hasError = false;
@@ -71,15 +67,9 @@ class _RecordScreenState extends State<RecordScreen> {
         return;
       }
 
-      print('🔍 [RecordScreen] Permission granted, proceeding to get location');
-
-      // Try to get current position (timeout handled in LocationService)
-      print('🔍 [RecordScreen] Getting current position...');
       final position = await _locationService.getCurrentPosition();
 
       if (position != null && mounted) {
-        print(
-            '🔍 [RecordScreen] Position obtained: ${position.latitude}, ${position.longitude}');
         setState(() {
           _initialCameraPosition = CameraPosition(
             target: LatLng(position.latitude, position.longitude),
@@ -88,8 +78,6 @@ class _RecordScreenState extends State<RecordScreen> {
           _hasError = false;
         });
       } else if (mounted) {
-        print('🔍 [RecordScreen] Position is null, using default location');
-        // Fallback to default location if position is null
         setState(() {
           _initialCameraPosition = const CameraPosition(
             target: LatLng(37.7749, -122.4194),
@@ -99,16 +87,13 @@ class _RecordScreenState extends State<RecordScreen> {
         });
       }
     } catch (e) {
-      print('🔍 [RecordScreen] Error getting location: $e');
-      // If anything fails, show error screen
       if (mounted) {
         setState(() {
           _hasError = true;
-          _errorMessage = "The page is not ready!";
+          _errorMessage = 'The page is not ready!';
         });
       }
     }
-    print('🔍 [RecordScreen] Location initialization complete');
   }
 
   @override
@@ -125,6 +110,7 @@ class _RecordScreenState extends State<RecordScreen> {
       MaterialPageRoute(builder: (_) => const ActivityTypeSelector()),
     );
 
+    if (!mounted) return;
     if (type != null) {
       setState(() {
         _selectedActivityType = type;
@@ -138,12 +124,10 @@ class _RecordScreenState extends State<RecordScreen> {
       if (_selectedActivityType == null) return;
     }
 
-    // Check if we have permission
     final hasPermission = await _locationService.checkPermissions();
     if (!hasPermission) {
       if (mounted) {
-        // Show dialog explaining why we need GPS
-        final shouldRequest = await showDialog<bool>(
+        await showDialog<void>(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('GPS Required'),
@@ -152,13 +136,13 @@ class _RecordScreenState extends State<RecordScreen> {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context, false),
+                onPressed: () => Navigator.pop(context),
                 child: const Text('Cancel'),
               ),
               ElevatedButton(
                 onPressed: () async {
                   await openAppSettings();
-                  Navigator.pop(context, false);
+                  if (context.mounted) Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF4500),
@@ -169,19 +153,8 @@ class _RecordScreenState extends State<RecordScreen> {
             ],
           ),
         );
-
-        if (shouldRequest == true && mounted) {
-          // Try to request permission again
-          final granted = await _locationService.requestPermissions();
-          if (!granted) {
-            return;
-          }
-        } else {
-          return;
-        }
-      } else {
-        return;
       }
+      return;
     }
 
     setState(() {
@@ -194,7 +167,6 @@ class _RecordScreenState extends State<RecordScreen> {
 
     _locationService.startTracking();
 
-    // Start timer
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!_isPaused) {
         setState(() {
@@ -203,7 +175,6 @@ class _RecordScreenState extends State<RecordScreen> {
       }
     });
 
-    // Start location tracking
     _positionSubscription = _locationService.getPositionStream().listen(
       (position) {
         if (!_isPaused) {
@@ -212,11 +183,11 @@ class _RecordScreenState extends State<RecordScreen> {
             _routePoints.add(LatLng(position.latitude, position.longitude));
           });
 
-          // Update map camera
           _mapController.future.then((controller) {
             controller.animateCamera(
               CameraUpdate.newLatLng(
-                  LatLng(position.latitude, position.longitude)),
+                LatLng(position.latitude, position.longitude),
+              ),
             );
           });
         }
@@ -254,7 +225,6 @@ class _RecordScreenState extends State<RecordScreen> {
       return;
     }
 
-    // Show confirmation dialog
     final shouldSave = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -303,16 +273,13 @@ class _RecordScreenState extends State<RecordScreen> {
       elevationGain: _locationService.calculateElevationGain(),
       startTime: startTime,
       endTime: endTime,
-      averagePace: 0, // Will be calculated by backend
-      maxPace: 0, // Will be calculated by backend
+      averagePace: 0,
+      maxPace: 0,
       isPublic: true,
       createdAt: DateTime.now(),
       locations: locations,
     );
 
-    // NOTE: Activity saving requires backend API to be running
-    // The ActivityProvider.createActivity() calls the backend API
-    // If backend is not available, this will fail silently or show error
     final activityProvider =
         Provider.of<ActivityProvider>(context, listen: false);
     final savedActivity = await activityProvider.createActivity(activity);
@@ -333,7 +300,6 @@ class _RecordScreenState extends State<RecordScreen> {
       );
     }
 
-    // Reset state
     setState(() {
       _isRecording = false;
       _isPaused = false;
@@ -344,47 +310,34 @@ class _RecordScreenState extends State<RecordScreen> {
     _locationService.clearLocations();
   }
 
-  String _formatDuration(Duration duration) {
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    final seconds = duration.inSeconds.remainder(60);
-
-    if (hours > 0) {
-      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-    }
-    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  void _retryAfterError() {
+    setState(() {
+      _hasError = false;
+      _initialCameraPosition = null;
+      _errorMessage = null;
+    });
+    _initializeLocation();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Show error screen by default to prevent crashes
     if (_hasError) {
-      return _buildErrorScreen();
+      return RecordErrorView(
+        message: _errorMessage ?? 'The page is not ready!',
+        onRetry: _retryAfterError,
+      );
     }
 
-    // Wrap entire build in error handling to prevent crashes
     try {
-      // If still loading location, show loading but with timeout fallback
       if (_initialCameraPosition == null) {
-        // Set a default after a short delay if location doesn't load
         Future.delayed(const Duration(seconds: 3), () {
           if (mounted && _initialCameraPosition == null) {
-            try {
-              setState(() {
-                _initialCameraPosition = const CameraPosition(
-                  target: LatLng(37.7749, -122.4194),
-                  zoom: 15,
-                );
-              });
-            } catch (e) {
-              print('🔍 [RecordScreen] Error setting default location: $e');
-              if (mounted) {
-                setState(() {
-                  _hasError = true;
-                  _errorMessage = "The page is not ready!";
-                });
-              }
-            }
+            setState(() {
+              _initialCameraPosition = const CameraPosition(
+                target: LatLng(37.7749, -122.4194),
+                zoom: 15,
+              );
+            });
           }
         });
         return const Scaffold(
@@ -404,10 +357,16 @@ class _RecordScreenState extends State<RecordScreen> {
       return Scaffold(
         body: Stack(
           children: [
-            // Map with error handling
-            _buildMapWidget(),
-
-            // Top overlay
+            RecordMapView(
+              initialCameraPosition: _initialCameraPosition!,
+              routePoints: _routePoints,
+              onMapCreated: (controller) {
+                if (!_mapCompleterUsed) {
+                  _mapCompleterUsed = true;
+                  _mapController.complete(controller);
+                }
+              },
+            ),
             SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -428,10 +387,11 @@ class _RecordScreenState extends State<RecordScreen> {
                         ),
                         decoration: BoxDecoration(
                           color: SyntrakColors.textPrimary.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(SyntrakRadius.round),
+                          borderRadius:
+                              BorderRadius.circular(SyntrakRadius.round),
                         ),
                         child: Text(
-                          _formatDuration(_elapsedTime),
+                          formatRecordDuration(_elapsedTime),
                           style: SyntrakTypography.metricLarge.copyWith(
                             color: SyntrakColors.textOnPrimary,
                           ),
@@ -441,12 +401,12 @@ class _RecordScreenState extends State<RecordScreen> {
                       const SizedBox(width: 48),
                     if (_isRecording)
                       IconButton(
-                      icon: Icon(
-                        _isPaused ? Icons.play_arrow : Icons.pause,
-                        color: SyntrakColors.textPrimary,
-                      ),
-                      onPressed:
-                          _isPaused ? _resumeRecording : _pauseRecording,
+                        icon: Icon(
+                          _isPaused ? Icons.play_arrow : Icons.pause,
+                          color: SyntrakColors.textPrimary,
+                        ),
+                        onPressed:
+                            _isPaused ? _resumeRecording : _pauseRecording,
                       )
                     else
                       const SizedBox(width: 48),
@@ -454,248 +414,30 @@ class _RecordScreenState extends State<RecordScreen> {
                 ),
               ),
             ),
-
-            // Bottom overlay
             Positioned(
               bottom: 0,
               left: 0,
               right: 0,
-              child: Container(
-                padding: const EdgeInsets.all(SyntrakSpacing.lg),
-                decoration: BoxDecoration(
-                  color: SyntrakColors.surface,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(SyntrakRadius.xl),
-                    topRight: Radius.circular(SyntrakRadius.xl),
-                  ),
-                  boxShadow: SyntrakElevation.lg,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (!_isRecording)
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: _selectedActivityType == null
-                              ? _selectActivityType
-                              : _startRecording,
-                          icon: _selectedActivityType == null
-                              ? const Icon(Icons.add)
-                              : Icon(ActivityHelpers.getActivityIcon(_selectedActivityType!)),
-                          label: Text(
-                            _selectedActivityType == null
-                                ? 'Select Activity Type'
-                                : 'Start Recording',
-                            style: SyntrakTypography.labelLarge,
-                          ),
-                        ),
-                      )
-                    else
-                      Column(
-                        children: [
-                          // Skiing-specific metrics
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              _buildMetric(
-                                'Vertical',
-                                '${_locationService.calculateElevationGain().toStringAsFixed(0)} m',
-                              ),
-                              _buildMetric(
-                                'Distance',
-                                '${(_locationService.calculateDistance() / 1000).toStringAsFixed(2)} km',
-                              ),
-                              _buildMetric(
-                                'Speed',
-                                _calculateCurrentSpeed(),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: SyntrakSpacing.md),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: _stopRecording,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: SyntrakColors.error,
-                                foregroundColor: SyntrakColors.textOnPrimary,
-                              ),
-                              child: Text(
-                                'Stop Recording',
-                                style: SyntrakTypography.labelLarge,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
+              child: RecordBottomSheet(
+                isRecording: _isRecording,
+                selectedActivityType: _selectedActivityType,
+                locationService: _locationService,
+                routePoints: _routePoints,
+                onSelectType: _selectActivityType,
+                onStart: _startRecording,
+                onStop: _stopRecording,
               ),
             ),
           ],
         ),
       );
     } catch (e, stackTrace) {
-      print('🔍 [RecordScreen] Error in build: $e');
-      print('🔍 [RecordScreen] Stack trace: $stackTrace');
-      // Show "page not ready" message instead of crashing
-      return _buildErrorScreen();
-    }
-  }
-
-  String _calculateCurrentSpeed() {
-    if (_routePoints.length < 2) return '-- km/h';
-    // Calculate speed from last two points
-    final lastPoint = _routePoints.last;
-    final secondLastPoint = _routePoints[_routePoints.length - 2];
-    final distance = Geolocator.distanceBetween(
-      secondLastPoint.latitude,
-      secondLastPoint.longitude,
-      lastPoint.latitude,
-      lastPoint.longitude,
-    );
-    // Assuming 1 second between points
-    final speedMs = distance / 1.0;
-    final speedKmh = speedMs * 3.6;
-    return '${speedKmh.toStringAsFixed(1)} km/h';
-  }
-
-  Widget _buildMetric(String label, String value) {
-    return Expanded(
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: SyntrakTypography.metricMedium.copyWith(
-              color: SyntrakColors.textPrimary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: SyntrakSpacing.xs),
-          Text(
-            label,
-            style: SyntrakTypography.labelSmall.copyWith(
-              color: SyntrakColors.textTertiary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMapWidget() {
-    try {
-      // API keys are configured in native files (AndroidManifest.xml and AppDelegate.swift)
-      // The Google Maps SDK will handle validation and show errors if keys are invalid
-      return GoogleMap(
-        initialCameraPosition: _initialCameraPosition!,
-        mapType: MapType.normal,
-        myLocationEnabled: true,
-        myLocationButtonEnabled: false,
-        zoomControlsEnabled: false,
-        onMapCreated: (controller) {
-          _mapController.complete(controller);
-          print('✅ [RecordScreen] Map created successfully');
-          // Try to get map style info to verify it's working
-          controller.getVisibleRegion().then((bounds) {
-            print('✅ [RecordScreen] Map bounds: ${bounds.northeast}, ${bounds.southwest}');
-          }).catchError((e) {
-            print('⚠️ [RecordScreen] Error getting map bounds: $e');
-          });
-        },
-        onCameraMoveStarted: () {
-          print('🔍 [RecordScreen] Camera move started');
-        },
-        onCameraIdle: () {
-          print('🔍 [RecordScreen] Camera idle');
-        },
-        polylines: _routePoints.length > 1
-            ? {
-                Polyline(
-                  polylineId: const PolylineId('route'),
-                  points: _routePoints,
-                  color: const Color(0xFFFF4500),
-                  width: 4,
-                ),
-              }
-            : {},
+      debugPrint('RecordScreen build: $e\n$stackTrace');
+      return RecordErrorView(
+        message: _errorMessage ?? 'The page is not ready!',
+        onRetry: _retryAfterError,
       );
-    } catch (e, stackTrace) {
-      print('🔍 [RecordScreen] Error building map: $e');
-      print('🔍 [RecordScreen] Stack trace: $stackTrace');
-      // Fallback: Show a placeholder instead of crashing
-      return _buildErrorScreen();
     }
   }
 
-  Widget _buildErrorScreen() {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Record Activity'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.map_outlined,
-                size: 80,
-                color: Colors.grey[400],
-              ),
-              const SizedBox(height: 24),
-              Text(
-                _errorMessage ?? 'The page is not ready!',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 32.0),
-                child: Text(
-                  'Map functionality is coming soon. You can still record activities without the map.',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: () {
-                  // Retry by resetting state
-                  setState(() {
-                    _hasError = false;
-                    _initialCameraPosition = null;
-                    _errorMessage = null;
-                  });
-                  _initializeLocation();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF4500),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
