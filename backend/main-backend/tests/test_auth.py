@@ -5,6 +5,12 @@ import pytest
 from fastapi import status
 
 
+def _error_message(response):
+    """Return error text from either legacy or standardized error envelope."""
+    payload = response.json()
+    return str(payload.get("detail") or payload.get("message") or payload)
+
+
 class TestRegisterEndpoint:
     """Test user registration endpoint."""
     
@@ -38,7 +44,7 @@ class TestRegisterEndpoint:
         )
         
         assert response.status_code == status.HTTP_409_CONFLICT
-        assert "already exists" in response.json()["detail"].lower()
+        assert "already exists" in _error_message(response).lower()
     
     def test_register_missing_fields(self, client, clean_storage):
         """Test registration with missing required fields."""
@@ -84,7 +90,7 @@ class TestLoginEndpoint:
         )
         
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-        assert "invalid" in response.json()["detail"].lower()
+        assert "invalid" in _error_message(response).lower()
     
     def test_login_invalid_password(self, client, clean_storage, test_user):
         """Test login with incorrect password."""
@@ -94,7 +100,7 @@ class TestLoginEndpoint:
         )
         
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-        assert "invalid" in response.json()["detail"].lower()
+        assert "invalid" in _error_message(response).lower()
     
     def test_login_missing_fields(self, client, clean_storage):
         """Test login with missing fields."""
