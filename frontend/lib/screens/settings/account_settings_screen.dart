@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:syntrak/providers/auth_provider.dart';
+import 'package:syntrak/screens/settings/widgets/settings_account_widgets.dart';
+import 'package:syntrak/screens/settings/widgets/settings_ios_widgets.dart';
 
 class AccountSettingsScreen extends StatefulWidget {
   const AccountSettingsScreen({super.key});
@@ -40,16 +42,17 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           const SizedBox(height: 24),
 
           // Contact Information
-          _buildSectionHeader('CONTACT INFORMATION'),
-          _SettingsGroup(
+          SettingsIosSectionHeader('CONTACT INFORMATION'),
+          SettingsIosGroup(
+            dividerLeadingPadding: 16,
             children: [
-              _SettingsDetailRow(
+              SettingsAccountDetailRow(
                 label: 'Email',
                 value: email,
                 trailing: _buildVerifiedBadge(),
                 onTap: () => _showChangeEmailDialog(),
               ),
-              _SettingsDetailRow(
+              SettingsAccountDetailRow(
                 label: 'Phone',
                 value: 'Not set',
                 onTap: () => _showAddPhoneDialog(),
@@ -60,14 +63,15 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           const SizedBox(height: 24),
 
           // Security
-          _buildSectionHeader('SECURITY'),
-          _SettingsGroup(
+          SettingsIosSectionHeader('SECURITY'),
+          SettingsIosGroup(
+            dividerLeadingPadding: 16,
             children: [
-              _SettingsNavigationRow(
+              SettingsAccountNavigationRow(
                 label: 'Change Password',
                 onTap: () => _showChangePasswordDialog(),
               ),
-              _SettingsToggleRow(
+              SettingsAccountToggleRow(
                 label: 'Two-Factor Authentication',
                 value: _twoFactorEnabled,
                 onChanged: (value) {
@@ -84,16 +88,17 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           const SizedBox(height: 24),
 
           // Connected Accounts
-          _buildSectionHeader('CONNECTED ACCOUNTS'),
-          _SettingsGroup(
+          SettingsIosSectionHeader('CONNECTED ACCOUNTS'),
+          SettingsIosGroup(
+            dividerLeadingPadding: 16,
             children: [
-              _SettingsConnectedRow(
+              SettingsAccountConnectedRow(
                 label: 'Google',
                 icon: Icons.g_mobiledata,
                 isConnected: false,
                 onTap: () => _showToast('Google connection coming soon'),
               ),
-              _SettingsConnectedRow(
+              SettingsAccountConnectedRow(
                 label: 'Apple',
                 icon: Icons.apple,
                 isConnected: false,
@@ -108,10 +113,11 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           const SizedBox(height: 24),
 
           // Sessions
-          _buildSectionHeader('SESSIONS'),
-          _SettingsGroup(
+          SettingsIosSectionHeader('SESSIONS'),
+          SettingsIosGroup(
+            dividerLeadingPadding: 16,
             children: [
-              _SettingsNavigationRow(
+              SettingsAccountNavigationRow(
                 label: 'Active Sessions',
                 value: '1 device',
                 onTap: () => _showToast('Active sessions coming soon'),
@@ -121,9 +127,10 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
 
           const SizedBox(height: 16),
 
-          _SettingsGroup(
+          SettingsIosGroup(
+            dividerLeadingPadding: 16,
             children: [
-              _SettingsActionRow(
+              SettingsIosActionRow(
                 label: 'Sign Out of All Devices',
                 textColor: const Color(0xFF007AFF),
                 onTap: () => _showLogoutAllConfirmation(),
@@ -150,21 +157,6 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           fontSize: 12,
           fontWeight: FontWeight.w500,
           color: Color(0xFF34C759),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 32, bottom: 6),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w400,
-          color: Colors.grey[600],
-          letterSpacing: -0.1,
         ),
       ),
     );
@@ -351,274 +343,6 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   void _showToast(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
-    );
-  }
-}
-
-// Reusable widgets
-class _SettingsGroup extends StatelessWidget {
-  final List<Widget> children;
-
-  const _SettingsGroup({required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          for (int i = 0; i < children.length; i++) ...[
-            children[i],
-            if (i < children.length - 1)
-              Padding(
-                padding: const EdgeInsets.only(left: 16),
-                child: Divider(
-                  height: 0.5,
-                  thickness: 0.5,
-                  color: Colors.grey[300],
-                ),
-              ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _SettingsDetailRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final Widget? trailing;
-  final VoidCallback? onTap;
-
-  const _SettingsDetailRow({
-    required this.label,
-    required this.value,
-    this.trailing,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: TextStyle(fontSize: 13, color: Colors.grey[500]),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      value,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (trailing != null) trailing!,
-              if (onTap != null) ...[
-                const SizedBox(width: 8),
-                Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SettingsNavigationRow extends StatelessWidget {
-  final String label;
-  final String? value;
-  final VoidCallback onTap;
-
-  const _SettingsNavigationRow({
-    required this.label,
-    this.value,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.black,
-                ),
-              ),
-              const Spacer(),
-              if (value != null)
-                Text(
-                  value!,
-                  style: TextStyle(fontSize: 17, color: Colors.grey[500]),
-                ),
-              const SizedBox(width: 4),
-              Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SettingsToggleRow extends StatelessWidget {
-  final String label;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  const _SettingsToggleRow({
-    required this.label,
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w400,
-              color: Colors.black,
-            ),
-          ),
-          const Spacer(),
-          CupertinoSwitch(
-            value: value,
-            onChanged: onChanged,
-            activeColor: const Color(0xFF34C759),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SettingsConnectedRow extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isConnected;
-  final VoidCallback onTap;
-
-  const _SettingsConnectedRow({
-    required this.label,
-    required this.icon,
-    required this.isConnected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Icon(icon, size: 24, color: Colors.grey[700]),
-              const SizedBox(width: 12),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.black,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: isConnected
-                      ? Colors.grey[200]
-                      : const Color(0xFF007AFF),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  isConnected ? 'Connected' : 'Connect',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: isConnected ? Colors.grey[600] : Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SettingsActionRow extends StatelessWidget {
-  final String label;
-  final Color textColor;
-  final VoidCallback onTap;
-
-  const _SettingsActionRow({
-    required this.label,
-    required this.textColor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w400,
-                color: textColor,
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
