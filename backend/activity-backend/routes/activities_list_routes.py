@@ -25,7 +25,7 @@ def _convert_activity_records_to_frontend_items(activity_records):
     ]
 
 
-@router.get("", response_model=ListResponse)
+@router.get("/", response_model=ListResponse)
 async def list_activities(
     request: Request,
     limit: int = Query(20, ge=1, le=100),

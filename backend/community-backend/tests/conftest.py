@@ -4,8 +4,8 @@ from fastapi.testclient import TestClient
 import main as community_main
 from middleware.auth import get_current_user, get_optional_user
 from routes import subthreads as subthreads_routes
-from routes import posts as posts_routes
 from routes import comments as comments_routes
+from routes import posts_read_routes, posts_write_routes
 
 
 class StubCommunityClient:
@@ -168,7 +168,8 @@ def stub_client():
 def app(monkeypatch, stub_client):
     monkeypatch.setattr(community_main, "initialize_community_client", lambda: stub_client)
     monkeypatch.setattr(subthreads_routes, "get_community_client", lambda: stub_client)
-    monkeypatch.setattr(posts_routes, "get_community_client", lambda: stub_client)
+    monkeypatch.setattr(posts_read_routes, "get_community_client", lambda: stub_client)
+    monkeypatch.setattr(posts_write_routes, "get_community_client", lambda: stub_client)
     monkeypatch.setattr(comments_routes, "get_community_client", lambda: stub_client)
 
     community_main.app.dependency_overrides[get_current_user] = lambda: "user-1"

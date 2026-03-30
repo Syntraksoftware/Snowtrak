@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 
 import main as activity_main
 from middleware.auth import get_current_user, get_optional_user
-from routes import activities as activities_routes
+from routes import activities_list_routes, activities_management_routes, activities_social_routes
 
 
 class StubActivityClient:
@@ -118,7 +118,9 @@ def stub_client():
 @pytest.fixture
 def app(monkeypatch, stub_client):
     monkeypatch.setattr(activity_main, "initialize_activity_client", lambda: stub_client)
-    monkeypatch.setattr(activities_routes, "get_activity_client", lambda: stub_client)
+    monkeypatch.setattr(activities_management_routes, "get_activity_client", lambda: stub_client)
+    monkeypatch.setattr(activities_list_routes, "get_activity_client", lambda: stub_client)
+    monkeypatch.setattr(activities_social_routes, "get_activity_client", lambda: stub_client)
 
     activity_main.app.dependency_overrides[get_current_user] = lambda: "user-1"
     activity_main.app.dependency_overrides[get_optional_user] = lambda: "user-1"

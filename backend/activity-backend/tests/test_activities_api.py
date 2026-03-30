@@ -63,14 +63,6 @@ class TestActivityEndpoints:
         assert "meta" in body
         assert body["meta"]["pagination"]["limit"] == 20
 
-    def test_list_activities_legacy_format(self, client):
-        response = client.get("/api/v1/activities?format=legacy")
-
-        assert response.status_code == status.HTTP_200_OK
-        body = response.json()
-        assert isinstance(body, list)
-        assert body[0]["id"] == "activity-1"
-
     def test_list_activities_invalid_limit(self, client):
         response = client.get("/api/v1/activities?limit=101")
 

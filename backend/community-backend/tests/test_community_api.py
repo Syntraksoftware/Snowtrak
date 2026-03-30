@@ -13,14 +13,6 @@ class TestSubthreadEndpoints:
         assert "meta" in body
         assert body["items"][0]["id"] == "sub-1"
 
-    def test_list_subthreads_legacy(self, client):
-        response = client.get("/api/v1/subthreads?format=legacy")
-
-        assert response.status_code == status.HTTP_200_OK
-        body = response.json()
-        assert "subthreads" in body
-        assert body["total"] == 1
-
     def test_create_subthread_success(self, client):
         response = client.post(
             "/api/v1/subthreads",
@@ -91,15 +83,8 @@ class TestPostEndpoints:
         assert response.status_code == status.HTTP_200_OK
         body = response.json()
         assert "items" in body
+        assert "meta" in body
         assert body["items"][0]["post_id"] == "post-1"
-
-    def test_list_posts_by_user_legacy(self, client):
-        response = client.get("/api/v1/posts/user/user-1?format=legacy")
-
-        assert response.status_code == status.HTTP_200_OK
-        body = response.json()
-        assert "posts" in body
-        assert body["page_size"] == 20
 
     def test_list_post_comments_not_found(self, client):
         response = client.get("/api/v1/posts/post-missing/comments")

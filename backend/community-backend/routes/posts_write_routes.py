@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("", response_model=CommunityPostResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=CommunityPostResponse, status_code=status.HTTP_201_CREATED)
 async def create_post(
     data: PostCreate,
     user_id: str = Depends(get_current_user),
