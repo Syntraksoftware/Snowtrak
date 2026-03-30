@@ -1,6 +1,6 @@
 """Subthread routes."""
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
-from typing import Optional, List, Union
+from typing import Optional, List
 from pydantic import BaseModel
 import logging
 import sys
@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from middleware.auth import get_current_user, get_optional_user
 from services.supabase_client import get_community_client
-from shared import ListResponse, ListMeta, PaginationMeta, ResponseMeta, get_request_id
+from shared import ListResponse, ListMeta, PaginationMeta, get_request_id
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -32,59 +32,37 @@ class SubthreadResponse(BaseModel):
     created_at: str
 
 
-class SubthreadsListResponse(BaseModel):
-    """Schema for subthreads list response."""
-    subthreads: List[SubthreadResponse]
-    total: int
-
-
-@router.get("", response_model=Union[ListResponse, SubthreadsListResponse])
+@router.get("", response_model=ListResponse)
 async def list_subthreads(
     request: Request,
     limit: int = Query(50, ge=1, le=200),
-    format: Optional[str] = Query(None, description="Response format: 'standard' for {items, meta} or 'legacy' for {subthreads, total}")
 ):
-    """
-    List all subthreads.
-    
-    Supports both new standardized format and legacy response format.
-    Default is new standardized format for new clients.
-    """
+    """List all subthreads."""
     try:
         client = get_community_client()
-        subthreads = client.list_subthreads(limit=limit)
-        
-        # Convert dicts to Pydantic models
-        subthread_models = [SubthreadResponse(**sub) for sub in subthreads]
-        
-        # Support legacy format for backward compatibility
-        if format == "legacy":
-            return SubthreadsListResponse(
-                subthreads=subthread_models,
-                total=len(subthread_models)
-            )
-        
-        # Return standardized list response
+        subthread_records = client.list_subthreads(limit=limit)
+        subthread_models = [SubthreadResponse(**subthread_record) for subthread_record in subthread_records]
+
         request_id = get_request_id(request)
-        total = len(subthread_models)
-        pagination_meta = PaginationMeta(
+        total_records = len(subthread_models)
+        pagination_metadata = PaginationMeta(
             limit=limit,
             offset=0,
-            total=total,
+            total=total_records,
             next_cursor=None,
             has_next=False,
         )
-        response_meta = ListMeta(
+        response_metadata = ListMeta(
             request_id=request_id,
-            pagination=pagination_meta,
+            pagination=pagination_metadata,
         )
-        
-        return ListResponse(items=subthread_models, meta=response_meta)
-    except Exception as e:
-        logger.error(f"Error listing subthreads: {str(e)}")
+
+        return ListResponse(items=subthread_models, meta=response_metadata)
+    except Exception as exception:
+        logger.error(f"Error listing subthreads: {str(exception)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
+            detail=str(exception)
         )
 
 
@@ -155,28 +133,14 @@ class PostResponse(BaseModel):
     author_last_name: Optional[str] = None
 
 
-class PostsListResponse(BaseModel):
-    """Schema for posts list response."""
-    posts: List[PostResponse]
-    total: int
-    page: int
-    page_size: int
-
-
-@router.get("/{subthread_id}/posts", response_model=Union[ListResponse, PostsListResponse])
+@router.get("/{subthread_id}/posts", response_model=ListResponse)
 async def list_subthread_posts(
     request: Request,
     subthread_id: str,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    format: Optional[str] = Query(None, description="Response format: 'standard' for {items, meta} or 'legacy' for {posts, total, page, page_size}")
 ):
-    """
-    List posts in a subthread.
-    
-    Supports both new standardized format and legacy response format.
-    Default is new standardized format for new clients.
-    """
+    """List posts in a subthread."""
     try:
         client = get_community_client()
         
@@ -188,40 +152,28 @@ async def list_subthread_posts(
                 detail="Subthread not found"
             )
         
-        posts = client.list_posts_by_subthread(
+        post_records = client.list_posts_by_subthread(
             subthread_id=subthread_id,
             limit=limit,
             offset=offset
         )
-        total = client.count_posts_by_subthread(subthread_id)
-        
-        # Convert dicts to Pydantic models
-        post_models = [PostResponse(**post) for post in posts]
-        
-        # Support legacy format for backward compatibility
-        if format == "legacy":
-            return PostsListResponse(
-                posts=post_models,
-                total=total,
-                page=offset // limit + 1,
-                page_size=limit
-            )
-        
-        # Return standardized list response
+        total_records = client.count_posts_by_subthread(subthread_id)
+        post_models = [PostResponse(**post_record) for post_record in post_records]
+
         request_id = get_request_id(request)
-        pagination_meta = PaginationMeta(
+        pagination_metadata = PaginationMeta(
             limit=limit,
             offset=offset,
-            total=total,
+            total=total_records,
             next_cursor=None,
-            has_next=offset + limit < total,
+            has_next=offset + limit < total_records,
         )
-        response_meta = ListMeta(
+        response_metadata = ListMeta(
             request_id=request_id,
-            pagination=pagination_meta,
+            pagination=pagination_metadata,
         )
-        
-        return ListResponse(items=post_models, meta=response_meta)
+
+        return ListResponse(items=post_models, meta=response_metadata)
     except HTTPException:
         raise
     except Exception:
