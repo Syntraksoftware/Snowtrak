@@ -1,4 +1,7 @@
-"""Shared request and response models for community routes."""
+"""
+Shared request and response models for community routes.
+used for organizing and standardizing the data structures across different route modules, 
+"""
 from typing import List, Optional
 
 from pydantic import BaseModel
