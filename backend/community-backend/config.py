@@ -1,63 +1,37 @@
-"""
-Configuration for Community Backend FastAPI app.
-"""
-import os
-from dotenv import load_dotenv
+"""Configuration for Community Backend FastAPI app."""
 
-load_dotenv()
+from functools import lru_cache
+from typing import List
 
-def _require_env(name: str) -> str:  
-    value = os.getenv(name)  
-    if not value:  
-        raise ValueError(f"Required environment variable {name} is not set")  
-    return value
+from pydantic import computed_field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-class Config:
-    """Base configuration."""
-    
-    # Supabase
-    SUPABASE_URL = _require_env("SUPABASE_URL")  
-    SUPABASE_SERVICE_ROLE_KEY = _require_env("SUPABASE_SERVICE_ROLE_KEY")
-    
-    # JWT
-    JWT_SECRET = _require_env("JWT_SECRET")
-    JWT_ALGORITHM = "HS256"
-    
-    # FastAPI
-    FASTAPI_ENV = os.getenv("FASTAPI_ENV", "development")
-    DEBUG = FASTAPI_ENV == "development"
-    PORT = int(os.getenv("PORT", 5001))
-    HOST = os.getenv("HOST", "0.0.0.0")
 
-    # CORS
-    CORS_ORIGINS = [
-        "http://localhost:3000",  # Flutter web dev
-        "http://localhost:8080",  # FastAPI backend
-        "http://localhost:5173",  # Vite dev server
+class Config(BaseSettings):
+    """Typed settings loaded from environment variables."""
+
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    SUPABASE_URL: str
+    SUPABASE_SERVICE_ROLE_KEY: str
+    JWT_SECRET: str
+    JWT_ALGORITHM: str = "HS256"
+    FASTAPI_ENV: str = "development"
+    PORT: int = 5001
+    HOST: str = "0.0.0.0"
+    CORS_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://localhost:8080",
+        "http://localhost:5173",
     ]
 
-
-class DevelopmentConfig(Config):
-    """Development configuration."""
-    DEBUG = True
-    FASTAPI_ENV = "development"
-
-
-class ProductionConfig(Config):
-    """Production configuration."""
-    DEBUG = False
-    FASTAPI_ENV = "production"
+    @computed_field
+    @property
+    def DEBUG(self) -> bool:
+        return self.FASTAPI_ENV == "development"
 
 
-# Config dictionary
-config = {
-    "development": DevelopmentConfig,
-    "production": ProductionConfig,
-    "default": DevelopmentConfig,
-}
-
-
-def get_config():
-    """Get configuration based on environment."""
-    env = os.getenv("FASTAPI_ENV", Config.FASTAPI_ENV)
-    return config.get(env, config["default"])
+@lru_cache(maxsize=1)
+def get_config() -> Config:
+    """Get cached config instance."""
+    return Config()

@@ -4,3 +4,5 @@ supabase>=2.4.0
 postgrest>=0.16.4
 python-dotenv>=1.0.0
 pyjwt>=2.8.0
+pydantic>=2.11.7
+pydantic-settings>=2.7.1
