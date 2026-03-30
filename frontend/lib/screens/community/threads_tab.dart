@@ -326,7 +326,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
       final index = _posts.indexWhere((p) => p.id == post.id);
       if (index != -1) {
         final current = _posts[index];
-        final replies = [...(current.replies ?? []), localReply];
+        final replies = <Post>[...(current.replies ?? []), localReply];
         _posts[index] = current.copyWith(
           replies: replies,
           replyCount: replies.length,
@@ -349,7 +349,8 @@ class _ThreadsTabState extends State<ThreadsTab> {
           final current = _posts[index];
           final nextReplies = (current.replies ?? [])
               .map((reply) => reply.id == tempReplyId ? confirmedReply : reply)
-              .toList();
+              .toList()
+              .cast<Post>();
           _posts[index] = current.copyWith(
             replies: nextReplies,
             replyCount: nextReplies.length,
