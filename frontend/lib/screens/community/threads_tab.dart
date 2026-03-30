@@ -3,9 +3,12 @@ import 'package:provider/provider.dart';
 import 'package:syntrak/core/di/service_locator.dart';
 import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/features/community/data/community_outbox_service.dart';
-import 'package:syntrak/services/api_service.dart';
+import 'package:syntrak/services/community_service.dart';
 import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/models/post.dart';
+import 'package:syntrak/screens/community/community_post_mapper.dart';
+import 'package:syntrak/screens/community/widgets/thread_reply_dialog.dart';
+import 'package:syntrak/screens/community/widgets/threads_search_bar.dart';
 import 'package:syntrak/widgets/compact_composer.dart';
 import 'package:syntrak/widgets/message_card.dart';
 
@@ -23,7 +26,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   final CommunityOutboxService _outbox = CommunityOutboxService();
-  final ApiService _apiService = sl<ApiService>();
+  final CommunityService _communityService = sl<CommunityService>();
 
   final List<Post> _posts = [];
   List<Post> _filteredPosts = [];
@@ -79,7 +82,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
     });
 
     try {
-      final subthreads = await _apiService.getCommunitySubthreads(limit: 50);
+      final subthreads = await _communityService.getSubthreads(limit: 50);
       if (subthreads.isEmpty) {
         if (mounted) {
           setState(() {
@@ -101,17 +104,17 @@ class _ThreadsTabState extends State<ThreadsTab> {
         return;
       }
 
-      final postsData = await _apiService.getCommunityPostsBySubthread(
+      final postsData = await _communityService.getPostsBySubthread(
         _activeSubthreadId!,
         limit: _defaultPageSize,
       );
 
       final mapped = <Post>[];
       for (final rawPost in postsData) {
-        final comments = await _apiService.getCommunityCommentsByPost(
+        final comments = await _communityService.getCommentsByPost(
           (rawPost['post_id'] ?? '').toString(),
         );
-        mapped.add(_mapBackendPost(rawPost, comments));
+        mapped.add(CommunityPostMapper.mapBackendPost(rawPost, comments));
       }
 
       if (mounted) {
@@ -176,13 +179,13 @@ class _ThreadsTabState extends State<ThreadsTab> {
     });
 
     try {
-      final response = await _apiService.createCommunityPost(
+      final response = await _communityService.createPost(
         subthreadId: _activeSubthreadId!,
         title: text.length > 48 ? '${text.substring(0, 48)}...' : text,
         content: text,
       );
 
-      final confirmed = _mapBackendPost(response, const []);
+      final confirmed = CommunityPostMapper.mapBackendPost(response, const []);
       if (!mounted) return;
 
       setState(() {
@@ -253,36 +256,8 @@ class _ThreadsTabState extends State<ThreadsTab> {
   }
 
   Future<void> _handleReply(Post post) async {
-    final controller = TextEditingController();
-    final result = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Reply'),
-          content: TextField(
-            controller: controller,
-            maxLines: 4,
-            decoration: const InputDecoration(
-              hintText: 'Write your reply...',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(dialogContext).pop(controller.text),
-              child: const Text('Reply'),
-            ),
-          ],
-        );
-      },
-    );
-
-    final text = (result ?? '').trim();
-    if (text.isEmpty) return;
-
+    final text = await showThreadReplyDialog(context);
+    if (text == null) return;
     await _sendReply(post: post, text: text);
   }
 
@@ -336,11 +311,11 @@ class _ThreadsTabState extends State<ThreadsTab> {
     });
 
     try {
-      final response = await _apiService.createCommunityComment(
+      final response = await _communityService.createComment(
         postId: post.id,
         content: text,
       );
-      final confirmedReply = _mapCommentToPost(response);
+      final confirmedReply = CommunityPostMapper.mapCommentToPost(response);
       if (!mounted) return;
 
       setState(() {
@@ -388,18 +363,18 @@ class _ThreadsTabState extends State<ThreadsTab> {
     for (final operation in operations) {
       try {
         if (operation.type == 'create_post') {
-          await _apiService.createCommunityPost(
+          await _communityService.createPost(
             subthreadId: (operation.payload['subthread_id'] ?? '').toString(),
             title: (operation.payload['title'] ?? '').toString(),
             content: (operation.payload['content'] ?? '').toString(),
           );
         } else if (operation.type == 'create_comment') {
-          await _apiService.createCommunityComment(
+          await _communityService.createComment(
             postId: (operation.payload['post_id'] ?? '').toString(),
             content: (operation.payload['content'] ?? '').toString(),
           );
         } else if (operation.type == 'vote_post') {
-          await _apiService.voteCommunityPost(
+          await _communityService.votePost(
             postId: (operation.payload['post_id'] ?? '').toString(),
             voteType: (operation.payload['vote_type'] as num?)?.toInt() ?? 0,
           );
@@ -415,129 +390,12 @@ class _ThreadsTabState extends State<ThreadsTab> {
     }
   }
 
-  Post _mapBackendPost(
-    Map<String, dynamic> rawPost,
-    List<Map<String, dynamic>> rawComments,
-  ) {
-    final createdAt = DateTime.tryParse((rawPost['created_at'] ?? '').toString()) ??
-        DateTime.now();
-    final authorName = _authorDisplayName(
-      firstName: rawPost['author_first_name']?.toString(),
-      lastName: rawPost['author_last_name']?.toString(),
-      fallback: rawPost['author_email']?.toString() ?? rawPost['user_id']?.toString() ?? 'unknown',
-    );
-
-    final replies = _mapReplies(rawComments);
-
-    return Post(
-      id: (rawPost['post_id'] ?? rawPost['id'] ?? '').toString(),
-      author: PostAuthor(
-        id: (rawPost['user_id'] ?? '').toString(),
-        displayName: authorName,
-        username: _usernameFromEmailOrId(
-          rawPost['author_email']?.toString(),
-          rawPost['user_id']?.toString(),
-        ),
-      ),
-      text: (rawPost['content'] ?? rawPost['title'] ?? '').toString(),
-      createdAt: createdAt,
-      timestampLabel: _timestampLabel(createdAt),
-      likeCount: 0,
-      replyCount: replies.length,
-      repostCount: 0,
-      replies: replies,
-    );
-  }
-
-  List<Post> _mapReplies(List<Map<String, dynamic>> comments) {
-    if (comments.isEmpty) {
-      return const [];
-    }
-
-    final root = comments
-        .where((c) => (c['parent_id'] == null || c['parent_id'].toString().isEmpty))
-        .toList();
-
-    return root.map((comment) {
-      final rootId = (comment['id'] ?? '').toString();
-      final nested = comments
-          .where((c) => (c['parent_id'] ?? '').toString() == rootId)
-          .map(_mapCommentToPost)
-          .toList();
-
-      final mappedRoot = _mapCommentToPost(comment);
-      return mappedRoot.copyWith(
-        replies: nested,
-        replyCount: nested.length,
-      );
-    }).toList();
-  }
-
-  Post _mapCommentToPost(Map<String, dynamic> comment) {
-    final createdAt = DateTime.tryParse((comment['created_at'] ?? '').toString()) ??
-        DateTime.now();
-    final authorName = _authorDisplayName(
-      firstName: comment['author_first_name']?.toString(),
-      lastName: comment['author_last_name']?.toString(),
-      fallback: comment['author_email']?.toString() ?? comment['user_id']?.toString() ?? 'unknown',
-    );
-
-    return Post(
-      id: (comment['id'] ?? '').toString(),
-      author: PostAuthor(
-        id: (comment['user_id'] ?? '').toString(),
-        displayName: authorName,
-        username: _usernameFromEmailOrId(
-          comment['author_email']?.toString(),
-          comment['user_id']?.toString(),
-        ),
-      ),
-      text: (comment['content'] ?? '').toString(),
-      createdAt: createdAt,
-      timestampLabel: _timestampLabel(createdAt),
-    );
-  }
-
-  String _authorDisplayName({
-    String? firstName,
-    String? lastName,
-    required String fallback,
-  }) {
-    final first = (firstName ?? '').trim();
-    final last = (lastName ?? '').trim();
-    if (first.isNotEmpty || last.isNotEmpty) {
-      return '$first $last'.trim();
-    }
-    return _usernameFromEmailOrId(fallback, fallback);
-  }
-
-  String _usernameFromEmailOrId(String? email, String? fallbackId) {
-    final e = (email ?? '').trim();
-    if (e.contains('@')) {
-      return e.split('@').first;
-    }
-
-    final id = (fallbackId ?? '').trim();
-    if (id.isEmpty) {
-      return 'user';
-    }
-    return id.length > 12 ? id.substring(0, 12) : id;
-  }
-
-  String _timestampLabel(DateTime createdAt) {
-    final diff = DateTime.now().difference(createdAt);
-    if (diff.inMinutes < 1) return 'now';
-    if (diff.inHours < 1) return '${diff.inMinutes}m';
-    if (diff.inDays < 1) return '${diff.inHours}h';
-    return '${diff.inDays}d';
-  }
-
   Future<void> _syncPostVote({
     required String postId,
     required int voteType,
   }) async {
     try {
-      await _apiService.voteCommunityPost(postId: postId, voteType: voteType);
+      await _communityService.votePost(postId: postId, voteType: voteType);
     } catch (_) {
       await _outbox.enqueue(
         CommunityOutboxOperation(
@@ -582,7 +440,22 @@ class _ThreadsTabState extends State<ThreadsTab> {
             elevation: innerBoxIsScrolled ? 2 : 0,
             shadowColor: Colors.black26,
             toolbarHeight: 72,
-            flexibleSpace: _buildSearchBar(),
+            flexibleSpace: ThreadsSearchBar(
+              controller: _searchController,
+              focusNode: _searchFocusNode,
+              isSearchFocused: _isSearchFocused,
+              onQueryChanged: (_) {
+                setState(() {
+                  _filterPosts();
+                });
+              },
+              onClear: () {
+                setState(() {
+                  _searchController.clear();
+                  _filterPosts();
+                });
+              },
+            ),
           ),
         ];
       },
@@ -610,86 +483,6 @@ class _ThreadsTabState extends State<ThreadsTab> {
               onShare: _handleShare,
             );
           },
-        ),
-      ),
-    );
-  }
-
-  // Fixed search bar at top
-  Widget _buildSearchBar() {
-    return Container(
-      color: SyntrakColors.surface,
-      padding: const EdgeInsets.fromLTRB(
-        SyntrakSpacing.md,
-        SyntrakSpacing.md,
-        SyntrakSpacing.md,
-        SyntrakSpacing.sm,
-      ),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        decoration: BoxDecoration(
-          color: _isSearchFocused
-              ? SyntrakColors.surface
-              : SyntrakColors.surfaceVariant,
-          borderRadius: BorderRadius.circular(SyntrakRadius.round),
-          border: Border.all(
-            color:
-                _isSearchFocused ? SyntrakColors.primary : Colors.transparent,
-            width: 2,
-          ),
-          boxShadow: _isSearchFocused
-              ? [
-                  BoxShadow(
-                    color: SyntrakColors.primary.withAlpha(30),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: TextField(
-          controller: _searchController,
-          focusNode: _searchFocusNode,
-          onChanged: (_) {
-            setState(() {
-              _filterPosts();
-            });
-          },
-          style: SyntrakTypography.bodyMedium.copyWith(
-            color: SyntrakColors.textPrimary,
-          ),
-          decoration: InputDecoration(
-            hintText: 'Search posts, users...',
-            hintStyle: SyntrakTypography.bodyMedium.copyWith(
-              color: SyntrakColors.textTertiary,
-            ),
-            prefixIcon: Icon(
-              Icons.search,
-              color: _isSearchFocused
-                  ? SyntrakColors.primary
-                  : SyntrakColors.textTertiary,
-            ),
-            suffixIcon: _searchController.text.isNotEmpty
-                ? IconButton(
-                    icon: Icon(
-                      Icons.close,
-                      color: SyntrakColors.textSecondary,
-                      size: 20,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _searchController.clear();
-                        _filterPosts();
-                      });
-                    },
-                  )
-                : null,
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: SyntrakSpacing.md,
-              vertical: 14,
-            ),
-          ),
         ),
       ),
     );
