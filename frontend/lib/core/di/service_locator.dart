@@ -16,7 +16,6 @@ import 'package:syntrak/features/profile/data/profile_repository.dart';
 import 'package:syntrak/providers/activity_provider.dart';
 import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/services/activities_service.dart';
-import 'package:syntrak/services/api_service.dart';
 import 'package:syntrak/services/auth_service.dart';
 import 'package:syntrak/services/community_service.dart';
 import 'package:syntrak/services/profile_service.dart';
@@ -123,15 +122,6 @@ Future<void> setupServiceLocatorWithEnvironment({
     () => ActivitiesContextRepository(
       weatherService: sl<WeatherService>(),
       locationService: sl<LocationService>(),
-    ),
-  );
-
-  sl.registerLazySingleton<ApiService>(
-    () => ApiService(
-      authService: sl<AuthService>(),
-      profileService: sl<ProfileService>(),
-      activitiesService: sl<ActivitiesService>(),
-      communityService: sl<CommunityService>(),
     ),
   );
 
