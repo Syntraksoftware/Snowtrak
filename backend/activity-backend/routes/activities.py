@@ -1,5 +1,5 @@
 """Activity routes for skiing activity records (minimal FastAPI implementation)."""
-from typing import Optional, List, Dict, Any, Union
+from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 import logging
 from datetime import datetime
@@ -12,13 +12,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from middleware.auth import get_current_user, get_optional_user
 from services.supabase_client import get_activity_client
-from shared import ListResponse, ListMeta, PaginationMeta, ResponseMeta, get_request_id
+from shared import ListResponse, ListMeta, PaginationMeta, get_request_id
 from shared.query_migration import check_deprecated_params, FILTER_MAPPING
 from models import (
-    ActivityCreate,
-    ActivityUpdate,
-    ActivityResponse,
-    ActivitiesListResponse,
     CommentCreate,
     CommentResponse,
     CommentsListResponse,
@@ -33,6 +29,32 @@ from models import (
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/activities", tags=["activities"])
+
+
+def _build_activity_list_response(
+    request: Request,
+    frontend_items: List[FrontendActivityResponse],
+    limit: int,
+    offset: int,
+    total: int,
+    deprecated_parameters: Optional[List[str]] = None,
+    deprecation_information: Optional[str] = None,
+) -> ListResponse:
+    request_id = get_request_id(request)
+    pagination_metadata = PaginationMeta(
+        limit=limit,
+        offset=offset,
+        total=total,
+        next_cursor=None,
+        has_next=offset + limit < total,
+    )
+    response_metadata = ListMeta(
+        request_id=request_id,
+        pagination=pagination_metadata,
+        deprecated_params=deprecated_parameters if deprecated_parameters else None,
+        deprecation_info=deprecation_information,
+    )
+    return ListResponse(items=frontend_items, meta=response_metadata)
 
 
 # -----------------------
@@ -191,53 +213,42 @@ async def create_activity(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
 
 
-@router.get("", response_model=Union[ListResponse, List[FrontendActivityResponse]])
+@router.get("", response_model=ListResponse)
 async def list_activities(
     request: Request,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    format: Optional[str] = Query(None, description="Response format: 'standard' for {items, meta} or 'legacy' for raw list")
 ):
-    """
-    List activities (public feed) formatted for frontend.
-    
-    Supports both new standardized format and legacy raw list format.
-    Default is new standardized format for new clients.
-    """
+    """List activities (public feed) formatted for frontend."""
     client = get_activity_client()
     try:
-        resp = client.list_activities(limit=limit, offset=offset)
-        items = resp["items"] if isinstance(resp, dict) else resp
-        total = resp.get("total", len(items))
-        
-        # Convert to frontend format
-        frontend_items = [FrontendActivityResponse(**_activity_to_frontend(item)) for item in items]
-        
-        # Default to new format unless explicitly requesting legacy
-        if format == "legacy":
-            return frontend_items
-        
-        # Return standardized list response
-        request_id = get_request_id(request)
-        pagination_meta = PaginationMeta(
+        activity_list_response = client.list_activities(limit=limit, offset=offset)
+        if not isinstance(activity_list_response, dict):
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Activity list response was not in expected format",
+            )
+
+        activity_items = activity_list_response.get("items", [])
+        total_items = activity_list_response.get("total", len(activity_items))
+        frontend_items = [
+            FrontendActivityResponse(**_activity_to_frontend(activity_item))
+            for activity_item in activity_items
+        ]
+
+        return _build_activity_list_response(
+            request=request,
+            frontend_items=frontend_items,
             limit=limit,
             offset=offset,
-            total=total,
-            next_cursor=None,  # Placeholder for cursor-based pagination
-            has_next=offset + limit < total,
+            total=total_items,
         )
-        response_meta = ListMeta(
-            request_id=request_id,
-            pagination=pagination_meta,
-        )
-        
-        return ListResponse(items=frontend_items, meta=response_meta)
     except Exception as exc:
         logger.error(f"Error listing activities: {exc}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve activities")
 
 
-@router.get("/me", response_model=Union[ListResponse, List[FrontendActivityResponse]])
+@router.get("/me", response_model=ListResponse)
 async def list_my_activities(
     request: Request,
     search: Optional[str] = None,
@@ -246,27 +257,14 @@ async def list_my_activities(
     end_date: Optional[str] = None,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    format: Optional[str] = Query(None, description="Response format: 'standard' for {items, meta} or 'legacy' for raw list"),
     user_id: str = Depends(get_current_user),
 ):
-    """
-    List current user's activities with optional filters.
-    
-    Supports both new standardized format and legacy raw list format.
-    Default is new standardized format for new clients.
-    
-    Filter Parameters:
-    - search: Full-text search on activity name
-    - activity_type: Filter by activity type (e.g., 'skiing', 'snowboarding')
-    - start_date: ISO 8601 date to filter activities from this date onwards
-    - end_date: ISO 8601 date to filter activities until this date
-    """
+    """List current user's activities with optional filters."""
     client = get_activity_client()
     try:
-        # Soft-accept: check if deprecated parameters are being used
         deprecated_params = check_deprecated_params(request.query_params, FILTER_MAPPING)
-        
-        resp = client.list_user_activities(
+
+        user_activity_list_response = client.list_user_activities(
             user_id=user_id,
             limit=limit,
             offset=offset,
@@ -275,33 +273,36 @@ async def list_my_activities(
             start_date=start_date,
             end_date=end_date,
         )
-        items = resp["items"] if isinstance(resp, dict) else resp
-        total = resp.get("total", len(items))
-        
-        # Convert to frontend format
-        frontend_items = [FrontendActivityResponse(**_activity_to_frontend(item)) for item in items]
-        
-        # Default to new format unless explicitly requesting legacy
-        if format == "legacy":
-            return frontend_items
-        
-        # Return standardized list response
-        request_id = get_request_id(request)
-        pagination_meta = PaginationMeta(
+
+        if not isinstance(user_activity_list_response, dict):
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="User activity list response was not in expected format",
+            )
+
+        user_activity_items = user_activity_list_response.get("items", [])
+        total_items = user_activity_list_response.get("total", len(user_activity_items))
+        frontend_items = [
+            FrontendActivityResponse(**_activity_to_frontend(activity_item))
+            for activity_item in user_activity_items
+        ]
+
+        deprecation_information = None
+        if deprecated_params:
+            deprecation_information = (
+                "Parameters like 'q' (search), 'from' (start_date), and 'to' "
+                "(end_date) are deprecated. Use canonical names instead."
+            )
+
+        return _build_activity_list_response(
+            request=request,
+            frontend_items=frontend_items,
             limit=limit,
             offset=offset,
-            total=total,
-            next_cursor=None,  # Placeholder for cursor-based pagination
-            has_next=offset + limit < total,
+            total=total_items,
+            deprecated_parameters=deprecated_params,
+            deprecation_information=deprecation_information,
         )
-        response_meta = ListMeta(
-            request_id=request_id,
-            pagination=pagination_meta,
-            deprecated_params=deprecated_params if deprecated_params else None,
-            deprecation_info="Parameters like 'q' (search), 'from' (start_date), 'to' (end_date) are deprecated. Use canonical names instead." if deprecated_params else None,
-        )
-        
-        return ListResponse(items=frontend_items, meta=response_meta)
     except Exception as exc:
         logger.error(f"Error listing user activities: {exc}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve user activities")
