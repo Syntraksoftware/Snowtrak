@@ -11,9 +11,11 @@ import 'package:syntrak/core/network/dio_factory.dart';
 import 'package:syntrak/features/activities/data/activities_context_repository.dart';
 import 'package:syntrak/features/activities/data/activities_repository.dart';
 import 'package:syntrak/features/auth/data/auth_repository.dart';
+import 'package:syntrak/features/auth/data/auth_session_store.dart';
 import 'package:syntrak/features/community/data/community_repository.dart';
 import 'package:syntrak/features/notifications/data/notifications_repository.dart';
 import 'package:syntrak/features/profile/data/profile_repository.dart';
+import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/services/api_service.dart';
 import 'package:syntrak/services/apis/activities_api.dart';
 import 'package:syntrak/services/apis/auth_api.dart';
@@ -111,6 +113,14 @@ Future<void> setupServiceLocatorWithEnvironment({
       communityRepository: sl<CommunityRepository>(),
       tokenStore: sl<AuthTokenStore>(),
       appConfig: sl<AppConfig>(),
+    ),
+  );
+
+  sl.registerFactoryParam<AuthProvider, AuthSessionStore, void>(
+    (sessionStore, _) => AuthProvider(
+      sl<ApiService>(),
+      null,
+      sessionStore,
     ),
   );
 }

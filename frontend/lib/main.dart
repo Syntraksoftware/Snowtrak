@@ -6,6 +6,7 @@ import 'package:syntrak/core/di/service_locator.dart';
 import 'package:syntrak/core/logging/app_logger.dart';
 import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/features/activities/data/activities_context_repository.dart';
+import 'package:syntrak/features/auth/data/auth_session_store.dart';
 import 'package:syntrak/models/notification.dart'; // notification model
 import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/providers/activity_provider.dart';
@@ -68,65 +69,29 @@ class _SyntrakAppState extends State<SyntrakApp> {
         ChangeNotifierProvider(create: (_) {
           // storage service: local storage and data persistency
           final storage = StorageService();
-          // Initialize storage and wait for it
-          storage.init().then((_) {
-            // Storage initialized
-          });
           return storage;
         }),
+        Provider<AuthSessionStore>(
+          create: (context) => AuthSessionStore(
+            context.read<StorageService>(),
+          ),
+        ),
 
-        ChangeNotifierProxyProvider<StorageService, AuthProvider>(
+        ChangeNotifierProxyProvider<AuthSessionStore, AuthProvider>(
           create: (context) {
             AppLogger.instance.debug('[Main] Creating AuthProvider');
-            // wait for storage to be initialized before creating AuthProvider
-
-            final storage = Provider.of<StorageService>(context, listen: false);
-            // listen false: do not rebuild when storage chanegs, handle manually with update methods
-
-            // activity provider: depend on the auth provider for user token and session manager
-            final apiService = sl<ApiService>();
-            final auth = AuthProvider(apiService, storage);
-
-            // Initialize storage first, then check auth
-            AppLogger.instance.debug(
-              '[Main] Initializing storage and checking auth...',
-            );
-            storage.init().then((_) {
-              AppLogger.instance.debug(
-                '[Main] Storage initialized, calling checkAuth',
-              );
-              // Storage is ready, now check auth
-              auth.checkAuth();
-            }).catchError((error) {
-              AppLogger.instance.warning(
-                '[Main] Storage init error, calling checkAuth anyway',
-                error: error,
-              );
-              // If storage init fails, still check auth
-              auth.checkAuth();
-            });
+            final sessionStore = context.read<AuthSessionStore>();
+            final auth = sl<AuthProvider>(param1: sessionStore);
+            auth.checkAuth();
             return auth;
           },
-          update: (_, storage, previous) {
+          update: (_, sessionStore, previous) {
             if (previous == null) {
               AppLogger.instance.debug(
                 '[Main] Updating AuthProvider (previous was null)',
               );
-              final apiService = sl<ApiService>();
-              final auth = AuthProvider(apiService, storage);
-              // Initialize storage first, then check auth
-              storage.init().then((_) {
-                AppLogger.instance.debug(
-                  '[Main] Storage initialized in update, calling checkAuth',
-                );
-                auth.checkAuth();
-              }).catchError((error) {
-                AppLogger.instance.warning(
-                  '[Main] Storage init error in update',
-                  error: error,
-                );
-                auth.checkAuth();
-              });
+              final auth = sl<AuthProvider>(param1: sessionStore);
+              auth.checkAuth();
               return auth;
             }
             return previous;

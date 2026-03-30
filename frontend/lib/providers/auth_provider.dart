@@ -1,6 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:syntrak/core/logging/app_logger.dart';
+import 'package:syntrak/features/auth/data/auth_session_store.dart';
 import 'package:syntrak/models/user.dart';
 import 'package:syntrak/models/auth_session.dart';
 import 'package:syntrak/services/api_service.dart';
@@ -8,13 +8,18 @@ import 'package:syntrak/services/storage_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final ApiService _apiService;
-  final StorageService? _storageService;
+  final AuthSessionStore? _sessionStore;
   AuthSession? _session;
   bool _isAuthenticated = false;
   bool _isLoading = true;
   String? _error;
 
-  AuthProvider(this._apiService, [this._storageService]);
+  AuthProvider(
+    this._apiService, [
+    StorageService? storageService,
+    AuthSessionStore? sessionStore,
+  ]) : _sessionStore = sessionStore ??
+            (storageService != null ? AuthSessionStore(storageService) : null);
 
   // Public method to check auth (called after storage is initialized)
   Future<void> checkAuth() => _checkAuth();
@@ -32,19 +37,21 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       AppLogger.instance.debug('🔍 [AuthProvider] isLoading set to true');
 
-      if (_storageService != null) {
+      if (_sessionStore != null) {
         AppLogger.instance.debug('🔍 [AuthProvider] Initializing storage...');
-        await _storageService!.init();
+        await _sessionStore!.initialize();
         AppLogger.instance.debug(
-            '🔍 [AuthProvider] Storage initialized. Token: ${_storageService!.token}');
+            '🔍 [AuthProvider] Storage initialized. Token: ${_sessionStore!.rawSession}');
       } else {
-        AppLogger.instance.debug('🔍 [AuthProvider] No storage service available');
+        AppLogger.instance
+            .debug('🔍 [AuthProvider] No storage service available');
       }
 
       // Try to restore session from storage
-      final restoredSession = await _restoreSession();
+      final restoredSession = await _sessionStore?.restore();
       if (restoredSession != null) {
-        AppLogger.instance.debug('🔍 [AuthProvider] Session restored from storage');
+        AppLogger.instance
+            .debug('🔍 [AuthProvider] Session restored from storage');
 
         // Check if token is expired
         if (restoredSession.isExpired) {
@@ -52,18 +59,20 @@ class AuthProvider extends ChangeNotifier {
               '🔍 [AuthProvider] Access token expired, attempting refresh...');
           try {
             _session = await _refreshSession(restoredSession);
-            await _saveSession(_session!);
+            await _sessionStore?.save(_session!);
             _apiService.setToken(_session!.accessToken);
             _isAuthenticated = true;
-            AppLogger.instance.debug('🔍 [AuthProvider] Session refreshed successfully');
+            AppLogger.instance
+                .debug('🔍 [AuthProvider] Session refreshed successfully');
           } catch (error) {
-            AppLogger.instance.debug('🔍 [AuthProvider] Token refresh failed: $error');
-            await _clearSession();
+            AppLogger.instance
+                .debug('🔍 [AuthProvider] Token refresh failed: $error');
+            await _sessionStore?.clear();
             _isAuthenticated = false;
           }
         } else {
           AppLogger.instance.debug(
-            '🔍 [AuthProvider] Token still valid, validating with backend...');
+              '🔍 [AuthProvider] Token still valid, validating with backend...');
           _apiService.setToken(restoredSession.accessToken);
           try {
             // Validate token with backend
@@ -77,15 +86,18 @@ class AuthProvider extends ChangeNotifier {
               user: user,
             );
             _isAuthenticated = true;
-            AppLogger.instance.debug('🔍 [AuthProvider] User authenticated: ${user.email}');
+            AppLogger.instance
+                .debug('🔍 [AuthProvider] User authenticated: ${user.email}');
           } catch (e) {
-            AppLogger.instance.debug('🔍 [AuthProvider] Token validation failed: $e');
-            await _clearSession();
+            AppLogger.instance
+                .debug('🔍 [AuthProvider] Token validation failed: $e');
+            await _sessionStore?.clear();
             _isAuthenticated = false;
           }
         }
       } else {
-        AppLogger.instance.debug('🔍 [AuthProvider] No session found, showing login');
+        AppLogger.instance
+            .debug('🔍 [AuthProvider] No session found, showing login');
         _isAuthenticated = false;
       }
     } catch (e) {
@@ -113,13 +125,14 @@ class AuthProvider extends ChangeNotifier {
 
       // Parse session from response
       _session = AuthSession.fromJson(response);
-      AppLogger.instance.debug('🔍 [AuthProvider] Session parsed, user: ${_session!.user.email}');
+      AppLogger.instance.debug(
+          '🔍 [AuthProvider] Session parsed, user: ${_session!.user.email}');
       _apiService.setToken(_session!.accessToken);
       _isAuthenticated = true;
       _error = null;
 
       // Save session to storage
-      await _saveSession(_session!);
+      await _sessionStore?.save(_session!);
       AppLogger.instance.debug(
           '🔍 [AuthProvider] Session saved, isAuthenticated: $_isAuthenticated');
 
@@ -135,7 +148,8 @@ class AuthProvider extends ChangeNotifier {
         notifyListeners();
       });
 
-      AppLogger.instance.debug('🔍 [AuthProvider] notifyListeners() called, returning true');
+      AppLogger.instance
+          .debug('🔍 [AuthProvider] notifyListeners() called, returning true');
       return true;
     } catch (error) {
       AppLogger.instance.debug('🔍 [AuthProvider] Login error: $error');
@@ -168,7 +182,7 @@ class AuthProvider extends ChangeNotifier {
       _error = null;
 
       // Save session to storage
-      await _saveSession(_session!);
+      await _sessionStore?.save(_session!);
 
       _isLoading = false;
       notifyListeners();
@@ -195,13 +209,13 @@ class AuthProvider extends ChangeNotifier {
     _isAuthenticated = false;
 
     // Clear session from storage
-    await _clearSession();
+    await _sessionStore?.clear();
 
     notifyListeners();
   }
 
   /// Refresh user data from the backend, do not assume the data is constant
-  /// setup the reload logic to detect changes in the supabase side rather than user side 
+  /// setup the reload logic to detect changes in the supabase side rather than user side
   Future<void> refreshUserData() async {
     if (!_isAuthenticated || _session == null) {
       return;
@@ -216,11 +230,13 @@ class AuthProvider extends ChangeNotifier {
         expiresAt: _session!.expiresAt,
         user: user,
       );
-      await _saveSession(_session!);
-      AppLogger.instance.debug('🔍 [AuthProvider] User data refreshed: ${user.firstName}');
+      await _sessionStore?.save(_session!);
+      AppLogger.instance
+          .debug('🔍 [AuthProvider] User data refreshed: ${user.firstName}');
       notifyListeners();
     } catch (e) {
-      AppLogger.instance.debug('🔍 [AuthProvider] Error refreshing user data: $e');
+      AppLogger.instance
+          .debug('🔍 [AuthProvider] Error refreshing user data: $e');
     }
   }
 
@@ -244,14 +260,16 @@ class AuthProvider extends ChangeNotifier {
     }
 
     try {
-      AppLogger.instance.debug('🔍 [AuthProvider] Token expired, refreshing...');
+      AppLogger.instance
+          .debug('🔍 [AuthProvider] Token expired, refreshing...');
       final newSession = await _refreshSession(_session!);
       _session = newSession;
       _apiService.setToken(newSession.accessToken);
-      await _saveSession(newSession);
+      await _sessionStore?.save(newSession);
       _isAuthenticated = true;
       notifyListeners();
-      AppLogger.instance.debug('🔍 [AuthProvider] Token refreshed successfully');
+      AppLogger.instance
+          .debug('🔍 [AuthProvider] Token refreshed successfully');
       return true;
     } catch (e) {
       AppLogger.instance.debug('🔍 [AuthProvider] Token refresh failed: $e');
@@ -259,53 +277,9 @@ class AuthProvider extends ChangeNotifier {
       _session = null;
       _isAuthenticated = false;
       _apiService.setToken(null);
-      await _clearSession();
+      await _sessionStore?.clear();
       notifyListeners();
       return false;
-    }
-  }
-
-  // Session management helpers
-
-  Future<AuthSession?> _restoreSession() async {
-    // obtain session data from storage, parse it, and return an AuthSession object if valid. If no session or an error occurs, return null. This allows the app to restore the user's authenticated state across app launches.
-    if (_storageService == null) return null;
-
-    try {
-      await _storageService!.init();
-      final sessionJson =
-          _storageService!.token; // Reuse token field for session JSON
-
-      if (sessionJson == null || sessionJson.isEmpty) return null;
-
-      final decoded = jsonDecode(sessionJson);
-      return AuthSession.fromJson(decoded);
-    } catch (e) {
-      AppLogger.instance.debug('🔍 [AuthProvider] Error restoring session: $e');
-      return null;
-    }
-  }
-
-  Future<void> _saveSession(AuthSession session) async {
-    if (_storageService == null) return;
-
-    try {
-      final sessionJson = jsonEncode(session.toJson());
-      await _storageService!.saveToken(sessionJson, session.user.id);
-      AppLogger.instance.debug('🔍 [AuthProvider] Session saved to storage');
-    } catch (e) {
-      AppLogger.instance.debug('🔍 [AuthProvider] Error saving session: $e');
-    }
-  }
-
-  Future<void> _clearSession() async {
-    if (_storageService == null) return;
-
-    try {
-      await _storageService!.clearToken();
-      AppLogger.instance.debug('🔍 [AuthProvider] Session cleared from storage');
-    } catch (e) {
-      AppLogger.instance.debug('🔍 [AuthProvider] Error clearing session: $e');
     }
   }
 
