@@ -15,7 +15,11 @@ import 'package:syntrak/features/notifications/data/notifications_repository.dar
 import 'package:syntrak/features/profile/data/profile_repository.dart';
 import 'package:syntrak/providers/activity_provider.dart';
 import 'package:syntrak/providers/auth_provider.dart';
+import 'package:syntrak/services/activities_service.dart';
 import 'package:syntrak/services/api_service.dart';
+import 'package:syntrak/services/auth_service.dart';
+import 'package:syntrak/services/community_service.dart';
+import 'package:syntrak/services/profile_service.dart';
 import 'package:syntrak/services/apis/activities_api.dart';
 import 'package:syntrak/services/apis/auth_api.dart';
 import 'package:syntrak/services/apis/community_api.dart';
@@ -93,6 +97,25 @@ Future<void> setupServiceLocatorWithEnvironment({
   sl.registerLazySingleton<NotificationsRepository>(
     () => NotificationsRepository(sl<NotificationsApi>()),
   );
+  sl.registerLazySingleton<AuthService>(
+    () => AuthService(
+      authRepository: sl<AuthRepository>(),
+      tokenStore: sl<AuthTokenStore>(),
+      appConfig: sl<AppConfig>(),
+    ),
+  );
+  sl.registerLazySingleton<ProfileService>(
+    () => ProfileService(profileRepository: sl<ProfileRepository>()),
+  );
+  sl.registerLazySingleton<ActivitiesService>(
+    () => ActivitiesService(
+      activitiesRepository: sl<ActivitiesRepository>(),
+      appConfig: sl<AppConfig>(),
+    ),
+  );
+  sl.registerLazySingleton<CommunityService>(
+    () => CommunityService(communityRepository: sl<CommunityRepository>()),
+  );
 
   sl.registerLazySingleton<WeatherService>(() => WeatherService());
   sl.registerLazySingleton<LocationService>(() => LocationService());
@@ -105,24 +128,22 @@ Future<void> setupServiceLocatorWithEnvironment({
 
   sl.registerLazySingleton<ApiService>(
     () => ApiService(
-      authRepository: sl<AuthRepository>(),
-      profileRepository: sl<ProfileRepository>(),
-      activitiesRepository: sl<ActivitiesRepository>(),
-      communityRepository: sl<CommunityRepository>(),
-      tokenStore: sl<AuthTokenStore>(),
-      appConfig: sl<AppConfig>(),
+      authService: sl<AuthService>(),
+      profileService: sl<ProfileService>(),
+      activitiesService: sl<ActivitiesService>(),
+      communityService: sl<CommunityService>(),
     ),
   );
 
   sl.registerFactoryParam<AuthProvider, AuthSessionStore, void>(
     (sessionStore, _) => AuthProvider(
-      sl<ApiService>(),
-      null,
+      sl<AuthService>(),
+      sl<ProfileService>(),
       sessionStore,
     ),
   );
 
   sl.registerFactory<ActivityProvider>(
-    () => ActivityProvider(sl<ApiService>()),
+    () => ActivityProvider(sl<ActivitiesService>()),
   );
 }

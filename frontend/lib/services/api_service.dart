@@ -1,43 +1,34 @@
 import 'dart:io';
-import 'package:dio/dio.dart';
-import 'package:syntrak/core/config/app_config.dart';
-import 'package:syntrak/core/config/app_environment.dart';
-import 'package:syntrak/core/network/auth_token_store.dart';
-import 'package:syntrak/features/activities/data/activities_repository.dart';
-import 'package:syntrak/features/auth/data/auth_repository.dart';
-import 'package:syntrak/features/community/data/community_repository.dart';
-import 'package:syntrak/features/profile/data/profile_repository.dart';
+
 import 'package:syntrak/models/activity.dart';
 import 'package:syntrak/models/profile.dart';
 import 'package:syntrak/models/user.dart';
+import 'package:syntrak/services/activities_service.dart';
+import 'package:syntrak/services/auth_service.dart';
+import 'package:syntrak/services/community_service.dart';
+import 'package:syntrak/services/profile_service.dart';
 
 class ApiService {
-  final AuthRepository _authRepository;
-  final ProfileRepository _profileRepository;
-  final ActivitiesRepository _activitiesRepository;
-  final CommunityRepository _communityRepository;
-  final AuthTokenStore _tokenStore;
-  final AppConfig _appConfig;
+  final AuthService _authService;
+  final ProfileService _profileService;
+  final ActivitiesService _activitiesService;
+  final CommunityService _communityService;
 
   ApiService({
-    required AuthRepository authRepository,
-    required ProfileRepository profileRepository,
-    required ActivitiesRepository activitiesRepository,
-    required CommunityRepository communityRepository,
-    required AuthTokenStore tokenStore,
-    required AppConfig appConfig,
-  })  : _authRepository = authRepository,
-        _profileRepository = profileRepository,
-        _activitiesRepository = activitiesRepository,
-        _communityRepository = communityRepository,
-        _tokenStore = tokenStore,
-        _appConfig = appConfig;
+    required AuthService authService,
+    required ProfileService profileService,
+    required ActivitiesService activitiesService,
+    required CommunityService communityService,
+  })  : _authService = authService,
+        _profileService = profileService,
+        _activitiesService = activitiesService,
+        _communityService = communityService;
 
   void setToken(String? token) {
-    _tokenStore.setToken(token);
+    _authService.setToken(token);
   }
 
-  bool get isDevEnvironment => _appConfig.environment == AppEnvironment.dev;
+  bool get isDevEnvironment => _activitiesService.isDevEnvironment;
 
   Future<Map<String, dynamic>> register({
     required String email,
@@ -45,75 +36,49 @@ class ApiService {
     String? firstName,
     String? lastName,
   }) async {
-    try {
-      return _authRepository.register(
-        email: email,
-        password: password,
-        firstName: firstName,
-        lastName: lastName,
-      );
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 409) {
-        throw Exception(
-            'An account with this email already exists. Please login instead.');
-      }
-      if (e.response?.statusCode == 422) {
-        throw Exception(
-            'Invalid registration data. Please check that your email is valid and password is at least 8 characters.');
-      }
-      throw Exception('Registration failed: ${e.message ?? "Unknown error"}');
-    }
+    return _authService.register(
+      email: email,
+      password: password,
+      firstName: firstName,
+      lastName: lastName,
+    );
   }
 
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
   }) async {
-    try {
-      return _authRepository.login(email: email, password: password);
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 401) {
-        throw Exception('Invalid email or password. Please try again.');
-      }
-      if (e.type == DioExceptionType.connectionError ||
-          e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout) {
-        throw Exception(
-          'Cannot connect to auth server at ${_appConfig.mainApiBaseUrl}.',
-        );
-      }
-      throw Exception('Login failed: ${e.message}');
-    }
+    return _authService.login(email: email, password: password);
   }
 
   Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
-    return _authRepository.refreshToken(refreshToken);
+    return _authService.refreshToken(refreshToken);
   }
 
   Future<User> getCurrentUser() async {
-    return _profileRepository.getCurrentUser();
+    return _profileService.getCurrentUser();
   }
 
   Future<User> updateUserProfile({
     String? firstName,
     String? lastName,
   }) async {
-    return _profileRepository.updateUserProfile(
+    return _profileService.updateUserProfile(
       firstName: firstName,
       lastName: lastName,
     );
   }
 
   Future<Activity> createActivity(Activity activity) async {
-    return _activitiesRepository.createActivity(activity);
+    return _activitiesService.createActivity(activity);
   }
 
   Future<List<Activity>> getActivities({int page = 1, int limit = 20}) async {
-    return _activitiesRepository.getActivities(page: page, limit: limit);
+    return _activitiesService.getActivities(page: page, limit: limit);
   }
 
   Future<Activity> getActivity(String id) async {
-    return _activitiesRepository.getActivity(id);
+    return _activitiesService.getActivity(id);
   }
 
   Future<Activity> updateActivity(
@@ -122,7 +87,7 @@ class ApiService {
     String? description,
     bool? isPublic,
   }) async {
-    return _activitiesRepository.updateActivity(
+    return _activitiesService.updateActivity(
       id,
       name: name,
       description: description,
@@ -131,11 +96,11 @@ class ApiService {
   }
 
   Future<void> deleteActivity(String id) async {
-    await _activitiesRepository.deleteActivity(id);
+    await _activitiesService.deleteActivity(id);
   }
 
   Future<Profile> getCurrentUserProfile() async {
-    return _profileRepository.getCurrentUserProfile();
+    return _profileService.getCurrentUserProfile();
   }
 
   Future<Profile> updateProfile({
@@ -147,7 +112,7 @@ class ApiService {
     String? skiLevel,
     String? home,
   }) async {
-    return _profileRepository.updateProfile(
+    return _profileService.updateProfile(
       fullName: fullName,
       username: username,
       bio: bio,
@@ -159,7 +124,7 @@ class ApiService {
   }
 
   Future<Profile> getProfileById(String userId) async {
-    return _profileRepository.getProfileById(userId);
+    return _profileService.getProfileById(userId);
   }
 
   Future<List<Map<String, dynamic>>> getPostsByUserId(
@@ -167,23 +132,17 @@ class ApiService {
     int limit = 20,
     int offset = 0,
   }) async {
-    try {
-      return _communityRepository.getPostsByUserId(
-        userId,
-        limit: limit,
-        offset: offset,
-      );
-    } on DioException {
-      return [];
-    } catch (_) {
-      return [];
-    }
+    return _communityService.getPostsByUserId(
+      userId,
+      limit: limit,
+      offset: offset,
+    );
   }
 
   Future<List<Map<String, dynamic>>> getCommunitySubthreads({
     int limit = 50,
   }) async {
-    return _communityRepository.getSubthreads(limit: limit);
+    return _communityService.getSubthreads(limit: limit);
   }
 
   Future<List<Map<String, dynamic>>> getCommunityPostsBySubthread(
@@ -191,7 +150,7 @@ class ApiService {
     int limit = 20,
     int offset = 0,
   }) async {
-    return _communityRepository.getPostsBySubthread(
+    return _communityService.getPostsBySubthread(
       subthreadId,
       limit: limit,
       offset: offset,
@@ -201,7 +160,7 @@ class ApiService {
   Future<List<Map<String, dynamic>>> getCommunityCommentsByPost(
     String postId,
   ) async {
-    return _communityRepository.getCommentsByPost(postId);
+    return _communityService.getCommentsByPost(postId);
   }
 
   Future<Map<String, dynamic>> createCommunityPost({
@@ -209,7 +168,7 @@ class ApiService {
     required String title,
     required String content,
   }) async {
-    return _communityRepository.createPost(
+    return _communityService.createPost(
       subthreadId: subthreadId,
       title: title,
       content: content,
@@ -221,7 +180,7 @@ class ApiService {
     required String content,
     String? parentId,
   }) async {
-    return _communityRepository.createComment(
+    return _communityService.createComment(
       postId: postId,
       content: content,
       parentId: parentId,
@@ -232,13 +191,13 @@ class ApiService {
     required String postId,
     required int voteType,
   }) async {
-    return _communityRepository.votePost(
+    return _communityService.votePost(
       postId: postId,
       voteType: voteType,
     );
   }
 
   Future<Profile> uploadAvatar(File imageFile) async {
-    return _profileRepository.uploadAvatar(imageFile);
+    return _profileService.uploadAvatar(imageFile);
   }
 }

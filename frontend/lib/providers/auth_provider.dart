@@ -3,10 +3,12 @@ import 'package:syntrak/core/logging/app_logger.dart';
 import 'package:syntrak/features/auth/data/auth_session_store.dart';
 import 'package:syntrak/models/user.dart';
 import 'package:syntrak/models/auth_session.dart';
-import 'package:syntrak/services/api_service.dart';
+import 'package:syntrak/services/auth_service.dart';
+import 'package:syntrak/services/profile_service.dart';
 
 class AuthProvider extends ChangeNotifier {
-  final ApiService _apiService;
+  final AuthService _authService;
+  final ProfileService _profileService;
   final AuthSessionStore _sessionStore;
   AuthSession? _session;
   bool _isAuthenticated = false;
@@ -14,7 +16,8 @@ class AuthProvider extends ChangeNotifier {
   String? _error;
 
   AuthProvider(
-    this._apiService,
+    this._authService,
+    this._profileService,
     this._sessionStore,
   );
 
@@ -52,7 +55,7 @@ class AuthProvider extends ChangeNotifier {
           try {
             _session = await _refreshSession(restoredSession);
             await _sessionStore.save(_session!);
-            _apiService.setToken(_session!.accessToken);
+            _authService.setToken(_session!.accessToken);
             _isAuthenticated = true;
             AppLogger.instance
                 .debug('🔍 [AuthProvider] Session refreshed successfully');
@@ -65,10 +68,10 @@ class AuthProvider extends ChangeNotifier {
         } else {
           AppLogger.instance.debug(
               '🔍 [AuthProvider] Token still valid, validating with backend...');
-          _apiService.setToken(restoredSession.accessToken);
+          _authService.setToken(restoredSession.accessToken);
           try {
             // Validate token with backend
-            final user = await _apiService
+            final user = await _profileService
                 .getCurrentUser()
                 .timeout(const Duration(seconds: 3));
             _session = AuthSession(
@@ -112,14 +115,14 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
 
       final response =
-          await _apiService.login(email: email, password: password);
+          await _authService.login(email: email, password: password);
       AppLogger.instance.debug('🔍 [AuthProvider] Login API response received');
 
       // Parse session from response
       _session = AuthSession.fromJson(response);
       AppLogger.instance.debug(
           '🔍 [AuthProvider] Session parsed, user: ${_session!.user.email}');
-      _apiService.setToken(_session!.accessToken);
+      _authService.setToken(_session!.accessToken);
       _isAuthenticated = true;
       _error = null;
 
@@ -160,7 +163,7 @@ class AuthProvider extends ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      final response = await _apiService.register(
+      final response = await _authService.register(
         email: email,
         password: password,
         firstName: firstName,
@@ -169,7 +172,7 @@ class AuthProvider extends ChangeNotifier {
 
       // Parse session from response
       _session = AuthSession.fromJson(response);
-      _apiService.setToken(_session!.accessToken);
+      _authService.setToken(_session!.accessToken);
       _isAuthenticated = true;
       _error = null;
 
@@ -196,7 +199,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    _apiService.setToken(null);
+    _authService.setToken(null);
     _session = null;
     _isAuthenticated = false;
 
@@ -215,7 +218,7 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       AppLogger.instance.debug('🔍 [AuthProvider] Refreshing user data...');
-      final user = await _apiService.getCurrentUser();
+      final user = await _profileService.getCurrentUser();
       _session = AuthSession(
         accessToken: _session!.accessToken,
         refreshToken: _session!.refreshToken,
@@ -256,7 +259,7 @@ class AuthProvider extends ChangeNotifier {
           .debug('🔍 [AuthProvider] Token expired, refreshing...');
       final newSession = await _refreshSession(_session!);
       _session = newSession;
-      _apiService.setToken(newSession.accessToken);
+      _authService.setToken(newSession.accessToken);
       await _sessionStore.save(newSession);
       _isAuthenticated = true;
       notifyListeners();
@@ -268,7 +271,7 @@ class AuthProvider extends ChangeNotifier {
       // Clear session on refresh failure
       _session = null;
       _isAuthenticated = false;
-      _apiService.setToken(null);
+      _authService.setToken(null);
       await _sessionStore.clear();
       notifyListeners();
       return false;
@@ -281,7 +284,7 @@ class AuthProvider extends ChangeNotifier {
     }
 
     try {
-      final response = await _apiService.refreshToken(oldSession.refreshToken!);
+      final response = await _authService.refreshToken(oldSession.refreshToken!);
       return AuthSession.fromJson(response);
     } catch (e) {
       AppLogger.instance.debug('🔍 [AuthProvider] Token refresh failed: $e');

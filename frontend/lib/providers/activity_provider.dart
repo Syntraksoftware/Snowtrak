@@ -1,11 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:syntrak/core/logging/app_logger.dart';
 import 'package:syntrak/models/activity.dart';
-import 'package:syntrak/services/api_service.dart';
+import 'package:syntrak/services/activities_service.dart';
 import 'package:syntrak/helpers/mock_activities.dart';
 
 class ActivityProvider extends ChangeNotifier {
-  final ApiService _apiService;
+  final ActivitiesService _activitiesService;
   List<Activity> _activities = [];
   bool _isLoading = false;
   bool _isLoadingMore = false;
@@ -14,7 +14,7 @@ class ActivityProvider extends ChangeNotifier {
   String? _error;
   static const int _pageSize = 20;
 
-  ActivityProvider(this._apiService);
+  ActivityProvider(this._activitiesService);
 
   List<Activity> get activities => _activities;
   bool get isLoading => _isLoading;
@@ -34,7 +34,7 @@ class ActivityProvider extends ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      final newActivities = await _apiService.getActivities(
+      final newActivities = await _activitiesService.getActivities(
         page: _currentPage,
         limit: _pageSize,
       );
@@ -53,7 +53,7 @@ class ActivityProvider extends ChangeNotifier {
       _error = e.toString();
       _isLoading = false;
 
-      if (_activities.isEmpty && _apiService.isDevEnvironment) {
+      if (_activities.isEmpty && _activitiesService.isDevEnvironment) {
         AppLogger.instance.warning(
           '[ActivityProvider] Activity API unavailable in dev, loading demo data',
           error: e,
@@ -81,7 +81,7 @@ class ActivityProvider extends ChangeNotifier {
       _isLoadingMore = true;
       notifyListeners();
 
-      final newActivities = await _apiService.getActivities(
+      final newActivities = await _activitiesService.getActivities(
         page: _currentPage,
         limit: _pageSize,
       );
@@ -110,7 +110,7 @@ class ActivityProvider extends ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      final created = await _apiService.createActivity(activity);
+      final created = await _activitiesService.createActivity(activity);
       _activities.insert(0, created);
       _isLoading = false;
       notifyListeners();
@@ -135,7 +135,7 @@ class ActivityProvider extends ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      await _apiService.deleteActivity(id);
+      await _activitiesService.deleteActivity(id);
       _activities.removeWhere((a) => a.id == id);
       _isLoading = false;
       notifyListeners();
@@ -154,7 +154,7 @@ class ActivityProvider extends ChangeNotifier {
 
   Future<Activity?> getActivity(String id) async {
     try {
-      return await _apiService.getActivity(id);
+      return await _activitiesService.getActivity(id);
     } catch (e) {
       _error = e.toString();
       AppLogger.instance.warning(
