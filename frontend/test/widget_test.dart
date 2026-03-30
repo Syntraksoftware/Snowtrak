@@ -8,14 +8,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:syntrak/core/config/app_environment.dart';
+import 'package:syntrak/core/di/service_locator.dart';
 
 import 'package:syntrak/main.dart';
 
 void main() {
-  setUp(() {
+  setUp(() async {
     // Mock SharedPreferences to prevent timeout timers
     // This makes SharedPreferences.getInstance() return immediately
     SharedPreferences.setMockInitialValues({});
+    sl.reset();
+    await setupServiceLocatorWithEnvironment(environment: AppEnvironment.dev);
   });
 
   testWidgets('App loads successfully', (WidgetTester tester) async {
