@@ -1,0 +1,159 @@
+"""Write-oriented post routes."""
+import logging
+import os
+import sys
+
+from fastapi import APIRouter, Depends, HTTPException, status
+
+# Add backend directory to path for shared imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from middleware.auth import get_current_user
+from routes.community_models import (
+    CommunityDeletePostResponse,
+    CommunityPostResponse,
+    PostCreate,
+    PostUpdate,
+    PostVoteRequest,
+    PostVoteResponse,
+)
+from services.supabase_client import get_community_client
+
+logger = logging.getLogger(__name__)
+router = APIRouter()
+
+
+@router.post("", response_model=CommunityPostResponse, status_code=status.HTTP_201_CREATED)
+async def create_post(
+    data: PostCreate,
+    user_id: str = Depends(get_current_user),
+):
+    """Create a new post."""
+    community_client = get_community_client()
+    try:
+        subthread = community_client.get_subthread_by_id(data.subthread_id)
+        if not subthread:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Subthread not found",
+            )
+
+        created_post = community_client.create_post(
+            user_id=user_id,
+            subthread_id=data.subthread_id,
+            title=data.title,
+            content=data.content,
+        )
+        if not created_post:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create post",
+            )
+
+        return created_post
+    except HTTPException:
+        raise
+    except Exception as exception:
+        logger.error(f"Error creating post: {exception}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Server Error",
+        )
+
+
+@router.patch("/{post_id}", response_model=CommunityPostResponse)
+async def update_post(
+    post_id: str,
+    data: PostUpdate,
+    user_id: str = Depends(get_current_user),
+):
+    """Update a post owned by the authenticated user."""
+    community_client = get_community_client()
+    try:
+        updated_post = community_client.update_post(
+            post_id=post_id,
+            user_id=user_id,
+            title=data.title,
+            content=data.content,
+        )
+        if not updated_post:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Post not found or unauthorized",
+            )
+
+        return updated_post
+    except HTTPException:
+        raise
+    except Exception as exception:
+        logger.error(f"Error updating post: {exception}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Server Error",
+        )
+
+
+@router.post("/{post_id}/vote", response_model=PostVoteResponse)
+async def vote_post(
+    post_id: str,
+    data: PostVoteRequest,
+    user_id: str = Depends(get_current_user),
+):
+    """Vote on a post with values -1, 0, or 1."""
+    if data.vote_type not in (-1, 0, 1):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="vote_type must be one of: -1, 0, 1",
+        )
+
+    community_client = get_community_client()
+    try:
+        vote_result = community_client.set_post_vote(
+            post_id=post_id,
+            user_id=user_id,
+            vote_type=data.vote_type,
+        )
+        if not vote_result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Post not found or vote operation failed",
+            )
+
+        return vote_result
+    except HTTPException:
+        raise
+    except Exception as exception:
+        logger.error(f"Error voting post: {exception}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Server Error",
+        )
+
+
+@router.delete("/{post_id}", response_model=CommunityDeletePostResponse)
+async def delete_post(
+    post_id: str,
+    user_id: str = Depends(get_current_user),
+):
+    """Delete a post and related comments."""
+    community_client = get_community_client()
+    try:
+        is_deleted = community_client.delete_post(post_id, user_id)
+        if not is_deleted:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Post not found or unauthorized",
+            )
+
+        return CommunityDeletePostResponse(
+            message="Post and all comments deleted successfully",
+            deleted_post_id=post_id,
+        )
+    except HTTPException:
+        raise
+    except Exception as exception:
+        logger.error(f"Error deleting post: {exception}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Server Error",
+        )
