@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/core/activity_helpers.dart';
+import 'package:syntrak/features/activities/data/activities_context_repository.dart';
 import 'package:syntrak/models/activity.dart';
 import 'package:syntrak/models/weather.dart';
 import 'package:syntrak/providers/activity_provider.dart';
 import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/screens/activities/activity_detail_screen.dart';
 import 'package:syntrak/screens/profile/user_profile_screen.dart';
-import 'package:syntrak/services/weather_service.dart';
-import 'package:syntrak/services/location_service.dart';
 import 'package:intl/intl.dart';
 
 class ActivitiesScreen extends StatefulWidget {
@@ -20,8 +19,6 @@ class ActivitiesScreen extends StatefulWidget {
 }
 
 class _ActivitiesScreenState extends State<ActivitiesScreen> {
-  final WeatherService _weatherService = WeatherService();
-  final LocationService _locationService = LocationService();
   WeatherData? _weatherData;
   bool _isLoadingWeather = false;
 
@@ -51,30 +48,13 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
     });
 
     try {
-      final position = await _locationService.getCurrentPosition();
-      if (position != null) {
-        final weather = await _weatherService.getWeather(
-          latitude: position.latitude,
-          longitude: position.longitude,
-        );
-        if (mounted) {
-          setState(() {
-            _weatherData = weather;
-            _isLoadingWeather = false;
-          });
-        }
-      } else {
-        // Fallback to default coordinates if location not available
-        final weather = await _weatherService.getWeather(
-          latitude: 52.52, // Default: Berlin
-          longitude: 13.41,
-        );
-        if (mounted) {
-          setState(() {
-            _weatherData = weather;
-            _isLoadingWeather = false;
-          });
-        }
+      final contextRepository = context.read<ActivitiesContextRepository>();
+      final weather = await contextRepository.getLocalWeather();
+      if (mounted) {
+        setState(() {
+          _weatherData = weather;
+          _isLoadingWeather = false;
+        });
       }
     } catch (e) {
       print('Error loading weather: $e');

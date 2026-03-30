@@ -5,6 +5,7 @@ import 'package:syntrak/core/config/app_environment.dart';
 import 'package:syntrak/core/di/service_locator.dart';
 import 'package:syntrak/core/logging/app_logger.dart';
 import 'package:syntrak/core/theme.dart';
+import 'package:syntrak/features/activities/data/activities_context_repository.dart';
 import 'package:syntrak/models/notification.dart'; // notification model
 import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/providers/activity_provider.dart';
@@ -15,31 +16,31 @@ import 'package:syntrak/services/api_service.dart';
 import 'package:syntrak/services/notification_service.dart';
 import 'package:syntrak/services/storage_service.dart';
 
-
-//todo: rename app name to snowtrak 
+//todo: rename app name to snowtrak
 
 Future<void> main() async {
   await bootstrapAndRun();
   //main endpoint to start the app
-  //collecting necessary components and start run the app 
+  //collecting necessary components and start run the app
 }
 
 Future<void> bootstrapAndRun({AppEnvironment? environment}) async {
-  WidgetsFlutterBinding.ensureInitialized(); // initialisation 
-  await setupServiceLocatorWithEnvironment(environment: environment); //injected to container
+  WidgetsFlutterBinding.ensureInitialized(); // initialisation
+  await setupServiceLocatorWithEnvironment(
+      environment: environment); //injected to container
   //service locator: manage dependices and provide them to the app when needed
 
   runApp(const SyntrakApp());
 }
 
-class SyntrakApp extends StatefulWidget { 
-  //extends: inherit from statefulwidget 
+class SyntrakApp extends StatefulWidget {
+  //extends: inherit from statefulwidget
   //stateful widget to manage app state and dependencise
   const SyntrakApp({super.key}); //super: pass key to parent class
-  //current blueprint of app 
+  //current blueprint of app
 
   @override
-  State<SyntrakApp> createState(){
+  State<SyntrakApp> createState() {
     return _SyntrakAppState();
   }
   //starting the app after initialization, create state for the app
@@ -47,10 +48,10 @@ class SyntrakApp extends StatefulWidget {
 
 class _SyntrakAppState extends State<SyntrakApp> {
   // Global key for Navigator to maintain state across rebuilds
-  // change of pages 
+  // change of pages
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
-  //snack bar messages key 
+  //snack bar messages key
   final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
       GlobalKey<ScaffoldMessengerState>();
 
@@ -64,7 +65,8 @@ class _SyntrakAppState extends State<SyntrakApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) {// storage service: local storage and data persistency
+        ChangeNotifierProvider(create: (_) {
+          // storage service: local storage and data persistency
           final storage = StorageService();
           // Initialize storage and wait for it
           storage.init().then((_) {
@@ -79,9 +81,9 @@ class _SyntrakAppState extends State<SyntrakApp> {
             // wait for storage to be initialized before creating AuthProvider
 
             final storage = Provider.of<StorageService>(context, listen: false);
-            // listen false: do not rebuild when storage chanegs, handle manually with update methods 
+            // listen false: do not rebuild when storage chanegs, handle manually with update methods
 
-            // activity provider: depend on the auth provider for user token and session manager 
+            // activity provider: depend on the auth provider for user token and session manager
             final apiService = sl<ApiService>();
             final auth = AuthProvider(apiService, storage);
 
@@ -130,21 +132,26 @@ class _SyntrakAppState extends State<SyntrakApp> {
             return previous;
           },
         ),
-        ChangeNotifierProxyProvider<StorageService, ActivityProvider>(//caching activity data and manage it 
-        // proxy provider: depend on storage service to manage activity data and cache it, update when storage changes
+        ChangeNotifierProxyProvider<StorageService, ActivityProvider>(
+          //caching activity data and manage it
+          // proxy provider: depend on storage service to manage activity data and cache it, update when storage changes
 
-          create: (_) => ActivityProvider(sl<ApiService>()), // request activity data from backend and manage it
+          create: (_) => ActivityProvider(sl<
+              ApiService>()), // request activity data from backend and manage it
           update: (_, storage, previous) =>
               previous ?? ActivityProvider(sl<ApiService>()),
         ),
+        Provider<ActivitiesContextRepository>(
+          create: (_) => sl<ActivitiesContextRepository>(),
+        ),
         // Notification Provider
         ChangeNotifierProvider(
-          create: (_) =>
-              NotificationProvider(notificationsRepository: sl())
-                ..loadNotifications(),
+          create: (_) => NotificationProvider(notificationsRepository: sl())
+            ..loadNotifications(),
         ),
       ],
-      child: MaterialApp(// inherited from parent widget, provide material design and theme to the app
+      child: MaterialApp(
+        // inherited from parent widget, provide material design and theme to the app
         navigatorKey: _navigatorKey,
         scaffoldMessengerKey: _scaffoldMessengerKey,
         title: 'Syntrak',
@@ -206,7 +213,7 @@ class _AppWrapperState extends State<_AppWrapper> {
           '[AppWrapper] Building. isLoading: ${authProvider.isLoading}, '
           'isAuthenticated: ${authProvider.isAuthenticated}',
         );
-        
+
         if (authProvider.isLoading) {
           return _LoadingScreenWithTimeout(authProvider: authProvider);
         }
@@ -252,8 +259,7 @@ class _LoadingScreenWithTimeoutState extends State<_LoadingScreenWithTimeout> {
   void dispose() {
     _timeoutTimer?.cancel();
     super.dispose();
-    // Todo: need to cancel the timer if the widget is diposed: 
-
+    // Todo: need to cancel the timer if the widget is diposed:
   }
 
   @override

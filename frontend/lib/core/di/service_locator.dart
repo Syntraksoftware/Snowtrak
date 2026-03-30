@@ -1,4 +1,4 @@
-// dependency injection setup using get_it package, central place to register and manage all services and repositories, including API clients, token store, and app configuration. 
+// dependency injection setup using get_it package, central place to register and manage all services and repositories, including API clients, token store, and app configuration.
 
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
@@ -8,6 +8,7 @@ import 'package:syntrak/core/config/app_environment.dart';
 import 'package:syntrak/core/logging/app_logger.dart';
 import 'package:syntrak/core/network/auth_token_store.dart';
 import 'package:syntrak/core/network/dio_factory.dart';
+import 'package:syntrak/features/activities/data/activities_context_repository.dart';
 import 'package:syntrak/features/activities/data/activities_repository.dart';
 import 'package:syntrak/features/auth/data/auth_repository.dart';
 import 'package:syntrak/features/community/data/community_repository.dart';
@@ -19,7 +20,9 @@ import 'package:syntrak/services/apis/auth_api.dart';
 import 'package:syntrak/services/apis/community_api.dart';
 import 'package:syntrak/services/apis/notifications_api.dart';
 import 'package:syntrak/services/apis/users_api.dart';
+import 'package:syntrak/services/location_service.dart';
 import 'package:syntrak/services/service_registry.dart';
+import 'package:syntrak/services/weather_service.dart';
 
 final sl = GetIt.instance; // Service Locator
 
@@ -89,6 +92,15 @@ Future<void> setupServiceLocatorWithEnvironment({
   );
   sl.registerLazySingleton<NotificationsRepository>(
     () => NotificationsRepository(sl<NotificationsApi>()),
+  );
+
+  sl.registerLazySingleton<WeatherService>(() => WeatherService());
+  sl.registerLazySingleton<LocationService>(() => LocationService());
+  sl.registerLazySingleton<ActivitiesContextRepository>(
+    () => ActivitiesContextRepository(
+      weatherService: sl<WeatherService>(),
+      locationService: sl<LocationService>(),
+    ),
   );
 
   sl.registerLazySingleton<ApiService>(
