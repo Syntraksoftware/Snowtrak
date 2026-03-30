@@ -4,8 +4,6 @@ import 'package:syntrak/core/logging/app_logger.dart';
 import 'package:syntrak/models/auth_session.dart';
 import 'package:syntrak/services/storage_service.dart';
 
-// for managing user authentication sessions, including saving, restoring, and clearing session data using a storage service, with logging for debugging purposes.
-
 class AuthSessionStore {
   final StorageService _storageService;
 

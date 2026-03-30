@@ -13,52 +13,37 @@ import 'package:syntrak/providers/activity_provider.dart';
 import 'package:syntrak/providers/notification_provider.dart';
 import 'package:syntrak/screens/auth/login_screen.dart';
 import 'package:syntrak/screens/home/home_screen.dart';
-import 'package:syntrak/services/api_service.dart';
 import 'package:syntrak/services/notification_service.dart';
 import 'package:syntrak/services/storage_service.dart';
 
-//todo: rename app name to snowtrak
-
 Future<void> main() async {
   await bootstrapAndRun();
-  //main endpoint to start the app
-  //collecting necessary components and start run the app
 }
 
 Future<void> bootstrapAndRun({AppEnvironment? environment}) async {
-  WidgetsFlutterBinding.ensureInitialized(); // initialisation
+  WidgetsFlutterBinding.ensureInitialized();
   await setupServiceLocatorWithEnvironment(
-      environment: environment); //injected to container
-  //service locator: manage dependices and provide them to the app when needed
+    environment: environment,
+  );
 
   runApp(const SyntrakApp());
 }
 
 class SyntrakApp extends StatefulWidget {
-  //extends: inherit from statefulwidget
-  //stateful widget to manage app state and dependencise
-  const SyntrakApp({super.key}); //super: pass key to parent class
-  //current blueprint of app
+  const SyntrakApp({super.key});
 
   @override
-  State<SyntrakApp> createState() {
-    return _SyntrakAppState();
-  }
-  //starting the app after initialization, create state for the app
+  State<SyntrakApp> createState() => _SyntrakAppState();
 }
 
 class _SyntrakAppState extends State<SyntrakApp> {
-  // Global key for Navigator to maintain state across rebuilds
-  // change of pages
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
-
-  //snack bar messages key
   final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
       GlobalKey<ScaffoldMessengerState>();
 
   @override
   void initState() {
-    super.initState(); //parent class initialization
+    super.initState();
     AppLogger.instance.attachScaffoldMessenger(_scaffoldMessengerKey);
   }
 
@@ -66,17 +51,12 @@ class _SyntrakAppState extends State<SyntrakApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) {
-          // storage service: local storage and data persistency
-          final storage = StorageService();
-          return storage;
-        }),
+        ChangeNotifierProvider(create: (_) => StorageService()),
         Provider<AuthSessionStore>(
           create: (context) => AuthSessionStore(
             context.read<StorageService>(),
           ),
         ),
-
         ChangeNotifierProxyProvider<AuthSessionStore, AuthProvider>(
           create: (context) {
             AppLogger.instance.debug('[Main] Creating AuthProvider');
@@ -97,26 +77,18 @@ class _SyntrakAppState extends State<SyntrakApp> {
             return previous;
           },
         ),
-        ChangeNotifierProxyProvider<StorageService, ActivityProvider>(
-          //caching activity data and manage it
-          // proxy provider: depend on storage service to manage activity data and cache it, update when storage changes
-
-          create: (_) => ActivityProvider(sl<
-              ApiService>()), // request activity data from backend and manage it
-          update: (_, storage, previous) =>
-              previous ?? ActivityProvider(sl<ApiService>()),
+        ChangeNotifierProvider<ActivityProvider>(
+          create: (_) => sl<ActivityProvider>(),
         ),
         Provider<ActivitiesContextRepository>(
           create: (_) => sl<ActivitiesContextRepository>(),
         ),
-        // Notification Provider
         ChangeNotifierProvider(
           create: (_) => NotificationProvider(notificationsRepository: sl())
             ..loadNotifications(),
         ),
       ],
       child: MaterialApp(
-        // inherited from parent widget, provide material design and theme to the app
         navigatorKey: _navigatorKey,
         scaffoldMessengerKey: _scaffoldMessengerKey,
         title: 'Syntrak',
@@ -124,15 +96,12 @@ class _SyntrakAppState extends State<SyntrakApp> {
         theme: SyntrakTheme.lightTheme,
         darkTheme: SyntrakTheme.darkTheme,
         themeMode: ThemeMode.light,
-        // Use home for simpler navigation that handles hot reload better
         home: const _AppWrapper(),
       ),
     );
   }
 }
 
-// Wrapper widget
-// manager for the entire app, handle auth state and show snackbar notifcations, maintain stable navigator key for consistent navigation and state management across the app
 class _AppWrapper extends StatefulWidget {
   const _AppWrapper();
 
@@ -144,25 +113,23 @@ class _AppWrapperState extends State<_AppWrapper> {
   @override
   void initState() {
     super.initState();
-    // Set up notification callback for showing banners
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _setupNotificationCallback();
-      // Todo: considering moving this to initstate setup, if before the first frame there is a notification, we migh miss it, but if we set up the callback after the first frame, we might miss notifications that come in during app startup. Need to test and decide the best approach.
     });
   }
 
   void _setupNotificationCallback() {
     final notificationProvider = context.read<NotificationProvider>();
     notificationProvider.onNewNotification = (AppNotification notification) {
-      // Show banner notification when a new notification is received from backend
       if (mounted) {
         NotificationService.showBanner(
           context,
           notification: notification,
           onTap: () {
-            // Optional: Navigate to notification details or related screen
             NotificationService.showToast(
-                context, 'Tapped: ${notification.title}');
+              context,
+              'Tapped: ${notification.title}',
+            );
           },
         );
       }
@@ -171,7 +138,6 @@ class _AppWrapperState extends State<_AppWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    // Use Consumer to properly listen to auth state changes
     return Consumer<AuthProvider>(
       builder: (context, authProvider, _) {
         AppLogger.instance.debug(
@@ -194,7 +160,6 @@ class _AppWrapperState extends State<_AppWrapper> {
   }
 }
 
-// Safety widget: if loading takes too long, force show login
 class _LoadingScreenWithTimeout extends StatefulWidget {
   final AuthProvider authProvider;
 
@@ -211,10 +176,8 @@ class _LoadingScreenWithTimeoutState extends State<_LoadingScreenWithTimeout> {
   @override
   void initState() {
     super.initState();
-    // If still loading after 10 seconds, force check auth again
     _timeoutTimer = Timer(const Duration(seconds: 5), () {
       if (widget.authProvider.isLoading) {
-        // Force complete the auth check
         widget.authProvider.checkAuth();
       }
     });
@@ -224,7 +187,6 @@ class _LoadingScreenWithTimeoutState extends State<_LoadingScreenWithTimeout> {
   void dispose() {
     _timeoutTimer?.cancel();
     super.dispose();
-    // Todo: need to cancel the timer if the widget is diposed:
   }
 
   @override

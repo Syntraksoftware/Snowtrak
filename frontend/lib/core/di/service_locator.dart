@@ -1,5 +1,3 @@
-// dependency injection setup using get_it package, central place to register and manage all services and repositories, including API clients, token store, and app configuration.
-
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 
@@ -15,6 +13,7 @@ import 'package:syntrak/features/auth/data/auth_session_store.dart';
 import 'package:syntrak/features/community/data/community_repository.dart';
 import 'package:syntrak/features/notifications/data/notifications_repository.dart';
 import 'package:syntrak/features/profile/data/profile_repository.dart';
+import 'package:syntrak/providers/activity_provider.dart';
 import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/services/api_service.dart';
 import 'package:syntrak/services/apis/activities_api.dart';
@@ -26,7 +25,7 @@ import 'package:syntrak/services/location_service.dart';
 import 'package:syntrak/services/service_registry.dart';
 import 'package:syntrak/services/weather_service.dart';
 
-final sl = GetIt.instance; // Service Locator
+final sl = GetIt.instance;
 
 Future<void> setupServiceLocator() async {
   return setupServiceLocatorWithEnvironment();
@@ -54,7 +53,6 @@ Future<void> setupServiceLocatorWithEnvironment({
   sl.registerSingleton<AuthTokenStore>(tokenStore);
   ServiceRegistry.initialize(config: appConfig, tokenStore: tokenStore);
 
-  //dio: HTTP client for API communication, configured with base URL and interceptors for auth and logging, registered as singleton for app-wide use
   final dioFactory = DioFactory(config: appConfig, tokenStore: tokenStore);
   sl.registerSingleton<Dio>(dioFactory.buildMainClient(), instanceName: 'main');
   sl.registerSingleton<Dio>(
@@ -122,5 +120,9 @@ Future<void> setupServiceLocatorWithEnvironment({
       null,
       sessionStore,
     ),
+  );
+
+  sl.registerFactory<ActivityProvider>(
+    () => ActivityProvider(sl<ApiService>()),
   );
 }
