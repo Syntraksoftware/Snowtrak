@@ -1,6 +1,6 @@
 """Post routes."""
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
-from typing import Optional, List, Union
+from typing import Optional, List
 from pydantic import BaseModel
 import logging
 import sys
@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from middleware.auth import get_current_user, get_optional_user
 from services.supabase_client import get_community_client
-from shared import ListResponse, ListMeta, PaginationMeta, ResponseMeta, get_request_id
+from shared import ListResponse, ListMeta, PaginationMeta, get_request_id
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -69,20 +69,6 @@ class CommentResponse(BaseModel):
     author_email: Optional[str] = None
     author_first_name: Optional[str] = None
     author_last_name: Optional[str] = None
-
-
-class CommentsListResponse(BaseModel):
-    """Schema for comments list response."""
-    comments: List[CommentResponse]
-    total: int
-    post_id: str
-
-
-class PostsListResponse(BaseModel):
-    """Schema for posts list response."""
-    posts: List[PostResponse]
-    page: int
-    page_size: int
 
 
 class DeleteResponse(BaseModel):
@@ -223,79 +209,56 @@ async def vote_post(
         )
 
 
-@router.get("/user/{user_id}", response_model=Union[ListResponse, PostsListResponse])
+@router.get("/user/{user_id}", response_model=ListResponse)
 async def list_posts_by_user(
     request: Request,
     user_id: str,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    format: Optional[str] = Query(None, description="Response format: 'standard' for {items, meta} or 'legacy' for {posts, page, page_size}"),
     current_user: Optional[str] = Depends(get_optional_user)
 ):
-    """
-    List posts by user ID (optional authentication).
-    
-    Supports both new standardized format and legacy response format.
-    Default is new standardized format for new clients.
-    """
+    """List posts by user ID (optional authentication)."""
     try:
         client = get_community_client()
-        
-        posts = client.list_posts_by_user_id(
+
+        post_records = client.list_posts_by_user_id(
             user_id=user_id,
             limit=limit,
             offset=offset
         )
-        total = len(posts)  # Get total count
-        
-        # Convert dicts to Pydantic models
-        post_models = [PostResponse(**post) for post in posts]
-        
-        # Support legacy format for backward compatibility
-        if format == "legacy":
-            return PostsListResponse(
-                posts=post_models,
-                page=offset // limit + 1,
-                page_size=limit
-            )
-        
-        # Return standardized list response
+        total_records = len(post_records)
+        post_models = [PostResponse(**post_record) for post_record in post_records]
+
         request_id = get_request_id(request)
-        pagination_meta = PaginationMeta(
+        pagination_metadata = PaginationMeta(
             limit=limit,
             offset=offset,
-            total=total,
+            total=total_records,
             next_cursor=None,
-            has_next=offset + limit < total,
+            has_next=offset + limit < total_records,
         )
-        response_meta = ListMeta(
+        response_metadata = ListMeta(
             request_id=request_id,
-            pagination=pagination_meta,
+            pagination=pagination_metadata,
         )
-        
-        return ListResponse(items=post_models, meta=response_meta)
+
+        return ListResponse(items=post_models, meta=response_metadata)
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Error listing posts by user: {str(e)}")
+    except Exception as exception:
+        logger.error(f"Error listing posts by user: {str(exception)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error"
         )
 
 
-@router.get("/{post_id}/comments", response_model=Union[ListResponse, CommentsListResponse])
+@router.get("/{post_id}/comments", response_model=ListResponse)
 async def list_post_comments(
     request: Request,
     post_id: str,
-    format: Optional[str] = Query(None, description="Response format: 'standard' for {items, meta} or 'legacy' for {comments, total, post_id}")
 ):
-    """
-    List all comments for a post.
-    
-    Supports both new standardized format and legacy response format.
-    Default is new standardized format for new clients.
-    """
+    """List all comments for a post."""
     try:
         client = get_community_client()
         
@@ -307,35 +270,24 @@ async def list_post_comments(
                 detail="Post not found"
             )
         
-        comments = client.list_comments_by_post(post_id)
-        total = client.count_comments_by_post(post_id)
-        
-        # Convert dicts to Pydantic models
-        comment_models = [CommentResponse(**comment) for comment in comments]
-        
-        # Support legacy format for backward compatibility
-        if format == "legacy":
-            return CommentsListResponse(
-                comments=comment_models,
-                total=total,
-                post_id=post_id
-            )
-        
-        # Return standardized list response
+        comment_records = client.list_comments_by_post(post_id)
+        total_records = client.count_comments_by_post(post_id)
+        comment_models = [CommentResponse(**comment_record) for comment_record in comment_records]
+
         request_id = get_request_id(request)
-        pagination_meta = PaginationMeta(
-            limit=len(comments),
+        pagination_metadata = PaginationMeta(
+            limit=len(comment_records),
             offset=0,
-            total=total,
+            total=total_records,
             next_cursor=None,
             has_next=False,
         )
-        response_meta = ListMeta(
+        response_metadata = ListMeta(
             request_id=request_id,
-            pagination=pagination_meta,
+            pagination=pagination_metadata,
         )
-        
-        return ListResponse(items=comment_models, meta=response_meta)
+
+        return ListResponse(items=comment_models, meta=response_metadata)
     except HTTPException:
         raise
     except Exception:
