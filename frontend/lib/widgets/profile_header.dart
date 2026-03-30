@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:syntrak/core/auth/authenticated_session.dart';
 import 'package:syntrak/core/di/service_locator.dart';
 import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/models/profile.dart';
 import 'package:syntrak/providers/auth_provider.dart';
-import 'package:syntrak/services/api_service.dart';
+import 'package:syntrak/services/profile_service.dart';
 import 'package:syntrak/screens/profile/edit_profile_screen.dart';
 
 /// ProfileHeader is a widget that displays the profile information at the top of the profile screen
@@ -28,6 +29,7 @@ class ProfileHeader extends StatefulWidget {
 }
 
 class _ProfileHeaderState extends State<ProfileHeader> {
+  final ProfileService _profileService = sl<ProfileService>();
   Profile? _profile;
   bool _isLoading = true;
   String? _error;
@@ -66,64 +68,28 @@ class _ProfileHeaderState extends State<ProfileHeader> {
     });
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final apiService = sl<ApiService>();
-
-    // Check if session exists
-    if (authProvider.session == null) {
-      print('🔍 [ProfileHeader] No session available');
-      if (mounted) {
-        setState(() {
-          _error = 'Not authenticated';
-          _isLoading = false;
-        });
-      }
-      return;
-    }
-
-    // Refresh token if expired
-    final tokenRefreshed = await authProvider.refreshTokenIfNeeded();
-    if (!tokenRefreshed) {
-      print('🔍 [ProfileHeader] Token refresh failed');
-      if (mounted) {
-        setState(() {
-          _error = 'Session expired. Please login again.';
-          _isLoading = false;
-        });
-      }
-      return;
-    }
-
-    // Set token
-    if (authProvider.session != null) {
-      apiService.setToken(authProvider.session!.accessToken);
-      print('🔍 [ProfileHeader] Token set');
-    } else {
-      print('🔍 [ProfileHeader] No session after refresh');
-      if (mounted) {
-        setState(() {
-          _error = 'Not authenticated';
-          _isLoading = false;
-        });
-      }
-      return;
-    }
-
-    final userId = widget.userId ?? authProvider.user?.id;
-    print('🔍 [ProfileHeader] UserId: $userId');
-    if (userId == null) {
-      print('🔍 [ProfileHeader] User ID is null');
-      if (mounted) {
-        setState(() {
-          _error = 'User not found';
-          _isLoading = false;
-        });
-      }
-      return;
+    final sessionOutcome = await ensureAuthenticatedSession(
+      authProvider,
+      viewUserId: widget.userId,
+      requireUserId: true,
+    );
+    late final String userId;
+    switch (sessionOutcome) {
+      case AuthenticatedSessionError(:final message):
+        if (mounted) {
+          setState(() {
+            _error = message;
+            _isLoading = false;
+          });
+        }
+        return;
+      case AuthenticatedSessionOk(:final resolvedUserId):
+        userId = resolvedUserId!;
     }
 
     try {
       print('🔍 [ProfileHeader] Calling getProfileById for: $userId');
-      final profile = await apiService.getProfileById(userId);
+      final profile = await _profileService.getProfileById(userId);
       print(
           '🔍 [ProfileHeader] Profile loaded: ${profile.fullName ?? "No name"}');
       if (mounted && _lastUserId == userId) {

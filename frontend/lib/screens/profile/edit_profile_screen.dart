@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:syntrak/core/auth/authenticated_session.dart';
 import 'package:syntrak/core/di/service_locator.dart';
 import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/providers/auth_provider.dart';
-import 'package:syntrak/services/api_service.dart';
+import 'package:syntrak/services/profile_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -13,6 +14,7 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
+  final ProfileService _profileService = sl<ProfileService>();
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
   final _usernameController = TextEditingController();
@@ -48,19 +50,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final apiService = sl<ApiService>();
-
-      if (authProvider.session == null) {
-        throw Exception('Not authenticated');
+      final sessionOutcome = await ensureAuthenticatedSession(authProvider);
+      if (sessionOutcome is AuthenticatedSessionError) {
+        throw Exception(sessionOutcome.message);
       }
 
-      final tokenRefreshed = await authProvider.refreshTokenIfNeeded();
-      if (!tokenRefreshed || authProvider.session == null) {
-        throw Exception('Session expired. Please login again.');
-      }
-
-      apiService.setToken(authProvider.session!.accessToken);
-      final profile = await apiService.getCurrentUserProfile();
+      final profile = await _profileService.getCurrentUserProfile();
 
       if (!mounted) {
         return;
@@ -99,20 +94,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final apiService = sl<ApiService>();
-
-      if (authProvider.session == null) {
-        throw Exception('Not authenticated');
+      final sessionOutcome = await ensureAuthenticatedSession(authProvider);
+      if (sessionOutcome is AuthenticatedSessionError) {
+        throw Exception(sessionOutcome.message);
       }
 
-      final tokenRefreshed = await authProvider.refreshTokenIfNeeded();
-      if (!tokenRefreshed || authProvider.session == null) {
-        throw Exception('Session expired. Please login again.');
-      }
-
-      apiService.setToken(authProvider.session!.accessToken);
-
-      await apiService.updateProfile(
+      await _profileService.updateProfile(
         fullName: _fullNameController.text.trim(),
         username: _usernameController.text.trim(),
         bio: _bioController.text.trim(),

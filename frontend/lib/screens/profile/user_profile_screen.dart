@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:syntrak/core/auth/authenticated_session.dart';
 import 'package:syntrak/core/di/service_locator.dart';
 import 'package:syntrak/core/theme.dart';
+import 'package:syntrak/services/community_service.dart';
 import 'package:syntrak/models/post.dart';
 import 'package:syntrak/providers/auth_provider.dart';
-import 'package:syntrak/services/api_service.dart';
 import 'package:syntrak/widgets/profile_header.dart';
 import 'package:syntrak/widgets/message_card.dart';
 import 'package:intl/intl.dart';
@@ -22,6 +23,7 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
+  final CommunityService _communityService = sl<CommunityService>();
   List<Post> _posts = [];
   bool _isLoading = false; // Start as false - will be set when loading starts
   bool _isLoadingMore = false;
@@ -76,48 +78,26 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final apiService = sl<ApiService>();
-      
-      // Check session and refresh token if needed
-      if (authProvider.session == null) {
-        setState(() {
-          _error = 'Not authenticated';
-          _isLoading = false;
-          _isLoadingMore = false;
-        });
-        return;
-      }
-
-      // Refresh token if expired
-      final tokenRefreshed = await authProvider.refreshTokenIfNeeded();
-      if (!tokenRefreshed) {
-        setState(() {
-          _error = 'Session expired. Please login again.';
-          _isLoading = false;
-          _isLoadingMore = false;
-        });
-        return;
-      }
-
-      // Set token
-      if (authProvider.session != null) {
-        apiService.setToken(authProvider.session!.accessToken);
-      }
-
-      final userId = widget.userId ?? authProvider.user?.id;
-      print('🔍 [UserProfileScreen] UserId: $userId');
-      if (userId == null) {
-        print('🔍 [UserProfileScreen] User ID is null');
-        setState(() {
-          _error = 'User not found';
-          _isLoading = false;
-          _isLoadingMore = false;
-        });
-        return;
+      final sessionOutcome = await ensureAuthenticatedSession(
+        authProvider,
+        viewUserId: widget.userId,
+        requireUserId: true,
+      );
+      late final String userId;
+      switch (sessionOutcome) {
+        case AuthenticatedSessionError(:final message):
+          setState(() {
+            _error = message;
+            _isLoading = false;
+            _isLoadingMore = false;
+          });
+          return;
+        case AuthenticatedSessionOk(:final resolvedUserId):
+          userId = resolvedUserId!;
       }
 
       print('🔍 [UserProfileScreen] Fetching posts for user: $userId');
-      final postsData = await apiService.getPostsByUserId(
+      final postsData = await _communityService.getPostsByUserId(
         userId,
         limit: _limit,
         offset: _offset,
