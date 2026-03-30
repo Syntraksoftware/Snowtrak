@@ -1,0 +1,133 @@
+"""Write-oriented comment Supabase operations for community service."""
+import logging
+from typing import Any, Dict, Optional
+
+logger = logging.getLogger(__name__)
+
+
+class CommunityCommentWriteOperations:
+    """Mixin containing create, update, vote, and delete operations for comments."""
+
+    def create_comment(
+        self,
+        user_id: str,
+        post_id: str,
+        content: str,
+        parent_id: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """Create a new comment."""
+        try:
+            payload = {
+                "user_id": user_id,
+                "post_id": post_id,
+                "content": content,
+                "parent_id": parent_id,
+                "has_parent": parent_id is not None,
+            }
+            response = self._client.table("comments").insert(payload).execute()
+            response_data = getattr(response, "data", None)
+            if isinstance(response_data, list) and response_data:
+                logger.info("Created comment by user %s on post %s", user_id, post_id)
+                return response_data[0]
+            return None
+        except Exception as exception:
+            logger.exception("Failed to create comment: %s", exception)
+            return None
+
+    def update_comment(
+        self,
+        comment_id: str,
+        user_id: str,
+        content: str,
+    ) -> Optional[Dict[str, Any]]:
+        """Update a comment if it belongs to the requesting user."""
+        try:
+            current_comment = self.get_comment_by_id(comment_id)
+            if not current_comment:
+                return None
+            if current_comment.get("user_id") != user_id:
+                return None
+
+            response = self._client.table("comments").update({"content": content}).eq("id", comment_id).execute()
+            response_data = getattr(response, "data", None)
+            if isinstance(response_data, list) and response_data:
+                return self.get_comment_by_id(comment_id)
+            return None
+        except Exception as exception:
+            logger.exception("Failed to update comment %s: %s", comment_id, exception)
+            return None
+
+    def set_comment_vote(
+        self,
+        comment_id: str,
+        user_id: str,
+        vote_type: int,
+    ) -> Optional[Dict[str, Any]]:
+        """Set or remove a comment vote for a user."""
+        try:
+            if vote_type not in (-1, 0, 1):
+                return None
+
+            comment = self.get_comment_by_id(comment_id)
+            if not comment:
+                return None
+
+            if vote_type == 0:
+                self._client.table("comment_votes").delete().eq("comment_id", comment_id).eq("user_id", user_id).execute()
+            else:
+                existing_vote_response = self._client.table("comment_votes").select("id").eq("comment_id", comment_id).eq("user_id", user_id).limit(1).execute()
+                existing_vote_data = getattr(existing_vote_response, "data", None)
+                vote_payload = {
+                    "comment_id": comment_id,
+                    "user_id": user_id,
+                    "vote_value": vote_type,
+                }
+                if isinstance(existing_vote_data, list) and existing_vote_data:
+                    self._client.table("comment_votes").update({"vote_value": vote_type}).eq("comment_id", comment_id).eq("user_id", user_id).execute()
+                else:
+                    self._client.table("comment_votes").insert(vote_payload).execute()
+
+            score_response = self._client.table("comment_votes").select("vote_value").eq("comment_id", comment_id).execute()
+            score_rows = getattr(score_response, "data", None)
+            score = 0
+            if isinstance(score_rows, list):
+                score = sum(int(row.get("vote_value", 0)) for row in score_rows)
+
+            return {
+                "comment_id": comment_id,
+                "user_id": user_id,
+                "vote_value": vote_type,
+                "score": score,
+            }
+        except Exception as exception:
+            logger.exception("Failed to set vote for comment %s: %s", comment_id, exception)
+            return None
+
+    def delete_comment(self, comment_id: str, user_id: str) -> bool:
+        """Delete a comment and nested replies when owned by requesting user."""
+        try:
+            comment = self.get_comment_by_id(comment_id)
+            if not comment:
+                logger.warning("Comment %s not found", comment_id)
+                return False
+
+            if comment["user_id"] != user_id:
+                logger.warning(
+                    "User %s attempted to delete comment %s owned by %s",
+                    user_id,
+                    comment_id,
+                    comment["user_id"],
+                )
+                return False
+
+            response = self._client.table("comments").delete().eq("id", comment_id).execute()
+            response_data = getattr(response, "data", None)
+
+            if isinstance(response_data, list) and response_data:
+                logger.info("Deleted comment %s and all nested replies", comment_id)
+                return True
+
+            return False
+        except Exception as exception:
+            logger.exception("Failed to delete comment %s: %s", comment_id, exception)
+            return False
