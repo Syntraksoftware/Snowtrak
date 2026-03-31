@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:syntrak/core/di/service_locator.dart';
+import 'package:syntrak/core/errors/app_error.dart';
+import 'package:syntrak/core/errors/app_result.dart';
+import 'package:syntrak/core/logging/app_logger.dart';
 import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/features/community/data/community_outbox_service.dart';
 import 'package:syntrak/services/community_service.dart';
@@ -36,6 +39,10 @@ class _ThreadsTabState extends State<ThreadsTab> {
   bool _isSearchFocused = false;
   String? _expandedPostId;
   String? _activeSubthreadId;
+  AppError? _feedError;
+
+  /// One attempt to create a default subthread when API returns none (posts require a subthread_id).
+  bool _triedDefaultSubthreadCreation = false;
 
   @override
   void initState() {
@@ -56,6 +63,16 @@ class _ThreadsTabState extends State<ThreadsTab> {
     super.dispose();
   }
 
+  /// Prefer "Chat" subthread for new posts; else first in list.
+  String _pickDefaultSubthreadId(List<Map<String, dynamic>> subthreads) {
+    for (final s in subthreads) {
+      if ((s['name'] ?? '').toString().toLowerCase().trim() == 'chat') {
+        return (s['id'] ?? '').toString();
+      }
+    }
+    return (subthreads.first['id'] ?? '').toString();
+  }
+
   void _filterPosts() {
     final query = _searchController.text.toLowerCase().trim();
     if (query.isEmpty) {
@@ -74,63 +91,119 @@ class _ThreadsTabState extends State<ThreadsTab> {
     await _retryOutbox();
   }
 
-  Future<void> _loadFeed() async {
-    if (_isLoading) return;
+  void _applyLoadFailure(AppError error) {
+    if (!mounted) return;
+    final hadPosts = _posts.isNotEmpty;
+    setState(() {
+      _isLoading = false;
+      if (!hadPosts) {
+        _feedError = error;
+      }
+    });
+    if (hadPosts) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.userMessage)),
+      );
+    }
+  }
+
+  Future<void> _loadFeed({bool afterDefaultSubthread = false}) async {
+    if (!afterDefaultSubthread && _isLoading) return;
 
     setState(() {
       _isLoading = true;
+      _feedError = null;
     });
 
-    try {
-      final subthreads = await _communityService.getSubthreads(limit: 50);
-      if (subthreads.isEmpty) {
-        if (mounted) {
-          setState(() {
-            _posts.clear();
-            _filteredPosts = [];
-            _isLoading = false;
-          });
-        }
+    final subResult = await _communityService.getSubthreads(limit: 50);
+    switch (subResult) {
+      case AppFailure(:final error):
+        _applyLoadFailure(error);
         return;
-      }
-
-      _activeSubthreadId = (subthreads.first['id'] ?? '').toString();
-      if (_activeSubthreadId == null || _activeSubthreadId!.isEmpty) {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
+      case AppSuccess(:final value):
+        var subthreads = value;
+        if (subthreads.isEmpty) {
+          if (!_triedDefaultSubthreadCreation) {
+            _triedDefaultSubthreadCreation = true;
+            final created = await _communityService.createSubthread(
+              name: 'Main',
+              description: 'Default community feed',
+            );
+            switch (created) {
+              case AppFailure(:final error):
+                _triedDefaultSubthreadCreation = false;
+                _applyLoadFailure(error);
+                return;
+              case AppSuccess():
+                await _loadFeed(afterDefaultSubthread: true);
+                return;
+            }
+          }
+          if (mounted) {
+            setState(() {
+              _posts.clear();
+              _filteredPosts = [];
+              _isLoading = false;
+              _feedError = null;
+            });
+          }
+          return;
         }
-        return;
-      }
 
-      final postsData = await _communityService.getPostsBySubthread(
-        _activeSubthreadId!,
-        limit: _defaultPageSize,
-      );
+        _triedDefaultSubthreadCreation = false;
+        _activeSubthreadId = _pickDefaultSubthreadId(subthreads);
+        if (_activeSubthreadId == null || _activeSubthreadId!.isEmpty) {
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+          }
+          return;
+        }
 
-      final mapped = <Post>[];
-      for (final rawPost in postsData) {
-        final comments = await _communityService.getCommentsByPost(
-          (rawPost['post_id'] ?? '').toString(),
+        final postsResult = await _communityService.getFeedPosts(
+          limit: _defaultPageSize,
         );
-        mapped.add(CommunityPostMapper.mapBackendPost(rawPost, comments));
-      }
+        switch (postsResult) {
+          case AppFailure(:final error):
+            _applyLoadFailure(error);
+            return;
+          case AppSuccess(:final value):
+            final postsData = value;
 
-      if (mounted) {
-        setState(() {
-          _posts.clear();
-          _posts.addAll(mapped);
-          _filteredPosts = List.from(_posts);
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+            final postIds = postsData
+                .map((p) => (p['post_id'] ?? '').toString())
+                .where((id) => id.isNotEmpty)
+                .toList();
+
+            final batchResult =
+                await _communityService.getCommentsForPosts(postIds);
+            switch (batchResult) {
+              case AppFailure(:final error):
+                _applyLoadFailure(error);
+                return;
+              case AppSuccess(:final value):
+                final byPost = value;
+                final mapped = <Post>[];
+                for (final rawPost in postsData) {
+                  final pid = (rawPost['post_id'] ?? '').toString();
+                  final comments = byPost[pid] ?? <Map<String, dynamic>>[];
+                  mapped.add(
+                    CommunityPostMapper.mapBackendPost(rawPost, comments),
+                  );
+                }
+
+                if (mounted) {
+                  setState(() {
+                    _posts.clear();
+                    _posts.addAll(mapped);
+                    _filteredPosts = List.from(_posts);
+                    _isLoading = false;
+                    _feedError = null;
+                  });
+                }
+            }
+        }
     }
   }
 
@@ -178,43 +251,61 @@ class _ThreadsTabState extends State<ThreadsTab> {
       _filterPosts();
     });
 
-    try {
-      final response = await _communityService.createPost(
-        subthreadId: _activeSubthreadId!,
-        title: text.length > 48 ? '${text.substring(0, 48)}...' : text,
-        content: text,
-      );
+    final createResult = await _communityService.createPost(
+      subthreadId: _activeSubthreadId!,
+      title: text.length > 48 ? '${text.substring(0, 48)}...' : text,
+      content: text,
+    );
 
-      final confirmed = CommunityPostMapper.mapBackendPost(response, const []);
-      if (!mounted) return;
-
-      setState(() {
-        final index = _posts.indexWhere((p) => p.id == tempId);
-        if (index != -1) {
-          _posts[index] = confirmed;
-          _filterPosts();
+    switch (createResult) {
+      case AppSuccess(:final value):
+        final response = value;
+        var confirmed = CommunityPostMapper.mapBackendPost(response, const []);
+        if (confirmed.author.id == user.id) {
+          confirmed = confirmed.copyWith(
+            author: PostAuthor(
+              id: user.id,
+              displayName: user.firstName != null && user.lastName != null
+                  ? '${user.firstName} ${user.lastName}'
+                  : user.email.split('@')[0],
+              username: user.email.split('@')[0],
+              avatarUrl: null,
+            ),
+          );
         }
-      });
-    } catch (_) {
-      await _outbox.enqueue(
-        CommunityOutboxOperation(
-          id: tempId,
-          type: 'create_post',
-          payload: {
-            'subthread_id': _activeSubthreadId,
-            'title': text.length > 48 ? '${text.substring(0, 48)}...' : text,
-            'content': text,
-            'temp_id': tempId,
-          },
-        ),
-      );
+        if (!mounted) return;
 
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Post queued offline. Will retry automatically.'),
-        ),
-      );
+        setState(() {
+          final index = _posts.indexWhere((p) => p.id == tempId);
+          if (index != -1) {
+            _posts[index] = confirmed;
+            _filterPosts();
+          }
+        });
+
+      case AppFailure(:final error):
+        await _outbox.enqueue(
+          CommunityOutboxOperation(
+            id: tempId,
+            type: 'create_post',
+            payload: {
+              'subthread_id': _activeSubthreadId,
+              'title': text.length > 48 ? '${text.substring(0, 48)}...' : text,
+              'content': text,
+              'temp_id': tempId,
+            },
+          ),
+        );
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Could not send post: ${error.userMessage}. '
+              'Saved to retry automatically.',
+            ),
+          ),
+        );
     }
   }
 
@@ -310,48 +401,55 @@ class _ThreadsTabState extends State<ThreadsTab> {
       }
     });
 
-    try {
-      final response = await _communityService.createComment(
-        postId: post.id,
-        content: text,
-      );
-      final confirmedReply = CommunityPostMapper.mapCommentToPost(response);
-      if (!mounted) return;
+    final commentResult = await _communityService.createComment(
+      postId: post.id,
+      content: text,
+    );
 
-      setState(() {
-        final index = _posts.indexWhere((p) => p.id == post.id);
-        if (index != -1) {
-          final current = _posts[index];
-          final nextReplies = (current.replies ?? [])
-              .map((reply) => reply.id == tempReplyId ? confirmedReply : reply)
-              .toList()
-              .cast<Post>();
-          _posts[index] = current.copyWith(
-            replies: nextReplies,
-            replyCount: nextReplies.length,
-          );
-          _filterPosts();
-        }
-      });
-    } catch (_) {
-      await _outbox.enqueue(
-        CommunityOutboxOperation(
-          id: tempReplyId,
-          type: 'create_comment',
-          payload: {
-            'post_id': post.id,
-            'content': text,
-            'temp_id': tempReplyId,
-          },
-        ),
-      );
+    switch (commentResult) {
+      case AppSuccess(:final value):
+        final response = value;
+        final confirmedReply = CommunityPostMapper.mapCommentToPost(response);
+        if (!mounted) return;
 
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Reply queued offline. Will retry automatically.'),
-        ),
-      );
+        setState(() {
+          final index = _posts.indexWhere((p) => p.id == post.id);
+          if (index != -1) {
+            final current = _posts[index];
+            final nextReplies = (current.replies ?? [])
+                .map((reply) => reply.id == tempReplyId ? confirmedReply : reply)
+                .toList()
+                .cast<Post>();
+            _posts[index] = current.copyWith(
+              replies: nextReplies,
+              replyCount: nextReplies.length,
+            );
+            _filterPosts();
+          }
+        });
+
+      case AppFailure(:final error):
+        await _outbox.enqueue(
+          CommunityOutboxOperation(
+            id: tempReplyId,
+            type: 'create_comment',
+            payload: {
+              'post_id': post.id,
+              'content': text,
+              'temp_id': tempReplyId,
+            },
+          ),
+        );
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Could not send reply: ${error.userMessage}. '
+              'Saved to retry automatically.',
+            ),
+          ),
+        );
     }
   }
 
@@ -361,25 +459,35 @@ class _ThreadsTabState extends State<ThreadsTab> {
 
     final pending = <CommunityOutboxOperation>[];
     for (final operation in operations) {
-      try {
-        if (operation.type == 'create_post') {
-          await _communityService.createPost(
-            subthreadId: (operation.payload['subthread_id'] ?? '').toString(),
-            title: (operation.payload['title'] ?? '').toString(),
-            content: (operation.payload['content'] ?? '').toString(),
-          );
-        } else if (operation.type == 'create_comment') {
-          await _communityService.createComment(
-            postId: (operation.payload['post_id'] ?? '').toString(),
-            content: (operation.payload['content'] ?? '').toString(),
-          );
-        } else if (operation.type == 'vote_post') {
-          await _communityService.votePost(
-            postId: (operation.payload['post_id'] ?? '').toString(),
-            voteType: (operation.payload['vote_type'] as num?)?.toInt() ?? 0,
-          );
-        }
-      } catch (_) {
+      var succeeded = false;
+      if (operation.type == 'create_post') {
+        final r = await _communityService.createPost(
+          subthreadId: (operation.payload['subthread_id'] ?? '').toString(),
+          title: (operation.payload['title'] ?? '').toString(),
+          content: (operation.payload['content'] ?? '').toString(),
+        );
+        succeeded = r.isSuccess;
+      } else if (operation.type == 'create_comment') {
+        final r = await _communityService.createComment(
+          postId: (operation.payload['post_id'] ?? '').toString(),
+          content: (operation.payload['content'] ?? '').toString(),
+        );
+        succeeded = r.isSuccess;
+      } else if (operation.type == 'vote_post') {
+        final r = await _communityService.votePost(
+          postId: (operation.payload['post_id'] ?? '').toString(),
+          voteType: (operation.payload['vote_type'] as num?)?.toInt() ?? 0,
+        );
+        succeeded = r.isSuccess;
+      } else {
+        // Unknown operation type: log warning and mark for retry
+        AppLogger.instance.warning(
+          '[ThreadsTab] Unknown outbox operation type: ${operation.type}',
+          notifyUser: false,
+        );
+        succeeded = false;
+      }
+      if (!succeeded) {
         pending.add(operation.copyWith(retryCount: operation.retryCount + 1));
       }
     }
@@ -394,34 +502,70 @@ class _ThreadsTabState extends State<ThreadsTab> {
     required String postId,
     required int voteType,
   }) async {
-    try {
-      await _communityService.votePost(postId: postId, voteType: voteType);
-    } catch (_) {
-      await _outbox.enqueue(
-        CommunityOutboxOperation(
-          id: 'vote_${DateTime.now().millisecondsSinceEpoch}_$postId',
-          type: 'vote_post',
-          payload: {
-            'post_id': postId,
-            'vote_type': voteType,
-          },
-        ),
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vote queued offline. Will retry automatically.'),
-        ),
-      );
+    final voteResult = await _communityService.votePost(
+      postId: postId,
+      voteType: voteType,
+    );
+    switch (voteResult) {
+      case AppSuccess():
+        break;
+      case AppFailure(:final error):
+        await _outbox.enqueue(
+          CommunityOutboxOperation(
+            id: 'vote_${DateTime.now().millisecondsSinceEpoch}_$postId',
+            type: 'vote_post',
+            payload: {
+              'post_id': postId,
+              'vote_type': voteType,
+            },
+          ),
+        );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Could not save vote: ${error.userMessage}. '
+              'Saved to retry automatically.',
+            ),
+          ),
+        );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading && _posts.isEmpty) {
+    if (_isLoading && _posts.isEmpty && _feedError == null) {
       return Center(
         child: CircularProgressIndicator(
           valueColor: AlwaysStoppedAnimation<Color>(SyntrakColors.primary),
+        ),
+      );
+    }
+
+    if (!_isLoading && _posts.isEmpty && _feedError != null) {
+      final err = _feedError!;
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(SyntrakSpacing.lg),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                err.userMessage,
+                textAlign: TextAlign.center,
+                style: SyntrakTypography.bodyMedium.copyWith(
+                  color: SyntrakColors.error,
+                ),
+              ),
+              if (err.retryable) ...[
+                const SizedBox(height: SyntrakSpacing.md),
+                ElevatedButton(
+                  onPressed: _loadFeed,
+                  child: const Text('Retry'),
+                ),
+              ],
+            ],
+          ),
         ),
       );
     }
