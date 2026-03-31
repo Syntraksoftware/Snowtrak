@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:syntrak/core/auth/authenticated_session.dart';
 import 'package:syntrak/core/di/service_locator.dart';
+import 'package:syntrak/core/errors/app_error.dart';
+import 'package:syntrak/core/errors/app_result.dart';
+import 'package:syntrak/core/logging/app_logger.dart';
 import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/services/community_service.dart';
 import 'package:syntrak/models/post.dart';
@@ -28,6 +31,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   bool _isLoading = false; // Start as false - will be set when loading starts
   bool _isLoadingMore = false;
   String? _error;
+  bool _errorRetryable = true;
   int _offset = 0;
   static const int _limit = 20;
   bool _hasMore = true;
@@ -46,16 +50,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Future<void> _loadPosts({bool refresh = false}) async {
     // Prevent multiple simultaneous loads (but allow refresh)
     if (!refresh && (_isLoading || _isLoadingMore)) {
-      print('🔍 [UserProfileScreen] Skipping load - already loading');
+      AppLogger.instance.debug('[UserProfileScreen] Skipping load - already loading');
       return;
     }
 
     if (!mounted) {
-      print('🔍 [UserProfileScreen] Not mounted, skipping load');
+      AppLogger.instance.debug('[UserProfileScreen] Not mounted, skipping load');
       return;
     }
 
-    print('🔍 [UserProfileScreen] Loading posts (refresh: $refresh)');
+    AppLogger.instance.debug('[UserProfileScreen] Loading posts (refresh: $refresh)');
     
     // Set loading state BEFORE making the API call
     setState(() {
@@ -74,6 +78,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         _isLoadingMore = true;
       }
       _error = null;
+      _errorRetryable = true;
     });
 
     try {
@@ -88,6 +93,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         case AuthenticatedSessionError(:final message):
           setState(() {
             _error = message;
+            _errorRetryable = false;
             _isLoading = false;
             _isLoadingMore = false;
           });
@@ -96,13 +102,30 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           userId = resolvedUserId!;
       }
 
-      print('🔍 [UserProfileScreen] Fetching posts for user: $userId');
-      final postsData = await _communityService.getPostsByUserId(
+      AppLogger.instance.debug('[UserProfileScreen] Fetching posts for user: $userId');
+      final postsResult = await _communityService.getPostsByUserId(
         userId,
         limit: _limit,
         offset: _offset,
       );
-      print('🔍 [UserProfileScreen] Received ${postsData.length} posts');
+
+      final List<Map<String, dynamic>> postsData;
+      switch (postsResult) {
+        case AppFailure(:final error):
+          if (mounted) {
+            setState(() {
+              _error = error.userMessage;
+              _errorRetryable = error.retryable;
+              _isLoading = false;
+              _isLoadingMore = false;
+            });
+          }
+          return;
+        case AppSuccess(:final value):
+          postsData = value;
+      }
+
+      AppLogger.instance.debug('[UserProfileScreen] Received ${postsData.length} posts');
 
       final newPosts = postsData.map((postJson) {
         // Convert backend post format to frontend Post model
@@ -140,18 +163,17 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           _isLoading = false;
           _isLoadingMore = false;
         });
-        print('🔍 [UserProfileScreen] Posts loaded: ${_posts.length} total');
+        AppLogger.instance.debug('[UserProfileScreen] Posts loaded: ${_posts.length} total');
       }
     } catch (e, stackTrace) {
-      print('🔍 [UserProfileScreen] Error loading posts: $e');
-      print('🔍 [UserProfileScreen] Stack trace: $stackTrace');
       if (mounted) {
+        final appError = AppError.from(e, stackTrace);
         setState(() {
-          _error = e.toString();
+          _error = appError.userMessage;
+          _errorRetryable = appError.retryable;
           _isLoading = false;
           _isLoadingMore = false;
         });
-        print('🔍 [UserProfileScreen] Error state set: $_error');
       }
     }
   }
@@ -179,7 +201,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print('🔍 [UserProfileScreen] Building screen. isLoading: $_isLoading, error: $_error, posts: ${_posts.length}');
+    AppLogger.instance.debug('[UserProfileScreen] Building screen. isLoading: $_isLoading, error: $_error, posts: ${_posts.length}');
     
     return Scaffold(
       backgroundColor: SyntrakColors.background,
@@ -198,16 +220,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Error: $_error',
+                          _error!,
+                          textAlign: TextAlign.center,
                           style: SyntrakTypography.bodyMedium.copyWith(
                             color: SyntrakColors.error,
                           ),
                         ),
-                        const SizedBox(height: SyntrakSpacing.md),
-                        ElevatedButton(
-                          onPressed: () => _loadPosts(refresh: true),
-                          child: const Text('Retry'),
-                        ),
+                        if (_errorRetryable) ...[
+                          const SizedBox(height: SyntrakSpacing.md),
+                          ElevatedButton(
+                            onPressed: () => _loadPosts(refresh: true),
+                            child: const Text('Retry'),
+                          ),
+                        ],
                       ],
                     ),
                   )
