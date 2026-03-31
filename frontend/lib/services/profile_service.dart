@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:syntrak/core/errors/app_error.dart';
+import 'package:syntrak/core/errors/app_result.dart';
 import 'package:syntrak/features/profile/data/profile_repository.dart';
 import 'package:syntrak/models/profile.dart';
 import 'package:syntrak/models/user.dart';
@@ -10,25 +12,25 @@ class ProfileService {
 
   final ProfileRepository _profileRepository;
 
-  Future<User> getCurrentUser() {
-    return _profileRepository.getCurrentUser();
+  Future<AppResult<User>> getCurrentUser() {
+    return _run(() => _profileRepository.getCurrentUser());
   }
 
-  Future<User> updateUserProfile({
+  Future<AppResult<User>> updateUserProfile({
     String? firstName,
     String? lastName,
   }) {
-    return _profileRepository.updateUserProfile(
-      firstName: firstName,
-      lastName: lastName,
-    );
+    return _run(() => _profileRepository.updateUserProfile(
+          firstName: firstName,
+          lastName: lastName,
+        ));
   }
 
-  Future<Profile> getCurrentUserProfile() {
-    return _profileRepository.getCurrentUserProfile();
+  Future<AppResult<Profile>> getCurrentUserProfile() {
+    return _run(() => _profileRepository.getCurrentUserProfile());
   }
 
-  Future<Profile> updateProfile({
+  Future<AppResult<Profile>> updateProfile({
     String? fullName,
     String? username,
     String? bio,
@@ -37,22 +39,30 @@ class ProfileService {
     String? skiLevel,
     String? home,
   }) {
-    return _profileRepository.updateProfile(
-      fullName: fullName,
-      username: username,
-      bio: bio,
-      avatarUrl: avatarUrl,
-      pushToken: pushToken,
-      skiLevel: skiLevel,
-      home: home,
-    );
+    return _run(() => _profileRepository.updateProfile(
+          fullName: fullName,
+          username: username,
+          bio: bio,
+          avatarUrl: avatarUrl,
+          pushToken: pushToken,
+          skiLevel: skiLevel,
+          home: home,
+        ));
   }
 
-  Future<Profile> getProfileById(String userId) {
-    return _profileRepository.getProfileById(userId);
+  Future<AppResult<Profile>> getProfileById(String userId) {
+    return _run(() => _profileRepository.getProfileById(userId));
   }
 
-  Future<Profile> uploadAvatar(File imageFile) {
-    return _profileRepository.uploadAvatar(imageFile);
+  Future<AppResult<Profile>> uploadAvatar(File imageFile) {
+    return _run(() => _profileRepository.uploadAvatar(imageFile));
+  }
+
+  Future<AppResult<T>> _run<T>(Future<T> Function() fn) async {
+    try {
+      return AppSuccess(await fn());
+    } catch (e, st) {
+      return AppFailure(AppError.from(e, st));
+    }
   }
 }

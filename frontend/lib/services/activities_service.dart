@@ -1,5 +1,7 @@
 import 'package:syntrak/core/config/app_config.dart';
 import 'package:syntrak/core/config/app_environment.dart';
+import 'package:syntrak/core/errors/app_error.dart';
+import 'package:syntrak/core/errors/app_result.dart';
 import 'package:syntrak/features/activities/data/activities_repository.dart';
 import 'package:syntrak/models/activity.dart';
 
@@ -15,33 +17,64 @@ class ActivitiesService {
 
   bool get isDevEnvironment => _appConfig.environment == AppEnvironment.dev;
 
-  Future<Activity> createActivity(Activity activity) {
-    return _activitiesRepository.createActivity(activity);
+  Future<AppResult<Activity>> createActivity(Activity activity) async {
+    try {
+      final created = await _activitiesRepository.createActivity(activity);
+      return AppSuccess(created);
+    } catch (e, st) {
+      return AppFailure(AppError.from(e, st));
+    }
   }
 
-  Future<List<Activity>> getActivities({int page = 1, int limit = 20}) {
-    return _activitiesRepository.getActivities(page: page, limit: limit);
+  Future<AppResult<List<Activity>>> getActivities({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    try {
+      final list = await _activitiesRepository.getActivities(
+        page: page,
+        limit: limit,
+      );
+      return AppSuccess(list);
+    } catch (e, st) {
+      return AppFailure(AppError.from(e, st));
+    }
   }
 
-  Future<Activity> getActivity(String id) {
-    return _activitiesRepository.getActivity(id);
+  Future<AppResult<Activity>> getActivity(String id) async {
+    try {
+      final activity = await _activitiesRepository.getActivity(id);
+      return AppSuccess(activity);
+    } catch (e, st) {
+      return AppFailure(AppError.from(e, st));
+    }
   }
 
-  Future<Activity> updateActivity(
+  Future<AppResult<Activity>> updateActivity(
     String id, {
     String? name,
     String? description,
     bool? isPublic,
-  }) {
-    return _activitiesRepository.updateActivity(
-      id,
-      name: name,
-      description: description,
-      isPublic: isPublic,
-    );
+  }) async {
+    try {
+      final updated = await _activitiesRepository.updateActivity(
+        id,
+        name: name,
+        description: description,
+        isPublic: isPublic,
+      );
+      return AppSuccess(updated);
+    } catch (e, st) {
+      return AppFailure(AppError.from(e, st));
+    }
   }
 
-  Future<void> deleteActivity(String id) {
-    return _activitiesRepository.deleteActivity(id);
+  Future<AppResult<Unit>> deleteActivity(String id) async {
+    try {
+      await _activitiesRepository.deleteActivity(id);
+      return const AppSuccess(Unit.unit);
+    } catch (e, st) {
+      return AppFailure(AppError.from(e, st));
+    }
   }
 }

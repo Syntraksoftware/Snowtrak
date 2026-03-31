@@ -9,6 +9,13 @@ class CommunityRepository {
     return _api.getSubthreads(limit: limit);
   }
 
+  Future<Map<String, dynamic>> createSubthread({
+    required String name,
+    String? description,
+  }) {
+    return _api.createSubthread(name: name, description: description);
+  }
+
   Future<List<Map<String, dynamic>>> getPostsBySubthread(
     String subthreadId, {
     int limit = 20,
@@ -21,8 +28,21 @@ class CommunityRepository {
     );
   }
 
+  Future<List<Map<String, dynamic>>> getFeedPosts({
+    int limit = 20,
+    int offset = 0,
+  }) {
+    return _api.getFeedPosts(limit: limit, offset: offset);
+  }
+
   Future<List<Map<String, dynamic>>> getCommentsByPost(String postId) {
     return _api.getCommentsByPost(postId);
+  }
+
+  Future<Map<String, List<Map<String, dynamic>>>> getCommentsForPosts(
+    List<String> postIds,
+  ) {
+    return _api.getCommentsForPosts(postIds);
   }
 
   Future<List<Map<String, dynamic>>> getPostsByUserId(

@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+import 'package:syntrak/core/errors/app_result.dart';
 import 'package:syntrak/core/logging/app_logger.dart';
 import 'package:syntrak/features/auth/data/auth_session_store.dart';
 import 'package:syntrak/models/user.dart';
@@ -70,22 +73,30 @@ class AuthProvider extends ChangeNotifier {
               '🔍 [AuthProvider] Token still valid, validating with backend...');
           _authService.setToken(restoredSession.accessToken);
           try {
-            // Validate token with backend
-            final user = await _profileService
+            final userResult = await _profileService
                 .getCurrentUser()
                 .timeout(const Duration(seconds: 3));
-            _session = AuthSession(
-              accessToken: restoredSession.accessToken,
-              refreshToken: restoredSession.refreshToken,
-              expiresAt: restoredSession.expiresAt,
-              user: user,
-            );
-            _isAuthenticated = true;
-            AppLogger.instance
-                .debug('🔍 [AuthProvider] User authenticated: ${user.email}');
-          } catch (e) {
-            AppLogger.instance
-                .debug('🔍 [AuthProvider] Token validation failed: $e');
+            switch (userResult) {
+              case AppSuccess(:final value):
+                final user = value;
+                _session = AuthSession(
+                  accessToken: restoredSession.accessToken,
+                  refreshToken: restoredSession.refreshToken,
+                  expiresAt: restoredSession.expiresAt,
+                  user: user,
+                );
+                _isAuthenticated = true;
+                AppLogger.instance.debug(
+                    '🔍 [AuthProvider] User authenticated: ${user.email}');
+              case AppFailure(:final error):
+                AppLogger.instance.debug(
+                    '🔍 [AuthProvider] Token validation failed: ${error.userMessage}');
+                await _sessionStore.clear();
+                _isAuthenticated = false;
+            }
+          } on TimeoutException {
+            AppLogger.instance.debug(
+                '🔍 [AuthProvider] Token validation timed out');
             await _sessionStore.clear();
             _isAuthenticated = false;
           }
@@ -114,38 +125,49 @@ class AuthProvider extends ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      final response =
+      final result =
           await _authService.login(email: email, password: password);
-      AppLogger.instance.debug('🔍 [AuthProvider] Login API response received');
+      switch (result) {
+        case AppSuccess(:final value):
+          final response = value;
+          AppLogger.instance
+              .debug('🔍 [AuthProvider] Login API response received');
 
-      // Parse session from response
-      _session = AuthSession.fromJson(response);
-      AppLogger.instance.debug(
-          '🔍 [AuthProvider] Session parsed, user: ${_session!.user.email}');
-      _authService.setToken(_session!.accessToken);
-      _isAuthenticated = true;
-      _error = null;
+          _session = AuthSession.fromJson(response);
+          AppLogger.instance.debug(
+              '🔍 [AuthProvider] Session parsed, user: ${_session!.user.email}');
+          _authService.setToken(_session!.accessToken);
+          _isAuthenticated = true;
+          _error = null;
 
-      // Save session to storage
-      await _sessionStore.save(_session!);
-      AppLogger.instance.debug(
-          '🔍 [AuthProvider] Session saved, isAuthenticated: $_isAuthenticated');
+          await _sessionStore.save(_session!);
+          AppLogger.instance.debug(
+              '🔍 [AuthProvider] Session saved, isAuthenticated: $_isAuthenticated');
 
-      _isLoading = false;
-      AppLogger.instance.debug(
-          '🔍 [AuthProvider] Calling notifyListeners() after successful login');
-      notifyListeners();
+          _isLoading = false;
+          AppLogger.instance.debug(
+              '🔍 [AuthProvider] Calling notifyListeners() after successful login');
+          notifyListeners();
 
-      // Force another notify after a brief delay to ensure Consumer rebuilds
-      Future.delayed(const Duration(milliseconds: 50), () {
-        AppLogger.instance.debug(
-            '🔍 [AuthProvider] Second notifyListeners() call to ensure rebuild');
-        notifyListeners();
-      });
+          Future.delayed(const Duration(milliseconds: 50), () {
+            AppLogger.instance.debug(
+                '🔍 [AuthProvider] Second notifyListeners() call to ensure rebuild');
+            notifyListeners();
+          });
 
-      AppLogger.instance
-          .debug('🔍 [AuthProvider] notifyListeners() called, returning true');
-      return true;
+          AppLogger.instance.debug(
+              '🔍 [AuthProvider] notifyListeners() called, returning true');
+          return true;
+
+        case AppFailure(:final error):
+          AppLogger.instance
+              .debug('🔍 [AuthProvider] Login error: ${error.userMessage}');
+          _error = error.userMessage;
+          _isLoading = false;
+          _isAuthenticated = false;
+          notifyListeners();
+          return false;
+      }
     } catch (error) {
       AppLogger.instance.debug('🔍 [AuthProvider] Login error: $error');
       _error = error.toString();
@@ -163,34 +185,36 @@ class AuthProvider extends ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      final response = await _authService.register(
+      final result = await _authService.register(
         email: email,
         password: password,
         firstName: firstName,
         lastName: lastName,
       );
 
-      // Parse session from response
-      _session = AuthSession.fromJson(response);
-      _authService.setToken(_session!.accessToken);
-      _isAuthenticated = true;
-      _error = null;
+      switch (result) {
+        case AppSuccess(:final value):
+          final response = value;
+          _session = AuthSession.fromJson(response);
+          _authService.setToken(_session!.accessToken);
+          _isAuthenticated = true;
+          _error = null;
 
-      // Save session to storage
-      await _sessionStore.save(_session!);
+          await _sessionStore.save(_session!);
 
-      _isLoading = false;
-      notifyListeners();
-      return true;
-    } catch (error) {
-      // Extract clean error message
-      String errorMessage = 'Registration failed';
-      if (error is Exception) {
-        errorMessage = error.toString().replaceFirst('Exception: ', '');
-      } else {
-        errorMessage = error.toString();
+          _isLoading = false;
+          notifyListeners();
+          return true;
+
+        case AppFailure(:final error):
+          _error = error.userMessage;
+          _isLoading = false;
+          _isAuthenticated = false;
+          notifyListeners();
+          return false;
       }
-      _error = errorMessage;
+    } catch (error) {
+      _error = error.toString();
       _isLoading = false;
       _isAuthenticated = false;
       notifyListeners();
@@ -203,47 +227,43 @@ class AuthProvider extends ChangeNotifier {
     _session = null;
     _isAuthenticated = false;
 
-    // Clear session from storage
     await _sessionStore.clear();
 
     notifyListeners();
   }
 
-  /// Refresh user data from the backend, do not assume the data is constant
-  /// setup the reload logic to detect changes in the supabase side rather than user side
   Future<void> refreshUserData() async {
     if (!_isAuthenticated || _session == null) {
       return;
     }
 
-    try {
-      AppLogger.instance.debug('🔍 [AuthProvider] Refreshing user data...');
-      final user = await _profileService.getCurrentUser();
-      _session = AuthSession(
-        accessToken: _session!.accessToken,
-        refreshToken: _session!.refreshToken,
-        expiresAt: _session!.expiresAt,
-        user: user,
-      );
-      await _sessionStore.save(_session!);
-      AppLogger.instance
-          .debug('🔍 [AuthProvider] User data refreshed: ${user.firstName}');
-      notifyListeners();
-    } catch (e) {
-      AppLogger.instance
-          .debug('🔍 [AuthProvider] Error refreshing user data: $e');
+    final result = await _profileService.getCurrentUser();
+    switch (result) {
+      case AppSuccess(:final value):
+        final user = value;
+        AppLogger.instance.debug('🔍 [AuthProvider] Refreshing user data...');
+        _session = AuthSession(
+          accessToken: _session!.accessToken,
+          refreshToken: _session!.refreshToken,
+          expiresAt: _session!.expiresAt,
+          user: user,
+        );
+        await _sessionStore.save(_session!);
+        AppLogger.instance.debug(
+            '🔍 [AuthProvider] User data refreshed: ${user.firstName}');
+        notifyListeners();
+      case AppFailure(:final error):
+        AppLogger.instance.debug(
+            '🔍 [AuthProvider] Error refreshing user data: ${error.userMessage}');
     }
   }
 
-  /// Refresh the access token using the refresh token
-  /// Returns true if refresh was successful, false otherwise
   Future<bool> refreshTokenIfNeeded() async {
     if (_session == null) {
       AppLogger.instance.debug('🔍 [AuthProvider] No session to refresh');
       return false;
     }
 
-    // Check if token is expired
     if (!_session!.isExpired) {
       AppLogger.instance.debug('🔍 [AuthProvider] Token is still valid');
       return true;
@@ -268,7 +288,6 @@ class AuthProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       AppLogger.instance.debug('🔍 [AuthProvider] Token refresh failed: $e');
-      // Clear session on refresh failure
       _session = null;
       _isAuthenticated = false;
       _authService.setToken(null);
@@ -283,12 +302,14 @@ class AuthProvider extends ChangeNotifier {
       throw Exception('No refresh token available');
     }
 
-    try {
-      final response = await _authService.refreshToken(oldSession.refreshToken!);
-      return AuthSession.fromJson(response);
-    } catch (e) {
-      AppLogger.instance.debug('🔍 [AuthProvider] Token refresh failed: $e');
-      rethrow;
+    final result = await _authService.refreshToken(oldSession.refreshToken!);
+    switch (result) {
+      case AppSuccess(:final value):
+        return AuthSession.fromJson(value);
+      case AppFailure(:final error):
+        AppLogger.instance.debug(
+            '🔍 [AuthProvider] Token refresh failed: ${error.userMessage}');
+        throw Exception(error.userMessage);
     }
   }
 }
