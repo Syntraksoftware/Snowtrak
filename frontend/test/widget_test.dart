@@ -25,10 +25,10 @@ void main() {
   testWidgets('App loads successfully', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const SyntrakApp());
-    
-    // Allow async operations to complete
-    // pumpAndSettle will wait for all animations and async operations
-    await tester.pumpAndSettle(const Duration(seconds: 10));
+
+    // Avoid pumpAndSettle because periodic polling timers keep the app "busy".
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     // Verify that the app loads (check for MaterialApp)
     expect(find.byType(MaterialApp), findsOneWidget);

@@ -28,6 +28,12 @@ class CommunityPostMapper {
 
     final replies = mapRepliesFromComments(rawComments);
 
+    final likeCount = (rawPost['like_count'] as num?)?.toInt() ?? 0;
+    final replyCountFromApi = (rawPost['reply_count'] as num?)?.toInt();
+    final repostCount = (rawPost['repost_count'] as num?)?.toInt() ?? 0;
+    final likedByCurrentUser = rawPost['liked_by_current_user'] == true;
+    final repostedByCurrentUser = rawPost['reposted_by_current_user'] == true;
+
     return Post(
       id: (rawPost['post_id'] ?? rawPost['id'] ?? '').toString(),
       author: PostAuthor(
@@ -41,9 +47,11 @@ class CommunityPostMapper {
       text: (rawPost['content'] ?? rawPost['title'] ?? '').toString(),
       createdAt: createdAt,
       timestampLabel: timestampLabel(createdAt),
-      likeCount: 0,
-      replyCount: replies.length,
-      repostCount: 0,
+      likeCount: likeCount,
+      replyCount: replyCountFromApi ?? replies.length,
+      repostCount: repostCount,
+      likedByCurrentUser: likedByCurrentUser,
+      repostedByCurrentUser: repostedByCurrentUser,
       replies: replies,
     );
   }

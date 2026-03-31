@@ -39,18 +39,19 @@ async def create_comment(
             )
 
         if data.parent_id:
-            parent_comment = community_client.get_comment_by_id(data.parent_id)
-            if not parent_comment:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Parent comment not found",
-                )
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=(
+                    "Nested comment threads are disabled. "
+                    "Post a top-level comment and mention users with @username."
+                ),
+            )
 
         created_comment = community_client.create_comment(
             user_id=user_id,
             post_id=data.post_id,
             content=data.content,
-            parent_id=data.parent_id,
+            parent_id=None,
         )
         if not created_comment:
             raise HTTPException(

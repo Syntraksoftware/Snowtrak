@@ -25,16 +25,16 @@ jobs:
       matrix:
         include:
           - service: main-backend
-            context: ./backend/main-backend
+            context: ./backend
             dockerfile: ./backend/main-backend/Dockerfile
           - service: community-backend
-            context: ./backend/community-backend
+            context: ./backend
             dockerfile: ./backend/community-backend/Dockerfile
           - service: activity-backend
-            context: ./backend/activity-backend
+            context: ./backend
             dockerfile: ./backend/activity-backend/Dockerfile
           - service: map-backend
-            context: ./backend/map-backend
+            context: ./backend
             dockerfile: ./backend/map-backend/Dockerfile
           - service: frontend-web
             context: ./frontend
@@ -91,6 +91,13 @@ jobs:
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Smoke check backend image imports
+        if: matrix.service != 'frontend-web'
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm "${{ steps.vars.outputs.sha_tag }}" python -c "import shared.auth; print('shared import OK')"
 
       - name: Scan image with Trivy (SARIF)
         id: trivy

@@ -44,6 +44,14 @@ class _MessageActionsState extends State<MessageActions>
   }
 
   @override
+  void didUpdateWidget(MessageActions oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isLiked != oldWidget.isLiked) {
+      _isLiked = widget.isLiked;
+    }
+  }
+
+  @override
   void dispose() {
     _likeAnimationController.dispose();
     super.dispose();
@@ -64,24 +72,23 @@ class _MessageActionsState extends State<MessageActions>
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Reply - left-aligned
+        // Like first (Threads-style)
         Flexible(
           child: _buildActionButton(
-          icon: Icons.chat_bubble_outline,
-          count: widget.replyCount,
-          onTap: widget.onReply,
-        ),
+            icon: _isLiked ? Icons.favorite : Icons.favorite_border,
+            count: widget.likeCount,
+            isActive: _isLiked,
+            onTap: _handleLike,
+            animated: true,
+          ),
         ),
         const SizedBox(width: 16),
-        // Like - consistent spacing
         Flexible(
           child: _buildActionButton(
-          icon: _isLiked ? Icons.favorite : Icons.favorite_border,
-          count: widget.likeCount,
-          isActive: _isLiked,
-          onTap: _handleLike,
-          animated: true,
-        ),
+            icon: Icons.chat_bubble_outline,
+            count: widget.replyCount,
+            onTap: widget.onReply,
+          ),
         ),
         const SizedBox(width: 16),
         // Repost - consistent spacing

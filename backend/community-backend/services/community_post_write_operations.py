@@ -146,3 +146,51 @@ class CommunityPostWriteOperations:
         except Exception as exception:
             logger.exception("Failed to delete post %s: %s", post_id, exception)
             return False
+
+    def set_post_repost(
+        self,
+        post_id: str,
+        user_id: str,
+        reposted: bool,
+    ) -> Optional[Dict[str, Any]]:
+        """Create or remove repost marker for a post."""
+        try:
+            post = self.get_post_by_id(post_id)
+            if not post:
+                return None
+
+            if reposted:
+                existing_response = self._client.table("post_reposts").select("id").eq(
+                    "post_id",
+                    post_id,
+                ).eq("user_id", user_id).limit(1).execute()
+                existing_data = getattr(existing_response, "data", None)
+                if not (isinstance(existing_data, list) and existing_data):
+                    self._client.table("post_reposts").insert(
+                        {
+                            "post_id": post_id,
+                            "user_id": user_id,
+                        }
+                    ).execute()
+            else:
+                self._client.table("post_reposts").delete().eq("post_id", post_id).eq(
+                    "user_id",
+                    user_id,
+                ).execute()
+
+            count_response = self._client.table("post_reposts").select("id").eq(
+                "post_id",
+                post_id,
+            ).execute()
+            count_rows = getattr(count_response, "data", None)
+            repost_count = len(count_rows) if isinstance(count_rows, list) else 0
+
+            return {
+                "post_id": post_id,
+                "user_id": user_id,
+                "reposted": reposted,
+                "repost_count": repost_count,
+            }
+        except Exception as exception:
+            logger.exception("Failed to set repost for post %s: %s", post_id, exception)
+            return None

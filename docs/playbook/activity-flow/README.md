@@ -19,7 +19,7 @@ This document traces activity operations from Flutter client calls to activity-b
 5. `frontend/lib/services/api_service.dart`
 6. `frontend/lib/models/activity.dart`
 7. `backend/activity-backend/routes/activities.py`
-8. `backend/activity-backend/models.py`
+8. `backend/activity-backend/models.pydocke`
 9. `backend/activity-backend/main.py`
 
 - Activities are owned by activity-backend under `/api/v1/activitues`
@@ -50,6 +50,7 @@ UI (ActivitiesScreen / RecordScreen / ActivityDetailScreen) → ActivityProvider
 
 > Startup and wiring (same as main-backend): 
 
+>
 > | Responsibility                                                                    | Where                                                                           |
 > | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 > | Dev/staging/prod base URLs (including activity API)                               | `frontend/lib/core/config/app_config.dart`                                      |
@@ -57,28 +58,32 @@ UI (ActivitiesScreen / RecordScreen / ActivityDetailScreen) → ActivityProvider
 > | Attach Authorization: Bearer when a token exists                                  | `frontend/lib/core/network/dio_factory.dart` + `AuthTokenStore`                 |
 > | After login, token is set so activity calls are authenticated                     | `frontend/lib/providers/auth_provider.dart` (calls `_apiService.setToken`)      |
 > | Expose activity list/create/delete/detail to the widget tree                      | `frontend/lib/main.dart` — `ChangeNotifierProxyProvider<..., ActivityProvider>` |
+>
 
-- All activity HTTP traffic goes through the named DIO instance `activity`, not the main-backend client 
-
+- All activity HTTP traffic goes through the named DIO instance `activity`, not the main-backend client
 
 > Domain model and json shape: 
-| Responsibility                               | Where                                                         |
-|----------------------------------------------|---------------------------------------------------------------|
-| Activity, ActivityType, toJson/fromJson for API | `frontend/lib/models/activity.dart`                            |
-| GPS points while recording (this should be in backend, one of todo)                   | `LocationService` (used from RecordScreen) + `frontend/lib/models/location.dart` |
-
+>
+>
+> | Responsibility                                                      | Where                                                                            |
+> | ------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+> | Activity, ActivityType, toJson/fromJson for API                     | `frontend/lib/models/activity.dart`                                              |
+> | GPS points while recording (this should be in backend, one of todo) | `LocationService` (used from RecordScreen) + `frontend/lib/models/location.dart` |
+>
 
 > Network layer (client -> HTTP): 
-| Responsibility                                        | Where                                                                                       |
-|-------------------------------------------------------|---------------------------------------------------------------------------------------------|
-| Thin HTTP: POST/GET/PUT/DELETE on /activities…        | `frontend/lib/services/apis/activities_api.dart`                                            |
-| Pass-through to the API (no extra business logic)      | `frontend/lib/features/activities/data/activities_repository.dart`                           |
-| Facade used by providers                              | `frontend/lib/services/api_service.dart` — `createActivity`, `getActivities`, `getActivity`, `updateActivity`, `deleteActivity` |
+>
+>
+> | Responsibility                                    | Where                                                                                                                           |
+> | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+> | Thin HTTP: POST/GET/PUT/DELETE on /activities…    | `frontend/lib/services/apis/activities_api.dart`                                                                                |
+> | Pass-through to the API (no extra business logic) | `frontend/lib/features/activities/data/activities_repository.dart`                                                              |
+> | Facade used by providers                          | `frontend/lib/services/api_service.dart` — `createActivity`, `getActivities`, `getActivity`, `updateActivity`, `deleteActivity` |
+>
 
 > Notes: effective URLS (base + path): 
+
 - `POST /api/v1/activities`, `GET /api/v1/activities`, `GET /api/v1/activities/{id}`
-
-
 
 ## Runtime sequence
 

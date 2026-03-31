@@ -33,6 +33,14 @@ class PostVoteResponse(BaseModel):
     score: int
 
 
+class PostRepostResponse(BaseModel):
+    """Schema for post repost toggle response."""
+    post_id: str
+    user_id: str
+    reposted: bool
+    repost_count: int
+
+
 class CommunityPostResponse(BaseModel):
     """Schema for post response payload."""
     post_id: str
@@ -44,6 +52,10 @@ class CommunityPostResponse(BaseModel):
     author_email: Optional[str] = None
     author_first_name: Optional[str] = None
     author_last_name: Optional[str] = None
+    like_count: int = 0
+    liked_by_current_user: bool = False
+    repost_count: int = 0
+    reposted_by_current_user: bool = False
 
 
 class CommunityCommentResponse(BaseModel):

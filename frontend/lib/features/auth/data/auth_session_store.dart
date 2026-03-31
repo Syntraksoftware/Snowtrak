@@ -13,8 +13,6 @@ class AuthSessionStore {
     await _storageService.init();
   }
 
-  String? get rawSession => _storageService.token;
-
   Future<AuthSession?> restore() async {
     try {
       await _storageService.init();
@@ -41,6 +39,7 @@ class AuthSessionStore {
     } catch (e) {
       AppLogger.instance
           .debug('🔍 [AuthSessionStore] Error saving session: $e');
+      throw StateError('Failed to persist auth session');
     }
   }
 
@@ -52,6 +51,7 @@ class AuthSessionStore {
     } catch (e) {
       AppLogger.instance
           .debug('🔍 [AuthSessionStore] Error clearing session: $e');
+      throw StateError('Failed to clear auth session');
     }
   }
 }

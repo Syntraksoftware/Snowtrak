@@ -49,8 +49,8 @@ services:
 
   map-backend:
     build:
-      context: ./map-backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./map-backend/Dockerfile
     container_name: syntrak-map-backend
     env_file:
       - ./map-backend/.env

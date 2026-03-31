@@ -130,6 +130,20 @@ curl -sS -w "\nHTTP_CODE:%{http_code}\n" \
 
 Expect **201** if `JWT_SECRET` in community matches main-backend `SECRET_KEY` and the subthread exists.
 
+### 4b) Repost toggle (auth required)
+
+```bash
+# create repost marker
+curl -sS -w "\nHTTP_CODE:%{http_code}\n" \
+  -X POST "$BASE/api/v1/posts/<post_uuid>/repost" \
+  -H "Authorization: Bearer $TOKEN"
+
+# remove repost marker
+curl -sS -w "\nHTTP_CODE:%{http_code}\n" \
+  -X DELETE "$BASE/api/v1/posts/<post_uuid>/repost" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
 **Trailing slash on create post:** `POST /api/v1/posts` (no slash) returns **307** to `/api/v1/posts/`. Flutter’s Dio can mishandle **POST** redirects and the request fails (“Unable to load data”). The app uses **`/posts/`** directly. Use the same in curl tests.
 
 ### 5) Docker: port and exec

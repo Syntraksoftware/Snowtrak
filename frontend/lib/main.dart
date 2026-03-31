@@ -172,13 +172,16 @@ class _LoadingScreenWithTimeout extends StatefulWidget {
 
 class _LoadingScreenWithTimeoutState extends State<_LoadingScreenWithTimeout> {
   Timer? _timeoutTimer;
+  bool _showSlowStartupHint = false;
 
   @override
   void initState() {
     super.initState();
     _timeoutTimer = Timer(const Duration(seconds: 5), () {
-      if (widget.authProvider.isLoading) {
-        widget.authProvider.checkAuth();
+      if (mounted && widget.authProvider.isLoading) {
+        setState(() {
+          _showSlowStartupHint = true;
+        });
       }
     });
   }
@@ -191,8 +194,19 @@ class _LoadingScreenWithTimeoutState extends State<_LoadingScreenWithTimeout> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            if (_showSlowStartupHint) ...[
+              const SizedBox(height: 12),
+              const Text('Startup is taking longer than expected...'),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

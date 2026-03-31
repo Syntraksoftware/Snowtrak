@@ -62,6 +62,12 @@ class CommunityService {
     return _run(() => _communityRepository.getCommentsByPost(postId));
   }
 
+  Future<AppResult<List<Map<String, dynamic>>>> getPostConversation(
+    String postId,
+  ) {
+    return _run(() => _communityRepository.getPostConversation(postId));
+  }
+
   /// Batched comments for a feed page (avoids N+1 GETs when Supabase batch is used).
   Future<AppResult<Map<String, List<Map<String, dynamic>>>>> getCommentsForPosts(
     List<String> postIds,
@@ -101,6 +107,29 @@ class CommunityService {
           postId: postId,
           voteType: voteType,
         ));
+  }
+
+  Future<AppResult<Map<String, dynamic>>> repostPost({
+    required String postId,
+  }) {
+    return _run(() => _communityRepository.repostPost(postId: postId));
+  }
+
+  Future<AppResult<Map<String, dynamic>>> undoRepost({
+    required String postId,
+  }) {
+    return _run(() => _communityRepository.undoRepost(postId: postId));
+  }
+
+  Future<AppResult<Unit>> sharePost({
+    required String postId,
+  }) async {
+    return const AppFailure(
+      AppError(
+        userMessage: 'Share functionality coming soon.',
+        retryable: false,
+      ),
+    );
   }
 
   Future<AppResult<T>> _run<T>(Future<T> Function() fn) async {

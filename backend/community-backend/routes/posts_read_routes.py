@@ -79,6 +79,7 @@ def list_feed_posts(
     request: Request,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    current_user: Optional[str] = Depends(get_optional_user),
 ):
     """Global feed: all posts across subthreads, newest first.
     
@@ -87,7 +88,11 @@ def list_feed_posts(
     """
     community_client = get_community_client()
     try:
-        post_records = community_client.list_recent_posts(limit=limit, offset=offset)
+        post_records = community_client.list_recent_posts(
+            limit=limit,
+            offset=offset,
+            current_user_id=current_user,
+        )
         total_records = community_client.count_all_posts()
         post_items = [CommunityPostResponse(**post_record) for post_record in post_records]
 
@@ -146,6 +151,7 @@ async def list_posts_by_user(
             user_id=user_id,
             limit=limit,
             offset=offset,
+            current_user_id=current_user,
         )
         total_records = len(post_records)
         post_items = [CommunityPostResponse(**post_record) for post_record in post_records]

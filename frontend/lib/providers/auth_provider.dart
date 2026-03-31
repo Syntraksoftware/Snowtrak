@@ -17,6 +17,7 @@ class AuthProvider extends ChangeNotifier {
   bool _isAuthenticated = false;
   bool _isLoading = true;
   String? _error;
+  Future<void>? _authCheckFuture;
 
   AuthProvider(
     this._authService,
@@ -25,7 +26,20 @@ class AuthProvider extends ChangeNotifier {
   );
 
   // Public method to check auth (called after storage is initialized)
-  Future<void> checkAuth() => _checkAuth();
+  Future<void> checkAuth() {
+    final inFlight = _authCheckFuture;
+    if (inFlight != null) {
+      return inFlight;
+    }
+
+    final next = _checkAuth();
+    _authCheckFuture = next;
+    return next.whenComplete(() {
+      if (identical(_authCheckFuture, next)) {
+        _authCheckFuture = null;
+      }
+    });
+  }
 
   User? get user => _session?.user;
   AuthSession? get session => _session;
@@ -43,7 +57,7 @@ class AuthProvider extends ChangeNotifier {
       AppLogger.instance.debug('🔍 [AuthProvider] Initializing storage...');
       await _sessionStore.initialize();
       AppLogger.instance.debug(
-          '🔍 [AuthProvider] Storage initialized. Token: ${_sessionStore.rawSession}');
+          '🔍 [AuthProvider] Storage initialized');
 
       // Try to restore session from storage
       final restoredSession = await _sessionStore.restore();
@@ -86,11 +100,10 @@ class AuthProvider extends ChangeNotifier {
                   user: user,
                 );
                 _isAuthenticated = true;
+                AppLogger.instance.debug('🔍 [AuthProvider] User authenticated');
+              case AppFailure():
                 AppLogger.instance.debug(
-                    '🔍 [AuthProvider] User authenticated: ${user.email}');
-              case AppFailure(:final error):
-                AppLogger.instance.debug(
-                    '🔍 [AuthProvider] Token validation failed: ${error.userMessage}');
+                    '🔍 [AuthProvider] Token validation failed');
                 await _sessionStore.clear();
                 _isAuthenticated = false;
             }
@@ -120,7 +133,7 @@ class AuthProvider extends ChangeNotifier {
 
   Future<bool> login(String email, String password) async {
     try {
-      AppLogger.instance.debug('🔍 [AuthProvider] Starting login for: $email');
+      AppLogger.instance.debug('🔍 [AuthProvider] Starting login');
       _isLoading = true;
       _error = null;
       notifyListeners();
@@ -134,8 +147,7 @@ class AuthProvider extends ChangeNotifier {
               .debug('🔍 [AuthProvider] Login API response received');
 
           _session = AuthSession.fromJson(response);
-          AppLogger.instance.debug(
-              '🔍 [AuthProvider] Session parsed, user: ${_session!.user.email}');
+      AppLogger.instance.debug('🔍 [AuthProvider] Session parsed');
           _authService.setToken(_session!.accessToken);
           _isAuthenticated = true;
           _error = null;
@@ -249,12 +261,11 @@ class AuthProvider extends ChangeNotifier {
           user: user,
         );
         await _sessionStore.save(_session!);
-        AppLogger.instance.debug(
-            '🔍 [AuthProvider] User data refreshed: ${user.firstName}');
+        AppLogger.instance.debug('🔍 [AuthProvider] User data refreshed');
         notifyListeners();
-      case AppFailure(:final error):
+      case AppFailure():
         AppLogger.instance.debug(
-            '🔍 [AuthProvider] Error refreshing user data: ${error.userMessage}');
+            '🔍 [AuthProvider] Error refreshing user data');
     }
   }
 
@@ -307,8 +318,7 @@ class AuthProvider extends ChangeNotifier {
       case AppSuccess(:final value):
         return AuthSession.fromJson(value);
       case AppFailure(:final error):
-        AppLogger.instance.debug(
-            '🔍 [AuthProvider] Token refresh failed: ${error.userMessage}');
+        AppLogger.instance.debug('🔍 [AuthProvider] Token refresh failed');
         throw Exception(error.userMessage);
     }
   }

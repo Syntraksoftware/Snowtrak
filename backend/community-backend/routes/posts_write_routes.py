@@ -13,6 +13,7 @@ from middleware.auth import get_current_user
 from routes.community_models import (
     CommunityDeletePostResponse,
     CommunityPostResponse,
+    PostRepostResponse,
     PostCreate,
     PostUpdate,
     PostVoteRequest,
@@ -56,6 +57,64 @@ async def create_post(
         raise
     except Exception as exception:
         logger.error(f"Error creating post: {exception}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Server Error",
+        )
+
+
+@router.post("/{post_id}/repost", response_model=PostRepostResponse)
+async def repost_post(
+    post_id: UUID,
+    user_id: str = Depends(get_current_user),
+):
+    """Create/keep repost marker for a post."""
+    community_client = get_community_client()
+    try:
+        result = community_client.set_post_repost(
+            post_id=str(post_id),
+            user_id=user_id,
+            reposted=True,
+        )
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Post not found or repost operation failed",
+            )
+        return result
+    except HTTPException:
+        raise
+    except Exception as exception:
+        logger.error("Error reposting post: %s", exception)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Server Error",
+        )
+
+
+@router.delete("/{post_id}/repost", response_model=PostRepostResponse)
+async def undo_repost_post(
+    post_id: UUID,
+    user_id: str = Depends(get_current_user),
+):
+    """Remove repost marker for a post."""
+    community_client = get_community_client()
+    try:
+        result = community_client.set_post_repost(
+            post_id=str(post_id),
+            user_id=user_id,
+            reposted=False,
+        )
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Post not found or repost operation failed",
+            )
+        return result
+    except HTTPException:
+        raise
+    except Exception as exception:
+        logger.error("Error removing repost on post: %s", exception)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",

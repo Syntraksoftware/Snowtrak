@@ -36,6 +36,11 @@ class StubActivityClient:
                 },
             ],
         }
+        self._private_activity = {
+            **self._activity,
+            "id": "activity-private",
+            "visibility": "private",
+        }
 
     def create_activity(self, **kwargs):
         activity = dict(self._activity)
@@ -58,6 +63,8 @@ class StubActivityClient:
     def get_activity_by_id(self, activity_id):
         if activity_id == "activity-1":
             return self._activity
+        if activity_id == "activity-private":
+            return self._private_activity
         return None
 
     def update_activity(self, activity_id, user_id, name=None, description=None, visibility=None):

@@ -175,6 +175,21 @@ class TestPostEndpoints:
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
+    def test_repost_post_success(self, client):
+        response = client.post(f"/api/v1/posts/{STUB_POST_ID}/repost")
+        assert response.status_code == status.HTTP_200_OK
+        body = response.json()
+        assert body["post_id"] == STUB_POST_ID
+        assert body["reposted"] is True
+        assert body["repost_count"] == 1
+
+    def test_undo_repost_post_success(self, client):
+        response = client.delete(f"/api/v1/posts/{STUB_POST_ID}/repost")
+        assert response.status_code == status.HTTP_200_OK
+        body = response.json()
+        assert body["post_id"] == STUB_POST_ID
+        assert body["reposted"] is False
+
 
 class TestCommentEndpoints:
     def test_create_comment_success(self, client):
@@ -186,7 +201,7 @@ class TestCommentEndpoints:
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["content"] == "Nice route"
 
-    def test_create_comment_missing_parent(self, client):
+    def test_create_comment_nested_parent_not_allowed(self, client):
         response = client.post(
             "/api/v1/comments",
             json={
@@ -196,7 +211,7 @@ class TestCommentEndpoints:
             },
         )
 
-        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     def test_get_comment_not_found(self, client):
         response = client.get("/api/v1/comments/comment-missing")
@@ -208,7 +223,8 @@ class TestCommentEndpoints:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    def test_update_comment_success(self, client):
+    def test_update_comment_success(self, client, app):
+        app.dependency_overrides[get_current_user] = lambda: "user-2"
         response = client.patch(
             "/api/v1/comments/comment-1",
             json={"content": "Updated reply"},

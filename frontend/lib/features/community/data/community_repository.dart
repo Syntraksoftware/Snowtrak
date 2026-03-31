@@ -39,6 +39,10 @@ class CommunityRepository {
     return _api.getCommentsByPost(postId);
   }
 
+  Future<List<Map<String, dynamic>>> getPostConversation(String postId) {
+    return _api.getPostConversation(postId);
+  }
+
   Future<Map<String, List<Map<String, dynamic>>>> getCommentsForPosts(
     List<String> postIds,
   ) {
@@ -82,5 +86,17 @@ class CommunityRepository {
     required int voteType,
   }) {
     return _api.votePost(postId: postId, voteType: voteType);
+  }
+
+  Future<Map<String, dynamic>> repostPost({
+    required String postId,
+  }) {
+    return _api.repostPost(postId: postId);
+  }
+
+  Future<Map<String, dynamic>> undoRepost({
+    required String postId,
+  }) {
+    return _api.undoRepost(postId: postId);
   }
 }

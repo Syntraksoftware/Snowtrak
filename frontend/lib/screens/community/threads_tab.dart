@@ -10,7 +10,8 @@ import 'package:syntrak/services/community_service.dart';
 import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/models/post.dart';
 import 'package:syntrak/screens/community/community_post_mapper.dart';
-import 'package:syntrak/screens/community/widgets/thread_reply_dialog.dart';
+import 'package:syntrak/screens/community/new_thread_draft_screen.dart';
+import 'package:syntrak/screens/community/thread_detail_screen.dart';
 import 'package:syntrak/screens/community/widgets/threads_search_bar.dart';
 import 'package:syntrak/widgets/compact_composer.dart';
 import 'package:syntrak/widgets/message_card.dart';
@@ -24,6 +25,9 @@ class ThreadsTab extends StatefulWidget {
 
 class _ThreadsTabState extends State<ThreadsTab> {
   static const int _defaultPageSize = 20;
+  static final RegExp _uuidRegExp = RegExp(
+    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+  );
 
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
@@ -37,7 +41,6 @@ class _ThreadsTabState extends State<ThreadsTab> {
   bool _isRefreshing = false;
   bool _isLoading = false;
   bool _isSearchFocused = false;
-  String? _expandedPostId;
   String? _activeSubthreadId;
   AppError? _feedError;
 
@@ -223,7 +226,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
     }
   }
 
-  Future<void> _handlePost(String text) async {
+  Future<void> _handlePost(String text, {String? topic}) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final user = authProvider.user;
 
@@ -253,7 +256,12 @@ class _ThreadsTabState extends State<ThreadsTab> {
 
     final createResult = await _communityService.createPost(
       subthreadId: _activeSubthreadId!,
-      title: text.length > 48 ? '${text.substring(0, 48)}...' : text,
+      title: (() {
+        final trimmedTopic = (topic ?? '').trim();
+        final base = text.length > 48 ? '${text.substring(0, 48)}...' : text;
+        if (trimmedTopic.isEmpty) return base;
+        return '$trimmedTopic > $base';
+      })(),
       content: text,
     );
 
@@ -290,7 +298,13 @@ class _ThreadsTabState extends State<ThreadsTab> {
             type: 'create_post',
             payload: {
               'subthread_id': _activeSubthreadId,
-              'title': text.length > 48 ? '${text.substring(0, 48)}...' : text,
+              'title': (() {
+                final trimmedTopic = (topic ?? '').trim();
+                final base =
+                    text.length > 48 ? '${text.substring(0, 48)}...' : text;
+                if (trimmedTopic.isEmpty) return base;
+                return '$trimmedTopic > $base';
+              })(),
               'content': text,
               'temp_id': tempId,
             },
@@ -307,6 +321,10 @@ class _ThreadsTabState extends State<ThreadsTab> {
           ),
         );
     }
+  }
+
+  bool _isPersistedPostId(String postId) {
+    return _uuidRegExp.hasMatch(postId);
   }
 
   void _handleLike(Post post) {
@@ -331,12 +349,13 @@ class _ThreadsTabState extends State<ThreadsTab> {
   }
 
   void _handleRepost(Post post) {
+    final nextReposted = !post.repostedByCurrentUser;
     setState(() {
       final index = _posts.indexWhere((p) => p.id == post.id);
       if (index != -1) {
         final currentPost = _posts[index];
         _posts[index] = currentPost.copyWith(
-          repostedByCurrentUser: !currentPost.repostedByCurrentUser,
+          repostedByCurrentUser: nextReposted,
           repostCount: currentPost.repostedByCurrentUser
               ? currentPost.repostCount - 1
               : currentPost.repostCount + 1,
@@ -344,27 +363,49 @@ class _ThreadsTabState extends State<ThreadsTab> {
         _filterPosts();
       }
     });
+    _syncPostRepost(postId: post.id, reposted: nextReposted);
   }
 
   Future<void> _handleReply(Post post) async {
-    final text = await showThreadReplyDialog(context);
-    if (text == null) return;
-    await _sendReply(post: post, text: text);
+    await _openThreadDetail(post);
   }
 
-  void _handleShare(Post post) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Share functionality coming soon'),
-        duration: Duration(seconds: 1),
+  Future<void> _handleShare(Post post) async {
+    final result = await _communityService.sharePost(postId: post.id);
+    if (!mounted) return;
+    switch (result) {
+      case AppSuccess():
+        break;
+      case AppFailure(:final error):
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.userMessage)),
+        );
+    }
+  }
+
+  Future<void> _handlePostTap(Post post) async {
+    await _openThreadDetail(post);
+  }
+
+  Future<void> _openThreadDetail(Post post) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ThreadDetailScreen(
+          post: post,
+          communityService: _communityService,
+          onSubmitReply: (targetPost, text) =>
+              _sendReply(post: targetPost, text: text),
+          onLike: _handleLike,
+          onRepost: _handleRepost,
+          onShare: (p) {
+            _handleShare(p);
+          },
+        ),
       ),
     );
-  }
-
-  void _handlePostTap(Post post) {
-    setState(() {
-      _expandedPostId = _expandedPostId == post.id ? null : post.id;
-    });
+    if (mounted) {
+      await _loadFeed();
+    }
   }
 
   Future<void> _sendReply({required Post post, required String text}) async {
@@ -372,6 +413,14 @@ class _ThreadsTabState extends State<ThreadsTab> {
     final user = authProvider.user;
     if (user == null) return;
 
+    if (!_isPersistedPostId(post.id)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please wait for the post to finish syncing before replying.'),
+        ),
+      );
+      return;
+    }
     final tempReplyId = 'tmp_reply_${DateTime.now().millisecondsSinceEpoch}';
     final localReply = Post(
       id: tempReplyId,
@@ -479,6 +528,16 @@ class _ThreadsTabState extends State<ThreadsTab> {
           voteType: (operation.payload['vote_type'] as num?)?.toInt() ?? 0,
         );
         succeeded = r.isSuccess;
+      } else if (operation.type == 'repost_post') {
+        final reposted = operation.payload['reposted'] == true;
+        final r = reposted
+            ? await _communityService.repostPost(
+                postId: (operation.payload['post_id'] ?? '').toString(),
+              )
+            : await _communityService.undoRepost(
+                postId: (operation.payload['post_id'] ?? '').toString(),
+              );
+        succeeded = r.isSuccess;
       } else {
         // Unknown operation type: log warning and mark for retry
         AppLogger.instance.warning(
@@ -532,10 +591,54 @@ class _ThreadsTabState extends State<ThreadsTab> {
     }
   }
 
+  Future<void> _syncPostRepost({
+    required String postId,
+    required bool reposted,
+  }) async {
+    final result = reposted
+        ? await _communityService.repostPost(postId: postId)
+        : await _communityService.undoRepost(postId: postId);
+    switch (result) {
+      case AppSuccess():
+        await _loadFeed();
+      case AppFailure(:final error):
+        await _outbox.enqueue(
+          CommunityOutboxOperation(
+            id: 'repost_${DateTime.now().millisecondsSinceEpoch}_$postId',
+            type: 'repost_post',
+            payload: {
+              'post_id': postId,
+              'reposted': reposted,
+            },
+          ),
+        );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Could not save repost: ${error.userMessage}. '
+              'Saved to retry automatically.',
+            ),
+          ),
+        );
+    }
+  }
+
+  Future<void> _openDraftComposer() async {
+    final draft = await Navigator.of(context).push<NewThreadDraftResult>(
+      MaterialPageRoute(builder: (_) => const NewThreadDraftScreen()),
+    );
+    if (draft == null) return;
+    final body = draft.content.trim();
+    if (body.isEmpty) return;
+    final topic = draft.topic?.trim();
+    await _handlePost(body, topic: topic);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading && _posts.isEmpty && _feedError == null) {
-      return Center(
+      return const Center(
         child: CircularProgressIndicator(
           valueColor: AlwaysStoppedAnimation<Color>(SyntrakColors.primary),
         ),
@@ -614,17 +717,19 @@ class _ThreadsTabState extends State<ThreadsTab> {
               return CompactComposer(
                 onPost: _handlePost,
                 maxCharacters: 280,
+                onComposeTap: _openDraftComposer,
               );
             }
             final post = _filteredPosts[index - 1];
             return MessageCard(
               post: post,
-              isExpanded: _expandedPostId == post.id,
               onTap: () => _handlePostTap(post),
               onLike: _handleLike,
               onRepost: _handleRepost,
               onReply: _handleReply,
-              onShare: _handleShare,
+              onShare: (p) {
+                _handleShare(p);
+              },
             );
           },
         ),

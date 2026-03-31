@@ -92,6 +92,16 @@ async def get_activity(
                 detail="Activity not found",
             )
 
+        visibility = str(activity_record.get("visibility", "private")).lower()
+        owner_id = str(activity_record.get("user_id", ""))
+        can_view = visibility == "public" or (user_id is not None and user_id == owner_id)
+        if not can_view:
+            # Intentionally return 404 to avoid exposing private resource existence.
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Activity not found",
+            )
+
         frontend_payload = map_activity_to_frontend_payload(activity_record)
         return FrontendActivityResponse(**frontend_payload)
     except HTTPException:

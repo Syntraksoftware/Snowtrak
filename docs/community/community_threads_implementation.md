@@ -14,6 +14,9 @@
 The community stack implements a **Threads-like** social feed: **subthreads** (topics), **posts**, and **nested comments**, backed by **Supabase (Postgres + PostgREST)** via the official Supabase Python client—not GraphQL. The goals of this implementation are:
 
 - **Feed loading:** **`GET /api/v1/feed`** returns a **global** feed (all subthreads, newest first). The app uses this path so it is never mistaken for **`GET /api/v1/posts/{post_id}`**. **`GET /api/v1/posts/feed`** is still available when routing distinguishes `/feed` from `{post_id}`. Comments load via **batch** (no N+1). Posting still targets a **default subthread** (prefers **“Chat”**, else the first listed).
+- **Feed loading:** **`GET /api/v1/feed`** returns a **global** feed (all subthreads, newest first). The app uses this path so it is never mistaken for **`GET /api/v1/posts/{post_id}`**. Comments load via **batch** (no N+1). Posting still targets a **default subthread** (prefers **“Chat”**, else the first listed).
+- **Engagement fields:** feed items now include `like_count`, `liked_by_current_user`, `repost_count`, and `reposted_by_current_user`.
+- **Repost persistence:** backend supports `POST /api/v1/posts/{post_id}/repost` and `DELETE /api/v1/posts/{post_id}/repost`.
 - **Thread detail:** Optionally load a full **flattened conversation** for one post (aligned with Meta’s Threads API naming: `conversation` vs `replies`).
 - **Correct failures:** Surface **typed errors** and **retryability** to the UI instead of empty lists when the API or parsing fails.
 

@@ -30,6 +30,10 @@ class StubCommunityClient:
             "author_email": "user@example.com",
             "author_first_name": "Ski",
             "author_last_name": "Rider",
+            "like_count": 1,
+            "liked_by_current_user": True,
+            "repost_count": 0,
+            "reposted_by_current_user": False,
         }
         self.comment = {
             "id": "comment-1",
@@ -63,7 +67,7 @@ class StubCommunityClient:
             return []
         return [self.post]
 
-    def list_recent_posts(self, limit=20, offset=0):
+    def list_recent_posts(self, limit=20, offset=0, current_user_id=None):
         return [self.post]
 
     def count_all_posts(self):
@@ -89,7 +93,7 @@ class StubCommunityClient:
             return self.post
         return None
 
-    def list_posts_by_user_id(self, user_id, limit=20, offset=0):
+    def list_posts_by_user_id(self, user_id, limit=20, offset=0, current_user_id=None):
         if user_id != "user-1":
             return []
         return [self.post]
@@ -131,6 +135,18 @@ class StubCommunityClient:
             "score": vote_type,
         }
 
+    def set_post_repost(self, post_id, user_id, reposted):
+        if post_id != STUB_POST_ID:
+            return None
+        self.post["reposted_by_current_user"] = bool(reposted)
+        self.post["repost_count"] = 1 if reposted else 0
+        return {
+            "post_id": post_id,
+            "user_id": user_id,
+            "reposted": bool(reposted),
+            "repost_count": self.post["repost_count"],
+        }
+
     def create_comment(self, user_id, post_id, content, parent_id=None):
         if post_id != STUB_POST_ID:
             return None
@@ -149,10 +165,10 @@ class StubCommunityClient:
         return None
 
     def delete_comment(self, comment_id, user_id):
-        return comment_id == "comment-1" and user_id == "user-1"
+        return comment_id == "comment-1" and user_id == "user-2"
 
     def update_comment(self, comment_id, user_id, content):
-        if comment_id != "comment-1" or user_id != "user-1":
+        if comment_id != "comment-1" or user_id != "user-2":
             return None
         updated = dict(self.comment)
         updated["content"] = content

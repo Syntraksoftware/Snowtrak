@@ -1,6 +1,6 @@
 from fastapi import status
 
-from middleware.auth import get_current_user
+from middleware.auth import get_current_user, get_optional_user
 
 
 def _activity_payload():
@@ -70,6 +70,26 @@ class TestActivityEndpoints:
 
     def test_get_activity_not_found(self, client):
         response = client.get("/api/v1/activities/missing")
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_get_private_activity_visible_to_owner(self, client):
+        response = client.get("/api/v1/activities/activity-private")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["id"] == "activity-private"
+
+    def test_get_private_activity_hidden_for_non_owner(self, client, app):
+        app.dependency_overrides[get_optional_user] = lambda: "user-2"
+
+        response = client.get("/api/v1/activities/activity-private")
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_get_private_activity_hidden_for_anonymous(self, client, app):
+        app.dependency_overrides[get_optional_user] = lambda: None
+
+        response = client.get("/api/v1/activities/activity-private")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 

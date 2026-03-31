@@ -37,7 +37,7 @@ class CommunityApi {
         'List response missing expected "items" or "$legacyKey" key',
       );
     }
-    throw FormatException('List response was not a map or list');
+      throw const FormatException('List response was not a map or list');
   }
 
   Future<List<Map<String, dynamic>>> getSubthreads({int limit = 50}) async {
@@ -104,6 +104,11 @@ class CommunityApi {
 
   Future<List<Map<String, dynamic>>> getCommentsByPost(String postId) async {
     final response = await _dio.get('/posts/$postId/comments');
+    return _parseListItems(response.data, 'comments');
+  }
+
+  Future<List<Map<String, dynamic>>> getPostConversation(String postId) async {
+    final response = await _dio.get('/posts/$postId/conversation');
     return _parseListItems(response.data, 'comments');
   }
 
@@ -210,6 +215,20 @@ class CommunityApi {
       },
     );
 
+    return Map<String, dynamic>.from(response.data as Map);
+  }
+
+  Future<Map<String, dynamic>> repostPost({
+    required String postId,
+  }) async {
+    final response = await _dio.post('/posts/$postId/repost');
+    return Map<String, dynamic>.from(response.data as Map);
+  }
+
+  Future<Map<String, dynamic>> undoRepost({
+    required String postId,
+  }) async {
+    final response = await _dio.delete('/posts/$postId/repost');
     return Map<String, dynamic>.from(response.data as Map);
   }
 }
