@@ -88,3 +88,38 @@ class CommunityPostReadOperations:
         except Exception as exception:
             logger.exception("Failed to count posts for subthread %s: %s", subthread_id, exception)
             return 0
+
+    def list_recent_posts(
+        self,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> List[Dict[str, Any]]:
+        """All posts across subthreads, newest first (global feed)."""
+        try:
+            response = self._client.table("posts").select(
+                "*, user_info!posts_user_id_fkey(email, first_name, last_name)"
+            ).order("created_at", desc=True).range(offset, offset + limit - 1).execute()
+            response_data = getattr(response, "data", None)
+            if isinstance(response_data, list):
+                for post in response_data:
+                    if "user_info" in post and post["user_info"]:
+                        author = post.pop("user_info")
+                        post["author_email"] = author.get("email")
+                        post["author_first_name"] = author.get("first_name")
+                        post["author_last_name"] = author.get("last_name")
+                return response_data
+            return []
+        except Exception as exception:
+            logger.exception("Failed to list recent posts: %s", exception)
+            return []
+
+    def count_all_posts(self) -> int:
+        """Total posts (for feed pagination)."""
+        try:
+            from postgrest import CountMethod
+
+            response = self._client.table("posts").select("post_id", count=CountMethod.exact).execute()
+            return getattr(response, "count", 0) or 0
+        except Exception as exception:
+            logger.exception("Failed to count all posts: %s", exception)
+            return 0

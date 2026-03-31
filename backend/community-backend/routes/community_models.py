@@ -125,3 +125,22 @@ class CommunityPostListResponse(BaseModel):
 class CommunityCommentListResponse(BaseModel):
     """Schema for comment list items in standardized envelopes."""
     items: List[CommunityCommentResponse]
+
+
+class CommentsBatchRequest(BaseModel):
+    """Request body for fetching comments for many posts at once."""
+
+    post_ids: List[str]
+
+
+class PostCommentsBundle(BaseModel):
+    """All comments for one post (chronological), for batch responses."""
+
+    post_id: str
+    comments: List[CommunityCommentResponse]
+
+
+class CommentsBatchResponse(BaseModel):
+    """Batch comments response; order of items matches deduped request order."""
+
+    items: List[PostCommentsBundle]

@@ -27,7 +27,13 @@ class CommunityPostWriteOperations:
             response_data = getattr(response, "data", None)
             if isinstance(response_data, list) and response_data:
                 logger.info("Created post by user %s", user_id)
-                return response_data[0]
+                row = response_data[0]
+                post_id = row.get("post_id")
+                if post_id:
+                    hydrated = self.get_post_by_id(post_id)
+                    if hydrated:
+                        return hydrated
+                return row
             return None
         except Exception as exception:
             logger.exception("Failed to create post: %s", exception)

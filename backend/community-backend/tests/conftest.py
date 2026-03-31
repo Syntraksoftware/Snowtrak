@@ -8,6 +8,10 @@ from routes import comments as comments_routes
 from routes import posts_read_routes, posts_write_routes
 
 
+# Matches test_community_api STUB_POST_ID (UUID path params avoid /posts/feed collision).
+STUB_POST_ID = "11111111-1111-1111-1111-111111111111"
+
+
 class StubCommunityClient:
     def __init__(self):
         self.subthread = {
@@ -17,7 +21,7 @@ class StubCommunityClient:
             "created_at": "2026-01-01T00:00:00Z",
         }
         self.post = {
-            "post_id": "post-1",
+            "post_id": STUB_POST_ID,
             "user_id": "user-1",
             "subthread_id": "sub-1",
             "title": "Bluebird day",
@@ -30,7 +34,7 @@ class StubCommunityClient:
         self.comment = {
             "id": "comment-1",
             "user_id": "user-2",
-            "post_id": "post-1",
+            "post_id": STUB_POST_ID,
             "parent_id": None,
             "content": "Great conditions",
             "has_parent": False,
@@ -59,6 +63,12 @@ class StubCommunityClient:
             return []
         return [self.post]
 
+    def list_recent_posts(self, limit=20, offset=0):
+        return [self.post]
+
+    def count_all_posts(self):
+        return 1
+
     def count_posts_by_subthread(self, subthread_id):
         return 1 if subthread_id == "sub-1" else 0
 
@@ -75,7 +85,7 @@ class StubCommunityClient:
         return created
 
     def get_post_by_id(self, post_id):
-        if post_id == "post-1":
+        if post_id == STUB_POST_ID:
             return self.post
         return None
 
@@ -85,18 +95,21 @@ class StubCommunityClient:
         return [self.post]
 
     def list_comments_by_post(self, post_id):
-        if post_id != "post-1":
+        if post_id != STUB_POST_ID:
             return []
         return [self.comment]
 
+    def list_comments_by_post_ids(self, post_ids):
+        return {pid: self.list_comments_by_post(pid) for pid in post_ids}
+
     def count_comments_by_post(self, post_id):
-        return 1 if post_id == "post-1" else 0
+        return 1 if post_id == STUB_POST_ID else 0
 
     def delete_post(self, post_id, user_id):
-        return post_id == "post-1" and user_id == "user-1"
+        return post_id == STUB_POST_ID and user_id == "user-1"
 
     def update_post(self, post_id, user_id, title=None, content=None):
-        if post_id != "post-1" or user_id != "user-1":
+        if post_id != STUB_POST_ID or user_id != "user-1":
             return None
         updated = dict(self.post)
         if title is not None:
@@ -107,7 +120,7 @@ class StubCommunityClient:
         return updated
 
     def set_post_vote(self, post_id, user_id, vote_type):
-        if post_id != "post-1":
+        if post_id != STUB_POST_ID:
             return None
         if vote_type not in (-1, 0, 1):
             return None
@@ -119,7 +132,7 @@ class StubCommunityClient:
         }
 
     def create_comment(self, user_id, post_id, content, parent_id=None):
-        if post_id != "post-1":
+        if post_id != STUB_POST_ID:
             return None
         created = dict(self.comment)
         created["id"] = "comment-2"

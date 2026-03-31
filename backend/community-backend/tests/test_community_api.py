@@ -99,6 +99,14 @@ class TestPostEndpoints:
         assert "items" in body
         assert body["items"][0]["post_id"] == STUB_POST_ID
 
+    def test_legacy_feed_paths_are_not_available(self, client):
+        """Only /api/v1/feed is canonical; /posts/feed should not resolve as feed."""
+        r_v1 = client.get("/api/v1/posts/feed?limit=10")
+        r_legacy = client.get("/api/posts/feed?limit=10")
+
+        assert r_v1.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert r_legacy.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
     def test_list_post_comments_not_found(self, client):
         response = client.get(f"/api/v1/posts/{STUB_POST_MISSING}/comments")
 

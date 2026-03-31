@@ -2,6 +2,7 @@
 import logging
 import os
 import sys
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -63,7 +64,7 @@ async def create_post(
 
 @router.patch("/{post_id}", response_model=CommunityPostResponse)
 async def update_post(
-    post_id: str,
+    post_id: UUID,
     data: PostUpdate,
     user_id: str = Depends(get_current_user),
 ):
@@ -71,7 +72,7 @@ async def update_post(
     community_client = get_community_client()
     try:
         updated_post = community_client.update_post(
-            post_id=post_id,
+            post_id=str(post_id),
             user_id=user_id,
             title=data.title,
             content=data.content,
@@ -95,7 +96,7 @@ async def update_post(
 
 @router.post("/{post_id}/vote", response_model=PostVoteResponse)
 async def vote_post(
-    post_id: str,
+    post_id: UUID,
     data: PostVoteRequest,
     user_id: str = Depends(get_current_user),
 ):
@@ -109,7 +110,7 @@ async def vote_post(
     community_client = get_community_client()
     try:
         vote_result = community_client.set_post_vote(
-            post_id=post_id,
+            post_id=str(post_id),
             user_id=user_id,
             vote_type=data.vote_type,
         )
@@ -132,13 +133,13 @@ async def vote_post(
 
 @router.delete("/{post_id}", response_model=CommunityDeletePostResponse)
 async def delete_post(
-    post_id: str,
+    post_id: UUID,
     user_id: str = Depends(get_current_user),
 ):
     """Delete a post and related comments."""
     community_client = get_community_client()
     try:
-        is_deleted = community_client.delete_post(post_id, user_id)
+        is_deleted = community_client.delete_post(str(post_id), user_id)
         if not is_deleted:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -147,7 +148,7 @@ async def delete_post(
 
         return CommunityDeletePostResponse(
             message="Post and all comments deleted successfully",
-            deleted_post_id=post_id,
+            deleted_post_id=str(post_id),
         )
     except HTTPException:
         raise
