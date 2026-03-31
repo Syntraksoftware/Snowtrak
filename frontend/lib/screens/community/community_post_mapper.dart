@@ -4,6 +4,13 @@ import 'package:syntrak/models/post.dart';
 class CommunityPostMapper {
   CommunityPostMapper._();
 
+  static bool _looksLikeUuid(String s) {
+    final t = s.trim();
+    return RegExp(
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+    ).hasMatch(t);
+  }
+
   static Post mapBackendPost(
     Map<String, dynamic> rawPost,
     List<Map<String, dynamic>> rawComments,
@@ -106,7 +113,14 @@ class CommunityPostMapper {
     if (first.isNotEmpty || last.isNotEmpty) {
       return '$first $last'.trim();
     }
-    return usernameFromEmailOrId(fallback, fallback);
+    final fb = fallback.trim();
+    if (_looksLikeUuid(fb)) {
+      return 'Member';
+    }
+    if (fb.contains('@')) {
+      return fb.split('@').first;
+    }
+    return usernameFromEmailOrId(null, fb);
   }
 
   static String usernameFromEmailOrId(String? email, String? fallbackId) {
@@ -118,6 +132,9 @@ class CommunityPostMapper {
     final id = (fallbackId ?? '').trim();
     if (id.isEmpty) {
       return 'user';
+    }
+    if (_looksLikeUuid(id)) {
+      return 'member';
     }
     return id.length > 12 ? id.substring(0, 12) : id;
   }
