@@ -180,12 +180,33 @@ This enables:
 
 ### Testing
 
+**Setup for testing:**
+
+```bash
+# Install runtime + test dependencies
+cd backend/community-backend
+source venv/bin/activate   # if using a venv
+pip install -r requirements-test.txt
+```
+
+**Run tests:**
+
+```bash
+cd backend/community-backend
+source venv/bin/activate   # if using a venv
+python -m pytest tests/test_community_api.py -q
+```
+
+**Important:** Run pytest from this directory so `import main` resolves correctly.
+
+**Manual smoke checks:**
+
 ```bash
 # Test health check
 curl http://localhost:5001/health
 
 # Test subthreads list
-curl http://localhost:5001/api/subthreads
+curl http://localhost:5001/api/v1/subthreads
 ```
 
 ## Deployment
