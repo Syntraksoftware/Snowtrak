@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:syntrak/core/auth/authenticated_session.dart';
 import 'package:syntrak/core/di/service_locator.dart';
+import 'package:syntrak/core/errors/app_result.dart';
 import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/services/profile_service.dart';
@@ -55,21 +56,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         throw Exception(sessionOutcome.message);
       }
 
-      final profile = await _profileService.getCurrentUserProfile();
+      final profileResult = await _profileService.getCurrentUserProfile();
+      switch (profileResult) {
+        case AppFailure(:final error):
+          if (!mounted) return;
+          setState(() {
+            _error = error.userMessage;
+            _isLoading = false;
+          });
+          return;
+        case AppSuccess(:final value):
+          final profile = value;
+          if (!mounted) return;
 
-      if (!mounted) {
-        return;
+          _fullNameController.text = profile.fullName ?? '';
+          _usernameController.text = profile.username ?? '';
+          _bioController.text = profile.bio ?? '';
+          _skiLevelController.text = profile.skiLevel ?? '';
+          _homeController.text = profile.home ?? '';
+
+          setState(() {
+            _isLoading = false;
+          });
       }
-
-      _fullNameController.text = profile.fullName ?? '';
-      _usernameController.text = profile.username ?? '';
-      _bioController.text = profile.bio ?? '';
-      _skiLevelController.text = profile.skiLevel ?? '';
-      _homeController.text = profile.home ?? '';
-
-      setState(() {
-        _isLoading = false;
-      });
     } catch (e) {
       if (!mounted) {
         return;
@@ -99,13 +108,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         throw Exception(sessionOutcome.message);
       }
 
-      await _profileService.updateProfile(
+      final saveResult = await _profileService.updateProfile(
         fullName: _fullNameController.text.trim(),
         username: _usernameController.text.trim(),
         bio: _bioController.text.trim(),
         skiLevel: _skiLevelController.text.trim(),
         home: _homeController.text.trim(),
       );
+
+      switch (saveResult) {
+        case AppFailure(:final error):
+          if (!mounted) return;
+          setState(() {
+            _error = error.userMessage;
+          });
+          return;
+        case AppSuccess():
+          break;
+      }
 
       if (!mounted) {
         return;
