@@ -61,11 +61,19 @@ class CommunityRepository {
     required String subthreadId,
     required String title,
     required String content,
+    String? quotedPostId,
+    String? repostOfPostId,
+    String? quotedCommentId,
+    String? repostOfCommentId,
   }) {
     return _api.createPost(
       subthreadId: subthreadId,
       title: title,
       content: content,
+      quotedPostId: quotedPostId,
+      repostOfPostId: repostOfPostId,
+      quotedCommentId: quotedCommentId,
+      repostOfCommentId: repostOfCommentId,
     );
   }
 

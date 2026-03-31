@@ -1,5 +1,6 @@
 """Read-oriented comment Supabase operations for community service."""
 import logging
+from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
@@ -33,7 +34,74 @@ class CommunityCommentReadOperations:
             comment["author_first_name"] = author.get("first_name")
             comment["author_last_name"] = author.get("last_name")
 
-    def list_comments_by_post(self, post_id: str) -> List[Dict[str, Any]]:
+    def _attach_comment_engagement_fields(
+        self,
+        comments: List[Dict[str, Any]],
+        current_user_id: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Count feed posts that duplicate-repost each comment; set current-user flag."""
+        if not comments:
+            return comments
+
+        comment_ids = [
+            str(c.get("id", "")).strip()
+            for c in comments
+            if str(c.get("id", "")).strip()
+        ]
+        if not comment_ids:
+            return comments
+
+        duplicate_repost_counts: Dict[str, int] = defaultdict(int)
+        reposted_by_current_user: Dict[str, bool] = defaultdict(bool)
+
+        try:
+            dup_response = self._client.table("posts").select(
+                "repost_of_comment_id"
+            ).in_("repost_of_comment_id", comment_ids).execute()
+            dup_rows = getattr(dup_response, "data", None)
+            if isinstance(dup_rows, list):
+                for row in dup_rows:
+                    cid = str(row.get("repost_of_comment_id", "")).strip()
+                    if cid:
+                        duplicate_repost_counts[cid] += 1
+        except Exception as exception:
+            logger.warning(
+                "Failed to hydrate comment duplicate repost counts: %s",
+                exception,
+            )
+
+        try:
+            if current_user_id:
+                dup_user = self._client.table("posts").select(
+                    "repost_of_comment_id"
+                ).in_("repost_of_comment_id", comment_ids).eq(
+                    "user_id", current_user_id
+                ).execute()
+                dup_user_rows = getattr(dup_user, "data", None)
+                if isinstance(dup_user_rows, list):
+                    for row in dup_user_rows:
+                        cid = str(row.get("repost_of_comment_id", "")).strip()
+                        if cid:
+                            reposted_by_current_user[cid] = True
+        except Exception as exception:
+            logger.warning(
+                "Failed to hydrate user duplicate repost flags on comments: %s",
+                exception,
+            )
+
+        for comment in comments:
+            cid = str(comment.get("id", ""))
+            comment["repost_count"] = int(duplicate_repost_counts.get(cid, 0))
+            comment["reposted_by_current_user"] = bool(
+                reposted_by_current_user.get(cid, False)
+            )
+        return comments
+
+    def list_comments_by_post(
+        self,
+        post_id: str,
+        current_user_id: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
         """List all comments for a post with author information."""
         try:
             response = self._client.table("comments").select(
@@ -43,13 +111,20 @@ class CommunityCommentReadOperations:
             if isinstance(response_data, list):
                 for comment in response_data:
                     self._flatten_comment_row(comment)
-                return response_data
+                return self._attach_comment_engagement_fields(
+                    response_data,
+                    current_user_id=current_user_id,
+                )
             return []
         except Exception as exception:
             logger.exception("Failed to list comments for post %s: %s", post_id, exception)
             return []
 
-    def list_comments_by_post_ids(self, post_ids: List[str]) -> Dict[str, List[Dict[str, Any]]]:
+    def list_comments_by_post_ids(
+        self,
+        post_ids: List[str],
+        current_user_id: Optional[str] = None,
+    ) -> Dict[str, List[Dict[str, Any]]]:
         """
         List comments for many posts in a single Supabase query, grouped by post_id.
 
@@ -81,6 +156,10 @@ class CommunityCommentReadOperations:
             for pid, rows in buckets.items():
                 rows.sort(key=lambda row: (row.get("created_at") or ""))
 
+            all_rows: List[Dict[str, Any]] = []
+            for rows in buckets.values():
+                all_rows.extend(rows)
+            self._attach_comment_engagement_fields(all_rows, current_user_id=current_user_id)
             return buckets
         except Exception as exception:
             logger.exception("Failed batch list comments: %s", exception)

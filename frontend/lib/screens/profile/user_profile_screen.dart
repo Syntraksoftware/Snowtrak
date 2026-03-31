@@ -9,9 +9,9 @@ import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/services/community_service.dart';
 import 'package:syntrak/models/post.dart';
 import 'package:syntrak/providers/auth_provider.dart';
+import 'package:syntrak/screens/community/community_post_mapper.dart';
 import 'package:syntrak/widgets/profile_header.dart';
 import 'package:syntrak/widgets/message_card.dart';
-import 'package:intl/intl.dart';
 
 class UserProfileScreen extends StatefulWidget {
   final String? userId; // If null, shows current user's profile
@@ -128,31 +128,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       AppLogger.instance.debug('[UserProfileScreen] Received ${postsData.length} posts');
 
       final newPosts = postsData.map((postJson) {
-        // Convert backend post format to frontend Post model
-        final authorFirstName = postJson['author_first_name'] ?? '';
-        final authorLastName = postJson['author_last_name'] ?? '';
-        final displayName = authorFirstName.isNotEmpty || authorLastName.isNotEmpty
-            ? '$authorFirstName $authorLastName'.trim()
-            : postJson['author_email']?.split('@')[0] ?? 'User';
-        
-        final createdAt = postJson['created_at'] != null
-            ? DateTime.parse(postJson['created_at'])
-            : DateTime.now();
-        
-        return Post(
-          id: postJson['post_id'] ?? postJson['id'] ?? '',
-          author: PostAuthor(
-            id: postJson['user_id'] ?? userId,
-            displayName: displayName,
-            username: postJson['author_email']?.split('@')[0] ?? 'user',
-            avatarUrl: null, // TODO: Get from profile
-          ),
-          text: postJson['content'] ?? postJson['text'] ?? '',
-          createdAt: createdAt,
-          timestampLabel: _formatTimestamp(createdAt),
-          likeCount: 0, // TODO: Get from backend
-          replyCount: 0, // TODO: Get from backend
-        );
+        final raw = Map<String, dynamic>.from(postJson as Map);
+        return CommunityPostMapper.mapBackendPost(raw, const []);
       }).toList();
 
       if (mounted) {
@@ -175,23 +152,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           _isLoadingMore = false;
         });
       }
-    }
-  }
-
-  String _formatTimestamp(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays > 7) {
-      return DateFormat('MMM d, y').format(dateTime);
-    } else if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    } else {
-      return 'now';
     }
   }
 

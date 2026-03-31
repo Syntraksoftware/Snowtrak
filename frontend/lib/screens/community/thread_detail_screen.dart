@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:syntrak/core/errors/app_result.dart';
 import 'package:syntrak/models/post.dart';
-import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/screens/community/community_post_mapper.dart';
 import 'package:syntrak/services/community_service.dart';
+import 'package:syntrak/screens/community/widgets/quoted_post_embed.dart';
 import 'package:syntrak/widgets/message_actions.dart';
 
 class ThreadDetailScreen extends StatefulWidget {
@@ -148,6 +147,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                 _ThreadOriginalPostCard(
                   post: post,
                   onLike: () => widget.onLike(post),
+                  onReplyTap: () => _replyFocusNode.requestFocus(),
                   onRepost: () => widget.onRepost(post),
                   onShare: () => widget.onShare(post),
                 ),
@@ -197,106 +197,114 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
           SafeArea(
             top: false,
             child: Container(
+              width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.white,
                 border: Border(
                   top: BorderSide(color: Colors.grey.shade200),
                 ),
               ),
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Builder(
-                    builder: (context) {
-                      final me = _replyMeInitial(context);
-                      return CircleAvatar(
-                        radius: 16,
-                        backgroundColor: Colors.grey.shade300,
-                        child: Text(
-                          me,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+              padding: EdgeInsets.fromLTRB(
+                12,
+                10,
+                12,
+                10 + MediaQuery.of(context).padding.bottom,
+              ),
+              child: Material(
+                elevation: 14,
+                shadowColor: Colors.black26,
+                borderRadius: BorderRadius.circular(28),
+                color: const Color(0xFFF4F5F7),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        CircleAvatar(
+                          radius: 18,
+                          backgroundColor: Colors.grey.shade300,
+                          child: Icon(
+                            Icons.person_outline,
+                            size: 22,
+                            color: Colors.grey.shade700,
                           ),
                         ),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF4F5F7),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      padding: const EdgeInsets.fromLTRB(14, 4, 8, 4),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _replyController,
-                              focusNode: _replyFocusNode,
-                              minLines: 1,
-                              maxLines: 4,
-                              textInputAction: TextInputAction.send,
-                              onSubmitted: (_) => _submitReply(),
-                              style: const TextStyle(color: Colors.black87),
-                              decoration: const InputDecoration(
-                                hintText: 'Add your reply...',
-                                hintStyle: TextStyle(color: Colors.black45),
-                                border: InputBorder.none,
-                                isDense: true,
-                              ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: _replyController,
+                            focusNode: _replyFocusNode,
+                            minLines: 1,
+                            maxLines: 4,
+                            textInputAction: TextInputAction.send,
+                            onSubmitted: (_) => _submitReply(),
+                            style: const TextStyle(
+                              color: Colors.black87,
+                              fontSize: 16,
+                              height: 1.3,
+                            ),
+                            cursorColor: Colors.black87,
+                            decoration: InputDecoration(
+                              hintText: 'Add your reply...',
+                              hintStyle: TextStyle(color: Colors.grey.shade400),
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: EdgeInsets.zero,
                             ),
                           ),
-                          IconButton(
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(
-                              minWidth: 32,
-                              minHeight: 32,
-                            ),
-                            onPressed: null,
-                            icon: Icon(Icons.image_outlined,
-                                size: 22, color: Colors.grey.shade700),
+                        ),
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 36,
+                            minHeight: 36,
                           ),
-                          IconButton(
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(
-                              minWidth: 32,
-                              minHeight: 32,
-                            ),
-                            onPressed: null,
-                            icon: Icon(Icons.gif_box_outlined,
-                                size: 22, color: Colors.grey.shade700),
+                          onPressed: () {},
+                          icon: Icon(
+                            Icons.image_outlined,
+                            size: 22,
+                            color: Colors.grey.shade700,
                           ),
-                          IconButton(
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(
-                              minWidth: 32,
-                              minHeight: 32,
-                            ),
-                            onPressed: null,
-                            icon: Icon(Icons.zoom_out_map_outlined,
-                                size: 22, color: Colors.grey.shade700),
+                          tooltip: 'Coming soon',
+                        ),
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 36,
+                            minHeight: 36,
                           ),
-                        ],
-                      ),
+                          onPressed: () {},
+                          icon: Icon(
+                            Icons.gif_box_outlined,
+                            size: 22,
+                            color: Colors.grey.shade700,
+                          ),
+                          tooltip: 'Coming soon',
+                        ),
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 36,
+                            minHeight: 36,
+                          ),
+                          onPressed: () {},
+                          icon: Icon(
+                            Icons.zoom_out_map_outlined,
+                            size: 22,
+                            color: Colors.grey.shade700,
+                          ),
+                          tooltip: 'Coming soon',
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 6),
-                  IconButton(
-                    onPressed: _isSubmitting ? null : _submitReply,
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.black87,
-                      foregroundColor: Colors.white,
-                    ),
-                    icon: const Icon(Icons.send_rounded, size: 20),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
@@ -304,27 +312,20 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
       ),
     );
   }
-
-  String _replyMeInitial(BuildContext context) {
-    final user = Provider.of<AuthProvider>(context, listen: false).user;
-    if (user == null) return '?';
-    if (user.firstName != null && user.firstName!.isNotEmpty) {
-      return user.firstName![0].toUpperCase();
-    }
-    return user.email.isNotEmpty ? user.email[0].toUpperCase() : '?';
-  }
 }
 
 class _ThreadOriginalPostCard extends StatelessWidget {
   const _ThreadOriginalPostCard({
     required this.post,
     required this.onLike,
+    required this.onReplyTap,
     required this.onRepost,
     required this.onShare,
   });
 
   final Post post;
   final VoidCallback onLike;
+  final VoidCallback onReplyTap;
   final VoidCallback onRepost;
   final VoidCallback onShare;
 
@@ -374,7 +375,9 @@ class _ThreadOriginalPostCard extends StatelessWidget {
                           ),
                           Flexible(
                             child: Text(
-                              '@${post.author.username}',
+                              (post.topic ?? '').trim().isNotEmpty
+                                  ? post.topic!.trim()
+                                  : '@${post.author.username}',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey.shade600,
@@ -409,19 +412,27 @@ class _ThreadOriginalPostCard extends StatelessWidget {
               ),
             ),
           ),
+          if (post.quotedPost != null) ...[
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.only(left: 52),
+              child: QuotedPostEmbed(post: post.quotedPost!),
+            ),
+          ],
           const SizedBox(height: 12),
           Padding(
             padding: const EdgeInsets.only(left: 52),
             child: MessageActions(
-            replyCount: post.replyCount,
-            likeCount: post.likeCount,
-            repostCount: post.repostCount,
-            isLiked: post.likedByCurrentUser,
-            isReposted: post.repostedByCurrentUser,
-            onReply: () {},
-            onLike: onLike,
-            onRepost: onRepost,
-            onShare: onShare,
+              replyCount: post.replyCount,
+              likeCount: post.likeCount,
+              repostCount: post.repostCount,
+              shareCount: post.shareCount,
+              isLiked: post.likedByCurrentUser,
+              isReposted: post.repostedByCurrentUser,
+              onReply: onReplyTap,
+              onLike: onLike,
+              onRepost: onRepost,
+              onShare: onShare,
             ),
           ),
         ],
@@ -501,6 +512,7 @@ class _ThreadCommentItem extends StatelessWidget {
                   replyCount: post.replyCount,
                   likeCount: post.likeCount,
                   repostCount: post.repostCount,
+                  shareCount: post.shareCount,
                   isLiked: post.likedByCurrentUser,
                   isReposted: post.repostedByCurrentUser,
                   onReply: onReplyTap,

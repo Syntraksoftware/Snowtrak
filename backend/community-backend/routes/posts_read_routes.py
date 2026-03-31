@@ -38,7 +38,10 @@ def _dedupe_post_ids(raw: List[str]) -> List[str]:
 
 
 @router.post("/comments/batch", response_model=CommentsBatchResponse)
-async def batch_post_comments(data: CommentsBatchRequest):
+async def batch_post_comments(
+    data: CommentsBatchRequest,
+    current_user: Optional[str] = Depends(get_optional_user),
+):
     """
     Load comments for many posts in one round trip (Supabase single `in` filter).
 
@@ -53,7 +56,10 @@ async def batch_post_comments(data: CommentsBatchRequest):
 
     community_client = get_community_client()
     try:
-        by_post = community_client.list_comments_by_post_ids(ordered)
+        by_post = community_client.list_comments_by_post_ids(
+            ordered,
+            current_user_id=current_user,
+        )
         items = [
             PostCommentsBundle(
                 post_id=pid,
@@ -174,7 +180,11 @@ async def list_posts_by_user(
 
 
 @router.get("/{post_id}/comments", response_model=ListResponse)
-async def list_post_comments(request: Request, post_id: UUID):
+async def list_post_comments(
+    request: Request,
+    post_id: UUID,
+    current_user: Optional[str] = Depends(get_optional_user),
+):
     """List comments for a post."""
     community_client = get_community_client()
     pid = str(post_id)
@@ -186,7 +196,10 @@ async def list_post_comments(request: Request, post_id: UUID):
                 detail="Post not found",
             )
 
-        comment_records = community_client.list_comments_by_post(pid)
+        comment_records = community_client.list_comments_by_post(
+            pid,
+            current_user_id=current_user,
+        )
         total_records = community_client.count_comments_by_post(pid)
         comment_items = [
             CommunityCommentResponse(**comment_record)

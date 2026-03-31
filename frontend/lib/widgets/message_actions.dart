@@ -4,6 +4,7 @@ class MessageActions extends StatefulWidget {
   final int replyCount;
   final int likeCount;
   final int repostCount;
+  final int shareCount;
   final bool isLiked;
   final bool isReposted;
   final VoidCallback? onReply;
@@ -16,6 +17,7 @@ class MessageActions extends StatefulWidget {
     this.replyCount = 0,
     this.likeCount = 0,
     this.repostCount = 0,
+    this.shareCount = 0,
     this.isLiked = false,
     this.isReposted = false,
     this.onReply,
@@ -104,8 +106,9 @@ class _MessageActionsState extends State<MessageActions>
         // Share - consistent spacing
         Flexible(
           child: _buildActionButton(
-          icon: Icons.share_outlined,
-          onTap: widget.onShare,
+            icon: Icons.share_outlined,
+            count: widget.shareCount,
+            onTap: widget.onShare,
           ),
         ),
       ],

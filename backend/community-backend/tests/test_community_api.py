@@ -76,6 +76,106 @@ class TestPostEndpoints:
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
+    def test_create_post_with_quote_success(self, client):
+        response = client.post(
+            "/api/v1/posts",
+            json={
+                "subthread_id": "sub-1",
+                "title": "nba > My take",
+                "content": "Agree with this.",
+                "quoted_post_id": STUB_POST_ID,
+            },
+        )
+
+        assert response.status_code == status.HTTP_201_CREATED
+        body = response.json()
+        assert body["quoted_post_id"] == STUB_POST_ID
+        assert body["content"] == "Agree with this."
+
+    def test_create_post_quote_target_missing(self, client):
+        response = client.post(
+            "/api/v1/posts",
+            json={
+                "subthread_id": "sub-1",
+                "title": "x > y",
+                "content": "Quote",
+                "quoted_post_id": STUB_POST_MISSING,
+            },
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_create_post_duplicate_repost_target_ok(self, client):
+        response = client.post(
+            "/api/v1/posts",
+            json={
+                "subthread_id": "sub-1",
+                "title": "dup title",
+                "content": "dup body",
+                "repost_of_post_id": STUB_POST_ID,
+            },
+        )
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["repost_of_post_id"] == STUB_POST_ID
+
+    def test_create_post_duplicate_repost_target_missing(self, client):
+        response = client.post(
+            "/api/v1/posts",
+            json={
+                "subthread_id": "sub-1",
+                "title": "dup",
+                "content": "dup",
+                "repost_of_post_id": STUB_POST_MISSING,
+            },
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_create_post_duplicate_repost_comment_ok(self, client):
+        response = client.post(
+            "/api/v1/posts",
+            json={
+                "subthread_id": "sub-1",
+                "title": "Comment repost",
+                "content": "Great conditions",
+                "repost_of_comment_id": "comment-1",
+            },
+        )
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["repost_of_comment_id"] == "comment-1"
+
+    def test_create_post_quote_comment_success(self, client):
+        response = client.post(
+            "/api/v1/posts",
+            json={
+                "subthread_id": "sub-1",
+                "title": "thread > My reply",
+                "content": "Agree.",
+                "quoted_comment_id": "comment-1",
+            },
+        )
+
+        assert response.status_code == status.HTTP_201_CREATED
+        body = response.json()
+        assert body["quoted_comment_id"] == "comment-1"
+        assert body["content"] == "Agree."
+
+    def test_create_post_quote_both_targets_rejected(self, client):
+        response = client.post(
+            "/api/v1/posts",
+            json={
+                "subthread_id": "sub-1",
+                "title": "x",
+                "content": "y",
+                "quoted_post_id": STUB_POST_ID,
+                "quoted_comment_id": "comment-1",
+            },
+        )
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
     def test_get_post_not_found(self, client):
         response = client.get(f"/api/v1/posts/{STUB_POST_MISSING}")
 

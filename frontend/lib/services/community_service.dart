@@ -79,11 +79,19 @@ class CommunityService {
     required String subthreadId,
     required String title,
     required String content,
+    String? quotedPostId,
+    String? repostOfPostId,
+    String? quotedCommentId,
+    String? repostOfCommentId,
   }) {
     return _run(() => _communityRepository.createPost(
           subthreadId: subthreadId,
           title: title,
           content: content,
+          quotedPostId: quotedPostId,
+          repostOfPostId: repostOfPostId,
+          quotedCommentId: quotedCommentId,
+          repostOfCommentId: repostOfCommentId,
         ));
   }
 

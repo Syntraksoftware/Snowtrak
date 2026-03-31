@@ -34,6 +34,13 @@ class StubCommunityClient:
             "liked_by_current_user": True,
             "repost_count": 0,
             "reposted_by_current_user": False,
+            "share_count": 0,
+            "quoted_post_id": None,
+            "quoted_post": None,
+            "repost_of_post_id": None,
+            "quoted_comment_id": None,
+            "quoted_comment": None,
+            "repost_of_comment_id": None,
         }
         self.comment = {
             "id": "comment-1",
@@ -46,6 +53,8 @@ class StubCommunityClient:
             "author_email": "friend@example.com",
             "author_first_name": "Pow",
             "author_last_name": "Fan",
+            "repost_count": 0,
+            "reposted_by_current_user": False,
         }
 
     def list_subthreads(self, limit=50):
@@ -79,13 +88,41 @@ class StubCommunityClient:
     def delete_subthread(self, subthread_id):
         return subthread_id == "sub-1"
 
-    def create_post(self, user_id, subthread_id, title, content):
+    def create_post(
+        self,
+        user_id,
+        subthread_id,
+        title,
+        content,
+        quoted_post_id=None,
+        repost_of_post_id=None,
+        quoted_comment_id=None,
+        repost_of_comment_id=None,
+    ):
         if subthread_id != "sub-1":
             return None
         created = dict(self.post)
         created["title"] = title
         created["content"] = content
         created["user_id"] = user_id
+        if quoted_post_id:
+            created["quoted_post_id"] = quoted_post_id
+        else:
+            created["quoted_post_id"] = None
+        if repost_of_post_id:
+            created["repost_of_post_id"] = repost_of_post_id
+        else:
+            created["repost_of_post_id"] = None
+        if quoted_comment_id:
+            created["quoted_comment_id"] = quoted_comment_id
+        else:
+            created["quoted_comment_id"] = None
+        if repost_of_comment_id:
+            created["repost_of_comment_id"] = repost_of_comment_id
+        else:
+            created["repost_of_comment_id"] = None
+        created["quoted_post"] = None
+        created["quoted_comment"] = None
         return created
 
     def get_post_by_id(self, post_id):
@@ -98,13 +135,13 @@ class StubCommunityClient:
             return []
         return [self.post]
 
-    def list_comments_by_post(self, post_id):
+    def list_comments_by_post(self, post_id, current_user_id=None):
         if post_id != STUB_POST_ID:
             return []
-        return [self.comment]
+        return [dict(self.comment)]
 
-    def list_comments_by_post_ids(self, post_ids):
-        return {pid: self.list_comments_by_post(pid) for pid in post_ids}
+    def list_comments_by_post_ids(self, post_ids, current_user_id=None):
+        return {pid: self.list_comments_by_post(pid, current_user_id=current_user_id) for pid in post_ids}
 
     def count_comments_by_post(self, post_id):
         return 1 if post_id == STUB_POST_ID else 0

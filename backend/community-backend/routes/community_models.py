@@ -12,6 +12,33 @@ class PostCreate(BaseModel):
     subthread_id: str
     title: str
     content: str
+    quoted_post_id: Optional[str] = None
+    repost_of_post_id: Optional[str] = None
+    quoted_comment_id: Optional[str] = None
+    repost_of_comment_id: Optional[str] = None
+
+
+class CommunityQuotedPostPreview(BaseModel):
+    """Minimal quoted post payload for quote posts (text-only)."""
+    post_id: str
+    user_id: str
+    title: str
+    content: str
+    created_at: str
+    author_email: Optional[str] = None
+    author_first_name: Optional[str] = None
+    author_last_name: Optional[str] = None
+
+
+class CommunityQuotedCommentPreview(BaseModel):
+    """Minimal quoted comment payload for quote posts (text-only)."""
+    id: str
+    user_id: str
+    content: str
+    created_at: str
+    author_email: Optional[str] = None
+    author_first_name: Optional[str] = None
+    author_last_name: Optional[str] = None
 
 
 class PostUpdate(BaseModel):
@@ -56,6 +83,13 @@ class CommunityPostResponse(BaseModel):
     liked_by_current_user: bool = False
     repost_count: int = 0
     reposted_by_current_user: bool = False
+    share_count: int = 0
+    quoted_post_id: Optional[str] = None
+    quoted_post: Optional[CommunityQuotedPostPreview] = None
+    repost_of_post_id: Optional[str] = None
+    quoted_comment_id: Optional[str] = None
+    quoted_comment: Optional[CommunityQuotedCommentPreview] = None
+    repost_of_comment_id: Optional[str] = None
 
 
 class CommunityCommentResponse(BaseModel):
@@ -70,6 +104,8 @@ class CommunityCommentResponse(BaseModel):
     author_email: Optional[str] = None
     author_first_name: Optional[str] = None
     author_last_name: Optional[str] = None
+    repost_count: int = 0
+    reposted_by_current_user: bool = False
 
 
 class CommunityDeletePostResponse(BaseModel):

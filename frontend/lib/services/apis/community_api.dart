@@ -172,6 +172,10 @@ class CommunityApi {
     required String subthreadId,
     required String title,
     required String content,
+    String? quotedPostId,
+    String? repostOfPostId,
+    String? quotedCommentId,
+    String? repostOfCommentId,
   }) async {
     // Trailing slash required: POST /api/v1/posts -> 307 to /api/v1/posts/ and Dio
     // mishandles POST body on redirect, breaking creates from the app.
@@ -181,6 +185,14 @@ class CommunityApi {
         'subthread_id': subthreadId,
         'title': title,
         'content': content,
+        if (quotedPostId != null && quotedPostId.isNotEmpty)
+          'quoted_post_id': quotedPostId,
+        if (repostOfPostId != null && repostOfPostId.isNotEmpty)
+          'repost_of_post_id': repostOfPostId,
+        if (quotedCommentId != null && quotedCommentId.isNotEmpty)
+          'quoted_comment_id': quotedCommentId,
+        if (repostOfCommentId != null && repostOfCommentId.isNotEmpty)
+          'repost_of_comment_id': repostOfCommentId,
       },
     );
 

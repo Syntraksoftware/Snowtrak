@@ -40,11 +40,63 @@ async def create_post(
                 detail="Subthread not found",
             )
 
+        quoted_id = (data.quoted_post_id or "").strip() or None
+        quoted_comment_id = (data.quoted_comment_id or "").strip() or None
+        if quoted_id and quoted_comment_id:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Cannot quote both a post and a comment",
+            )
+
+        if quoted_id:
+            qpost = community_client.get_post_by_id(quoted_id)
+            if not qpost:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Quoted post not found",
+                )
+
+        if quoted_comment_id:
+            qcom = community_client.get_comment_by_id(quoted_comment_id)
+            if not qcom:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Quoted comment not found",
+                )
+
+        repost_of_id = (data.repost_of_post_id or "").strip() or None
+        repost_of_comment_id = (data.repost_of_comment_id or "").strip() or None
+        if repost_of_id and repost_of_comment_id:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Cannot duplicate-repost both a post and a comment",
+            )
+
+        if repost_of_id:
+            parent = community_client.get_post_by_id(repost_of_id)
+            if not parent:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Repost target post not found",
+                )
+
+        if repost_of_comment_id:
+            parent_comment = community_client.get_comment_by_id(repost_of_comment_id)
+            if not parent_comment:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Repost target comment not found",
+                )
+
         created_post = community_client.create_post(
             user_id=user_id,
             subthread_id=data.subthread_id,
             title=data.title,
             content=data.content,
+            quoted_post_id=quoted_id,
+            repost_of_post_id=repost_of_id,
+            quoted_comment_id=quoted_comment_id,
+            repost_of_comment_id=repost_of_comment_id,
         )
         if not created_post:
             raise HTTPException(
@@ -77,9 +129,15 @@ async def repost_post(
             reposted=True,
         )
         if not result:
+            if community_client.get_post_by_id(str(post_id)):
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Could not save repost. If this continues, check that "
+                    "the post_reposts table exists (see community-backend SQL setup).",
+                )
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Post not found or repost operation failed",
+                detail="Post not found",
             )
         return result
     except HTTPException:
@@ -106,9 +164,15 @@ async def undo_repost_post(
             reposted=False,
         )
         if not result:
+            if community_client.get_post_by_id(str(post_id)):
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Could not update repost. If this continues, check that "
+                    "the post_reposts table exists (see community-backend SQL setup).",
+                )
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Post not found or repost operation failed",
+                detail="Post not found",
             )
         return result
     except HTTPException:
@@ -174,9 +238,15 @@ async def vote_post(
             vote_type=data.vote_type,
         )
         if not vote_result:
+            if community_client.get_post_by_id(str(post_id)):
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Could not save vote. If this continues, check that "
+                    "the post_votes table exists (see community-backend SQL setup).",
+                )
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Post not found or vote operation failed",
+                detail="Post not found",
             )
 
         return vote_result

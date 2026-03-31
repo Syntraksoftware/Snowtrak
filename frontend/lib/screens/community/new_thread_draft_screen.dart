@@ -1,19 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:syntrak/models/post.dart';
 import 'package:syntrak/providers/auth_provider.dart';
+import 'package:syntrak/screens/community/widgets/quoted_post_embed.dart';
 
 class NewThreadDraftResult {
   const NewThreadDraftResult({
     required this.content,
     this.topic,
+    this.quotedPostId,
   });
 
   final String content;
   final String? topic;
+  /// Set when composing a quote; sent as [quoted_post_id] on create.
+  final String? quotedPostId;
 }
 
 class NewThreadDraftScreen extends StatefulWidget {
-  const NewThreadDraftScreen({super.key});
+  const NewThreadDraftScreen({super.key, this.quotedPost});
+
+  /// When non-null, user is quoting this post (adds embed + sends id on post).
+  final Post? quotedPost;
 
   @override
   State<NewThreadDraftScreen> createState() => _NewThreadDraftScreenState();
@@ -35,10 +43,12 @@ class _NewThreadDraftScreenState extends State<NewThreadDraftScreen> {
     final content = _contentController.text.trim();
     if (content.isEmpty) return;
     final topic = _topicController.text.trim();
+    final q = widget.quotedPost;
     Navigator.of(context).pop(
       NewThreadDraftResult(
         content: content,
         topic: topic.isEmpty ? null : topic,
+        quotedPostId: q != null ? q.id : null,
       ),
     );
   }
@@ -48,6 +58,7 @@ class _NewThreadDraftScreenState extends State<NewThreadDraftScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final user = authProvider.user;
     final canPost = _contentController.text.trim().isNotEmpty;
+    final isQuote = widget.quotedPost != null;
     final displayName = user?.firstName ?? user?.email.split('@').first ?? 'Member';
     final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'M';
     return Scaffold(
@@ -146,12 +157,18 @@ class _NewThreadDraftScreenState extends State<NewThreadDraftScreen> {
                             fontSize: 20,
                             height: 1.35,
                           ),
-                          decoration: const InputDecoration(
-                            hintText: "What's new?",
-                            hintStyle: TextStyle(color: Colors.black38),
+                          decoration: InputDecoration(
+                            hintText: isQuote
+                                ? 'Share your thoughts...'
+                                : "What's new?",
+                            hintStyle: const TextStyle(color: Colors.black38),
                             border: InputBorder.none,
                           ),
                         ),
+                        if (isQuote) ...[
+                          const SizedBox(height: 14),
+                          QuotedPostEmbed(post: widget.quotedPost!),
+                        ],
                       ],
                     ),
                   ),

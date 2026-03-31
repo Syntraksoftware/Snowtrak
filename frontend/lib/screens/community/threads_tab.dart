@@ -82,9 +82,11 @@ class _ThreadsTabState extends State<ThreadsTab> {
       _filteredPosts = List.from(_posts);
     } else {
       _filteredPosts = _posts.where((post) {
+        final topic = (post.topic ?? '').toLowerCase();
         return post.text.toLowerCase().contains(query) ||
             post.author.displayName.toLowerCase().contains(query) ||
-            post.author.username.toLowerCase().contains(query);
+            post.author.username.toLowerCase().contains(query) ||
+            (topic.isNotEmpty && topic.contains(query));
       }).toList();
     }
   }
@@ -226,13 +228,27 @@ class _ThreadsTabState extends State<ThreadsTab> {
     }
   }
 
-  Future<void> _handlePost(String text, {String? topic}) async {
+  Future<void> _handlePost(
+    String text, {
+    String? topic,
+    String? quotedPostId,
+    Post? quotePreview,
+  }) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final user = authProvider.user;
 
     if (user == null || _activeSubthreadId == null) return;
 
     final tempId = 'tmp_${DateTime.now().millisecondsSinceEpoch}';
+
+    final trimmedTopic = (topic ?? '').trim();
+    final titleLine = () {
+      final base = text.length > 48 ? '${text.substring(0, 48)}...' : text;
+      if (trimmedTopic.isEmpty) return base;
+      return '$trimmedTopic > $base';
+    }();
+
+    final qid = (quotedPostId ?? '').trim();
 
     final newPost = Post(
       id: tempId,
@@ -245,6 +261,11 @@ class _ThreadsTabState extends State<ThreadsTab> {
         avatarUrl: null,
       ),
       text: text,
+      topic: trimmedTopic.isEmpty ? null : trimmedTopic,
+      serverTitle: titleLine,
+      subthreadId: _activeSubthreadId!,
+      quotedPost: quotePreview,
+      quotedPostId: qid.isEmpty ? null : qid,
       createdAt: DateTime.now(),
       timestampLabel: 'now',
     );
@@ -256,13 +277,9 @@ class _ThreadsTabState extends State<ThreadsTab> {
 
     final createResult = await _communityService.createPost(
       subthreadId: _activeSubthreadId!,
-      title: (() {
-        final trimmedTopic = (topic ?? '').trim();
-        final base = text.length > 48 ? '${text.substring(0, 48)}...' : text;
-        if (trimmedTopic.isEmpty) return base;
-        return '$trimmedTopic > $base';
-      })(),
+      title: titleLine,
       content: text,
+      quotedPostId: qid.isEmpty ? null : qid,
     );
 
     switch (createResult) {
@@ -298,15 +315,10 @@ class _ThreadsTabState extends State<ThreadsTab> {
             type: 'create_post',
             payload: {
               'subthread_id': _activeSubthreadId,
-              'title': (() {
-                final trimmedTopic = (topic ?? '').trim();
-                final base =
-                    text.length > 48 ? '${text.substring(0, 48)}...' : text;
-                if (trimmedTopic.isEmpty) return base;
-                return '$trimmedTopic > $base';
-              })(),
+              'title': titleLine,
               'content': text,
               'temp_id': tempId,
+              if (qid.isNotEmpty) 'quoted_post_id': qid,
             },
           ),
         );
@@ -328,6 +340,16 @@ class _ThreadsTabState extends State<ThreadsTab> {
   }
 
   void _handleLike(Post post) {
+    if (!_isPersistedPostId(post.id)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please wait for this post to finish syncing before liking.',
+          ),
+        ),
+      );
+      return;
+    }
     final nextLiked = !post.likedByCurrentUser;
     final nextVoteType = nextLiked ? 1 : 0;
 
@@ -348,22 +370,196 @@ class _ThreadsTabState extends State<ThreadsTab> {
     _syncPostVote(postId: post.id, voteType: nextVoteType);
   }
 
-  void _handleRepost(Post post) {
-    final nextReposted = !post.repostedByCurrentUser;
-    setState(() {
-      final index = _posts.indexWhere((p) => p.id == post.id);
-      if (index != -1) {
-        final currentPost = _posts[index];
-        _posts[index] = currentPost.copyWith(
-          repostedByCurrentUser: nextReposted,
-          repostCount: currentPost.repostedByCurrentUser
-              ? currentPost.repostCount - 1
-              : currentPost.repostCount + 1,
+  void _showRepostOptions(Post post) {
+    if (!_isPersistedPostId(post.id)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please wait for this post to finish syncing before reposting.',
+          ),
+        ),
+      );
+      return;
+    }
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _repostSheetButton(
+                  label: 'Repost',
+                  icon: Icons.repeat,
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _duplicateRepostPost(post);
+                  },
+                ),
+                const SizedBox(height: 10),
+                _repostSheetButton(
+                  label: 'Quote',
+                  icon: Icons.chat_bubble_outline,
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _openQuoteComposer(post);
+                  },
+                ),
+              ],
+            ),
+          ),
         );
-        _filterPosts();
-      }
+      },
+    );
+  }
+
+  Widget _repostSheetButton({
+    required String label,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: const Color(0xFFF0F0F2),
+      borderRadius: BorderRadius.circular(28),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(28),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Row(
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              const Spacer(),
+              Icon(icon, color: Colors.black87, size: 22),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _duplicateRepostPost(Post source) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.user;
+    if (user == null || _activeSubthreadId == null) return;
+
+    final subthreadId = source.subthreadId.isNotEmpty
+        ? source.subthreadId
+        : _activeSubthreadId!;
+
+    final tempId = 'tmp_${DateTime.now().millisecondsSinceEpoch}';
+    final duplicate = Post(
+      id: tempId,
+      author: PostAuthor(
+        id: user.id,
+        displayName: user.firstName != null && user.lastName != null
+            ? '${user.firstName} ${user.lastName}'
+            : user.email.split('@')[0],
+        username: user.email.split('@')[0],
+        avatarUrl: null,
+      ),
+      text: source.text,
+      topic: source.topic,
+      serverTitle: source.composeServerTitle(),
+      subthreadId: subthreadId,
+      quotedPost: source.quotedPost,
+      quotedPostId: source.quotedPostId,
+      createdAt: DateTime.now(),
+      timestampLabel: 'now',
+    );
+
+    setState(() {
+      _posts.insert(0, duplicate);
+      _filterPosts();
     });
-    _syncPostRepost(postId: post.id, reposted: nextReposted);
+
+    final dupQid = (source.quotedPostId ?? '').trim();
+    final createResult = await _communityService.createPost(
+      subthreadId: subthreadId,
+      title: source.composeServerTitle(),
+      content: source.text.trim(),
+      quotedPostId: dupQid.isEmpty ? null : dupQid,
+      repostOfPostId: source.id,
+    );
+
+    switch (createResult) {
+      case AppSuccess(:final value):
+        var confirmed = CommunityPostMapper.mapBackendPost(value, const []);
+        if (confirmed.author.id == user.id) {
+          confirmed = confirmed.copyWith(
+            author: PostAuthor(
+              id: user.id,
+              displayName: user.firstName != null && user.lastName != null
+                  ? '${user.firstName} ${user.lastName}'
+                  : user.email.split('@')[0],
+              username: user.email.split('@')[0],
+              avatarUrl: null,
+            ),
+          );
+        }
+        if (!mounted) return;
+        setState(() {
+          final index = _posts.indexWhere((p) => p.id == tempId);
+          if (index != -1) {
+            _posts[index] = confirmed;
+            _filterPosts();
+          }
+        });
+        await _loadFeed();
+      case AppFailure(:final error):
+        setState(() {
+          _posts.removeWhere((p) => p.id == tempId);
+          _filterPosts();
+        });
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Could not repost: ${error.userMessage}',
+            ),
+          ),
+        );
+    }
+  }
+
+  Future<void> _openQuoteComposer(Post source) async {
+    final draft = await Navigator.of(context).push<NewThreadDraftResult>(
+      MaterialPageRoute(
+        builder: (_) => NewThreadDraftScreen(quotedPost: source),
+      ),
+    );
+    if (draft == null) return;
+    final body = draft.content.trim();
+    if (body.isEmpty) return;
+    final topic = draft.topic?.trim();
+    final qid = (draft.quotedPostId ?? '').trim();
+    await _handlePost(
+      body,
+      topic: topic,
+      quotedPostId: qid.isEmpty ? null : qid,
+      quotePreview: source,
+    );
   }
 
   Future<void> _handleReply(Post post) async {
@@ -396,7 +592,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
           onSubmitReply: (targetPost, text) =>
               _sendReply(post: targetPost, text: text),
           onLike: _handleLike,
-          onRepost: _handleRepost,
+          onRepost: _showRepostOptions,
           onShare: (p) {
             _handleShare(p);
           },
@@ -510,10 +706,13 @@ class _ThreadsTabState extends State<ThreadsTab> {
     for (final operation in operations) {
       var succeeded = false;
       if (operation.type == 'create_post') {
+        final qRaw = operation.payload['quoted_post_id'];
+        final qid = qRaw == null ? null : qRaw.toString().trim();
         final r = await _communityService.createPost(
           subthreadId: (operation.payload['subthread_id'] ?? '').toString(),
           title: (operation.payload['title'] ?? '').toString(),
           content: (operation.payload['content'] ?? '').toString(),
+          quotedPostId: (qid != null && qid.isNotEmpty) ? qid : null,
         );
         succeeded = r.isSuccess;
       } else if (operation.type == 'create_comment') {
@@ -527,16 +726,6 @@ class _ThreadsTabState extends State<ThreadsTab> {
           postId: (operation.payload['post_id'] ?? '').toString(),
           voteType: (operation.payload['vote_type'] as num?)?.toInt() ?? 0,
         );
-        succeeded = r.isSuccess;
-      } else if (operation.type == 'repost_post') {
-        final reposted = operation.payload['reposted'] == true;
-        final r = reposted
-            ? await _communityService.repostPost(
-                postId: (operation.payload['post_id'] ?? '').toString(),
-              )
-            : await _communityService.undoRepost(
-                postId: (operation.payload['post_id'] ?? '').toString(),
-              );
         succeeded = r.isSuccess;
       } else {
         // Unknown operation type: log warning and mark for retry
@@ -584,39 +773,6 @@ class _ThreadsTabState extends State<ThreadsTab> {
           SnackBar(
             content: Text(
               'Could not save vote: ${error.userMessage}. '
-              'Saved to retry automatically.',
-            ),
-          ),
-        );
-    }
-  }
-
-  Future<void> _syncPostRepost({
-    required String postId,
-    required bool reposted,
-  }) async {
-    final result = reposted
-        ? await _communityService.repostPost(postId: postId)
-        : await _communityService.undoRepost(postId: postId);
-    switch (result) {
-      case AppSuccess():
-        await _loadFeed();
-      case AppFailure(:final error):
-        await _outbox.enqueue(
-          CommunityOutboxOperation(
-            id: 'repost_${DateTime.now().millisecondsSinceEpoch}_$postId',
-            type: 'repost_post',
-            payload: {
-              'post_id': postId,
-              'reposted': reposted,
-            },
-          ),
-        );
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Could not save repost: ${error.userMessage}. '
               'Saved to retry automatically.',
             ),
           ),
@@ -715,7 +871,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
           itemBuilder: (context, index) {
             if (index == 0) {
               return CompactComposer(
-                onPost: _handlePost,
+                onPost: (text) => _handlePost(text),
                 maxCharacters: 280,
                 onComposeTap: _openDraftComposer,
               );
@@ -725,7 +881,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
               post: post,
               onTap: () => _handlePostTap(post),
               onLike: _handleLike,
-              onRepost: _handleRepost,
+              onRepost: _showRepostOptions,
               onReply: _handleReply,
               onShare: (p) {
                 _handleShare(p);

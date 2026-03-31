@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:syntrak/models/post.dart';
+import 'package:syntrak/screens/community/widgets/quoted_post_embed.dart';
 import 'package:syntrak/widgets/message_actions.dart';
 import 'package:syntrak/widgets/inline_reply_preview.dart';
 
@@ -37,6 +38,14 @@ class MessageCard extends StatefulWidget {
 
 class _MessageCardState extends State<MessageCard> {
   bool _isExpanded = false;
+
+  static String _feedSubtitle(Post post) {
+    final t = (post.topic ?? '').trim();
+    if (t.isNotEmpty) {
+      return t;
+    }
+    return '@${post.author.username}';
+  }
 
   @override
   void initState() {
@@ -138,7 +147,7 @@ class _MessageCardState extends State<MessageCard> {
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
-                              '@${widget.post.author.username}',
+                              _feedSubtitle(widget.post),
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey[600],
@@ -255,12 +264,20 @@ class _MessageCardState extends State<MessageCard> {
               ],
             ),
           ),
+          if (widget.post.quotedPost != null) ...[
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.only(left: 52),
+              child: QuotedPostEmbed(post: widget.post.quotedPost!),
+            ),
+          ],
           const SizedBox(height: 12),
 
           MessageActions(
             replyCount: widget.post.replyCount,
             likeCount: widget.post.likeCount,
             repostCount: widget.post.repostCount,
+            shareCount: widget.post.shareCount,
             isLiked: widget.post.likedByCurrentUser,
             isReposted: widget.post.repostedByCurrentUser,
             onReply: () => widget.onReply?.call(widget.post),
