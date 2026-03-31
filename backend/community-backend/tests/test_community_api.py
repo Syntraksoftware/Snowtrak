@@ -2,6 +2,10 @@ from fastapi import status
 
 from middleware.auth import get_current_user
 
+# Must match StubCommunityClient post_id (UUID path params avoid /posts/feed collision).
+STUB_POST_ID = "11111111-1111-1111-1111-111111111111"
+STUB_POST_MISSING = "00000000-0000-0000-0000-000000000099"
+
 
 class TestSubthreadEndpoints:
     def test_list_subthreads_standard(self, client):
@@ -73,7 +77,7 @@ class TestPostEndpoints:
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     def test_get_post_not_found(self, client):
-        response = client.get("/api/v1/posts/post-missing")
+        response = client.get(f"/api/v1/posts/{STUB_POST_MISSING}")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -84,21 +88,62 @@ class TestPostEndpoints:
         body = response.json()
         assert "items" in body
         assert "meta" in body
-        assert body["items"][0]["post_id"] == "post-1"
+        assert body["items"][0]["post_id"] == STUB_POST_ID
+
+    def test_list_feed_posts_canonical_path(self, client):
+        """GET /api/v1/feed is the canonical feed endpoint."""
+        response = client.get("/api/v1/feed?limit=10")
+
+        assert response.status_code == status.HTTP_200_OK
+        body = response.json()
+        assert "items" in body
+        assert body["items"][0]["post_id"] == STUB_POST_ID
 
     def test_list_post_comments_not_found(self, client):
-        response = client.get("/api/v1/posts/post-missing/comments")
+        response = client.get(f"/api/v1/posts/{STUB_POST_MISSING}/comments")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
+    def test_batch_post_comments(self, client):
+        response = client.post(
+            "/api/v1/posts/comments/batch",
+            json={"post_ids": [STUB_POST_ID, STUB_POST_MISSING]},
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        body = response.json()
+        assert "items" in body
+        assert len(body["items"]) == 2
+        assert body["items"][0]["post_id"] == STUB_POST_ID
+        assert len(body["items"][0]["comments"]) == 1
+        assert body["items"][0]["comments"][0]["id"] == "comment-1"
+        assert body["items"][1]["post_id"] == STUB_POST_MISSING
+        assert body["items"][1]["comments"] == []
+
+    def test_batch_post_comments_too_many_distinct_ids(self, client):
+        response = client.post(
+            "/api/v1/posts/comments/batch",
+            json={"post_ids": [f"p{i}" for i in range(51)]},
+        )
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    def test_get_post_conversation_matches_comments(self, client):
+        r_comments = client.get(f"/api/v1/posts/{STUB_POST_ID}/comments")
+        r_conv = client.get(f"/api/v1/posts/{STUB_POST_ID}/conversation")
+
+        assert r_comments.status_code == status.HTTP_200_OK
+        assert r_conv.status_code == status.HTTP_200_OK
+        assert r_comments.json()["items"] == r_conv.json()["items"]
+
     def test_delete_post_not_found(self, client):
-        response = client.delete("/api/v1/posts/post-missing")
+        response = client.delete(f"/api/v1/posts/{STUB_POST_MISSING}")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
     def test_update_post_success(self, client):
         response = client.patch(
-            "/api/v1/posts/post-1",
+            f"/api/v1/posts/{STUB_POST_ID}",
             json={"content": "Updated content"},
         )
 
@@ -107,7 +152,7 @@ class TestPostEndpoints:
 
     def test_vote_post_success(self, client):
         response = client.post(
-            "/api/v1/posts/post-1/vote",
+            f"/api/v1/posts/{STUB_POST_ID}/vote",
             json={"vote_type": 1},
         )
 
@@ -116,7 +161,7 @@ class TestPostEndpoints:
 
     def test_vote_post_invalid_type(self, client):
         response = client.post(
-            "/api/v1/posts/post-1/vote",
+            f"/api/v1/posts/{STUB_POST_ID}/vote",
             json={"vote_type": 2},
         )
 
@@ -127,7 +172,7 @@ class TestCommentEndpoints:
     def test_create_comment_success(self, client):
         response = client.post(
             "/api/v1/comments",
-            json={"post_id": "post-1", "content": "Nice route"},
+            json={"post_id": STUB_POST_ID, "content": "Nice route"},
         )
 
         assert response.status_code == status.HTTP_201_CREATED
@@ -137,7 +182,7 @@ class TestCommentEndpoints:
         response = client.post(
             "/api/v1/comments",
             json={
-                "post_id": "post-1",
+                "post_id": STUB_POST_ID,
                 "content": "Reply",
                 "parent_id": "comment-missing",
             },
@@ -178,7 +223,7 @@ class TestCommentEndpoints:
 
         response = client.post(
             "/api/v1/comments",
-            json={"post_id": "post-1", "content": "Auth required"},
+            json={"post_id": STUB_POST_ID, "content": "Auth required"},
         )
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
