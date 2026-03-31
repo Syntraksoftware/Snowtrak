@@ -10,7 +10,9 @@ COPY . .
 RUN flutter config --enable-web
 RUN flutter build web --release
 
-FROM nginx:1.27-alpine
+FROM nginx:1.29-alpine
+
+RUN apk update && apk upgrade --no-cache
 
 COPY --from=build /app/build/web /usr/share/nginx/html
 

@@ -1,8 +1,8 @@
-FastAPI==0.109.1
-uvicorn==0.24.0
-supabase==2.16.0
+FastAPI==0.121.0
+uvicorn[standard]==0.37.0
+supabase==2.28.3
 httpx<0.28
-PyJWT==2.8.0
-python-dotenv==1.0.0
+PyJWT==2.12.0
+python-dotenv==1.1.1
 pydantic>=2.11.7
 pydantic-settings>=2.0.0
