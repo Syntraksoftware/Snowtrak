@@ -1,6 +1,9 @@
 """Write-oriented post Supabase operations for community service."""
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
+
+from services.constants.community_tables import POST_REPOSTS, POSTS, POST_VOTES
+from services.helpers.engagement_ops import set_vote
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +21,7 @@ class CommunityPostWriteOperations:
         repost_of_post_id: Optional[str] = None,
         quoted_comment_id: Optional[str] = None,
         repost_of_comment_id: Optional[str] = None,
+        media_urls: Optional[List[str]] = None,
     ) -> Optional[Dict[str, Any]]:
         """Create a new post."""
         try:
@@ -35,6 +39,7 @@ class CommunityPostWriteOperations:
                 "subthread_id": subthread_id,
                 "title": title,
                 "content": content,
+                "media_urls": list(media_urls or []),
             }
             if quoted_post_id:
                 payload["quoted_post_id"] = quoted_post_id
@@ -44,7 +49,7 @@ class CommunityPostWriteOperations:
                 payload["quoted_comment_id"] = quoted_comment_id
             if repost_of_comment_id:
                 payload["repost_of_comment_id"] = repost_of_comment_id
-            response = self._client.table("posts").insert(payload).execute()
+            response = self._client.table(POSTS).insert(payload).execute()
             response_data = getattr(response, "data", None)
             if isinstance(response_data, list) and response_data:
                 logger.info("Created post by user %s", user_id)
@@ -84,7 +89,7 @@ class CommunityPostWriteOperations:
             if not update_payload:
                 return current_post
 
-            response = self._client.table("posts").update(update_payload).eq("post_id", post_id).execute()
+            response = self._client.table(POSTS).update(update_payload).eq("post_id", post_id).execute()
             response_data = getattr(response, "data", None)
             if isinstance(response_data, list) and response_data:
                 return self.get_post_by_id(post_id)
@@ -108,26 +113,14 @@ class CommunityPostWriteOperations:
             if not post:
                 return None
 
-            if vote_type == 0:
-                self._client.table("post_votes").delete().eq("post_id", post_id).eq("user_id", user_id).execute()
-            else:
-                existing_vote_response = self._client.table("post_votes").select("id").eq("post_id", post_id).eq("user_id", user_id).limit(1).execute()
-                existing_vote_data = getattr(existing_vote_response, "data", None)
-                vote_payload = {
-                    "post_id": post_id,
-                    "user_id": user_id,
-                    "vote_value": vote_type,
-                }
-                if isinstance(existing_vote_data, list) and existing_vote_data:
-                    self._client.table("post_votes").update({"vote_value": vote_type}).eq("post_id", post_id).eq("user_id", user_id).execute()
-                else:
-                    self._client.table("post_votes").insert(vote_payload).execute()
-
-            score_response = self._client.table("post_votes").select("vote_value").eq("post_id", post_id).execute()
-            score_rows = getattr(score_response, "data", None)
-            score = 0
-            if isinstance(score_rows, list):
-                score = sum(int(row.get("vote_value", 0)) for row in score_rows)
+            score = set_vote(
+                self._client,
+                table_name=POST_VOTES,
+                entity_field="post_id",
+                entity_id=post_id,
+                user_id=user_id,
+                vote_type=vote_type,
+            )
 
             return {
                 "post_id": post_id,
@@ -156,7 +149,7 @@ class CommunityPostWriteOperations:
                 )
                 return False
 
-            response = self._client.table("posts").delete().eq("post_id", post_id).execute()
+            response = self._client.table(POSTS).delete().eq("post_id", post_id).execute()
             response_data = getattr(response, "data", None)
 
             if isinstance(response_data, list) and response_data:
@@ -181,25 +174,25 @@ class CommunityPostWriteOperations:
                 return None
 
             if reposted:
-                existing_response = self._client.table("post_reposts").select("id").eq(
+                existing_response = self._client.table(POST_REPOSTS).select("id").eq(
                     "post_id",
                     post_id,
                 ).eq("user_id", user_id).limit(1).execute()
                 existing_data = getattr(existing_response, "data", None)
                 if not (isinstance(existing_data, list) and existing_data):
-                    self._client.table("post_reposts").insert(
+                    self._client.table(POST_REPOSTS).insert(
                         {
                             "post_id": post_id,
                             "user_id": user_id,
                         }
                     ).execute()
             else:
-                self._client.table("post_reposts").delete().eq("post_id", post_id).eq(
+                self._client.table(POST_REPOSTS).delete().eq("post_id", post_id).eq(
                     "user_id",
                     user_id,
                 ).execute()
 
-            count_response = self._client.table("post_reposts").select("id").eq(
+            count_response = self._client.table(POST_REPOSTS).select("id").eq(
                 "post_id",
                 post_id,
             ).execute()

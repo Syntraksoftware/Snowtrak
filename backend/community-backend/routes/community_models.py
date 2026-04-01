@@ -4,7 +4,7 @@ used for organizing and standardizing the data structures across different route
 """
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class PostCreate(BaseModel):
@@ -16,6 +16,7 @@ class PostCreate(BaseModel):
     repost_of_post_id: Optional[str] = None
     quoted_comment_id: Optional[str] = None
     repost_of_comment_id: Optional[str] = None
+    media_urls: Optional[List[str]] = None
 
 
 class CommunityQuotedPostPreview(BaseModel):
@@ -90,6 +91,7 @@ class CommunityPostResponse(BaseModel):
     quoted_comment_id: Optional[str] = None
     quoted_comment: Optional[CommunityQuotedCommentPreview] = None
     repost_of_comment_id: Optional[str] = None
+    media_urls: List[str] = Field(default_factory=list)
 
 
 class CommunityCommentResponse(BaseModel):
@@ -106,6 +108,7 @@ class CommunityCommentResponse(BaseModel):
     author_last_name: Optional[str] = None
     repost_count: int = 0
     reposted_by_current_user: bool = False
+    media_urls: List[str] = Field(default_factory=list)
 
 
 class CommunityDeletePostResponse(BaseModel):
@@ -139,6 +142,7 @@ class CommentCreate(BaseModel):
     post_id: str
     content: str
     parent_id: Optional[str] = None
+    media_urls: Optional[List[str]] = None
 
 
 class CommentUpdate(BaseModel):

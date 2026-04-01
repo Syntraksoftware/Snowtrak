@@ -1,6 +1,9 @@
 """Write-oriented comment Supabase operations for community service."""
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
+
+from services.constants.community_tables import COMMENTS, COMMENT_VOTES
+from services.helpers.engagement_ops import set_vote
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +17,7 @@ class CommunityCommentWriteOperations:
         post_id: str,
         content: str,
         parent_id: Optional[str] = None,
+        media_urls: Optional[List[str]] = None,
     ) -> Optional[Dict[str, Any]]:
         """Create a new comment."""
         try:
@@ -23,8 +27,9 @@ class CommunityCommentWriteOperations:
                 "content": content,
                 "parent_id": parent_id,
                 "has_parent": parent_id is not None,
+                "media_urls": list(media_urls or []),
             }
-            response = self._client.table("comments").insert(payload).execute()
+            response = self._client.table(COMMENTS).insert(payload).execute()
             response_data = getattr(response, "data", None)
             if isinstance(response_data, list) and response_data:
                 logger.info("Created comment by user %s on post %s", user_id, post_id)
@@ -48,7 +53,7 @@ class CommunityCommentWriteOperations:
             if current_comment.get("user_id") != user_id:
                 return None
 
-            response = self._client.table("comments").update({"content": content}).eq("id", comment_id).execute()
+            response = self._client.table(COMMENTS).update({"content": content}).eq("id", comment_id).execute()
             response_data = getattr(response, "data", None)
             if isinstance(response_data, list) and response_data:
                 return self.get_comment_by_id(comment_id)
@@ -72,26 +77,14 @@ class CommunityCommentWriteOperations:
             if not comment:
                 return None
 
-            if vote_type == 0:
-                self._client.table("comment_votes").delete().eq("comment_id", comment_id).eq("user_id", user_id).execute()
-            else:
-                existing_vote_response = self._client.table("comment_votes").select("id").eq("comment_id", comment_id).eq("user_id", user_id).limit(1).execute()
-                existing_vote_data = getattr(existing_vote_response, "data", None)
-                vote_payload = {
-                    "comment_id": comment_id,
-                    "user_id": user_id,
-                    "vote_value": vote_type,
-                }
-                if isinstance(existing_vote_data, list) and existing_vote_data:
-                    self._client.table("comment_votes").update({"vote_value": vote_type}).eq("comment_id", comment_id).eq("user_id", user_id).execute()
-                else:
-                    self._client.table("comment_votes").insert(vote_payload).execute()
-
-            score_response = self._client.table("comment_votes").select("vote_value").eq("comment_id", comment_id).execute()
-            score_rows = getattr(score_response, "data", None)
-            score = 0
-            if isinstance(score_rows, list):
-                score = sum(int(row.get("vote_value", 0)) for row in score_rows)
+            score = set_vote(
+                self._client,
+                table_name=COMMENT_VOTES,
+                entity_field="comment_id",
+                entity_id=comment_id,
+                user_id=user_id,
+                vote_type=vote_type,
+            )
 
             return {
                 "comment_id": comment_id,
@@ -120,7 +113,7 @@ class CommunityCommentWriteOperations:
                 )
                 return False
 
-            response = self._client.table("comments").delete().eq("id", comment_id).execute()
+            response = self._client.table(COMMENTS).delete().eq("id", comment_id).execute()
             response_data = getattr(response, "data", None)
 
             if isinstance(response_data, list) and response_data:

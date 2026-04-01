@@ -19,6 +19,11 @@ from routes.community_models import (
     PostVoteRequest,
     PostVoteResponse,
 )
+from routes.validators.community_write_validators import (
+    ensure_text_or_media,
+    ensure_vote_type,
+)
+from services.media_validation import normalize_media_urls
 from services.supabase_client import get_community_client
 
 logger = logging.getLogger(__name__)
@@ -88,6 +93,21 @@ async def create_post(
                     detail="Repost target comment not found",
                 )
 
+        media_urls = normalize_media_urls(data.media_urls)
+        body = (data.content or "").strip()
+        is_duplicate_repost = bool(repost_of_id or repost_of_comment_id)
+        if not is_duplicate_repost:
+            ensure_text_or_media(
+                body,
+                media_urls,
+                "Post must include text or at least one media attachment",
+            )
+        if is_duplicate_repost and not body and not media_urls:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Duplicate repost must include content or media from the source",
+            )
+
         created_post = community_client.create_post(
             user_id=user_id,
             subthread_id=data.subthread_id,
@@ -97,6 +117,7 @@ async def create_post(
             repost_of_post_id=repost_of_id,
             quoted_comment_id=quoted_comment_id,
             repost_of_comment_id=repost_of_comment_id,
+            media_urls=media_urls,
         )
         if not created_post:
             raise HTTPException(
@@ -224,11 +245,7 @@ async def vote_post(
     user_id: str = Depends(get_current_user),
 ):
     """Vote on a post with values -1, 0, or 1."""
-    if data.vote_type not in (-1, 0, 1):
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="vote_type must be one of: -1, 0, 1",
-        )
+    ensure_vote_type(data.vote_type)
 
     community_client = get_community_client()
     try:

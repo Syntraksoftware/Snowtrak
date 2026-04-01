@@ -56,6 +56,66 @@ class TestPostEndpoints:
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["title"] == "Condition report"
 
+    def test_upload_media_success(self, client):
+        response = client.post(
+            "/api/v1/media/upload",
+            files={
+                "file": ("x.png", b"\x89PNG\r\n\x1a\n\x00", "image/png"),
+            },
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        body = response.json()
+        assert "url" in body
+        assert "community-media" in body["url"]
+
+    def test_upload_media_octet_stream_heic_filename(self, client):
+        response = client.post(
+            "/api/v1/media/upload",
+            files={
+                "file": ("IMG_1234.heic", b"fake-bytes", "application/octet-stream"),
+            },
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        assert "url" in response.json()
+
+    def test_upload_media_unsupported_type(self, client):
+        response = client.post(
+            "/api/v1/media/upload",
+            files={
+                "file": ("malware.exe", b"MZ", "application/octet-stream"),
+            },
+        )
+        assert response.status_code == status.HTTP_415_UNSUPPORTED_MEDIA_TYPE
+
+    def test_upload_media_too_large(self, client):
+        response = client.post(
+            "/api/v1/media/upload",
+            files={
+                "file": (
+                    "huge.png",
+                    b"x" * (50 * 1024 * 1024 + 1),
+                    "image/png",
+                ),
+            },
+        )
+        assert response.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+
+    def test_create_post_with_media_urls(self, client):
+        url = (
+            "https://stub.supabase.co/storage/v1/object/public/community-media/u/y.png"
+        )
+        response = client.post(
+            "/api/v1/posts",
+            json={
+                "subthread_id": "sub-1",
+                "title": "Pic",
+                "content": "Check this",
+                "media_urls": [url],
+            },
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["media_urls"] == [url]
+
     def test_create_post_subthread_not_found(self, client):
         response = client.post(
             "/api/v1/posts",

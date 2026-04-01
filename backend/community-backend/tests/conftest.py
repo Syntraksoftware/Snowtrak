@@ -5,11 +5,20 @@ import main as community_main
 from middleware.auth import get_current_user, get_optional_user
 from routes import subthreads as subthreads_routes
 from routes import comments as comments_routes
-from routes import posts_read_routes, posts_write_routes
+from routes import media_routes, posts_read_routes, posts_write_routes
+from services.community_media_operations import (
+    CommunityMediaUploadResult,
+    normalize_upload_mime_and_extension,
+)
+
+_MEDIA_MAX = 50 * 1024 * 1024
 
 
 # Matches test_community_api STUB_POST_ID (UUID path params avoid /posts/feed collision).
 STUB_POST_ID = "11111111-1111-1111-1111-111111111111"
+STUB_MEDIA_URL = (
+    "https://stub.supabase.co/storage/v1/object/public/community-media/user-1/x.png"
+)
 
 
 class StubCommunityClient:
@@ -41,6 +50,7 @@ class StubCommunityClient:
             "quoted_comment_id": None,
             "quoted_comment": None,
             "repost_of_comment_id": None,
+            "media_urls": [],
         }
         self.comment = {
             "id": "comment-1",
@@ -55,7 +65,15 @@ class StubCommunityClient:
             "author_last_name": "Fan",
             "repost_count": 0,
             "reposted_by_current_user": False,
+            "media_urls": [],
         }
+
+    def upload_community_media(self, user_id, file_bytes, content_type, extension):
+        if len(file_bytes) > _MEDIA_MAX:
+            return CommunityMediaUploadResult(error="too_large")
+        if not normalize_upload_mime_and_extension(content_type, extension):
+            return CommunityMediaUploadResult(error="unsupported_type")
+        return CommunityMediaUploadResult(url=STUB_MEDIA_URL)
 
     def list_subthreads(self, limit=50):
         return [self.subthread]
@@ -98,6 +116,7 @@ class StubCommunityClient:
         repost_of_post_id=None,
         quoted_comment_id=None,
         repost_of_comment_id=None,
+        media_urls=None,
     ):
         if subthread_id != "sub-1":
             return None
@@ -123,6 +142,7 @@ class StubCommunityClient:
             created["repost_of_comment_id"] = None
         created["quoted_post"] = None
         created["quoted_comment"] = None
+        created["media_urls"] = list(media_urls or [])
         return created
 
     def get_post_by_id(self, post_id):
@@ -184,7 +204,7 @@ class StubCommunityClient:
             "repost_count": self.post["repost_count"],
         }
 
-    def create_comment(self, user_id, post_id, content, parent_id=None):
+    def create_comment(self, user_id, post_id, content, parent_id=None, media_urls=None):
         if post_id != STUB_POST_ID:
             return None
         created = dict(self.comment)
@@ -194,6 +214,7 @@ class StubCommunityClient:
         created["content"] = content
         created["parent_id"] = parent_id
         created["has_parent"] = parent_id is not None
+        created["media_urls"] = list(media_urls or [])
         return created
 
     def get_comment_by_id(self, comment_id):
@@ -237,6 +258,7 @@ def app(monkeypatch, stub_client):
     monkeypatch.setattr(posts_read_routes, "get_community_client", lambda: stub_client)
     monkeypatch.setattr(posts_write_routes, "get_community_client", lambda: stub_client)
     monkeypatch.setattr(comments_routes, "get_community_client", lambda: stub_client)
+    monkeypatch.setattr(media_routes, "get_community_client", lambda: stub_client)
 
     community_main.app.dependency_overrides[get_current_user] = lambda: "user-1"
     community_main.app.dependency_overrides[get_optional_user] = lambda: "user-1"

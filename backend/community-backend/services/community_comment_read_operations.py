@@ -3,6 +3,8 @@ import logging
 from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
+from services.mappers.community_row_mappers import flatten_user_info
+
 logger = logging.getLogger(__name__)
 
 
@@ -28,11 +30,7 @@ class CommunityCommentReadOperations:
     @staticmethod
     def _flatten_comment_row(comment: Dict[str, Any]) -> None:
         """Inline nested user_info onto the comment dict (mutates)."""
-        if "user_info" in comment and comment["user_info"]:
-            author = comment.pop("user_info")
-            comment["author_email"] = author.get("email")
-            comment["author_first_name"] = author.get("first_name")
-            comment["author_last_name"] = author.get("last_name")
+        flatten_user_info(comment)
 
     def _attach_comment_engagement_fields(
         self,

@@ -3,6 +3,8 @@ import logging
 from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
+from services.mappers.community_row_mappers import flatten_user_info
+
 logger = logging.getLogger(__name__)
 
 
@@ -139,11 +141,7 @@ class CommunityPostReadOperations:
                         pid = str(preview.get("post_id", "")).strip()
                         if not pid:
                             continue
-                        if "user_info" in preview and preview["user_info"]:
-                            author = preview.pop("user_info")
-                            preview["author_email"] = author.get("email")
-                            preview["author_first_name"] = author.get("first_name")
-                            preview["author_last_name"] = author.get("last_name")
+                        flatten_user_info(preview)
                         by_id[pid] = preview
             except Exception as exception:
                 logger.warning("Failed to hydrate quoted_post previews: %s", exception)
@@ -189,11 +187,7 @@ class CommunityPostReadOperations:
                         cid = str(preview.get("id", "")).strip()
                         if not cid:
                             continue
-                        if "user_info" in preview and preview["user_info"]:
-                            author = preview.pop("user_info")
-                            preview["author_email"] = author.get("email")
-                            preview["author_first_name"] = author.get("first_name")
-                            preview["author_last_name"] = author.get("last_name")
+                        flatten_user_info(preview)
                         by_id[cid] = preview
             except Exception as exception:
                 logger.warning("Failed to hydrate quoted_comment previews: %s", exception)
@@ -220,11 +214,7 @@ class CommunityPostReadOperations:
             response_data = getattr(response, "data", None)
             if isinstance(response_data, list) and response_data:
                 post = response_data[0]
-                if "user_info" in post and post["user_info"]:
-                    author = post.pop("user_info")
-                    post["author_email"] = author.get("email")
-                    post["author_first_name"] = author.get("first_name")
-                    post["author_last_name"] = author.get("last_name")
+                flatten_user_info(post)
                 enriched = self._attach_engagement_fields([post], current_user_id=current_user_id)
                 return self._hydrate_quoted_comments(self._hydrate_quoted_posts(enriched))[0]
             return None
@@ -247,11 +237,7 @@ class CommunityPostReadOperations:
             response_data = getattr(response, "data", None)
             if isinstance(response_data, list):
                 for post in response_data:
-                    if "user_info" in post and post["user_info"]:
-                        author = post.pop("user_info")
-                        post["author_email"] = author.get("email")
-                        post["author_first_name"] = author.get("first_name")
-                        post["author_last_name"] = author.get("last_name")
+                    flatten_user_info(post)
                 return self._hydrate_quoted_comments(
                     self._hydrate_quoted_posts(
                         self._attach_engagement_fields(

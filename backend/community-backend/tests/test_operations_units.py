@@ -47,7 +47,11 @@ class FakeQuery:
         return self
 
     def eq(self, field, value):
-        self.filters.append((field, value))
+        self.filters.append(("eq", field, value))
+        return self
+
+    def in_(self, field, values):
+        self.filters.append(("in", field, list(values)))
         return self
 
     def order(self, field, desc=False):
@@ -65,9 +69,26 @@ class FakeQuery:
 
     def _apply_filters(self, rows):
         filtered = list(rows)
-        for field, value in self.filters:
-            filtered = [row for row in filtered if row.get(field) == value]
+        for item in self.filters:
+            if item[0] == "eq":
+                _, field, value = item
+                filtered = [row for row in filtered if row.get(field) == value]
+            elif item[0] == "in":
+                _, field, vals = item
+                filtered = [row for row in filtered if row.get(field) in vals]
         return filtered
+
+    def _row_matches_filters(self, row):
+        for item in self.filters:
+            if item[0] == "eq":
+                _, field, value = item
+                if row.get(field) != value:
+                    return False
+            elif item[0] == "in":
+                _, field, vals = item
+                if row.get(field) not in vals:
+                    return False
+        return True
 
     def execute(self):
         table_rows = self.client.tables[self.table_name]
@@ -90,7 +111,7 @@ class FakeQuery:
         if self.operation == "update":
             updated = []
             for row in table_rows:
-                match = all(row.get(field) == value for field, value in self.filters)
+                match = self._row_matches_filters(row)
                 if match:
                     row.update(self.payload)
                     updated.append(dict(row))
@@ -100,7 +121,7 @@ class FakeQuery:
             remaining = []
             deleted = []
             for row in table_rows:
-                match = all(row.get(field) == value for field, value in self.filters)
+                match = self._row_matches_filters(row)
                 if match:
                     deleted.append(dict(row))
                 else:
