@@ -11,6 +11,7 @@ from config import get_config
 from supabase import Client, create_client
 
 from services.community_comment_operations import CommunityCommentOperations
+from services.community_media_operations import CommunityMediaOperations
 from services.community_post_operations import CommunityPostOperations
 from services.community_subthread_operations import CommunitySubthreadOperations
 
@@ -64,6 +65,7 @@ class CommunitySupabaseClient(
     CommunitySubthreadOperations,
     CommunityPostOperations,
     CommunityCommentOperations,
+    CommunityMediaOperations,
 ):
     """Handles all Supabase operations for the community feature."""
     

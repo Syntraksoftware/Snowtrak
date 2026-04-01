@@ -97,6 +97,7 @@ from routes.posts_read_routes import list_feed_posts
 from routes.subthreads import router as subthreads_router
 from routes.posts import router as posts_router
 from routes.comments import router as comments_router
+from routes.media_routes import router as media_router
 
 # Canonical global feed endpoint
 # Registered directly (not via posts router) to avoid routing precedence with GET /{post_id}.
@@ -117,6 +118,7 @@ app.add_api_route(
 app.include_router(subthreads_router, prefix="/api/v1/subthreads", tags=["subthreads"])
 app.include_router(posts_router, prefix="/api/v1/posts", tags=["posts"])
 app.include_router(comments_router, prefix="/api/v1/comments", tags=["comments"])
+app.include_router(media_router, prefix="/api/v1/media", tags=["media"])
 
 # Legacy /api/* routes deprecated (will be supported for 1 release cycle with deprecation headers)
 # These are mounted after v1 routes so v1 takes precedence in routing
@@ -124,6 +126,7 @@ app.include_router(comments_router, prefix="/api/v1/comments", tags=["comments"]
 app.include_router(subthreads_router, prefix="/api/subthreads", tags=["subthreads_deprecated"])
 app.include_router(posts_router, prefix="/api/posts", tags=["posts_deprecated"])
 app.include_router(comments_router, prefix="/api/comments", tags=["comments_deprecated"])
+app.include_router(media_router, prefix="/api/media", tags=["media_deprecated"])
 
 
 @app.get("/")
