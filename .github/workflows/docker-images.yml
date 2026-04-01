@@ -36,9 +36,6 @@ jobs:
           - service: map-backend
             context: ./backend
             dockerfile: ./backend/map-backend/Dockerfile
-          - service: frontend-web
-            context: ./frontend
-            dockerfile: ./frontend/Dockerfile
 
     steps:
       - name: Checkout repository
@@ -93,7 +90,6 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Smoke check backend image imports
-        if: matrix.service != 'frontend-web'
         shell: bash
         run: |
           set -euo pipefail
