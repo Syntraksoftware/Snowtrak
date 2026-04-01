@@ -2,25 +2,6 @@
 
 > A skiing-focused fitness tracking and social community app built with Flutter, FastAPI, and Supabase.
 
-Syntrak combines the activity tracking features of Strava with social community features similar to Reddit and Threads, specifically designed for skiing enthusiasts.
-
-## Tech Stack
-
-- **Frontend**: Flutter (Dart) with Provider state management
-- **Backend**: FastAPI microservices with Supabase integration
-- **Database**: Supabase (PostgreSQL)
-- **Maps**: Google Maps Flutter SDK
-- **Location**: Geolocator for GPS tracking
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- **Flutter**: 3.0+ ([Install](https://flutter.dev/docs/get-started/install))
-- **Python**: 3.11+ ([Install](https://www.python.org/downloads/))
-- **Supabase Account**: ([Sign up](https://supabase.com)) - Optional
-- **Google Maps API Key**: ([Get key](https://console.cloud.google.com/)) - For map features
-
 ### 1. Clone Repository
 
 ```bash
@@ -74,15 +55,6 @@ cd backend
 python run.py
 ```
 
-This launches:
-
-- 🔐 **main-backend** (port 8080) - Authentication & core APIs
-- 👥 **community-backend** (port 5001) - Posts, threads, comments
-- 🎿 **activity-backend** (port 5100) - GPS tracking, kudos
-- 🗺️ **map-backend** (port 5200) - Maps, elevation APIs
-
-Press `Ctrl+C` to stop all services gracefully.
-
 ### Start Individual Backend Service
 
 ```bash
@@ -97,7 +69,7 @@ Example: `python run.py --service main` (authentication only)
 ### Start Frontend (iOS Simulator)
 
 Prerequisites: Xcode installed with command-line tools (`xcode-select --install`)
-open -a Simulator
+`open -a Simulator`
 
 # Run the Flutter app
 
@@ -145,35 +117,6 @@ Stop all containers:
 
 ```bash
 docker compose down
-```
-
-## 📁 Project Structure
-
-```
-syntrak-application/
-├── frontend/                    # Flutter mobile app
-│   ├── lib/
-│   │   ├── core/               # Theme, helpers
-│   │   ├── models/             # Data models
-│   │   ├── providers/          # State management
-│   │   ├── screens/            # UI screens
-│   │   ├── services/           # API, location, storage
-│   │   └── widgets/            # Reusable widgets
-│   ├── doc/                    # Frontend documentation
-│   └── README.md
-│
-├── backend/                    # All microservices (unified)
-│   ├── main-backend/           # FastAPI (Auth & Core)
-│   ├── community-backend/      # FastAPI (Community)
-│   ├── activity-backend/       # FastAPI (Activities)
-│   ├── map-backend/            # FastAPI (Maps)
-│   ├── .venv/                  # Shared Python environment
-│   ├── requirements.txt        # Unified dependencies
-│   ├── run.py                  # Master orchestrator
-│   ├── README.md               # Backend documentation
-│   └── (service READMEs)
-│
-└── docs/                       # Root documentation
 ```
 
 ## 📚 Documentation
@@ -249,10 +192,3 @@ Run before committing to detect accidentally committed secrets:
 ```bash
 ./scripts/check_secrets.sh
 ```
-
-## 🔗 Resources
-
-- [Flutter Documentation](https://flutter.dev/docs)
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
-- [Supabase Documentation](https://supabase.com/docs)
-- [Google Maps API](https://console.cloud.google.com/)
