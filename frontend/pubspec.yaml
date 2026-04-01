@@ -32,11 +32,13 @@ dependencies:
 
   # Image handling
   image_picker: ^1.0.7
+  video_player: ^2.9.2
 
   # UI
   cupertino_icons: ^1.0.6
   intl: ^0.20.2
   table_calendar: ^3.1.2
+  http_parser: ^4.1.2
 
 dev_dependencies:
   flutter_test:

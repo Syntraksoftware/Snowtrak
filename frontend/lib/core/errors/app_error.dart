@@ -83,7 +83,7 @@ class AppError {
       message = 'Too many requests. Please wait a moment and try again.';
       retryable = true;
     } else if (status >= 500) {
-      message = 'Server error. Please try again later.';
+      message = serverMsg ?? 'Server error. Please try again later.';
       retryable = true;
     } else if (status >= 400) {
       message = serverMsg ?? dioDetail ?? 'Unable to complete that request.';

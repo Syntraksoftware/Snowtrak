@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:syntrak/core/errors/app_result.dart';
 import 'package:syntrak/models/post.dart';
 import 'package:syntrak/screens/community/community_post_mapper.dart';
+import 'package:syntrak/screens/community/thread_media_upload.dart';
+import 'package:syntrak/screens/community/widgets/thread_media_attachments_bar.dart';
+import 'package:syntrak/screens/community/widgets/thread_expanded_reply_sheet.dart';
+import 'package:syntrak/screens/community/widgets/thread_reply_composer_bar.dart';
 import 'package:syntrak/services/community_service.dart';
 import 'package:syntrak/screens/community/widgets/quoted_post_embed.dart';
 import 'package:syntrak/widgets/message_actions.dart';
+import 'package:syntrak/widgets/post_media_gallery.dart';
 
 class ThreadDetailScreen extends StatefulWidget {
   const ThreadDetailScreen({
@@ -19,7 +25,8 @@ class ThreadDetailScreen extends StatefulWidget {
 
   final Post post;
   final CommunityService communityService;
-  final Future<void> Function(Post post, String text) onSubmitReply;
+  final Future<void> Function(Post post, String text, List<String> mediaUrls)
+      onSubmitReply;
   final void Function(Post post) onLike;
   final void Function(Post post) onRepost;
   final void Function(Post post) onShare;
@@ -33,6 +40,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
   final FocusNode _replyFocusNode = FocusNode();
   bool _isSubmitting = false;
   Post? _post;
+  final List<XFile> _replyMedia = [];
 
   @override
   void initState() {
@@ -60,6 +68,36 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
     _replyFocusNode.requestFocus();
   }
 
+  void _pickReplyImages() {
+    pickThreadImages(
+      _replyMedia,
+      (next) => setState(() {
+        _replyMedia
+          ..clear()
+          ..addAll(next);
+      }),
+    );
+  }
+
+  void _showExpandedReplySheet() {
+    showThreadExpandedReplySheet(
+      context: context,
+      controller: _replyController,
+      media: _replyMedia,
+      isSubmitting: _isSubmitting,
+      onAddImages: _pickReplyImages,
+      onSubmit: _submitReply,
+      onRemove: (i) => setState(() {
+        _replyMedia.removeAt(i);
+      }),
+      onSetMedia: (next) => setState(() {
+        _replyMedia
+          ..clear()
+          ..addAll(next);
+      }),
+    );
+  }
+
   Future<void> _reloadConversation() async {
     final current = _post;
     if (current == null) return;
@@ -69,7 +107,11 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
         if (!mounted) return;
         setState(() {
           _post = current.copyWith(
-            replies: CommunityPostMapper.mapRepliesFromComments(value),
+            replies: CommunityPostMapper.mapRepliesFromComments(
+              value,
+              threadSubthreadId: current.subthreadId,
+              parentPostId: current.id,
+            ),
             replyCount: value.where((c) => c['parent_id'] == null).length,
           );
         });
@@ -83,10 +125,32 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
     final current = _post;
     if (current == null) return;
     final text = _replyController.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty && _replyMedia.isEmpty) {
+      return;
+    }
     setState(() => _isSubmitting = true);
-    await widget.onSubmitReply(current, text);
+    var mediaUrls = <String>[];
+    if (_replyMedia.isNotEmpty) {
+      final uploaded = await uploadThreadMediaFiles(
+        widget.communityService,
+        _replyMedia,
+      );
+      switch (uploaded) {
+        case AppSuccess(:final value):
+          mediaUrls = value;
+        case AppFailure(:final error):
+          if (mounted) {
+            setState(() => _isSubmitting = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(error.userMessage)),
+            );
+          }
+          return;
+      }
+    }
+    await widget.onSubmitReply(current, text, mediaUrls);
     _replyController.clear();
+    setState(() => _replyMedia.clear());
     await _reloadConversation();
     if (mounted) setState(() => _isSubmitting = false);
   }
@@ -188,6 +252,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                   (comment) => _ThreadCommentItem(
                     post: comment,
                     onReplyTap: () => _handleReplyTo(comment),
+                    onRepost: () => widget.onRepost(comment),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -196,116 +261,16 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
           ),
           SafeArea(
             top: false,
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border(
-                  top: BorderSide(color: Colors.grey.shade200),
-                ),
-              ),
-              padding: EdgeInsets.fromLTRB(
-                12,
-                10,
-                12,
-                10 + MediaQuery.of(context).padding.bottom,
-              ),
-              child: Material(
-                elevation: 14,
-                shadowColor: Colors.black26,
-                borderRadius: BorderRadius.circular(28),
-                color: const Color(0xFFF4F5F7),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        CircleAvatar(
-                          radius: 18,
-                          backgroundColor: Colors.grey.shade300,
-                          child: Icon(
-                            Icons.person_outline,
-                            size: 22,
-                            color: Colors.grey.shade700,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextField(
-                            controller: _replyController,
-                            focusNode: _replyFocusNode,
-                            minLines: 1,
-                            maxLines: 4,
-                            textInputAction: TextInputAction.send,
-                            onSubmitted: (_) => _submitReply(),
-                            style: const TextStyle(
-                              color: Colors.black87,
-                              fontSize: 16,
-                              height: 1.3,
-                            ),
-                            cursorColor: Colors.black87,
-                            decoration: InputDecoration(
-                              hintText: 'Add your reply...',
-                              hintStyle: TextStyle(color: Colors.grey.shade400),
-                              border: InputBorder.none,
-                              isDense: true,
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 36,
-                            minHeight: 36,
-                          ),
-                          onPressed: () {},
-                          icon: Icon(
-                            Icons.image_outlined,
-                            size: 22,
-                            color: Colors.grey.shade700,
-                          ),
-                          tooltip: 'Coming soon',
-                        ),
-                        IconButton(
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 36,
-                            minHeight: 36,
-                          ),
-                          onPressed: () {},
-                          icon: Icon(
-                            Icons.gif_box_outlined,
-                            size: 22,
-                            color: Colors.grey.shade700,
-                          ),
-                          tooltip: 'Coming soon',
-                        ),
-                        IconButton(
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 36,
-                            minHeight: 36,
-                          ),
-                          onPressed: () {},
-                          icon: Icon(
-                            Icons.zoom_out_map_outlined,
-                            size: 22,
-                            color: Colors.grey.shade700,
-                          ),
-                          tooltip: 'Coming soon',
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+            child: ThreadReplyComposerBar(
+              replyMedia: _replyMedia,
+              controller: _replyController,
+              focusNode: _replyFocusNode,
+              onRemoveMedia: (i) => setState(() {
+                _replyMedia.removeAt(i);
+              }),
+              onSubmit: _submitReply,
+              onPickImages: _pickReplyImages,
+              onExpand: _showExpandedReplySheet,
             ),
           ),
         ],
@@ -412,11 +377,25 @@ class _ThreadOriginalPostCard extends StatelessWidget {
               ),
             ),
           ),
+          if (post.media != null && post.media!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.only(left: 52),
+              child: PostMediaGallery(urls: post.media!),
+            ),
+          ],
           if (post.quotedPost != null) ...[
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.only(left: 52),
               child: QuotedPostEmbed(post: post.quotedPost!),
+            ),
+          ],
+          if (post.quotedComment != null) ...[
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.only(left: 52),
+              child: QuotedPostEmbed(post: post.quotedComment!),
             ),
           ],
           const SizedBox(height: 12),
@@ -445,10 +424,12 @@ class _ThreadCommentItem extends StatelessWidget {
   const _ThreadCommentItem({
     required this.post,
     required this.onReplyTap,
+    required this.onRepost,
   });
 
   final Post post;
   final VoidCallback onReplyTap;
+  final VoidCallback onRepost;
 
   @override
   Widget build(BuildContext context) {
@@ -507,6 +488,10 @@ class _ThreadCommentItem extends StatelessWidget {
                   post.text,
                   style: const TextStyle(color: Colors.black87, height: 1.3),
                 ),
+                if (post.media != null && post.media!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  PostMediaGallery(urls: post.media!),
+                ],
                 const SizedBox(height: 4),
                 MessageActions(
                   replyCount: post.replyCount,
@@ -517,7 +502,7 @@ class _ThreadCommentItem extends StatelessWidget {
                   isReposted: post.repostedByCurrentUser,
                   onReply: onReplyTap,
                   onLike: () {},
-                  onRepost: () {},
+                  onRepost: onRepost,
                   onShare: () {},
                 ),
               ],

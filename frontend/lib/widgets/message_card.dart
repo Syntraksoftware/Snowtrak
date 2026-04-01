@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:syntrak/models/post.dart';
 import 'package:syntrak/screens/community/widgets/quoted_post_embed.dart';
+import 'package:syntrak/widgets/post_media_gallery.dart';
 import 'package:syntrak/widgets/message_actions.dart';
 import 'package:syntrak/widgets/inline_reply_preview.dart';
 
@@ -191,28 +192,12 @@ class _MessageCardState extends State<MessageCard> {
                     ),
                   ),
                 ),
-                // Optional media
                 if (widget.post.media != null &&
                     widget.post.media!.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Padding(
                     padding: const EdgeInsets.only(left: 52),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: AspectRatio(
-                        aspectRatio: 16 / 9,
-                        child: Container(
-                          color: Colors.grey[200],
-                          child: Center(
-                            child: Icon(
-                              Icons.image,
-                              size: 40,
-                              color: Colors.grey[400],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                    child: PostMediaGallery(urls: widget.post.media!),
                   ),
                 ],
                 // Inline reply preview (legacy; only when [showInlineReplies])
@@ -264,11 +249,14 @@ class _MessageCardState extends State<MessageCard> {
               ],
             ),
           ),
-          if (widget.post.quotedPost != null) ...[
+          if (widget.post.quotedPost != null ||
+              widget.post.quotedComment != null) ...[
             const SizedBox(height: 10),
             Padding(
               padding: const EdgeInsets.only(left: 52),
-              child: QuotedPostEmbed(post: widget.post.quotedPost!),
+              child: QuotedPostEmbed(
+                post: widget.post.quotedPost ?? widget.post.quotedComment!,
+              ),
             ),
           ],
           const SizedBox(height: 12),

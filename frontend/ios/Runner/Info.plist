@@ -49,6 +49,10 @@
 	<string>We need your location to track your activities</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>We need your location to track your activities</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Attach photos or videos to community posts and replies.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Take a photo or video to share in the community.</string>
 	<key>GoogleMapsAPIKey</key>
 	<string>YOUR_GOOGLE_MAPS_API_KEY</string>
 </dict>

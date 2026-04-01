@@ -1,20 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:syntrak/core/di/service_locator.dart';
+import 'package:syntrak/core/errors/app_result.dart';
 import 'package:syntrak/models/post.dart';
 import 'package:syntrak/providers/auth_provider.dart';
+import 'package:syntrak/screens/community/thread_media_upload.dart';
 import 'package:syntrak/screens/community/widgets/quoted_post_embed.dart';
+import 'package:syntrak/screens/community/widgets/thread_media_attachments_bar.dart';
+import 'package:syntrak/services/community_service.dart';
 
 class NewThreadDraftResult {
   const NewThreadDraftResult({
     required this.content,
     this.topic,
     this.quotedPostId,
+    this.quotedCommentId,
+    this.mediaUrls = const [],
   });
 
   final String content;
   final String? topic;
-  /// Set when composing a quote; sent as [quoted_post_id] on create.
+  /// Set when composing a quote of a post; sent as [quoted_post_id] on create.
   final String? quotedPostId;
+  /// Set when composing a quote of a thread comment; sent as [quoted_comment_id] on create.
+  final String? quotedCommentId;
+  final List<String> mediaUrls;
 }
 
 class NewThreadDraftScreen extends StatefulWidget {
@@ -31,6 +42,14 @@ class _NewThreadDraftScreenState extends State<NewThreadDraftScreen> {
   final TextEditingController _contentController = TextEditingController();
   final TextEditingController _topicController = TextEditingController();
   bool _allowReplies = true;
+  final List<XFile> _attachments = [];
+  bool _isPosting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _contentController.addListener(() => setState(() {}));
+  }
 
   @override
   void dispose() {
@@ -39,16 +58,46 @@ class _NewThreadDraftScreenState extends State<NewThreadDraftScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  bool get _canPost =>
+      _contentController.text.trim().isNotEmpty || _attachments.isNotEmpty;
+
+  Future<void> _submit() async {
+    if (!_canPost || _isPosting) {
+      return;
+    }
     final content = _contentController.text.trim();
-    if (content.isEmpty) return;
     final topic = _topicController.text.trim();
     final q = widget.quotedPost;
+
+    setState(() => _isPosting = true);
+    var mediaUrls = <String>[];
+    if (_attachments.isNotEmpty) {
+      final service = sl<CommunityService>();
+      final uploaded = await uploadThreadMediaFiles(service, _attachments);
+      switch (uploaded) {
+        case AppSuccess(:final value):
+          mediaUrls = value;
+        case AppFailure(:final error):
+          if (mounted) {
+            setState(() => _isPosting = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(error.userMessage)),
+            );
+          }
+          return;
+      }
+    }
+    if (!mounted) {
+      return;
+    }
+    setState(() => _isPosting = false);
     Navigator.of(context).pop(
       NewThreadDraftResult(
         content: content,
         topic: topic.isEmpty ? null : topic,
-        quotedPostId: q != null ? q.id : null,
+        quotedPostId: q != null && !q.isComment ? q.id : null,
+        quotedCommentId: q != null && q.isComment ? q.id : null,
+        mediaUrls: mediaUrls,
       ),
     );
   }
@@ -57,7 +106,7 @@ class _NewThreadDraftScreenState extends State<NewThreadDraftScreen> {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final user = authProvider.user;
-    final canPost = _contentController.text.trim().isNotEmpty;
+    final canPost = _canPost && !_isPosting;
     final isQuote = widget.quotedPost != null;
     final displayName = user?.firstName ?? user?.email.split('@').first ?? 'Member';
     final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'M';
@@ -84,14 +133,23 @@ class _NewThreadDraftScreenState extends State<NewThreadDraftScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: FilledButton(
-              onPressed: canPost ? _submit : null,
+              onPressed: canPost ? () => _submit() : null,
               style: FilledButton.styleFrom(
                 shape: const StadiumBorder(),
                 minimumSize: const Size(64, 36),
                 backgroundColor: canPost ? Colors.black87 : Colors.black26,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Post'),
+              child: _isPosting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text('Post'),
             ),
           ),
         ],
@@ -175,18 +233,25 @@ class _NewThreadDraftScreenState extends State<NewThreadDraftScreen> {
                 ],
               ),
               const SizedBox(height: 10),
-              const Row(
-                children: [
-                  Icon(Icons.image_outlined, color: Colors.black54),
-                  SizedBox(width: 16),
-                  Icon(Icons.gif_box_outlined, color: Colors.black54),
-                  SizedBox(width: 16),
-                  Icon(Icons.format_list_bulleted, color: Colors.black54),
-                  SizedBox(width: 16),
-                  Icon(Icons.format_quote, color: Colors.black54),
-                  SizedBox(width: 16),
-                  Icon(Icons.more_horiz, color: Colors.black54),
-                ],
+              ThreadMediaAttachmentsBar(
+                files: _attachments,
+                onRemove: (i) => setState(() => _attachments.removeAt(i)),
+                onAddImages: () => pickThreadImages(
+                  _attachments,
+                  (next) => setState(() {
+                    _attachments
+                      ..clear()
+                      ..addAll(next);
+                  }),
+                ),
+                onAddVideo: () => pickThreadVideo(
+                  _attachments,
+                  (next) => setState(() {
+                    _attachments
+                      ..clear()
+                      ..addAll(next);
+                  }),
+                ),
               ),
               const SizedBox(height: 12),
               const Row(
@@ -213,13 +278,22 @@ class _NewThreadDraftScreenState extends State<NewThreadDraftScreen> {
                   ),
                   const SizedBox(width: 6),
                   FilledButton(
-                    onPressed: canPost ? _submit : null,
+                    onPressed: canPost ? () => _submit() : null,
                     style: FilledButton.styleFrom(
                       shape: const StadiumBorder(),
                       backgroundColor: canPost ? Colors.black87 : Colors.black26,
                       foregroundColor: Colors.white,
                     ),
-                    child: const Text('Post'),
+                    child: _isPosting
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text('Post'),
                   ),
                 ],
               ),
