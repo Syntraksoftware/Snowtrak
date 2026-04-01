@@ -10,11 +10,18 @@ import 'package:syntrak/services/community_service.dart';
 import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/models/post.dart';
 import 'package:syntrak/screens/community/community_post_mapper.dart';
+import 'package:syntrak/screens/community/community_repost_sheet.dart';
 import 'package:syntrak/screens/community/new_thread_draft_screen.dart';
+import 'package:syntrak/screens/community/threads_tab_action_builders.dart';
+import 'package:syntrak/screens/community/threads_tab_action_coordinator.dart';
+import 'package:syntrak/screens/community/thread_draft_builders.dart';
 import 'package:syntrak/screens/community/thread_detail_screen.dart';
+import 'package:syntrak/screens/community/threads_feed_loader.dart';
+import 'package:syntrak/screens/community/threads_tab_feedback.dart';
+import 'package:syntrak/screens/community/threads_tab_post_state.dart';
+import 'package:syntrak/screens/community/threads_tab_sync_coordinator.dart';
 import 'package:syntrak/screens/community/widgets/threads_search_bar.dart';
-import 'package:syntrak/widgets/compact_composer.dart';
-import 'package:syntrak/widgets/message_card.dart';
+import 'package:syntrak/screens/community/widgets/threads_tab_sections.dart';
 
 class ThreadsTab extends StatefulWidget {
   const ThreadsTab({super.key});
@@ -32,14 +39,22 @@ class _ThreadsTabState extends State<ThreadsTab> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
-  final CommunityOutboxService _outbox = CommunityOutboxService();
+  final CommunityOutboxService _outboxService = CommunityOutboxService();
   final CommunityService _communityService = sl<CommunityService>();
+  late final ThreadsTabActionCoordinator _actionCoordinator =
+      ThreadsTabActionCoordinator(
+        communityService: _communityService,
+        outboxService: _outboxService,
+      );
+  late final ThreadsTabSyncCoordinator _syncCoordinator =
+      ThreadsTabSyncCoordinator(communityService: _communityService);
 
   final List<Post> _posts = [];
   List<Post> _filteredPosts = [];
 
   bool _isRefreshing = false;
   bool _isLoading = false;
+  int _activeUploadOps = 0;
   bool _isSearchFocused = false;
   String? _activeSubthreadId;
   AppError? _feedError;
@@ -66,16 +81,6 @@ class _ThreadsTabState extends State<ThreadsTab> {
     super.dispose();
   }
 
-  /// Prefer "Chat" subthread for new posts; else first in list.
-  String _pickDefaultSubthreadId(List<Map<String, dynamic>> subthreads) {
-    for (final s in subthreads) {
-      if ((s['name'] ?? '').toString().toLowerCase().trim() == 'chat') {
-        return (s['id'] ?? '').toString();
-      }
-    }
-    return (subthreads.first['id'] ?? '').toString();
-  }
-
   void _filterPosts() {
     final query = _searchController.text.toLowerCase().trim();
     if (query.isEmpty) {
@@ -88,6 +93,83 @@ class _ThreadsTabState extends State<ThreadsTab> {
             post.author.username.toLowerCase().contains(query) ||
             (topic.isNotEmpty && topic.contains(query));
       }).toList();
+    }
+  }
+
+  void _recomputeVisiblePosts() {
+    _filterPosts();
+  }
+
+  void _updatePosts(void Function() mutate) {
+    setState(() {
+      mutate();
+      _recomputeVisiblePosts();
+    });
+  }
+
+  Post _mapConfirmedPost(Map<String, dynamic> response, dynamic user) {
+    return ThreadsTabActionBuilders.normalizeConfirmedAuthor(
+      CommunityPostMapper.mapBackendPost(response, const []),
+      user,
+    );
+  }
+
+  void _prependOptimisticPost(Post post) {
+    _updatePosts(() {
+      ThreadsTabPostState.prepend(_posts, post);
+    });
+  }
+
+  void _replaceTempPost(String tempId, Post confirmed) {
+    _updatePosts(() {
+      ThreadsTabPostState.replaceById(_posts, tempId, confirmed);
+    });
+  }
+
+  void _removeTempPost(String tempId) {
+    _updatePosts(() {
+      ThreadsTabPostState.removeById(_posts, tempId);
+    });
+  }
+
+  void _appendLocalReply({
+    required String postId,
+    required Post localReply,
+  }) {
+    _updatePosts(() {
+      ThreadsTabPostState.appendLocalReply(
+        posts: _posts,
+        postId: postId,
+        localReply: localReply,
+      );
+    });
+  }
+
+  void _replaceTempReply({
+    required String postId,
+    required String tempReplyId,
+    required Post confirmedReply,
+  }) {
+    _updatePosts(() {
+      ThreadsTabPostState.replaceReply(
+        posts: _posts,
+        postId: postId,
+        tempReplyId: tempReplyId,
+        confirmedReply: confirmedReply,
+      );
+    });
+  }
+
+  Future<T> _runWithUploadIndicator<T>(Future<T> Function() action) async {
+    if (mounted) {
+      setState(() => _activeUploadOps += 1);
+    }
+    try {
+      return await action();
+    } finally {
+      if (mounted) {
+        setState(() => _activeUploadOps = (_activeUploadOps - 1).clamp(0, 9999));
+      }
     }
   }
 
@@ -106,9 +188,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
       }
     });
     if (hadPosts) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.userMessage)),
-      );
+      ThreadsTabFeedback.showMessage(context, error.userMessage);
     }
   }
 
@@ -126,7 +206,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
         _applyLoadFailure(error);
         return;
       case AppSuccess(:final value):
-        var subthreads = value;
+        final subthreads = value;
         if (subthreads.isEmpty) {
           if (!_triedDefaultSubthreadCreation) {
             _triedDefaultSubthreadCreation = true;
@@ -154,59 +234,27 @@ class _ThreadsTabState extends State<ThreadsTab> {
           }
           return;
         }
-
         _triedDefaultSubthreadCreation = false;
-        _activeSubthreadId = _pickDefaultSubthreadId(subthreads);
-        if (_activeSubthreadId == null || _activeSubthreadId!.isEmpty) {
-          if (mounted) {
-            setState(() {
-              _isLoading = false;
-            });
-          }
-          return;
-        }
-
-        final postsResult = await _communityService.getFeedPosts(
-          limit: _defaultPageSize,
+        final feedResult = await ThreadsFeedLoader.load(
+          service: _communityService,
+          pageSize: _defaultPageSize,
+          fetchBatchComments: _communityService.getCommentsForPosts,
         );
-        switch (postsResult) {
+        switch (feedResult) {
           case AppFailure(:final error):
             _applyLoadFailure(error);
             return;
           case AppSuccess(:final value):
-            final postsData = value;
-
-            final postIds = postsData
-                .map((p) => (p['post_id'] ?? '').toString())
-                .where((id) => id.isNotEmpty)
-                .toList();
-
-            final batchResult =
-                await _communityService.getCommentsForPosts(postIds);
-            switch (batchResult) {
-              case AppFailure(:final error):
-                _applyLoadFailure(error);
-                return;
-              case AppSuccess(:final value):
-                final byPost = value;
-                final mapped = <Post>[];
-                for (final rawPost in postsData) {
-                  final pid = (rawPost['post_id'] ?? '').toString();
-                  final comments = byPost[pid] ?? <Map<String, dynamic>>[];
-                  mapped.add(
-                    CommunityPostMapper.mapBackendPost(rawPost, comments),
-                  );
-                }
-
-                if (mounted) {
-                  setState(() {
-                    _posts.clear();
-                    _posts.addAll(mapped);
-                    _filteredPosts = List.from(_posts);
-                    _isLoading = false;
-                    _feedError = null;
-                  });
-                }
+            _activeSubthreadId = value.activeSubthreadId;
+            if (mounted) {
+              setState(() {
+                _posts
+                  ..clear()
+                  ..addAll(value.posts);
+                _filteredPosts = List.from(_posts);
+                _isLoading = false;
+                _feedError = null;
+              });
             }
         }
     }
@@ -232,105 +280,81 @@ class _ThreadsTabState extends State<ThreadsTab> {
     String text, {
     String? topic,
     String? quotedPostId,
+    String? quotedCommentId,
     Post? quotePreview,
+    List<String> mediaUrls = const [],
   }) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final user = authProvider.user;
 
     if (user == null || _activeSubthreadId == null) return;
 
-    final tempId = 'tmp_${DateTime.now().millisecondsSinceEpoch}';
+    final tempId = ThreadsTabActionBuilders.tempId('tmp');
 
     final trimmedTopic = (topic ?? '').trim();
-    final titleLine = () {
-      final base = text.length > 48 ? '${text.substring(0, 48)}...' : text;
-      if (trimmedTopic.isEmpty) return base;
-      return '$trimmedTopic > $base';
-    }();
+    final body = text.trim();
+    final titleLine =
+        CommunityDraftBuilders.buildServerTitle(text: body, topic: trimmedTopic);
 
     final qid = (quotedPostId ?? '').trim();
+    final qcid = (quotedCommentId ?? '').trim();
+    final previewPost = (qid.isNotEmpty && quotePreview != null && !quotePreview.isComment)
+        ? quotePreview
+        : null;
+    final previewComment = (qcid.isNotEmpty && quotePreview != null && quotePreview.isComment)
+        ? quotePreview
+        : null;
 
-    final newPost = Post(
-      id: tempId,
-      author: PostAuthor(
-        id: user.id,
-        displayName: user.firstName != null && user.lastName != null
-            ? '${user.firstName} ${user.lastName}'
-            : user.email.split('@')[0],
-        username: user.email.split('@')[0],
-        avatarUrl: null,
-      ),
+    final newPost = ThreadsTabActionBuilders.optimisticPost(
+      tempId: tempId,
+      user: user,
       text: text,
-      topic: trimmedTopic.isEmpty ? null : trimmedTopic,
-      serverTitle: titleLine,
+      titleLine: titleLine,
       subthreadId: _activeSubthreadId!,
-      quotedPost: quotePreview,
+      topic: trimmedTopic,
       quotedPostId: qid.isEmpty ? null : qid,
-      createdAt: DateTime.now(),
-      timestampLabel: 'now',
+      quotedCommentId: qcid.isEmpty ? null : qcid,
+      previewPost: previewPost,
+      previewComment: previewComment,
+      mediaUrls: mediaUrls,
     );
 
-    setState(() {
-      _posts.insert(0, newPost);
-      _filterPosts();
-    });
+    _prependOptimisticPost(newPost);
 
-    final createResult = await _communityService.createPost(
-      subthreadId: _activeSubthreadId!,
-      title: titleLine,
-      content: text,
-      quotedPostId: qid.isEmpty ? null : qid,
+    final createResult = await _runWithUploadIndicator(
+      () => _actionCoordinator.createPost(
+        subthreadId: _activeSubthreadId!,
+        title: titleLine,
+        content: text,
+        quotedPostId: qid.isEmpty ? null : qid,
+        quotedCommentId: qcid.isEmpty ? null : qcid,
+        mediaUrls: mediaUrls.isEmpty ? null : mediaUrls,
+      ),
     );
 
     switch (createResult) {
       case AppSuccess(:final value):
         final response = value;
-        var confirmed = CommunityPostMapper.mapBackendPost(response, const []);
-        if (confirmed.author.id == user.id) {
-          confirmed = confirmed.copyWith(
-            author: PostAuthor(
-              id: user.id,
-              displayName: user.firstName != null && user.lastName != null
-                  ? '${user.firstName} ${user.lastName}'
-                  : user.email.split('@')[0],
-              username: user.email.split('@')[0],
-              avatarUrl: null,
-            ),
-          );
-        }
+        final confirmed = _mapConfirmedPost(response, user);
         if (!mounted) return;
-
-        setState(() {
-          final index = _posts.indexWhere((p) => p.id == tempId);
-          if (index != -1) {
-            _posts[index] = confirmed;
-            _filterPosts();
-          }
-        });
+        _replaceTempPost(tempId, confirmed);
 
       case AppFailure(:final error):
-        await _outbox.enqueue(
-          CommunityOutboxOperation(
-            id: tempId,
-            type: 'create_post',
-            payload: {
-              'subthread_id': _activeSubthreadId,
-              'title': titleLine,
-              'content': text,
-              'temp_id': tempId,
-              if (qid.isNotEmpty) 'quoted_post_id': qid,
-            },
-          ),
+        await _actionCoordinator.enqueueCreatePost(
+          tempId: tempId,
+          subthreadId: _activeSubthreadId,
+          title: titleLine,
+          content: text,
+          quotedPostId: qid.isEmpty ? null : qid,
+          quotedCommentId: qcid.isEmpty ? null : qcid,
+          mediaUrls: mediaUrls.isEmpty ? null : mediaUrls,
         );
 
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Could not send post: ${error.userMessage}. '
-              'Saved to retry automatically.',
-            ),
-          ),
+        ThreadsTabFeedback.showCouldNotSend(
+          context,
+          operation: 'post',
+          error: error,
         );
     }
   }
@@ -341,30 +365,15 @@ class _ThreadsTabState extends State<ThreadsTab> {
 
   void _handleLike(Post post) {
     if (!_isPersistedPostId(post.id)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Please wait for this post to finish syncing before liking.',
-          ),
-        ),
-      );
+      ThreadsTabFeedback.showWaitForSync(context, 'liking');
       return;
     }
     final nextLiked = !post.likedByCurrentUser;
     final nextVoteType = nextLiked ? 1 : 0;
 
     setState(() {
-      final index = _posts.indexWhere((p) => p.id == post.id);
-      if (index != -1) {
-        final currentPost = _posts[index];
-        _posts[index] = currentPost.copyWith(
-          likedByCurrentUser: !currentPost.likedByCurrentUser,
-          likeCount: currentPost.likedByCurrentUser
-              ? currentPost.likeCount - 1
-              : currentPost.likeCount + 1,
-        );
-        _filterPosts();
-      }
+      ThreadsTabPostState.toggleLike(_posts, post.id);
+      _recomputeVisiblePosts();
     });
 
     _syncPostVote(postId: post.id, voteType: nextVoteType);
@@ -372,90 +381,13 @@ class _ThreadsTabState extends State<ThreadsTab> {
 
   void _showRepostOptions(Post post) {
     if (!_isPersistedPostId(post.id)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Please wait for this post to finish syncing before reposting.',
-          ),
-        ),
-      );
+      ThreadsTabFeedback.showWaitForSync(context, 'reposting');
       return;
     }
-    showModalBottomSheet<void>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _repostSheetButton(
-                  label: 'Repost',
-                  icon: Icons.repeat,
-                  onTap: () {
-                    Navigator.of(ctx).pop();
-                    _duplicateRepostPost(post);
-                  },
-                ),
-                const SizedBox(height: 10),
-                _repostSheetButton(
-                  label: 'Quote',
-                  icon: Icons.chat_bubble_outline,
-                  onTap: () {
-                    Navigator.of(ctx).pop();
-                    _openQuoteComposer(post);
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _repostSheetButton({
-    required String label,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: const Color(0xFFF0F0F2),
-      borderRadius: BorderRadius.circular(28),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(28),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Row(
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
-              const Spacer(),
-              Icon(icon, color: Colors.black87, size: 22),
-            ],
-          ),
-        ),
-      ),
+    showCommunityRepostSheet(
+      context,
+      onDuplicateRepost: () => _duplicateRepostPost(post),
+      onQuote: () => _openQuoteComposer(post),
     );
   }
 
@@ -468,77 +400,92 @@ class _ThreadsTabState extends State<ThreadsTab> {
         ? source.subthreadId
         : _activeSubthreadId!;
 
-    final tempId = 'tmp_${DateTime.now().millisecondsSinceEpoch}';
-    final duplicate = Post(
-      id: tempId,
-      author: PostAuthor(
-        id: user.id,
-        displayName: user.firstName != null && user.lastName != null
-            ? '${user.firstName} ${user.lastName}'
-            : user.email.split('@')[0],
-        username: user.email.split('@')[0],
-        avatarUrl: null,
-      ),
-      text: source.text,
-      topic: source.topic,
-      serverTitle: source.composeServerTitle(),
+    final tempId = ThreadsTabActionBuilders.tempId('tmp');
+
+    if (source.isComment) {
+      final trimmed = source.text.trim();
+      final titleLine = trimmed.isEmpty
+          ? 'Comment'
+          : (trimmed.length > 80 ? '${trimmed.substring(0, 80)}...' : trimmed);
+      final dupCommentMedia = source.media == null || source.media!.isEmpty
+          ? null
+          : List<String>.from(source.media!);
+      final duplicate = ThreadsTabActionBuilders.optimisticCommentRepost(
+        tempId: tempId,
+        user: user,
+        source: source,
+        titleLine: titleLine,
+        subthreadId: subthreadId,
+        mediaUrls: dupCommentMedia,
+      );
+
+      _prependOptimisticPost(duplicate);
+
+      final createResult = await _runWithUploadIndicator(
+        () => _actionCoordinator.createCommentRepost(
+          subthreadId: subthreadId,
+          title: titleLine,
+          content: source.text.trim(),
+          repostOfCommentId: source.id,
+          mediaUrls: dupCommentMedia,
+        ),
+      );
+
+      switch (createResult) {
+        case AppSuccess(:final value):
+          final confirmed = _mapConfirmedPost(value, user);
+          if (!mounted) return;
+          _replaceTempPost(tempId, confirmed);
+          await _loadFeed();
+        case AppFailure(:final error):
+          _removeTempPost(tempId);
+          if (!mounted) return;
+          ThreadsTabFeedback.showCouldNotComplete(
+            context,
+            operation: 'repost',
+            error: error,
+          );
+      }
+      return;
+    }
+
+    final duplicate = ThreadsTabActionBuilders.optimisticPostRepost(
+      tempId: tempId,
+      user: user,
+      source: source,
       subthreadId: subthreadId,
-      quotedPost: source.quotedPost,
-      quotedPostId: source.quotedPostId,
-      createdAt: DateTime.now(),
-      timestampLabel: 'now',
     );
 
-    setState(() {
-      _posts.insert(0, duplicate);
-      _filterPosts();
-    });
+    _prependOptimisticPost(duplicate);
 
     final dupQid = (source.quotedPostId ?? '').trim();
-    final createResult = await _communityService.createPost(
-      subthreadId: subthreadId,
-      title: source.composeServerTitle(),
-      content: source.text.trim(),
-      quotedPostId: dupQid.isEmpty ? null : dupQid,
-      repostOfPostId: source.id,
+    final dupMedia = source.media == null || source.media!.isEmpty
+        ? null
+        : List<String>.from(source.media!);
+    final createResult = await _runWithUploadIndicator(
+      () => _actionCoordinator.createPostRepost(
+        subthreadId: subthreadId,
+        title: source.composeServerTitle(),
+        content: source.text.trim(),
+        quotedPostId: dupQid.isEmpty ? null : dupQid,
+        repostOfPostId: source.id,
+        mediaUrls: dupMedia,
+      ),
     );
 
     switch (createResult) {
       case AppSuccess(:final value):
-        var confirmed = CommunityPostMapper.mapBackendPost(value, const []);
-        if (confirmed.author.id == user.id) {
-          confirmed = confirmed.copyWith(
-            author: PostAuthor(
-              id: user.id,
-              displayName: user.firstName != null && user.lastName != null
-                  ? '${user.firstName} ${user.lastName}'
-                  : user.email.split('@')[0],
-              username: user.email.split('@')[0],
-              avatarUrl: null,
-            ),
-          );
-        }
+        final confirmed = _mapConfirmedPost(value, user);
         if (!mounted) return;
-        setState(() {
-          final index = _posts.indexWhere((p) => p.id == tempId);
-          if (index != -1) {
-            _posts[index] = confirmed;
-            _filterPosts();
-          }
-        });
+        _replaceTempPost(tempId, confirmed);
         await _loadFeed();
       case AppFailure(:final error):
-        setState(() {
-          _posts.removeWhere((p) => p.id == tempId);
-          _filterPosts();
-        });
+        _removeTempPost(tempId);
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Could not repost: ${error.userMessage}',
-            ),
-          ),
+        ThreadsTabFeedback.showCouldNotComplete(
+          context,
+          operation: 'repost',
+          error: error,
         );
     }
   }
@@ -551,14 +498,17 @@ class _ThreadsTabState extends State<ThreadsTab> {
     );
     if (draft == null) return;
     final body = draft.content.trim();
-    if (body.isEmpty) return;
+    if (body.isEmpty && draft.mediaUrls.isEmpty) return;
     final topic = draft.topic?.trim();
     final qid = (draft.quotedPostId ?? '').trim();
+    final qcid = (draft.quotedCommentId ?? '').trim();
     await _handlePost(
       body,
       topic: topic,
       quotedPostId: qid.isEmpty ? null : qid,
+      quotedCommentId: qcid.isEmpty ? null : qcid,
       quotePreview: source,
+      mediaUrls: draft.mediaUrls,
     );
   }
 
@@ -573,9 +523,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
       case AppSuccess():
         break;
       case AppFailure(:final error):
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.userMessage)),
-        );
+        ThreadsTabFeedback.showMessage(context, error.userMessage);
     }
   }
 
@@ -589,8 +537,11 @@ class _ThreadsTabState extends State<ThreadsTab> {
         builder: (_) => ThreadDetailScreen(
           post: post,
           communityService: _communityService,
-          onSubmitReply: (targetPost, text) =>
-              _sendReply(post: targetPost, text: text),
+          onSubmitReply: (targetPost, text, mediaUrls) => _sendReply(
+                post: targetPost,
+                text: text,
+                mediaUrls: mediaUrls,
+              ),
           onLike: _handleLike,
           onRepost: _showRepostOptions,
           onShare: (p) {
@@ -604,143 +555,90 @@ class _ThreadsTabState extends State<ThreadsTab> {
     }
   }
 
-  Future<void> _sendReply({required Post post, required String text}) async {
+  Future<void> _sendReply({
+    required Post post,
+    required String text,
+    List<String> mediaUrls = const [],
+  }) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final user = authProvider.user;
     if (user == null) return;
 
     if (!_isPersistedPostId(post.id)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please wait for the post to finish syncing before replying.'),
-        ),
+      ThreadsTabFeedback.showMessage(
+        context,
+        'Please wait for the post to finish syncing before replying.',
       );
       return;
     }
-    final tempReplyId = 'tmp_reply_${DateTime.now().millisecondsSinceEpoch}';
-    final localReply = Post(
-      id: tempReplyId,
-      author: PostAuthor(
-        id: user.id,
-        displayName: user.firstName != null && user.lastName != null
-            ? '${user.firstName} ${user.lastName}'
-            : user.email.split('@')[0],
-        username: user.email.split('@')[0],
-        avatarUrl: null,
-      ),
+    if (text.trim().isEmpty && mediaUrls.isEmpty) {
+      return;
+    }
+    final tempReplyId = ThreadsTabActionBuilders.tempId('tmp_reply');
+    final localReply = ThreadsTabActionBuilders.optimisticReply(
+      tempId: tempReplyId,
+      user: user,
       text: text,
-      createdAt: DateTime.now(),
-      timestampLabel: 'now',
     );
 
-    setState(() {
-      final index = _posts.indexWhere((p) => p.id == post.id);
-      if (index != -1) {
-        final current = _posts[index];
-        final replies = <Post>[...(current.replies ?? []), localReply];
-        _posts[index] = current.copyWith(
-          replies: replies,
-          replyCount: replies.length,
-        );
-        _filterPosts();
-      }
-    });
+    _appendLocalReply(postId: post.id, localReply: localReply);
 
-    final commentResult = await _communityService.createComment(
-      postId: post.id,
-      content: text,
+    final commentResult = await _runWithUploadIndicator(
+      () => _actionCoordinator.createReply(
+        postId: post.id,
+        content: text,
+        mediaUrls: mediaUrls.isEmpty ? null : mediaUrls,
+      ),
     );
 
     switch (commentResult) {
       case AppSuccess(:final value):
         final response = value;
-        final confirmedReply = CommunityPostMapper.mapCommentToPost(response);
+        final confirmedReply = CommunityPostMapper.mapCommentToPost(
+          response,
+          threadSubthreadId: post.subthreadId,
+          parentPostId: post.id,
+        );
         if (!mounted) return;
 
-        setState(() {
-          final index = _posts.indexWhere((p) => p.id == post.id);
-          if (index != -1) {
-            final current = _posts[index];
-            final nextReplies = (current.replies ?? [])
-                .map((reply) => reply.id == tempReplyId ? confirmedReply : reply)
-                .toList()
-                .cast<Post>();
-            _posts[index] = current.copyWith(
-              replies: nextReplies,
-              replyCount: nextReplies.length,
-            );
-            _filterPosts();
-          }
-        });
+        _replaceTempReply(
+          postId: post.id,
+          tempReplyId: tempReplyId,
+          confirmedReply: confirmedReply,
+        );
 
       case AppFailure(:final error):
-        await _outbox.enqueue(
-          CommunityOutboxOperation(
-            id: tempReplyId,
-            type: 'create_comment',
-            payload: {
-              'post_id': post.id,
-              'content': text,
-              'temp_id': tempReplyId,
-            },
-          ),
+        await _actionCoordinator.enqueueCreateComment(
+          tempReplyId: tempReplyId,
+          postId: post.id,
+          content: text,
+          mediaUrls: mediaUrls.isEmpty ? null : mediaUrls,
         );
 
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Could not send reply: ${error.userMessage}. '
-              'Saved to retry automatically.',
-            ),
-          ),
+        ThreadsTabFeedback.showCouldNotSend(
+          context,
+          operation: 'reply',
+          error: error,
         );
     }
   }
 
   Future<void> _retryOutbox() async {
-    final operations = await _outbox.load();
+    final operations = await _actionCoordinator.loadOutbox();
     if (operations.isEmpty) return;
 
-    final pending = <CommunityOutboxOperation>[];
-    for (final operation in operations) {
-      var succeeded = false;
-      if (operation.type == 'create_post') {
-        final qRaw = operation.payload['quoted_post_id'];
-        final qid = qRaw == null ? null : qRaw.toString().trim();
-        final r = await _communityService.createPost(
-          subthreadId: (operation.payload['subthread_id'] ?? '').toString(),
-          title: (operation.payload['title'] ?? '').toString(),
-          content: (operation.payload['content'] ?? '').toString(),
-          quotedPostId: (qid != null && qid.isNotEmpty) ? qid : null,
-        );
-        succeeded = r.isSuccess;
-      } else if (operation.type == 'create_comment') {
-        final r = await _communityService.createComment(
-          postId: (operation.payload['post_id'] ?? '').toString(),
-          content: (operation.payload['content'] ?? '').toString(),
-        );
-        succeeded = r.isSuccess;
-      } else if (operation.type == 'vote_post') {
-        final r = await _communityService.votePost(
-          postId: (operation.payload['post_id'] ?? '').toString(),
-          voteType: (operation.payload['vote_type'] as num?)?.toInt() ?? 0,
-        );
-        succeeded = r.isSuccess;
-      } else {
-        // Unknown operation type: log warning and mark for retry
+    final pending = await _syncCoordinator.retryOutbox(
+      operations,
+      onUnknownOperationType: (operationType) {
         AppLogger.instance.warning(
-          '[ThreadsTab] Unknown outbox operation type: ${operation.type}',
+          '[ThreadsTab] Unknown outbox operation type: $operationType',
           notifyUser: false,
         );
-        succeeded = false;
-      }
-      if (!succeeded) {
-        pending.add(operation.copyWith(retryCount: operation.retryCount + 1));
-      }
-    }
+      },
+    );
 
-    await _outbox.replaceAll(pending);
+    await _actionCoordinator.replaceOutbox(pending);
     if (mounted) {
       await _loadFeed();
     }
@@ -750,7 +648,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
     required String postId,
     required int voteType,
   }) async {
-    final voteResult = await _communityService.votePost(
+    final voteResult = await _syncCoordinator.syncPostVote(
       postId: postId,
       voteType: voteType,
     );
@@ -758,24 +656,15 @@ class _ThreadsTabState extends State<ThreadsTab> {
       case AppSuccess():
         break;
       case AppFailure(:final error):
-        await _outbox.enqueue(
-          CommunityOutboxOperation(
-            id: 'vote_${DateTime.now().millisecondsSinceEpoch}_$postId',
-            type: 'vote_post',
-            payload: {
-              'post_id': postId,
-              'vote_type': voteType,
-            },
-          ),
+        await _actionCoordinator.enqueueVotePost(
+          postId: postId,
+          voteType: voteType,
         );
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Could not save vote: ${error.userMessage}. '
-              'Saved to retry automatically.',
-            ),
-          ),
+        ThreadsTabFeedback.showCouldNotSave(
+          context,
+          operation: 'vote',
+          error: error,
         );
     }
   }
@@ -786,9 +675,9 @@ class _ThreadsTabState extends State<ThreadsTab> {
     );
     if (draft == null) return;
     final body = draft.content.trim();
-    if (body.isEmpty) return;
+    if (body.isEmpty && draft.mediaUrls.isEmpty) return;
     final topic = draft.topic?.trim();
-    await _handlePost(body, topic: topic);
+    await _handlePost(body, topic: topic, mediaUrls: draft.mediaUrls);
   }
 
   @override
@@ -803,93 +692,72 @@ class _ThreadsTabState extends State<ThreadsTab> {
 
     if (!_isLoading && _posts.isEmpty && _feedError != null) {
       final err = _feedError!;
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(SyntrakSpacing.lg),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                err.userMessage,
-                textAlign: TextAlign.center,
-                style: SyntrakTypography.bodyMedium.copyWith(
-                  color: SyntrakColors.error,
-                ),
-              ),
-              if (err.retryable) ...[
-                const SizedBox(height: SyntrakSpacing.md),
-                ElevatedButton(
-                  onPressed: _loadFeed,
-                  child: const Text('Retry'),
-                ),
-              ],
-            ],
-          ),
-        ),
+      return ThreadsEmptyState(
+        message: err.userMessage,
+        retryable: err.retryable,
+        onRetry: _loadFeed,
       );
     }
 
-    return NestedScrollView(
-      controller: _scrollController,
-      headerSliverBuilder: (context, innerBoxIsScrolled) {
-        return [
-          // Pinned search bar - stays fixed at top
-          SliverAppBar(
-            pinned: true,
-            floating: false,
-            automaticallyImplyLeading: false,
-            backgroundColor: SyntrakColors.surface,
-            surfaceTintColor: Colors.transparent,
-            elevation: innerBoxIsScrolled ? 2 : 0,
-            shadowColor: Colors.black26,
-            toolbarHeight: 72,
-            flexibleSpace: ThreadsSearchBar(
-              controller: _searchController,
-              focusNode: _searchFocusNode,
-              isSearchFocused: _isSearchFocused,
-              onQueryChanged: (_) {
-                setState(() {
-                  _filterPosts();
-                });
-              },
-              onClear: () {
-                setState(() {
-                  _searchController.clear();
-                  _filterPosts();
-                });
-              },
+    return Stack(
+      children: [
+        NestedScrollView(
+          controller: _scrollController,
+          headerSliverBuilder: (context, innerBoxIsScrolled) {
+            return [
+              // Pinned search bar - stays fixed at top
+              SliverAppBar(
+                pinned: true,
+                floating: false,
+                automaticallyImplyLeading: false,
+                backgroundColor: SyntrakColors.surface,
+                surfaceTintColor: Colors.transparent,
+                elevation: innerBoxIsScrolled ? 2 : 0,
+                shadowColor: Colors.black26,
+                toolbarHeight: 72,
+                flexibleSpace: ThreadsSearchBar(
+                  controller: _searchController,
+                  focusNode: _searchFocusNode,
+                  isSearchFocused: _isSearchFocused,
+                  onQueryChanged: (_) {
+                    setState(() {
+                      _filterPosts();
+                    });
+                  },
+                  onClear: () {
+                    setState(() {
+                      _searchController.clear();
+                      _filterPosts();
+                    });
+                  },
+                ),
+              ),
+            ];
+          },
+          body: ThreadsFeedBody(
+            posts: _filteredPosts,
+            onRefresh: _handleRefresh,
+            onComposerSubmit: (text) => _handlePost(text),
+            onComposeTap: _openDraftComposer,
+            onPostTap: _handlePostTap,
+            onLike: _handleLike,
+            onRepost: _showRepostOptions,
+            onReply: _handleReply,
+            onShare: _handleShare,
+          ),
+        ),
+        if (_activeUploadOps > 0)
+          const Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: LinearProgressIndicator(
+              minHeight: 2.5,
+              backgroundColor: Colors.transparent,
+              valueColor: AlwaysStoppedAnimation<Color>(SyntrakColors.primary),
             ),
           ),
-        ];
-      },
-      body: RefreshIndicator(
-        onRefresh: _handleRefresh,
-        color: SyntrakColors.primary,
-        child: ListView.builder(
-          padding: const EdgeInsets.only(top: SyntrakSpacing.sm),
-          itemCount: _filteredPosts.length + 1,
-          itemBuilder: (context, index) {
-            if (index == 0) {
-              return CompactComposer(
-                onPost: (text) => _handlePost(text),
-                maxCharacters: 280,
-                onComposeTap: _openDraftComposer,
-              );
-            }
-            final post = _filteredPosts[index - 1];
-            return MessageCard(
-              post: post,
-              onTap: () => _handlePostTap(post),
-              onLike: _handleLike,
-              onRepost: _showRepostOptions,
-              onReply: _handleReply,
-              onShare: (p) {
-                _handleShare(p);
-              },
-            );
-          },
-        ),
-      ),
+      ],
     );
   }
 }

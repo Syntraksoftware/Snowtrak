@@ -1,4 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:syntrak/services/apis/community_api_helpers.dart';
 
 class CommunityApi {
   CommunityApi({required Dio dio}) : _dio = dio;
@@ -8,36 +11,7 @@ class CommunityApi {
   /// Parses a list payload. Does not return `[]` on unexpected shapes (avoids
   /// masking API/parsing failures as an empty feed).
   List<Map<String, dynamic>> _parseListItems(dynamic data, String legacyKey) {
-    if (data == null) {
-      return [];
-    }
-    if (data is List) {
-      return [
-        for (final item in data) Map<String, dynamic>.from(item as Map),
-      ];
-    }
-    if (data is Map) {
-      final typed = Map<String, dynamic>.from(data);
-      if (typed['items'] is List) {
-        final list = typed['items'] as List;
-        return [
-          for (final item in list) Map<String, dynamic>.from(item as Map),
-        ];
-      }
-      if (typed[legacyKey] is List) {
-        final list = typed[legacyKey] as List;
-        return [
-          for (final item in list) Map<String, dynamic>.from(item as Map),
-        ];
-      }
-      if (typed.isEmpty) {
-        return [];
-      }
-      throw FormatException(
-        'List response missing expected "items" or "$legacyKey" key',
-      );
-    }
-      throw const FormatException('List response was not a map or list');
+    return CommunityApiHelpers.parseListItems(data, legacyKey);
   }
 
   Future<List<Map<String, dynamic>>> getSubthreads({int limit = 50}) async {
@@ -176,6 +150,7 @@ class CommunityApi {
     String? repostOfPostId,
     String? quotedCommentId,
     String? repostOfCommentId,
+    List<String>? mediaUrls,
   }) async {
     // Trailing slash required: POST /api/v1/posts -> 307 to /api/v1/posts/ and Dio
     // mishandles POST body on redirect, breaking creates from the app.
@@ -193,16 +168,44 @@ class CommunityApi {
           'quoted_comment_id': quotedCommentId,
         if (repostOfCommentId != null && repostOfCommentId.isNotEmpty)
           'repost_of_comment_id': repostOfCommentId,
+        if (mediaUrls != null && mediaUrls.isNotEmpty) 'media_urls': mediaUrls,
       },
     );
 
     return Map<String, dynamic>.from(response.data as Map);
   }
 
+  /// Single file → public URL for [media_urls] on post/comment create.
+  Future<String> uploadMedia(XFile file) async {
+    final path = file.path;
+    if (path.isEmpty) {
+      throw const FormatException('File path missing (web upload not supported here)');
+    }
+    final mime = CommunityApiHelpers.mimeTypeForUploadFilename(file.name);
+    final formData = FormData.fromMap({
+      'file': await MultipartFile.fromFile(
+        path,
+        filename: file.name,
+        contentType: MediaType.parse(mime),
+      ),
+    });
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/media/upload',
+      data: formData,
+    );
+    final data = response.data;
+    final url = data?['url']?.toString();
+    if (url == null || url.isEmpty) {
+      throw const FormatException('Upload response missing url');
+    }
+    return url;
+  }
+
   Future<Map<String, dynamic>> createComment({
     required String postId,
     required String content,
     String? parentId,
+    List<String>? mediaUrls,
   }) async {
     final payload = <String, dynamic>{
       'post_id': postId,
@@ -210,6 +213,9 @@ class CommunityApi {
     };
     if (parentId != null && parentId.trim().isNotEmpty) {
       payload['parent_id'] = parentId;
+    }
+    if (mediaUrls != null && mediaUrls.isNotEmpty) {
+      payload['media_urls'] = mediaUrls;
     }
 
     final response = await _dio.post('/comments', data: payload);

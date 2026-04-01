@@ -1,3 +1,4 @@
+import 'package:image_picker/image_picker.dart';
 import 'package:syntrak/services/apis/community_api.dart';
 
 class CommunityRepository {
@@ -65,6 +66,7 @@ class CommunityRepository {
     String? repostOfPostId,
     String? quotedCommentId,
     String? repostOfCommentId,
+    List<String>? mediaUrls,
   }) {
     return _api.createPost(
       subthreadId: subthreadId,
@@ -74,18 +76,25 @@ class CommunityRepository {
       repostOfPostId: repostOfPostId,
       quotedCommentId: quotedCommentId,
       repostOfCommentId: repostOfCommentId,
+      mediaUrls: mediaUrls,
     );
+  }
+
+  Future<String> uploadMedia(XFile file) {
+    return _api.uploadMedia(file);
   }
 
   Future<Map<String, dynamic>> createComment({
     required String postId,
     required String content,
     String? parentId,
+    List<String>? mediaUrls,
   }) {
     return _api.createComment(
       postId: postId,
       content: content,
       parentId: parentId,
+      mediaUrls: mediaUrls,
     );
   }
 

@@ -1,3 +1,4 @@
+import 'package:image_picker/image_picker.dart';
 import 'package:syntrak/core/errors/app_error.dart';
 import 'package:syntrak/core/errors/app_result.dart';
 import 'package:syntrak/features/community/data/community_repository.dart';
@@ -83,6 +84,7 @@ class CommunityService {
     String? repostOfPostId,
     String? quotedCommentId,
     String? repostOfCommentId,
+    List<String>? mediaUrls,
   }) {
     return _run(() => _communityRepository.createPost(
           subthreadId: subthreadId,
@@ -92,18 +94,25 @@ class CommunityService {
           repostOfPostId: repostOfPostId,
           quotedCommentId: quotedCommentId,
           repostOfCommentId: repostOfCommentId,
+          mediaUrls: mediaUrls,
         ));
+  }
+
+  Future<AppResult<String>> uploadMedia(XFile file) {
+    return _run(() => _communityRepository.uploadMedia(file));
   }
 
   Future<AppResult<Map<String, dynamic>>> createComment({
     required String postId,
     required String content,
     String? parentId,
+    List<String>? mediaUrls,
   }) {
     return _run(() => _communityRepository.createComment(
           postId: postId,
           content: content,
           parentId: parentId,
+          mediaUrls: mediaUrls,
         ));
   }
 
