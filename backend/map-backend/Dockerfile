@@ -13,13 +13,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
-COPY requirements.txt ./
+COPY map-backend/requirements.txt ./requirements.txt
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade "wheel>=0.46.2" "setuptools>=80.9.0" "jaraco.context>=6.1.0"
 
-# Copy application code
-COPY . .
+# Copy application code and shared package
+COPY map-backend/ ./
+COPY shared/ ./shared/
 
 RUN useradd --create-home --shell /usr/sbin/nologin appuser && chown -R appuser:appuser /app
 USER appuser

@@ -103,5 +103,13 @@ frontend/android/local.properties
 **/.venv/
 **/venv/
 
+# Python artifacts (repo-wide)
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
 *.html/
 *.png/

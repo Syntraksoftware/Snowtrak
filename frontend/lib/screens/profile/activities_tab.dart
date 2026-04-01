@@ -1,125 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/models/activity.dart';
-import 'package:syntrak/models/user.dart';
 import 'package:syntrak/providers/auth_provider.dart';
-import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
-
-/// Service class for activity-related API calls
-/// This provides clean endpoints for future backend integration
-class ActivityService {
-  // TODO: Replace with actual API service when backend is ready
-  // Example endpoints:
-  // - GET /api/v1/activities/me?search={query}&type={type}&date_from={date}&date_to={date}
-  // - GET /api/v1/activities/{id}
-  // - POST /api/v1/activities/{id}/kudos
-  // - DELETE /api/v1/activities/{id}/kudos
-  // - GET /api/v1/activities/{id}/comments
-  // - POST /api/v1/activities/{id}/comments
-
-  Future<List<Activity>> getUserActivities({
-    String? searchQuery,
-    ActivityType? typeFilter,
-    DateTime? dateFrom,
-    DateTime? dateTo,
-  }) async {
-    // TODO: Implement actual API call
-    // For now, return mock data
-    return _getMockActivities();
-  }
-
-  Future<void> toggleKudos(String activityId) async {
-    // TODO: Implement API call to toggle kudos
-  }
-
-  Future<void> shareActivity(String activityId) async {
-    // TODO: Implement share functionality
-  }
-
-  Future<void> addComment(String activityId, String comment) async {
-    // TODO: Implement API call to add comment
-  }
-
-  List<Activity> _getMockActivities() {
-    // Create a date matching the reference: January 27, 2025 at 9:30 PM
-    final activityDate = DateTime(2025, 1, 27, 21, 30);
-    final now = DateTime.now();
-
-    return [
-      Activity(
-        id: '1',
-        userId: 'user1',
-        type: ActivityType.alpine,
-        name: 'Night Hike',
-        distance: 1390, // 1.39 km
-        duration: 773, // 12m 53s
-        elevationGain: 10, // 10m
-        startTime: activityDate,
-        endTime: activityDate.add(const Duration(minutes: 12, seconds: 53)),
-        averagePace: 556, // ~9:16 min/km
-        maxPace: 500,
-        isPublic: true,
-        createdAt: activityDate,
-        locations: [],
-      ),
-      Activity(
-        id: '2',
-        userId: 'user1',
-        type: ActivityType.alpine,
-        name: 'Morning Alpine Run',
-        distance: 12500, // 12.5 km
-        duration: 3600, // 1 hour
-        elevationGain: 850, // 850m
-        startTime: now.subtract(const Duration(days: 2, hours: 2)),
-        endTime: now.subtract(const Duration(days: 2, hours: 1)),
-        averagePace: 288, // 4:48 min/km
-        maxPace: 240, // 4:00 min/km
-        isPublic: true,
-        createdAt: now.subtract(const Duration(days: 2)),
-        locations: [],
-      ),
-      Activity(
-        id: '3',
-        userId: 'user1',
-        type: ActivityType.backcountry,
-        name: 'Backcountry Adventure',
-        distance: 18500, // 18.5 km
-        duration: 7200, // 2 hours
-        elevationGain: 1200, // 1200m
-        startTime: now.subtract(const Duration(days: 5, hours: 3)),
-        endTime: now.subtract(const Duration(days: 5, hours: 1)),
-        averagePace: 389, // 6:29 min/km
-        maxPace: 320, // 5:20 min/km
-        isPublic: true,
-        createdAt: now.subtract(const Duration(days: 5)),
-        locations: [],
-      ),
-    ];
-  }
-}
+import 'package:syntrak/screens/profile/widgets/profile_activity_list_card.dart';
+import 'package:syntrak/screens/profile/widgets/profile_activities_search_bar.dart';
+import 'package:syntrak/services/profile_activities_service.dart';
 
 class ActivitiesTab extends StatefulWidget {
-  final List<Activity> activities;
-
   const ActivitiesTab({
     super.key,
     required this.activities,
   });
+
+  final List<Activity> activities;
 
   @override
   State<ActivitiesTab> createState() => _ActivitiesTabState();
 }
 
 class _ActivitiesTabState extends State<ActivitiesTab> {
-  final ActivityService _activityService = ActivityService();
+  final ProfileActivitiesService _activityService = ProfileActivitiesService();
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   List<Activity> _activities = [];
   List<Activity> _filteredActivities = [];
   bool _isLoading = true;
-  final Map<String, bool> _kudosMap = {}; // activityId -> hasKudos
-  final Map<String, int> _kudosCountMap = {}; // activityId -> count
+  final Map<String, bool> _kudosMap = {};
+  final Map<String, int> _kudosCountMap = {};
 
   @override
   void initState() {
@@ -128,22 +36,29 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
     _searchController.addListener(_onSearchChanged);
   }
 
+  @override
+  void didUpdateWidget(ActivitiesTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.activities != widget.activities) {
+      _loadActivities();
+    }
+  }
+
   Future<void> _loadActivities() async {
     setState(() {
       _isLoading = true;
     });
 
-    // Use mock data from ActivityService
-    final activities = await _activityService.getUserActivities();
-
-    // Sort activities by startTime (most recent first)
+    final activities = widget.activities.isNotEmpty
+        ? List<Activity>.from(widget.activities)
+        : await _activityService.getUserActivities();
     activities.sort((a, b) => b.startTime.compareTo(a.startTime));
 
     setState(() {
       _activities = activities;
       _filteredActivities = activities;
 
-      for (var activity in activities) {
+      for (final activity in activities) {
         _kudosMap[activity.id] = false;
         _kudosCountMap[activity.id] =
             activity.id == activities.first.id ? 1 : 0;
@@ -177,6 +92,26 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
     }
   }
 
+  SliverAppBar _pinnedSearchBar(bool innerBoxIsScrolled) {
+    return SliverAppBar(
+      pinned: true,
+      floating: false,
+      automaticallyImplyLeading: false,
+      backgroundColor: SyntrakColors.surface,
+      surfaceTintColor: Colors.transparent,
+      elevation: innerBoxIsScrolled ? 2 : 0,
+      shadowColor: Colors.black26,
+      toolbarHeight: 72,
+      flexibleSpace: ProfileActivitiesSearchBar(
+        controller: _searchController,
+        onClear: () {
+          _searchController.clear();
+          _onSearchChanged();
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<AuthProvider>(context, listen: false).user;
@@ -184,7 +119,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
     if (_isLoading) {
       return NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
-          _buildPinnedSearchBar(innerBoxIsScrolled),
+          _pinnedSearchBar(innerBoxIsScrolled),
         ],
         body: const Center(
           child: CircularProgressIndicator(),
@@ -195,7 +130,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
     if (_filteredActivities.isEmpty && _searchQuery.isNotEmpty) {
       return NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
-          _buildPinnedSearchBar(innerBoxIsScrolled),
+          _pinnedSearchBar(innerBoxIsScrolled),
         ],
         body: Center(
           child: Column(
@@ -229,7 +164,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
     if (_filteredActivities.isEmpty) {
       return NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
-          _buildPinnedSearchBar(innerBoxIsScrolled),
+          _pinnedSearchBar(innerBoxIsScrolled),
         ],
         body: Center(
           child: Padding(
@@ -266,7 +201,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
 
     return NestedScrollView(
       headerSliverBuilder: (context, innerBoxIsScrolled) => [
-        _buildPinnedSearchBar(innerBoxIsScrolled),
+        _pinnedSearchBar(innerBoxIsScrolled),
       ],
       body: RefreshIndicator(
         onRefresh: _loadActivities,
@@ -276,7 +211,6 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
           itemCount: _filteredActivities.length,
           itemBuilder: (context, index) {
             final activity = _filteredActivities[index];
-            // First activity (index 0) is the most recent and should show kudos card
             final isFirstActivity = index == 0;
             return Padding(
               padding: EdgeInsets.only(
@@ -284,7 +218,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
                     ? SyntrakSpacing.md
                     : 0,
               ),
-              child: _ActivityCard(
+              child: ProfileActivityListCard(
                 activity: activity,
                 user: user,
                 isFirstActivity: isFirstActivity,
@@ -296,75 +230,6 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
               ),
             );
           },
-        ),
-      ),
-    );
-  }
-
-  // Pinned search bar that stays fixed at top
-  SliverAppBar _buildPinnedSearchBar(bool innerBoxIsScrolled) {
-    return SliverAppBar(
-      pinned: true,
-      floating: false,
-      automaticallyImplyLeading: false,
-      backgroundColor: SyntrakColors.surface,
-      surfaceTintColor: Colors.transparent,
-      elevation: innerBoxIsScrolled ? 2 : 0,
-      shadowColor: Colors.black26,
-      toolbarHeight: 72,
-      flexibleSpace: _buildSearchBar(),
-    );
-  }
-
-  Widget _buildSearchBar() {
-    return Container(
-      color: SyntrakColors.surface,
-      padding: const EdgeInsets.fromLTRB(
-        SyntrakSpacing.md,
-        SyntrakSpacing.md,
-        SyntrakSpacing.md,
-        SyntrakSpacing.sm,
-      ),
-      child: Container(
-        height: 44,
-        decoration: BoxDecoration(
-          color: SyntrakColors.surfaceVariant,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: TextField(
-          controller: _searchController,
-          style: SyntrakTypography.bodyMedium.copyWith(
-            color: SyntrakColors.textPrimary,
-          ),
-          decoration: InputDecoration(
-            hintText: 'Search activities...',
-            hintStyle: SyntrakTypography.bodyMedium.copyWith(
-              color: SyntrakColors.textTertiary,
-            ),
-            prefixIcon: Icon(
-              Icons.search,
-              color: SyntrakColors.textTertiary,
-              size: 22,
-            ),
-            suffixIcon: _searchController.text.isNotEmpty
-                ? IconButton(
-                    icon: Icon(
-                      Icons.close,
-                      color: SyntrakColors.textSecondary,
-                      size: 20,
-                    ),
-                    onPressed: () {
-                      _searchController.clear();
-                      _onSearchChanged();
-                    },
-                  )
-                : null,
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: SyntrakSpacing.md,
-              vertical: 12,
-            ),
-          ),
         ),
       ),
     );
@@ -383,413 +248,9 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
 
   void _shareActivity(String activityId) {
     _activityService.shareActivity(activityId);
-    // TODO: Show share dialog
   }
 
   void _commentActivity(String activityId) {
-    // TODO: Navigate to comments screen
     _activityService.addComment(activityId, '');
-  }
-}
-
-class _ActivityCard extends StatelessWidget {
-  final Activity activity;
-  final User? user;
-  final bool isFirstActivity;
-  final bool hasKudos;
-  final int kudosCount;
-  final VoidCallback onKudosToggle;
-  final VoidCallback onShare;
-  final VoidCallback onComment;
-
-  const _ActivityCard({
-    required this.activity,
-    required this.user,
-    required this.isFirstActivity,
-    required this.hasKudos,
-    required this.kudosCount,
-    required this.onKudosToggle,
-    required this.onShare,
-    required this.onComment,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-        side: BorderSide(color: SyntrakColors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Activity Header: User info, date/time, device, location
-          Padding(
-            padding: const EdgeInsets.all(SyntrakSpacing.md),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // User avatar
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: SyntrakColors.surfaceVariant,
-                  child: user?.firstName != null
-                      ? Text(
-                          user!.firstName![0].toUpperCase(),
-                          style: SyntrakTypography.bodyMedium.copyWith(
-                            color: SyntrakColors.textPrimary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        )
-                      : Icon(
-                          Icons.person,
-                          size: 20,
-                          color: SyntrakColors.textTertiary,
-                        ),
-                ),
-                const SizedBox(width: SyntrakSpacing.md),
-                // User info and details
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // User name
-                      Text(
-                        user?.fullName ?? 'User',
-                        style: SyntrakTypography.bodyMedium.copyWith(
-                          color: SyntrakColors.textPrimary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
-                      ),
-                      const SizedBox(height: SyntrakSpacing.xs / 2),
-
-                      Text(
-                        '${_formatDateTime(activity.startTime)} • Apple Watch SE',
-                        style: SyntrakTypography.labelSmall.copyWith(
-                          color: SyntrakColors.textTertiary,
-                          fontSize: 10,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: SyntrakSpacing.xs / 2),
-                      // Location with shoe icon
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.directions_walk,
-                            size: 14,
-                            color: SyntrakColors.textTertiary,
-                          ),
-                          const SizedBox(width: SyntrakSpacing.xs / 2),
-                          Expanded(
-                            child: Text(
-                              'Finland, Tampere',
-                              style: SyntrakTypography.labelSmall.copyWith(
-                                color: SyntrakColors.textTertiary,
-                                fontSize: 11,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Activity Name and Metrics
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              SyntrakSpacing.md,
-              0,
-              SyntrakSpacing.md,
-              SyntrakSpacing.md,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  activity.name ?? activity.type.displayName,
-                  style: SyntrakTypography.headlineSmall.copyWith(
-                    color: SyntrakColors.textPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: SyntrakSpacing.sm),
-                // Metrics: Distance, Elev Gain, Time
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child:
-                          _buildMetric('Distance', activity.formattedDistance),
-                    ),
-                    const SizedBox(width: SyntrakSpacing.sm),
-                    Expanded(
-                      child: _buildMetric(
-                          'Elev Gain', activity.formattedVerticalDrop),
-                    ),
-                    const SizedBox(width: SyntrakSpacing.sm),
-                    Expanded(
-                      child: _buildMetric('Time', activity.formattedDuration),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // Kudos card (if first activity - most recent)
-          if (isFirstActivity) ...[
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
-              child: Container(
-                padding: const EdgeInsets.all(SyntrakSpacing.md),
-                decoration: BoxDecoration(
-                  color: SyntrakColors.accent.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(SyntrakRadius.md),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            SyntrakColors.primary,
-                            SyntrakColors.accent,
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          '1',
-                          style: SyntrakTypography.labelLarge.copyWith(
-                            color: SyntrakColors.textOnPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: SyntrakSpacing.md),
-                    Expanded(
-                      child: Text(
-                        'Kudos on your first activity!',
-                        style: SyntrakTypography.bodyMedium.copyWith(
-                          color: SyntrakColors.textPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        // TODO: Navigate to kudos/achievements screen
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: SyntrakColors.accent,
-                        foregroundColor: SyntrakColors.textOnPrimary,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: SyntrakSpacing.md,
-                          vertical: SyntrakSpacing.sm,
-                        ),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text(
-                        'View',
-                        style: SyntrakTypography.labelMedium,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: SyntrakSpacing.md),
-          ],
-
-          // Map preview (using demo image for now) - Full width
-          Container(
-            height: 200,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: SyntrakColors.surfaceVariant,
-            ),
-            child: ClipRRect(
-              child: _buildMapPreview(),
-            ),
-          ),
-
-          const SizedBox(height: SyntrakSpacing.md),
-
-          // Action buttons: Like, Comment, Share
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildActionButton(
-                  icon: hasKudos ? Icons.favorite : Icons.favorite_border,
-                  label: 'Like',
-                  count: kudosCount,
-                  color: hasKudos
-                      ? SyntrakColors.primary
-                      : SyntrakColors.textSecondary,
-                  onTap: onKudosToggle,
-                ),
-                _buildActionButton(
-                  icon: Icons.comment_outlined,
-                  label: 'Comment',
-                  onTap: onComment,
-                ),
-                _buildActionButton(
-                  icon: Icons.share,
-                  label: 'Share',
-                  onTap: onShare,
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: SyntrakSpacing.md),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMetric(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          label,
-          style: SyntrakTypography.labelSmall.copyWith(
-            color: SyntrakColors.textTertiary,
-            fontSize: 11,
-          ),
-        ),
-        const SizedBox(height: SyntrakSpacing.xs / 2),
-        Text(
-          value,
-          style: SyntrakTypography.bodyMedium.copyWith(
-            color: SyntrakColors.textPrimary,
-            fontWeight: FontWeight.w600,
-            fontSize: 15,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMapPreview() {
-    // Use demo image for now
-    // TODO: Replace with actual Google Maps when map services are enabled
-    try {
-      return Image.asset(
-        'assets/images/activities_demo_1.jpg',
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            color: SyntrakColors.surfaceVariant,
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.map,
-                    color: SyntrakColors.textTertiary,
-                    size: 40,
-                  ),
-                  const SizedBox(height: SyntrakSpacing.sm),
-                  Text(
-                    'Map preview',
-                    style: SyntrakTypography.bodySmall.copyWith(
-                      color: SyntrakColors.textTertiary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      );
-    } catch (e) {
-      return Container(
-        color: SyntrakColors.surfaceVariant,
-        child: Center(
-          child: Icon(
-            Icons.map,
-            color: SyntrakColors.textTertiary,
-            size: 40,
-          ),
-        ),
-      );
-    }
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    int? count,
-    Color? color,
-    required VoidCallback onTap,
-  }) {
-    final buttonColor = color ?? SyntrakColors.textSecondary;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(SyntrakRadius.md),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SyntrakSpacing.md,
-          vertical: SyntrakSpacing.sm,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 20,
-              color: buttonColor,
-            ),
-            if (count != null && count > 0) ...[
-              const SizedBox(width: SyntrakSpacing.xs),
-              Text(
-                count.toString(),
-                style: SyntrakTypography.bodySmall.copyWith(
-                  color: buttonColor,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-            const SizedBox(width: SyntrakSpacing.xs),
-            Text(
-              label,
-              style: SyntrakTypography.labelMedium.copyWith(
-                color: buttonColor,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formatDateTime(DateTime date) {
-    final dateFormat = DateFormat('MMMM d, yyyy \'at\' h:mm a');
-    return dateFormat.format(date);
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/core/activity_helpers.dart';
 import 'package:syntrak/models/activity.dart';
+import 'package:syntrak/screens/groups/challenges_tab_widgets.dart';
 
 class ChallengesTab extends StatefulWidget {
   const ChallengesTab({super.key});
@@ -185,7 +186,7 @@ class _ChallengesTabState extends State<ChallengesTab> {
           ),
           // Challenge card
           SliverToBoxAdapter(
-            child: _buildChallengeCard(
+            child: ChallengesDetailCard(
               icon: ActivityHelpers.getActivityIcon(ActivityType.alpine),
               title: 'December Vertical Challenge',
               description: 'Complete 5,000m of vertical drop skiing.',
@@ -264,13 +265,13 @@ class _ChallengesTabState extends State<ChallengesTab> {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.all(SyntrakSpacing.md),
                 children: [
-                  _buildRecommendedChallengeCard(
+                  ChallengesRecommendedCard(
                     icon: ActivityHelpers.getActivityIcon(ActivityType.alpine),
                     title: 'December 400-Minute Alpine Challenge',
                     badge: '400\'',
                   ),
                   const SizedBox(width: SyntrakSpacing.md),
-                  _buildRecommendedChallengeCard(
+                  ChallengesRecommendedCard(
                     icon: ActivityHelpers.getActivityIcon(ActivityType.crossCountry),
                     title: 'December Cross-Country 50K Challenge',
                     badge: '50K',
@@ -312,202 +313,6 @@ class _ChallengesTabState extends State<ChallengesTab> {
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildChallengeCard({
-    required IconData icon,
-    required String title,
-    required String description,
-    required String duration,
-    required String badge,
-  }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: SyntrakSpacing.md,
-        vertical: SyntrakSpacing.sm,
-      ),
-      padding: const EdgeInsets.all(SyntrakSpacing.md),
-      decoration: BoxDecoration(
-        color: SyntrakColors.surface,
-        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-        border: Border.all(color: SyntrakColors.divider),
-        boxShadow: SyntrakElevation.sm,
-      ),
-      child: Row(
-        children: [
-          // Challenge icon
-          Stack(
-            children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: SyntrakColors.primaryLight.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(SyntrakRadius.md),
-                ),
-                child: Icon(
-                  icon,
-                  color: SyntrakColors.primary,
-                  size: 30,
-                ),
-              ),
-              Positioned(
-                top: -4,
-                right: -4,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: SyntrakColors.accent,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.arrow_upward,
-                    color: SyntrakColors.textOnPrimary,
-                    size: 12,
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: -4,
-                left: -4,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: SyntrakSpacing.xs,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: SyntrakColors.textPrimary,
-                    borderRadius: BorderRadius.circular(SyntrakRadius.sm),
-                  ),
-                  child: Text(
-                    badge,
-                    style: SyntrakTypography.labelSmall.copyWith(
-                      color: SyntrakColors.textOnPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 16),
-          // Challenge details
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: SyntrakTypography.headlineSmall.copyWith(
-                    color: SyntrakColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: SyntrakSpacing.xs),
-                Text(
-                  description,
-                  style: SyntrakTypography.bodyMedium.copyWith(
-                    color: SyntrakColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: SyntrakSpacing.xs),
-                Text(
-                  duration,
-                  style: SyntrakTypography.bodySmall.copyWith(
-                    color: SyntrakColors.textTertiary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecommendedChallengeCard({
-    required IconData icon,
-    required String title,
-    required String badge,
-  }) {
-    return Container(
-      width: 200,
-      padding: const EdgeInsets.all(SyntrakSpacing.md),
-      decoration: BoxDecoration(
-        color: SyntrakColors.surface,
-        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-        border: Border.all(color: SyntrakColors.divider),
-        boxShadow: SyntrakElevation.sm,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: SyntrakColors.primaryLight.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(SyntrakRadius.md),
-                ),
-                child: Icon(
-                  icon,
-                  color: SyntrakColors.primary,
-                  size: 24,
-                ),
-              ),
-              Positioned(
-                top: -4,
-                right: -4,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: SyntrakColors.accent,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.arrow_upward,
-                    color: SyntrakColors.textOnPrimary,
-                    size: 10,
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: -4,
-                left: -4,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: SyntrakSpacing.xs,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: SyntrakColors.textPrimary,
-                    borderRadius: BorderRadius.circular(SyntrakRadius.sm),
-                  ),
-                  child: Text(
-                    badge,
-                    style: SyntrakTypography.labelSmall.copyWith(
-                      color: SyntrakColors.textOnPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: SyntrakSpacing.md),
-          Text(
-            title,
-            style: SyntrakTypography.bodyMedium.copyWith(
-              color: SyntrakColors.textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

@@ -1,19 +1,31 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:syntrak/core/config/app_environment.dart';
+import 'package:syntrak/core/di/service_locator.dart';
+import 'package:syntrak/core/logging/app_logger.dart';
 import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/models/notification.dart';
+import 'package:syntrak/features/activities/data/activities_context_repository.dart';
+import 'package:syntrak/features/auth/data/auth_session_store.dart';
+import 'package:syntrak/models/notification.dart'; // notification model
 import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/providers/activity_provider.dart';
 import 'package:syntrak/providers/notification_provider.dart';
 import 'package:syntrak/screens/auth/login_screen.dart';
 import 'package:syntrak/screens/home/home_screen.dart';
-import 'package:syntrak/services/api_service.dart';
 import 'package:syntrak/services/notification_service.dart';
 import 'package:syntrak/services/storage_service.dart';
 
-void main() {
+Future<void> main() async {
+  await bootstrapAndRun();
+}
+
+Future<void> bootstrapAndRun({AppEnvironment? environment}) async {
   WidgetsFlutterBinding.ensureInitialized();
+  await setupServiceLocatorWithEnvironment(
+    environment: environment,
+  );
+
   runApp(const SyntrakApp());
 }
 
@@ -25,85 +37,71 @@ class SyntrakApp extends StatefulWidget {
 }
 
 class _SyntrakAppState extends State<SyntrakApp> {
-  // Global key for Navigator to maintain state across rebuilds
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
+      GlobalKey<ScaffoldMessengerState>();
+
+  @override
+  void initState() {
+    super.initState();
+    AppLogger.instance.attachScaffoldMessenger(_scaffoldMessengerKey);
+  }
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) {
-          final storage = StorageService();
-          // Initialize storage and wait for it
-          storage.init().then((_) {
-            // Storage initialized
-          });
-          return storage;
-        }),
-        ChangeNotifierProxyProvider<StorageService, AuthProvider>(
+        ChangeNotifierProvider(create: (_) => StorageService()),
+        Provider<AuthSessionStore>(
+          create: (context) => AuthSessionStore(
+            context.read<StorageService>(),
+          ),
+        ),
+        ChangeNotifierProxyProvider<AuthSessionStore, AuthProvider>(
           create: (context) {
-            print('🔍 [Main] Creating AuthProvider');
-            final storage = Provider.of<StorageService>(context, listen: false);
-            final apiService = ApiService();
-            final auth = AuthProvider(apiService, storage);
-            // Initialize storage first, then check auth
-            print('🔍 [Main] Initializing storage and checking auth...');
-            storage.init().then((_) {
-              print('🔍 [Main] Storage initialized, calling checkAuth');
-              // Storage is ready, now check auth
-              auth.checkAuth();
-            }).catchError((error) {
-              print(
-                  '🔍 [Main] Storage init error: $error, calling checkAuth anyway');
-              // If storage init fails, still check auth (will show login)
-              auth.checkAuth();
-            });
+            AppLogger.instance.debug('[Main] Creating AuthProvider');
+            final sessionStore = context.read<AuthSessionStore>();
+            final auth = sl<AuthProvider>(param1: sessionStore);
+            auth.checkAuth();
             return auth;
           },
-          update: (_, storage, previous) {
+          update: (_, sessionStore, previous) {
             if (previous == null) {
-              print('🔍 [Main] Updating AuthProvider (previous was null)');
-              final apiService = ApiService();
-              final auth = AuthProvider(apiService, storage);
-              // Initialize storage first, then check auth
-              storage.init().then((_) {
-                print(
-                    '🔍 [Main] Storage initialized in update, calling checkAuth');
-                auth.checkAuth();
-              }).catchError((error) {
-                print('🔍 [Main] Storage init error in update: $error');
-                auth.checkAuth();
-              });
+              AppLogger.instance.debug(
+                '[Main] Updating AuthProvider (previous was null)',
+              );
+              final auth = sl<AuthProvider>(param1: sessionStore);
+              auth.checkAuth();
               return auth;
             }
             return previous;
           },
         ),
-        ChangeNotifierProxyProvider<StorageService, ActivityProvider>(
-          create: (_) => ActivityProvider(ApiService()),
-          update: (_, storage, previous) =>
-              previous ?? ActivityProvider(ApiService()),
+        ChangeNotifierProvider<ActivityProvider>(
+          create: (_) => sl<ActivityProvider>(),
         ),
-        // Notification Provider
+        Provider<ActivitiesContextRepository>(
+          create: (_) => sl<ActivitiesContextRepository>(),
+        ),
         ChangeNotifierProvider(
-          create: (_) => NotificationProvider()..loadNotifications(),
+          create: (_) => NotificationProvider(notificationsRepository: sl())
+            ..loadNotifications(),
         ),
       ],
       child: MaterialApp(
         navigatorKey: _navigatorKey,
+        scaffoldMessengerKey: _scaffoldMessengerKey,
         title: 'Syntrak',
         debugShowCheckedModeBanner: false,
         theme: SyntrakTheme.lightTheme,
         darkTheme: SyntrakTheme.darkTheme,
         themeMode: ThemeMode.light,
-        // Use home for simpler navigation that handles hot reload better
         home: const _AppWrapper(),
       ),
     );
   }
 }
 
-// Wrapper widget to maintain stable Navigator identity and set up notifications
 class _AppWrapper extends StatefulWidget {
   const _AppWrapper();
 
@@ -115,7 +113,6 @@ class _AppWrapperState extends State<_AppWrapper> {
   @override
   void initState() {
     super.initState();
-    // Set up notification callback for showing banners
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _setupNotificationCallback();
     });
@@ -124,15 +121,15 @@ class _AppWrapperState extends State<_AppWrapper> {
   void _setupNotificationCallback() {
     final notificationProvider = context.read<NotificationProvider>();
     notificationProvider.onNewNotification = (AppNotification notification) {
-      // Show banner notification when a new notification is received from backend
       if (mounted) {
         NotificationService.showBanner(
           context,
           notification: notification,
           onTap: () {
-            // Optional: Navigate to notification details or related screen
             NotificationService.showToast(
-                context, 'Tapped: ${notification.title}');
+              context,
+              'Tapped: ${notification.title}',
+            );
           },
         );
       }
@@ -141,20 +138,21 @@ class _AppWrapperState extends State<_AppWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    // Use Consumer to properly listen to auth state changes
     return Consumer<AuthProvider>(
       builder: (context, authProvider, _) {
-        print(
-            '🔍 [AppWrapper] Building. isLoading: ${authProvider.isLoading}, isAuthenticated: ${authProvider.isAuthenticated}');
-        
+        AppLogger.instance.debug(
+          '[AppWrapper] Building. isLoading: ${authProvider.isLoading}, '
+          'isAuthenticated: ${authProvider.isAuthenticated}',
+        );
+
         if (authProvider.isLoading) {
           return _LoadingScreenWithTimeout(authProvider: authProvider);
         }
         if (authProvider.isAuthenticated) {
-          print('🔍 [AppWrapper] Showing HomeScreen');
+          AppLogger.instance.debug('[AppWrapper] Showing HomeScreen');
           return const HomeScreen();
         } else {
-          print('🔍 [AppWrapper] Showing LoginScreen');
+          AppLogger.instance.debug('[AppWrapper] Showing LoginScreen');
           return const LoginScreen();
         }
       },
@@ -162,7 +160,6 @@ class _AppWrapperState extends State<_AppWrapper> {
   }
 }
 
-// Safety widget: if loading takes too long, force show login
 class _LoadingScreenWithTimeout extends StatefulWidget {
   final AuthProvider authProvider;
 
@@ -175,15 +172,16 @@ class _LoadingScreenWithTimeout extends StatefulWidget {
 
 class _LoadingScreenWithTimeoutState extends State<_LoadingScreenWithTimeout> {
   Timer? _timeoutTimer;
+  bool _showSlowStartupHint = false;
 
   @override
   void initState() {
     super.initState();
-    // If still loading after 10 seconds, force check auth again
-    _timeoutTimer = Timer(const Duration(seconds: 10), () {
-      if (widget.authProvider.isLoading) {
-        // Force complete the auth check
-        widget.authProvider.checkAuth();
+    _timeoutTimer = Timer(const Duration(seconds: 5), () {
+      if (mounted && widget.authProvider.isLoading) {
+        setState(() {
+          _showSlowStartupHint = true;
+        });
       }
     });
   }
@@ -196,8 +194,19 @@ class _LoadingScreenWithTimeoutState extends State<_LoadingScreenWithTimeout> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            if (_showSlowStartupHint) ...[
+              const SizedBox(height: 12),
+              const Text('Startup is taking longer than expected...'),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

@@ -1,16 +1,16 @@
 # FastAPI and ASGI server
-fastapi==0.115.0
-uvicorn[standard]==0.32.1
+fastapi==0.121.0
+uvicorn[standard]==0.37.0
 
 # Authentication & Security
-python-jose[cryptography]==3.3.0
+python-jose[cryptography]==3.5.0
 bcrypt==4.2.1
-python-multipart==0.0.17
+python-multipart==0.0.22
 
 # Environment & Config
-python-dotenv==1.0.1
+python-dotenv==1.1.1
 pydantic>=2.11.7
-pydantic-settings==2.7.1
+pydantic-settings==2.11.0
 email-validator>=2.0.0
 
-supabase==2.25.1
+supabase==2.28.3

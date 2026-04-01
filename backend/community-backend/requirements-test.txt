@@ -1,0 +1,3 @@
+# Test dependencies - should NOT be installed in production
+-r requirements.txt
+pytest>=8.0.0

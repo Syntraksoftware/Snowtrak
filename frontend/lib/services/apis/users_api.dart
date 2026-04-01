@@ -3,10 +3,9 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:syntrak/models/profile.dart';
 import 'package:syntrak/models/user.dart';
-import 'package:syntrak/services/service_registry.dart';
 
 class UsersApi {
-  UsersApi({Dio? dio}) : _dio = dio ?? ServiceRegistry.instance.main;
+  UsersApi({required Dio dio}) : _dio = dio;
 
   final Dio _dio;
 

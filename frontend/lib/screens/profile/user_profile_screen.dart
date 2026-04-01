@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:syntrak/core/auth/authenticated_session.dart';
+import 'package:syntrak/core/di/service_locator.dart';
+import 'package:syntrak/core/errors/app_error.dart';
+import 'package:syntrak/core/errors/app_result.dart';
+import 'package:syntrak/core/logging/app_logger.dart';
 import 'package:syntrak/core/theme.dart';
+import 'package:syntrak/services/community_service.dart';
 import 'package:syntrak/models/post.dart';
 import 'package:syntrak/providers/auth_provider.dart';
-import 'package:syntrak/services/api_service.dart';
+import 'package:syntrak/screens/community/community_post_mapper.dart';
 import 'package:syntrak/widgets/profile_header.dart';
 import 'package:syntrak/widgets/message_card.dart';
-import 'package:intl/intl.dart';
 
 class UserProfileScreen extends StatefulWidget {
   final String? userId; // If null, shows current user's profile
@@ -21,10 +26,12 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
+  final CommunityService _communityService = sl<CommunityService>();
   List<Post> _posts = [];
   bool _isLoading = false; // Start as false - will be set when loading starts
   bool _isLoadingMore = false;
   String? _error;
+  bool _errorRetryable = true;
   int _offset = 0;
   static const int _limit = 20;
   bool _hasMore = true;
@@ -43,16 +50,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Future<void> _loadPosts({bool refresh = false}) async {
     // Prevent multiple simultaneous loads (but allow refresh)
     if (!refresh && (_isLoading || _isLoadingMore)) {
-      print('🔍 [UserProfileScreen] Skipping load - already loading');
+      AppLogger.instance.debug('[UserProfileScreen] Skipping load - already loading');
       return;
     }
 
     if (!mounted) {
-      print('🔍 [UserProfileScreen] Not mounted, skipping load');
+      AppLogger.instance.debug('[UserProfileScreen] Not mounted, skipping load');
       return;
     }
 
-    print('🔍 [UserProfileScreen] Loading posts (refresh: $refresh)');
+    AppLogger.instance.debug('[UserProfileScreen] Loading posts (refresh: $refresh)');
     
     // Set loading state BEFORE making the API call
     setState(() {
@@ -71,84 +78,58 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         _isLoadingMore = true;
       }
       _error = null;
+      _errorRetryable = true;
     });
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final apiService = ApiService();
-      
-      // Check session and refresh token if needed
-      if (authProvider.session == null) {
-        setState(() {
-          _error = 'Not authenticated';
-          _isLoading = false;
-          _isLoadingMore = false;
-        });
-        return;
+      final sessionOutcome = await ensureAuthenticatedSession(
+        authProvider,
+        viewUserId: widget.userId,
+        requireUserId: true,
+      );
+      late final String userId;
+      switch (sessionOutcome) {
+        case AuthenticatedSessionError(:final message):
+          setState(() {
+            _error = message;
+            _errorRetryable = false;
+            _isLoading = false;
+            _isLoadingMore = false;
+          });
+          return;
+        case AuthenticatedSessionOk(:final resolvedUserId):
+          userId = resolvedUserId!;
       }
 
-      // Refresh token if expired
-      final tokenRefreshed = await authProvider.refreshTokenIfNeeded();
-      if (!tokenRefreshed) {
-        setState(() {
-          _error = 'Session expired. Please login again.';
-          _isLoading = false;
-          _isLoadingMore = false;
-        });
-        return;
-      }
-
-      // Set token
-      if (authProvider.session != null) {
-        apiService.setToken(authProvider.session!.accessToken);
-      }
-
-      final userId = widget.userId ?? authProvider.user?.id;
-      print('🔍 [UserProfileScreen] UserId: $userId');
-      if (userId == null) {
-        print('🔍 [UserProfileScreen] User ID is null');
-        setState(() {
-          _error = 'User not found';
-          _isLoading = false;
-          _isLoadingMore = false;
-        });
-        return;
-      }
-
-      print('🔍 [UserProfileScreen] Fetching posts for user: $userId');
-      final postsData = await apiService.getPostsByUserId(
+      AppLogger.instance.debug('[UserProfileScreen] Fetching posts for user: $userId');
+      final postsResult = await _communityService.getPostsByUserId(
         userId,
         limit: _limit,
         offset: _offset,
       );
-      print('🔍 [UserProfileScreen] Received ${postsData.length} posts');
+
+      final List<Map<String, dynamic>> postsData;
+      switch (postsResult) {
+        case AppFailure(:final error):
+          if (mounted) {
+            setState(() {
+              _error = error.userMessage;
+              _errorRetryable = error.retryable;
+              _isLoading = false;
+              _isLoadingMore = false;
+            });
+          }
+          return;
+        case AppSuccess(:final value):
+          postsData = value;
+      }
+
+      AppLogger.instance.debug('[UserProfileScreen] Received ${postsData.length} posts');
 
       final newPosts = postsData.map((postJson) {
-        // Convert backend post format to frontend Post model
-        final authorFirstName = postJson['author_first_name'] ?? '';
-        final authorLastName = postJson['author_last_name'] ?? '';
-        final displayName = authorFirstName.isNotEmpty || authorLastName.isNotEmpty
-            ? '$authorFirstName $authorLastName'.trim()
-            : postJson['author_email']?.split('@')[0] ?? 'User';
-        
-        final createdAt = postJson['created_at'] != null
-            ? DateTime.parse(postJson['created_at'])
-            : DateTime.now();
-        
-        return Post(
-          id: postJson['post_id'] ?? postJson['id'] ?? '',
-          author: PostAuthor(
-            id: postJson['user_id'] ?? userId,
-            displayName: displayName,
-            username: postJson['author_email']?.split('@')[0] ?? 'user',
-            avatarUrl: null, // TODO: Get from profile
-          ),
-          text: postJson['content'] ?? postJson['text'] ?? '',
-          createdAt: createdAt,
-          timestampLabel: _formatTimestamp(createdAt),
-          likeCount: 0, // TODO: Get from backend
-          replyCount: 0, // TODO: Get from backend
-        );
+        final raw = Map<String, dynamic>.from(postJson as Map);
+        return CommunityPostMapper.mapBackendPost(raw, const []);
       }).toList();
 
       if (mounted) {
@@ -159,36 +140,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           _isLoading = false;
           _isLoadingMore = false;
         });
-        print('🔍 [UserProfileScreen] Posts loaded: ${_posts.length} total');
+        AppLogger.instance.debug('[UserProfileScreen] Posts loaded: ${_posts.length} total');
       }
     } catch (e, stackTrace) {
-      print('🔍 [UserProfileScreen] Error loading posts: $e');
-      print('🔍 [UserProfileScreen] Stack trace: $stackTrace');
       if (mounted) {
+        final appError = AppError.from(e, stackTrace);
         setState(() {
-          _error = e.toString();
+          _error = appError.userMessage;
+          _errorRetryable = appError.retryable;
           _isLoading = false;
           _isLoadingMore = false;
         });
-        print('🔍 [UserProfileScreen] Error state set: $_error');
       }
-    }
-  }
-
-  String _formatTimestamp(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays > 7) {
-      return DateFormat('MMM d, y').format(dateTime);
-    } else if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    } else {
-      return 'now';
     }
   }
 
@@ -198,7 +161,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print('🔍 [UserProfileScreen] Building screen. isLoading: $_isLoading, error: $_error, posts: ${_posts.length}');
+    AppLogger.instance.debug('[UserProfileScreen] Building screen. isLoading: $_isLoading, error: $_error, posts: ${_posts.length}');
     
     return Scaffold(
       backgroundColor: SyntrakColors.background,
@@ -217,16 +180,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Error: $_error',
+                          _error!,
+                          textAlign: TextAlign.center,
                           style: SyntrakTypography.bodyMedium.copyWith(
                             color: SyntrakColors.error,
                           ),
                         ),
-                        const SizedBox(height: SyntrakSpacing.md),
-                        ElevatedButton(
-                          onPressed: () => _loadPosts(refresh: true),
-                          child: const Text('Retry'),
-                        ),
+                        if (_errorRetryable) ...[
+                          const SizedBox(height: SyntrakSpacing.md),
+                          ElevatedButton(
+                            onPressed: () => _loadPosts(refresh: true),
+                            child: const Text('Retry'),
+                          ),
+                        ],
                       ],
                     ),
                   )

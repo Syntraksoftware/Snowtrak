@@ -1,9 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:syntrak/models/activity.dart';
-import 'package:syntrak/services/service_registry.dart';
 
 class ActivitiesApi {
-  ActivitiesApi({Dio? dio}) : _dio = dio ?? ServiceRegistry.instance.activity;
+  ActivitiesApi({required Dio dio}) : _dio = dio;
 
   final Dio _dio;
 

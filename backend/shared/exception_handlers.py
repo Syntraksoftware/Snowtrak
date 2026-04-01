@@ -95,7 +95,7 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     
     return JSONResponse(
         status_code=exc.status_code,
-        content=error_response.model_dump(by_alias=True),
+        content=error_response.model_dump(mode="json", by_alias=True),
     )
 
 
@@ -124,7 +124,7 @@ async def validation_error_handler(request: Request, exc: ValidationError) -> JS
     
     return JSONResponse(
         status_code=400,
-        content=error_response.model_dump(by_alias=True),
+        content=error_response.model_dump(mode="json", by_alias=True),
     )
 
 
@@ -157,7 +157,7 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
     
     return JSONResponse(
         status_code=500,
-        content=error_response.model_dump(by_alias=True),
+        content=error_response.model_dump(mode="json", by_alias=True),
     )
 
 

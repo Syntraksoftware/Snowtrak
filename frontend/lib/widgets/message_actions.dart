@@ -4,6 +4,7 @@ class MessageActions extends StatefulWidget {
   final int replyCount;
   final int likeCount;
   final int repostCount;
+  final int shareCount;
   final bool isLiked;
   final bool isReposted;
   final VoidCallback? onReply;
@@ -16,6 +17,7 @@ class MessageActions extends StatefulWidget {
     this.replyCount = 0,
     this.likeCount = 0,
     this.repostCount = 0,
+    this.shareCount = 0,
     this.isLiked = false,
     this.isReposted = false,
     this.onReply,
@@ -44,6 +46,14 @@ class _MessageActionsState extends State<MessageActions>
   }
 
   @override
+  void didUpdateWidget(MessageActions oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isLiked != oldWidget.isLiked) {
+      _isLiked = widget.isLiked;
+    }
+  }
+
+  @override
   void dispose() {
     _likeAnimationController.dispose();
     super.dispose();
@@ -64,24 +74,23 @@ class _MessageActionsState extends State<MessageActions>
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Reply - left-aligned
+        // Like first (Threads-style)
         Flexible(
           child: _buildActionButton(
-          icon: Icons.chat_bubble_outline,
-          count: widget.replyCount,
-          onTap: widget.onReply,
-        ),
+            icon: _isLiked ? Icons.favorite : Icons.favorite_border,
+            count: widget.likeCount,
+            isActive: _isLiked,
+            onTap: _handleLike,
+            animated: true,
+          ),
         ),
         const SizedBox(width: 16),
-        // Like - consistent spacing
         Flexible(
           child: _buildActionButton(
-          icon: _isLiked ? Icons.favorite : Icons.favorite_border,
-          count: widget.likeCount,
-          isActive: _isLiked,
-          onTap: _handleLike,
-          animated: true,
-        ),
+            icon: Icons.chat_bubble_outline,
+            count: widget.replyCount,
+            onTap: widget.onReply,
+          ),
         ),
         const SizedBox(width: 16),
         // Repost - consistent spacing
@@ -97,8 +106,9 @@ class _MessageActionsState extends State<MessageActions>
         // Share - consistent spacing
         Flexible(
           child: _buildActionButton(
-          icon: Icons.share_outlined,
-          onTap: widget.onShare,
+            icon: Icons.share_outlined,
+            count: widget.shareCount,
+            onTap: widget.onShare,
           ),
         ),
       ],

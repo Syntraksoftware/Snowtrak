@@ -1,8 +1,7 @@
 import 'package:dio/dio.dart';
-import 'package:syntrak/services/service_registry.dart';
 
 class AuthApi {
-  AuthApi({Dio? dio}) : _dio = dio ?? ServiceRegistry.instance.main;
+  AuthApi({required Dio dio}) : _dio = dio;
 
   final Dio _dio;
 

@@ -1,48 +1,40 @@
 import 'package:dio/dio.dart';
+import 'package:syntrak/core/config/app_config.dart';
+import 'package:syntrak/core/network/auth_token_store.dart';
+import 'package:syntrak/core/network/dio_factory.dart';
 
 class ServiceRegistry {
-  ServiceRegistry._();
+  ServiceRegistry._internal({
+    required this.config,
+    required AuthTokenStore tokenStore,
+  }) : _tokenStore = tokenStore {
+    final factory = DioFactory(config: config, tokenStore: _tokenStore);
+    _main = factory.buildMainClient();
+    _activity = factory.buildActivityClient();
+    _community = factory.buildCommunityClient();
+  }
 
-  static final ServiceRegistry instance = ServiceRegistry._();
+  static late final ServiceRegistry instance;
 
-  static const String mainBaseUrl = 'http://127.0.0.1:8080/api/v1';
-  static const String activityBaseUrl = 'http://127.0.0.1:5100/api/v1';
-  static const String communityBaseUrl = 'http://127.0.0.1:5001/api/v1';
+  final AppConfig config;
+  final AuthTokenStore _tokenStore;
 
-  String? _token;
+  static void initialize({
+    required AppConfig config,
+    required AuthTokenStore tokenStore,
+  }) {
+    instance = ServiceRegistry._internal(config: config, tokenStore: tokenStore);
+  }
 
-  late final Dio _main = _buildDio(mainBaseUrl);
-  late final Dio _activity = _buildDio(activityBaseUrl);
-  late final Dio _community = _buildDio(communityBaseUrl);
+  late final Dio _main;
+  late final Dio _activity;
+  late final Dio _community;
 
   Dio get main => _main;
   Dio get activity => _activity;
   Dio get community => _community;
 
   void setToken(String? token) {
-    _token = token;
-  }
-
-  Dio _buildDio(String baseUrl) {
-    final dio = Dio(
-      BaseOptions(
-        baseUrl: baseUrl,
-        connectTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(seconds: 30),
-      ),
-    );
-
-    dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) {
-          if (_token != null && _token!.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $_token';
-          }
-          handler.next(options);
-        },
-      ),
-    );
-
-    return dio;
+    _tokenStore.setToken(token);
   }
 }

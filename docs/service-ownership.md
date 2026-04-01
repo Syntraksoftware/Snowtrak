@@ -1,6 +1,7 @@
 # Service Ownership Boundaries
 
 This document defines single-owner domains for backend services.
+One specific backend for each service (activity-related, main-backend handling user profiles/date etc, map-backend for geographical locations)
 
 ## Ownership Matrix
 
@@ -18,12 +19,13 @@ This document defines single-owner domains for backend services.
 ## Canonical Base Paths
 
 - main-backend: /api/v1/auth, /api/v1/users, /api/v1/notifications
+  - notification is not yet being implemented
 - activity-backend: /api/v1/activities
 - community-backend: /api/subthreads, /api/posts, /api/comments
 
 ## Migration Decision (2026-03-20)
 
-- Activity APIs were removed from main-backend routing.
+- Activity APIs were removed from main-backend routing, to avoid coupling with activity backend
 - Activity ownership is hard-cut over to activity-backend.
 - Notifications remain in main-backend as cross-domain infrastructure.
 

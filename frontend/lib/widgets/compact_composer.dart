@@ -5,11 +5,13 @@ import 'package:syntrak/providers/auth_provider.dart';
 class CompactComposer extends StatefulWidget {
   final Function(String text) onPost;
   final int maxCharacters;
+  final VoidCallback? onComposeTap;
 
   const CompactComposer({
     super.key,
     required this.onPost,
     this.maxCharacters = 280,
+    this.onComposeTap,
   });
 
   @override
@@ -91,6 +93,7 @@ class _CompactComposerState extends State<CompactComposer> {
             child: TextField(
               controller: _textController,
               focusNode: _focusNode,
+              readOnly: widget.onComposeTap != null,
               maxLines: _isExpanded ? null : 1,
               maxLength: widget.maxCharacters,
               style: const TextStyle(
@@ -98,6 +101,10 @@ class _CompactComposerState extends State<CompactComposer> {
                 color: Colors.black87,
               ),
               onTap: () {
+                if (widget.onComposeTap != null) {
+                  widget.onComposeTap!.call();
+                  return;
+                }
                 if (!_isExpanded) {
                   setState(() {
                     _isExpanded = true;
@@ -122,10 +129,11 @@ class _CompactComposerState extends State<CompactComposer> {
           SizedBox(
             height: 32,
             child: ElevatedButton(
-              onPressed:
-                  _characterCount > 0 && _characterCount <= widget.maxCharacters
+              onPressed: widget.onComposeTap ??
+                  (_characterCount > 0 &&
+                          _characterCount <= widget.maxCharacters
                       ? _handlePost
-                      : null,
+                      : null),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF4500),
                 foregroundColor: Colors.white,

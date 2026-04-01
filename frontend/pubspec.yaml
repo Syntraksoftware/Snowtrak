@@ -1,5 +1,5 @@
 name: syntrak
-description: A fitness tracking app similar to Strava
+description: All in one ski tracking and social app
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -12,6 +12,7 @@ dependencies:
 
   # State Management
   provider: ^6.1.1
+  get_it: ^7.7.0
 
   # Networking
   http: ^1.1.0
@@ -27,14 +28,17 @@ dependencies:
 
   # Storage
   shared_preferences: ^2.2.2
+  flutter_secure_storage: ^9.2.2
 
   # Image handling
   image_picker: ^1.0.7
+  video_player: ^2.9.2
 
   # UI
   cupertino_icons: ^1.0.6
   intl: ^0.20.2
   table_calendar: ^3.1.2
+  http_parser: ^4.1.2
 
 dev_dependencies:
   flutter_test:

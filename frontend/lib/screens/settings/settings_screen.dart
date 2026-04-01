@@ -8,6 +8,7 @@ import 'package:syntrak/screens/settings/activity_settings_screen.dart';
 import 'package:syntrak/screens/settings/display_settings_screen.dart';
 import 'package:syntrak/screens/settings/data_storage_screen.dart';
 import 'package:syntrak/screens/settings/help_support_screen.dart';
+import 'package:syntrak/screens/settings/widgets/settings_ios_widgets.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -46,20 +47,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 8),
 
           // Profile Card - iOS Style (like Apple ID card)
-          _buildProfileCard(user),
+          SettingsIosProfileCard(user: user),
 
           const SizedBox(height: 24),
 
           // Most Important First: Notifications & Privacy
-          _SettingsGroup(
+          SettingsIosGroup(
             children: [
-              _SettingsRow(
+              SettingsIosRow(
                 icon: Icons.notifications,
                 iconBackground: const Color(0xFFFF3B30), // iOS Red
                 label: 'Notifications',
                 onTap: () => _navigateTo(const NotificationsSettingsScreen()),
               ),
-              _SettingsRow(
+              SettingsIosRow(
                 icon: Icons.lock,
                 iconBackground: const Color(0xFF34C759), // iOS Green
                 label: 'Privacy & Security',
@@ -71,10 +72,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
 
           // Account & Personalization
-          _buildSectionHeader('ACCOUNT'),
-          _SettingsGroup(
+          SettingsIosSectionHeader('ACCOUNT'),
+          SettingsIosGroup(
             children: [
-              _SettingsRow(
+              SettingsIosRow(
                 icon: Icons.person,
                 iconBackground: const Color(0xFF007AFF), // iOS Blue
                 label: 'Account',
@@ -87,24 +88,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
 
           // App Settings
-          _buildSectionHeader('APP'),
-          _SettingsGroup(
+          SettingsIosSectionHeader('APP'),
+          SettingsIosGroup(
             children: [
-              _SettingsRow(
+              SettingsIosRow(
                 icon: Icons.downhill_skiing,
                 iconBackground: const Color(0xFFFF9500), // iOS Orange
                 label: 'Activity & Recording',
                 subtitle: 'GPS, units, auto-pause',
                 onTap: () => _navigateTo(const ActivitySettingsScreen()),
               ),
-              _SettingsRow(
+              SettingsIosRow(
                 icon: Icons.display_settings,
                 iconBackground: const Color(0xFF5856D6), // iOS Purple
                 label: 'Display & Appearance',
                 subtitle: 'Theme, language, date format',
                 onTap: () => _navigateTo(const DisplaySettingsScreen()),
               ),
-              _SettingsRow(
+              SettingsIosRow(
                 icon: Icons.storage,
                 iconBackground: const Color(0xFF8E8E93), // iOS Gray
                 label: 'Data & Storage',
@@ -117,16 +118,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
 
           // Support
-          _buildSectionHeader('SUPPORT'),
-          _SettingsGroup(
+          SettingsIosSectionHeader('SUPPORT'),
+          SettingsIosGroup(
             children: [
-              _SettingsRow(
+              SettingsIosRow(
                 icon: Icons.help,
                 iconBackground: const Color(0xFF007AFF), // iOS Blue
                 label: 'Help & Support',
                 onTap: () => _navigateTo(const HelpSupportScreen()),
               ),
-              _SettingsRow(
+              SettingsIosRow(
                 icon: Icons.info,
                 iconBackground: const Color(0xFF8E8E93), // iOS Gray
                 label: 'About Syntrak',
@@ -139,9 +140,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 32),
 
           // Sign Out - separate group at bottom
-          _SettingsGroup(
+          SettingsIosGroup(
             children: [
-              _SettingsActionRow(
+              SettingsIosActionRow(
                 label: 'Sign Out',
                 textColor: const Color(0xFF007AFF),
                 onTap: () => _showLogoutConfirmation(),
@@ -152,9 +153,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 16),
 
           // Delete Account - dangerous action at very bottom
-          _SettingsGroup(
+          SettingsIosGroup(
             children: [
-              _SettingsActionRow(
+              SettingsIosActionRow(
                 label: 'Delete Account',
                 textColor: const Color(0xFFFF3B30),
                 onTap: () => _showDeleteAccountConfirmation(),
@@ -176,119 +177,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 32),
         ],
-      ),
-    );
-  }
-
-  // iOS-style profile card (like Apple ID)
-  Widget _buildProfileCard(dynamic user) {
-    final displayName = user?.firstName != null && user?.lastName != null
-        ? '${user.firstName} ${user.lastName}'
-        : user?.email?.split('@')[0] ?? 'User';
-    final email = user?.email ?? '';
-    final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U';
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () {
-            // TODO: Navigate to profile editing
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                // Large avatar like Apple ID
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        const Color(0xFF007AFF),
-                        const Color(0xFF5856D6),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: Center(
-                    child: Text(
-                      initial,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                // Name and details
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        displayName,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        email,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Profile, Subscriptions & more',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[500],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Chevron
-                Icon(
-                  Icons.chevron_right,
-                  color: Colors.grey[400],
-                  size: 22,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 32, bottom: 6),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w400,
-          color: Colors.grey[600],
-          letterSpacing: -0.1,
-        ),
       ),
     );
   }
@@ -434,158 +322,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// iOS-style Settings Group (white rounded container)
-class _SettingsGroup extends StatelessWidget {
-  final List<Widget> children;
-
-  const _SettingsGroup({required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          for (int i = 0; i < children.length; i++) ...[
-            children[i],
-            if (i < children.length - 1)
-              Padding(
-                padding: const EdgeInsets.only(left: 52),
-                child: Divider(
-                  height: 0.5,
-                  thickness: 0.5,
-                  color: Colors.grey[300],
-                ),
-              ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-// iOS-style Settings Row with colored icon
-class _SettingsRow extends StatelessWidget {
-  final IconData icon;
-  final Color iconBackground;
-  final String label;
-  final String? subtitle;
-  final VoidCallback onTap;
-
-  const _SettingsRow({
-    required this.icon,
-    required this.iconBackground,
-    required this.label,
-    this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-          child: Row(
-            children: [
-              // Colored icon container (iOS style)
-              Container(
-                width: 29,
-                height: 29,
-                decoration: BoxDecoration(
-                  color: iconBackground,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Icon(
-                  icon,
-                  color: Colors.white,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Label and subtitle
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.black,
-                      ),
-                    ),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 1),
-                      Text(
-                        subtitle!,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[500],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              // Chevron
-              Icon(
-                Icons.chevron_right,
-                color: Colors.grey[400],
-                size: 20,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// iOS-style Action Row (centered text, no icon)
-class _SettingsActionRow extends StatelessWidget {
-  final String label;
-  final Color textColor;
-  final VoidCallback onTap;
-
-  const _SettingsActionRow({
-    required this.label,
-    required this.textColor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w400,
-                color: textColor,
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

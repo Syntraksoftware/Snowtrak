@@ -1,43 +1,36 @@
 """Configuration for Activity Backend (FastAPI)."""
-import os
-from dotenv import load_dotenv
 
-load_dotenv()
+from functools import lru_cache
+from typing import List
 
-
-def _require_env(name: str) -> str:
-    value = os.getenv(name)
-    if not value:
-        raise ValueError(f"Required environment variable {name} is not set")
-    return value
+from pydantic import computed_field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Config:
-    """Base configuration."""
+class Config(BaseSettings):
+    """Typed settings loaded from environment variables."""
 
-    # Supabase
-    SUPABASE_URL = _require_env("SUPABASE_URL")
-    SUPABASE_SERVICE_ROLE_KEY = _require_env("SUPABASE_SERVICE_ROLE_KEY")
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    # JWT
-    JWT_SECRET = _require_env("JWT_SECRET")
-    JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-
-    # FastAPI / server
-    FASTAPI_ENV = os.getenv("FASTAPI_ENV", "development")
-    DEBUG = FASTAPI_ENV == "development"
-    PORT = int(os.getenv("PORT", 5100))
-    # Bind host: default to localhost for safety; override with HOST=0.0.0.0 when needed
-    HOST = os.getenv("HOST", "127.0.0.1")
-
-    # CORS
-    CORS_ORIGINS = [
+    SUPABASE_URL: str
+    SUPABASE_SERVICE_ROLE_KEY: str
+    JWT_SECRET: str
+    JWT_ALGORITHM: str = "HS256"
+    FASTAPI_ENV: str = "development"
+    PORT: int = 5100
+    HOST: str = "127.0.0.1"
+    CORS_ORIGINS: List[str] = [
         "http://localhost:3000",
         "http://localhost:8080",
         "http://localhost:5173",
     ]
 
+    @computed_field
+    @property
+    def DEBUG(self) -> bool:
+        return self.FASTAPI_ENV == "development"
 
+
+@lru_cache(maxsize=1)
 def get_config() -> Config:
-    env = os.getenv("FASTAPI_ENV", "development")
     return Config()

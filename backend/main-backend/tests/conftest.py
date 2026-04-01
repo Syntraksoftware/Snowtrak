@@ -6,11 +6,14 @@ from fastapi.testclient import TestClient
 from app.main import create_application
 from app.core.storage import user_store, User
 from app.core.security import hash_password
+from app.core.supabase import supabase_client
 
 
 @pytest.fixture(scope="function")
-def app():
+def app(monkeypatch):
     """Create a fresh FastAPI app instance for each test."""
+    # Tests use in-memory fixtures; disable Supabase path for deterministic auth flows.
+    monkeypatch.setattr(supabase_client, "is_configured", lambda: False)
     return create_application()
 
 

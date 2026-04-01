@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:syntrak/core/auth/authenticated_session.dart';
+import 'package:syntrak/core/di/service_locator.dart';
+import 'package:syntrak/core/errors/app_result.dart';
+import 'package:syntrak/core/logging/app_logger.dart';
 import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/models/profile.dart';
 import 'package:syntrak/providers/auth_provider.dart';
-import 'package:syntrak/services/api_service.dart';
+import 'package:syntrak/services/profile_service.dart';
 import 'package:syntrak/screens/profile/edit_profile_screen.dart';
 
 /// ProfileHeader is a widget that displays the profile information at the top of the profile screen
@@ -27,6 +31,7 @@ class ProfileHeader extends StatefulWidget {
 }
 
 class _ProfileHeaderState extends State<ProfileHeader> {
+  final ProfileService _profileService = sl<ProfileService>();
   Profile? _profile;
   bool _isLoading = true;
   String? _error;
@@ -54,118 +59,69 @@ class _ProfileHeaderState extends State<ProfileHeader> {
   Future<void> _loadProfile() async {
     // Prevent multiple simultaneous loads
     if (_isLoading && _hasLoaded) {
-      print('🔍 [ProfileHeader] Skipping load - already loading and loaded');
+      AppLogger.instance.debug('[ProfileHeader] Skipping load - already loading and loaded');
       return;
     }
 
-    print('🔍 [ProfileHeader] Loading profile...');
+    AppLogger.instance.debug('[ProfileHeader] Loading profile...');
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final apiService = ApiService();
-
-    // Check if session exists
-    if (authProvider.session == null) {
-      print('🔍 [ProfileHeader] No session available');
-      if (mounted) {
-        setState(() {
-          _error = 'Not authenticated';
-          _isLoading = false;
-        });
-      }
-      return;
-    }
-
-    // Refresh token if expired
-    final tokenRefreshed = await authProvider.refreshTokenIfNeeded();
-    if (!tokenRefreshed) {
-      print('🔍 [ProfileHeader] Token refresh failed');
-      if (mounted) {
-        setState(() {
-          _error = 'Session expired. Please login again.';
-          _isLoading = false;
-        });
-      }
-      return;
-    }
-
-    // Set token
-    if (authProvider.session != null) {
-      apiService.setToken(authProvider.session!.accessToken);
-      print('🔍 [ProfileHeader] Token set');
-    } else {
-      print('🔍 [ProfileHeader] No session after refresh');
-      if (mounted) {
-        setState(() {
-          _error = 'Not authenticated';
-          _isLoading = false;
-        });
-      }
-      return;
-    }
-
-    final userId = widget.userId ?? authProvider.user?.id;
-    print('🔍 [ProfileHeader] UserId: $userId');
-    if (userId == null) {
-      print('🔍 [ProfileHeader] User ID is null');
-      if (mounted) {
-        setState(() {
-          _error = 'User not found';
-          _isLoading = false;
-        });
-      }
-      return;
-    }
-
-    try {
-      print('🔍 [ProfileHeader] Calling getProfileById for: $userId');
-      final profile = await apiService.getProfileById(userId);
-      print(
-          '🔍 [ProfileHeader] Profile loaded: ${profile.fullName ?? "No name"}');
-      if (mounted && _lastUserId == userId) {
-        setState(() {
-          _profile = profile;
-          _isLoading = false;
-          _hasLoaded = true;
-        });
-        print('🔍 [ProfileHeader] Profile state updated');
-      }
-    } catch (e, stackTrace) {
-      print('🔍 [ProfileHeader] Error loading profile: $e');
-      print('🔍 [ProfileHeader] Stack trace: $stackTrace');
-      if (mounted && _lastUserId == userId) {
-        // Extract clean error message
-        String errorMessage = 'Failed to load profile';
-        if (e is Exception) {
-          final message = e.toString();
-          // Remove "Exception: " prefix if present
-          if (message.startsWith('Exception: ')) {
-            errorMessage = message.substring(11);
-          } else {
-            errorMessage = message;
-          }
+    final sessionOutcome = await ensureAuthenticatedSession(
+      authProvider,
+      viewUserId: widget.userId,
+      requireUserId: true,
+    );
+    late final String userId;
+    switch (sessionOutcome) {
+      case AuthenticatedSessionError(:final message):
+        if (mounted) {
+          setState(() {
+            _error = message;
+            _isLoading = false;
+          });
         }
+        return;
+      case AuthenticatedSessionOk(:final resolvedUserId):
+        userId = resolvedUserId!;
+    }
 
-        setState(() {
-          _error = errorMessage;
-          _isLoading = false;
-          _hasLoaded = true;
-        });
-        print('🔍 [ProfileHeader] Error state set: $errorMessage');
-      }
+    AppLogger.instance.debug('[ProfileHeader] Calling getProfileById for: $userId');
+    final profileResult = await _profileService.getProfileById(userId);
+    switch (profileResult) {
+      case AppSuccess(:final value):
+        final profile = value;
+        AppLogger.instance.debug('[ProfileHeader] Profile loaded: ${profile.fullName ?? "No name"}');
+        if (mounted && _lastUserId == userId) {
+          setState(() {
+            _profile = profile;
+            _isLoading = false;
+            _hasLoaded = true;
+          });
+          AppLogger.instance.debug('[ProfileHeader] Profile state updated');
+        }
+      case AppFailure(:final error):
+        AppLogger.instance.debug('[ProfileHeader] Error loading profile: ${error.userMessage}');
+        if (mounted && _lastUserId == userId) {
+          setState(() {
+            _error = error.userMessage;
+            _isLoading = false;
+            _hasLoaded = true;
+          });
+          AppLogger.instance.debug('[ProfileHeader] Error state set: ${error.userMessage}');
+        }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    print(
-        '🔍 [ProfileHeader] Building. isLoading: $_isLoading, error: $_error, profile: ${_profile != null}');
+    AppLogger.instance.debug('[ProfileHeader] Building. isLoading: $_isLoading, error: $_error, profile: ${_profile != null}');
 
     if (_isLoading) {
-      print('🔍 [ProfileHeader] Showing loading indicator');
+      AppLogger.instance.debug('[ProfileHeader] Showing loading indicator');
       return Container(
         padding: const EdgeInsets.all(SyntrakSpacing.lg),
         child: const Center(
@@ -175,7 +131,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
     }
 
     if (_error != null) {
-      print('🔍 [ProfileHeader] Showing error: $_error');
+      AppLogger.instance.debug('[ProfileHeader] Showing error: $_error');
       return Container(
         padding: const EdgeInsets.all(SyntrakSpacing.lg),
         child: Center(
@@ -204,7 +160,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
     }
 
     if (_profile == null) {
-      print('🔍 [ProfileHeader] Profile is null, showing empty');
+      AppLogger.instance.debug('[ProfileHeader] Profile is null, showing empty');
       return Container(
         padding: const EdgeInsets.all(SyntrakSpacing.lg),
         child: const Center(
@@ -217,7 +173,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
     final displayName = profile.fullName ?? 'User';
     final username = profile.username ?? '';
 
-    print('🔍 [ProfileHeader] Rendering profile: $displayName (@$username)');
+    AppLogger.instance.debug('[ProfileHeader] Rendering profile: $displayName (@$username)');
 
     return Container(
       padding: const EdgeInsets.all(SyntrakSpacing.lg),
