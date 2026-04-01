@@ -1,53 +1,287 @@
-# Activity Backend (Minimal)
+# Activity Backend
 
-Minimal FastAPI service for skiing activity records using Supabase.
+FastAPI microservice for activity record management, GPS path storage, and activity metrics for the Syntrak skiing application.
 
-## Setup
+## 1. Purpose and scope
 
-### 1. Create Supabase Tables
+The Activity Backend exposes REST APIs for creating, retrieving, updating, and deleting skiing activity records. Activities include GPS tracks, elevation metrics, and user-generated content (comments, kudos). This service manages the activity domain on behalf of the Flutter frontend and integrates with Supabase as the data store.
 
-Copy the SQL from `SUPABASE_SETUP.sql` and run it in your Supabase project's SQL editor:
-```bash
-# Go to: Supabase Dashboard → Your Project → SQL Editor
-# Create New Query → Paste contents of SUPABASE_SETUP.sql → Run
+**Key responsibilities:**
+- Activity CRUD operations (`/api/v1/activities/*`)
+- GPS path and metrics persistence
+- Visibility (public/private) and sharing controls
+- Activity comment and kudos management
+
+## 2. Architecture overview
+
+### High-level design
+
+Activity Backend is a self-contained FastAPI microservice exposing a REST JSON API. It does not call other backend services; instead, it coordinates directly with Supabase PostgREST for data storage and retrieval.
+
+```
+Flutter Frontend (ActivitiesApi) 
+  ↓ HTTP POST/GET/PUT/DELETE
+Activity Backend (/api/v1/activities)
+  ↓ SQL
+Supabase (activities, activity_comments, activity_kudos, activity_shares tables)
 ```
 
-This creates:
-- `activities` — user activities with GPS path, metrics, visibility
-- `activity_comments` — activity comments (cascade deleted with activity)
-- `activity_kudos` — likes/kudos (one per user per activity)
-- `activity_shares` — shareable links with tokens
-- Indexes for performance on common queries
-- `activity_stats` view for quick stats queries
+### Key design patterns
 
-### 2. Install & Run
+- **Schema-first integration**: Frontend and backend coordinate on Activity JSON contract defined in `FRONTEND_ACTIVITY_API_SCHEMA.md`
+- **Model mapping**: Pydantic schemas (`models.py`) translate Supabase rows to API responses
+- **JWT authentication**: All routes protected by bearer token validation via `middleware/auth.py`
+- **Supabase client**: Direct SQL integration (no ORM); service layer handles queries
 
-```bash
-cd backend/activity-backend
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-cp ../community-backend/.env.example .env  # or create your own
-# Update .env: set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, JWT_SECRET
-export HOST=127.0.0.1
-export PORT=5100
-python main.py
-```
+### Data contracts/models
 
-## Project Structure
+**Activity model (request/response):**
+- `id`: UUID (backend-generated)
+- `user_id`: UUID (from JWT token)
+- `activity_type`: Enum (ski, snowboard, hike)
+- `start_time`: ISO8601 timestamp
+- `end_time`: ISO8601 timestamp
+- `locations`: List of GPS points (lat, lng, elevation, timestamp)
+- `distance_meters`: Calculated from GPS path
+- `elevation_gain_meters`: Calculated from locations
+- `visibility`: 'public' or 'private' (default: private)
+- `featured_photo_url`: Optional image URL
+- `description`: Optional user text
+
+** Related entities:**
+- **Activity Comments**: User-generated text responses; cascade delete with parent activity
+- **Activity Kudos**: Like/upvote one per user per activity
+- **Activity Shares**: Time-limited shareable links with token-based access
+
+### External integrations
+
+- **Supabase**: PostgreSQL database with REST API (no direct client library; uses HTTP POST to Supabase PostgREST)
+- **Frontend**: Receives activity list/detail/mutation responses in standardized JSON format
+- **Shared utilities**: `backend/shared/auth.py` for JWT token validation; `backend/shared/exception_handlers.py` for error responses
+
+## 3. Code structure and key components
+
+### File map
 
 ```
 backend/activity-backend/
-  config.py                    # Environment & settings
-  main.py                      # FastAPI app + lifespan
-  models.py                    # Pydantic schemas
-  middleware/
-    auth.py                    # JWT dependencies
-  services/
-    supabase_client.py         # Supabase operations
-  routes/
-    activities.py              # API endpoints
-  SUPABASE_SETUP.sql          # Database table creation
+├── main.py                             # FastAPI app setup, lifespan, startup hooks
+├── config.py                           # Environment variables & settings
+├── models.py                           # Pydantic Activity schema
+├── routes/
+│   └── activities.py                   # CRUD endpoints (/api/v1/activities*)
+├── services/
+│   └── supabase_client.py             # Query builder and SQL execution
+├── middleware/
+│   └── auth.py                        # JWT extraction and validation
+├── SUPABASE_SETUP.sql                 # Database schema creation script
+├── FRONTEND_ACTIVITY_API_SCHEMA.md    # Activity payload contract with frontend
+└── requirements.txt                    # Python dependencies (fastapi, supabase-py, etc.)
+```
+
+### Entry points
+
+- **main.py**: Initializes FastAPI app, registers routes, starts ASGI server on port 5100
+- **routes/activities.py**: Defines endpoints; each route extracts JWT token and delegates to service layer
+- **services/supabase_client.py**: Database adapter; handles query construction and error handling
+
+### Critical logic
+
+1. **JWT extraction** (`middleware/auth.py`): Extracts bearer token from Authorization header; validates expiration and signature using shared `JWT_SECRET`
+2. **Activity creation**: Receives GPS locations; computes metrics (distance, elevation gain); UUID-generates activity ID; inserts record into Supabase
+3. **Activity retrieval**: Filters by ownership; returns activity with human-readable timestamps; omits sensitive fields (e.g., service metadata)
+4. **Model mapping**: Pydantic `Activity` schema transforms Supabase JSON rows (snake_case) into camelCase for frontend
+
+### Configuration
+
+Environment variables (set via `.env` or deployment config):
+- `SUPABASE_URL`: Supabase project base URL
+- `SUPABASE_SERVICE_ROLE_KEY`: Service role authentication key (full database access)
+- `JWT_SECRET`: Shared secret for token validation across all backends
+- `HOST`, `PORT`: Server bind address (default: 127.0.0.1:5100)
+
+## 4. Development and maintenance guidelines
+
+### Setup instructions
+
+1. **Create database tables:**
+   ```bash
+   # Go to Supabase Dashboard → SQL Editor → Create New Query
+   # Paste contents of SUPABASE_SETUP.sql and run
+   # Creates: activities, activity_comments, activity_kudos, activity_shares tables and indexes
+   ```
+
+2. **Install and run:**
+   ```bash
+   cd backend/activity-backend
+   python -m venv venv
+   source venv/bin/activate  # Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+   cp .env.example .env
+   # Edit .env: set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, JWT_SECRET
+   python main.py
+   ```
+
+### Testing strategy
+
+- Unit tests in `tests/` for model validation and service layer functions
+- Integration tests against live Supabase (use separate test database for isolation)
+- Manual curl tests in `CURL_TESTS.md` for endpoint verification
+
+**Run tests:**
+```bash
+pytest tests/
+pytest tests/ -v --tb=short  # Verbose output with short traceback
+```
+
+### Code standards
+
+- Pydantic models for all request/response schemas (type safety, auto-validation)
+- Service layer for Supabase queries (separate concerns: route handling vs. data access)
+- Shared auth middleware via `backend/shared/auth.py` (consistent token validation)
+- Error responses use `backend/shared/exception_handlers.py` (standardized error format)
+
+### Common pitfalls
+
+- **Forgotten JWT secret alignment**: `JWT_SECRET` must match value in `main-backend` and shared deployment config
+- **Supabase ServiceRole key leakage**: Never commit `.env` file; use `.env.example` as template
+- **Model mismatch**: When adding fields to Activity, update both Pydantic schema and `SUPABASE_SETUP.sql` together
+- **GPS location edge cases**: Handle empty location arrays and zero-distance activities
+
+### Logging and monitoring
+
+- Logs: Standard Python logging to stdout (captured by Docker/container orchestrator)
+- Key log points: Service startup, successful authentications, query errors
+- Monitor: HTTP response times, Supabase query latency, token validation failures
+
+## 5. Deployment and operations
+
+### Build and deployment
+
+```bash
+# Local Docker build
+docker build -t syntrak-activity-backend:latest .
+
+# Via docker-compose from backend root
+cd backend
+docker-compose up -d syntrak-activity-backend
+```
+
+Service runs on port 5100 and connects to Supabase via SUPABASE_URL.
+
+### Runtime requirements
+
+- Python 3.11+ (FastAPI, Pydantic)
+- Network access to Supabase PostgreSQL (typically port 5432 + PostgREST)
+- Environment variables: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `JWT_SECRET`
+- Shared backend/shared/ directory for auth utilities and exception handlers
+
+### Health checks
+
+- **Liveness**: HTTP GET `/health` (if added; currently no dedicated health endpoint)
+- **Readiness**: Successful Supabase query response indicates database connectivity
+
+### Backward compatibility
+
+- API contract changes (adding/removing Activity fields) must be coordinated with frontend
+- New fields should be optional with sensible defaults to avoid breaking existing clients
+- Deprecation notice: When removing a field, plan at least one release cycle of warning
+
+## 6. Examples and usage
+
+### Create activity
+
+```bash
+curl -X POST http://localhost:5100/api/v1/activities \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "activity_type": "ski",
+    "start_time": "2024-01-15T09:00:00Z",
+    "end_time": "2024-01-15T13:30:00Z",
+    "locations": [
+      {"lat": 39.2847, "lng": -106.5007, "elevation": 3200, "timestamp": "2024-01-15T09:00:00Z"},
+      {"lat": 39.2848, "lng": -106.5006, "elevation": 3195, "timestamp": "2024-01-15T09:05:00Z"}
+    ],
+    "description": "Great run on Dora Bowl"
+  }'
+```
+
+### Retrieve activity
+
+```bash
+curl -X GET http://localhost:5100/api/v1/activities/{id} \
+  -H "Authorization: Bearer <JWT_TOKEN>"
+```
+
+### List activities (user's own)
+
+```bash
+curl -X GET http://localhost:5100/api/v1/activities \
+  -H "Authorization: Bearer <JWT_TOKEN>"
+```
+
+### Update activity
+
+```bash
+curl -X PUT http://localhost:5100/api/v1/activities/{id} \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"description": "Updated description"}'
+```
+
+### Delete activity
+
+```bash
+curl -X DELETE http://localhost:5100/api/v1/activities/{id} \
+  -H "Authorization: Bearer <JWT_TOKEN>"
+```
+
+## 7. Troubleshooting and FAQs
+
+### Common errors
+
+**401 Unauthorized**: Token validation failed
+- Check: JWT_SECRET matches between activity-backend and main-backend
+- Check: Bearer token format in Authorization header
+- Check: Token expiration (main-backend determines TTL)
+
+**500 Database error**: Supabase connection failure
+- Check: SUPABASE_URL is reachable and correct
+- Check: SUPABASE_SERVICE_ROLE_KEY has proper permissions
+- Check: Database tables exist (run SUPABASE_SETUP.sql if missing)
+
+**GPS metrics incorrect**: Distance or elevation gain is wrong
+- Verify: Locations are ordered by timestamp
+- Verify: Coordinates are valid (lat -90..90, lng -180..180)
+- Check: Elevation field is populated (not null)
+
+### Debugging tips
+
+- Enable request/response logging in FastAPI: Add logging middleware to `main.py`
+- Track Supabase queries via Supabase dashboard logs (SQL Editor → Logs)
+- Test endpoints independently with curl (see Examples section above)
+- Verify token payload: Decode JWT at jwt.io to inspect claims
+
+### Performance tuning
+
+- Index activities by user_id for fast filtering (included in SUPABASE_SETUP.sql)
+- Avoid N+1 queries: Use Supabase views (e.g., activity_stats) for aggregations
+- Cache frequent queries (e.g., user's activity count) in Redis if response time critical
+
+## 8. Change log and versioning
+
+### Recent updates
+
+- **2024-01**: Initial FastAPI service with CRUD endpoints and Supabase integration
+- **2024-02**: Added activity kudos and commenting features
+- **2024-03**: Activity shares with token-based link generation
+
+### Version compatibility
+
+- Activity Backend v1 expects Activity model with: id, user_id, activity_type, start_time, end_time, locations, distance_meters, elevation_gain_meters, visibility, description
+- Frontend expects activity-backend running on port 5100 via app configuration (app_config.dart)
+- Shared backend services (auth, exception handling) imported from `backend/shared`
   requirements.txt
   README.md
 ```

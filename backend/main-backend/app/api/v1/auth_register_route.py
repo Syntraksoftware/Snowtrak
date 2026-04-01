@@ -24,7 +24,7 @@ router = APIRouter()
 )
 def register(user_data: UserCreate) -> AuthSession:
     """Register a new user account."""
-    normalized_email = user_data.email.strip().lower()
+    normalized_email = user_data.email.strip().lower() 
 
     if supabase_client.is_configured():
         if supabase_client.email_exists(normalized_email):
@@ -33,7 +33,7 @@ def register(user_data: UserCreate) -> AuthSession:
                 detail="An account with this email already exists",
             )
     else:
-        if user_store.exists_by_email(normalized_email):
+        if user_store.exists_by_email(normalized_email): 
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="An account with this email already exists",

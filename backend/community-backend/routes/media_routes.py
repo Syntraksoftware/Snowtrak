@@ -53,22 +53,22 @@ async def upload_community_media(
         if result.error == "too_large":
             raise HTTPException(
                 status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                detail=_TOO_LARGE_MSG,
+                detail=TOO_LARGE_MSG,
             )
         if result.error == "unsupported_type":
             raise HTTPException(
                 status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-                detail=_UNSUPPORTED_MSG,
+                detail=UNSUPPORTED_MSG,
             )
         if result.error == "bucket_not_found":
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail=_BUCKET_MISSING_MSG,
+                detail=BUCKET_MISSING_MSG,
             )
         if result.error == "storage_error":
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=_STORAGE_MSG,
+                detail=STORAGE_MSG,
             )
         if not result.url:
             raise HTTPException(

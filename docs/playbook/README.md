@@ -1,26 +1,88 @@
-# Syntrak Flow Navigation Notes
+# playbook documentation index
 
-This folder is a practical onboarding map for the three core end-to-end flows in the current codebase.
-For any proposed changes or error spotted, please raise an issue. 
-Feel free to contact Matthew Ng via email: ctngah@connect.ust.hk
+## 1. purpose and scope
+Index for flow-oriented implementation playbooks.
 
-## Flows
+## 2. architecture overview
+### high-level design
+Playbooks document cross-service workflows for activity, auth, and community domains.
 
-- Auth flow: `doc/auth-flow/README.md`
-- Activity flow: `doc/activity-flow/README.md`
-- Community flow: `doc/community-flow/README.md`
+### key design patterns
+- scenario-based implementation guides.
 
-## How to use this folder
+### data contracts/models
+- references to domain-specific contract documents.
 
-1. Start with auth flow to understand app bootstrap, token lifecycle, and service ownership.
-2. Move to activity flow to trace request payload conversion and response formatting.
-3. Read community flow to understand route versioning and deprecation behavior.
-4. While reading each flow, open the listed files in order and follow one request path from UI/provider to backend route.
+### external integrations
+- backend services and frontend feature modules.
 
-## Source of truth rule
+## 3. code structure and key components
+### file map
+- `activity-flow/README.md`
+- `auth-flow/README.md`
+- `community-flow/README.md`
 
-When documentation and code differ, treat code as source of truth and update docs afterward.
+### entry points
+- read this index first and open target flow guide.
 
-Primary ownership reference:
+### critical logic
+- not applicable.
 
-- `docs/service-ownership.md`
+### configuration
+- not applicable.
+
+## 4. development and maintenance guidelines
+### setup instructions
+- update playbooks with each major flow change.
+
+### testing strategy
+- include validation evidence and commands per flow.
+
+### code standards
+- maintain consistent section headings and link style.
+
+### common pitfalls
+- stale references after route or module changes.
+
+### logging and monitoring
+- include key logs and metrics for each flow.
+
+## 5. deployment and operations
+### build/deployment steps
+- flow docs should include release smoke checks.
+
+### runtime requirements
+- depends on involved services.
+
+### health checks
+- include health endpoints in each flow guide.
+
+### backward compatibility
+- document migration notes for breaking flow changes.
+
+## 6. examples and usage
+### code snippets
+- not applicable.
+
+### integration scenarios
+- onboarding and release planning.
+
+### cli commands
+- see individual flow guides.
+
+## 7. troubleshooting and faqs
+### common errors
+- outdated flow assumptions.
+
+### debugging tips
+- verify flow against live endpoints and current code paths.
+
+### performance tuning
+- capture bottlenecks in flow-specific docs.
+
+## 8. change log and versioning
+### recent updates
+- playbook index standardized.
+
+### version compatibility
+- process documentation only.

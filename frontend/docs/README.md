@@ -4,6 +4,7 @@ This directory contains documentation specific to the Flutter frontend applicati
 
 ## Available Documentation
 
+- **technical_guide.md** - Full technical architecture, operations, and troubleshooting guide
 - **map.md** - Map service implementation plan and architecture
 - **architecture_map_service.md** - Architecture design for map services (frontend vs backend)
 - **ui_ux_prompt.md** - UI/UX design guidelines and prompts

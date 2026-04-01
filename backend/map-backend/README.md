@@ -1,193 +1,300 @@
 # Map Backend
 
-Map Backend is a FastAPI microservice that provides static map image generation and elevation correction APIs for the Syntrak application.
+FastAPI microservice for static map image generation and elevation data lookup for the Syntrak skiing application.
 
-## Features
+## 1. Purpose and scope
 
-- **Static Map Generation**: Generate static map images with optional paths and markers using the Google Maps Static API
-- **Elevation Lookup**: Get elevation data for coordinates using the Google Maps Elevation API
-- **JWT Authentication**: Optional authentication for API tracking
-- **Docker Support**: Fully containerized with Docker
+The Map Backend provides location-based utilities: generating static map images for activity recording and detail views, and enriching GPS coordinates with elevation data. This service acts as a facade over Google Maps (map images) and Open Elevation API (elevation lookup), reducing direct API calls from the frontend.
 
-## Tech Stack
+**Key responsibilities:**
+- Static map generation (`/api/maps/*`)
+- Elevation lookup for GPS coordinates (`/api/elevation/*`)
+- JWT authentication and service integration
+- Caching map images for offline access
 
-- **FastAPI**: Modern, fast web framework
-- **Google Maps Static API**: For generating static maps
-- **Google Maps Elevation API**: For elevation data
-- **Supabase**: Database and authentication
-- **Docker**: Containerization
+## 2. Architecture overview
 
-## Setup
+### High-level design
 
-### Prerequisites
+Map Backend is a lightweight FastAPI microservice that wraps external mapping APIs and exposes simplified endpoints for the Flutter frontend. It does not manage persistent data; instead, it acts as a pass-through with optional result caching.
 
-- Python 3.11+
-- Docker (optional)
-- Mapbox access token
+```
+Flutter Frontend (map_api.dart)
+  ↓ HTTP POST (coordinates, zoom level)
+Map Backend (/api/maps/*, /api/elevation/*)
+  ↓ HTTPS
+Google Maps Static API + Open Elevation API
+  ↓
+Static map image URL + elevation data
+```
 
-### Local Development
+### Key design patterns
 
-1. Install dependencies:
+- **Facade pattern**: Wraps Google Maps and Open Elevation API behind simplified HTTP endpoints
+- **Service locator**: External API credentials (API keys) managed centrally in config; credentials injected into service instances
+- **Optional JWT auth**: Endpoints support optional authorization for tracking/billing purposes; unauthenticated requests allowed
+- **Supabase coordination**: Can query Supabase for user preferences (saved map styles, zoom defaults) if needed in future
+
+### Data contracts/models
+
+**Static Map request:**
+- `center_lat`, `center_lng`: Center point latitude/longitude
+- `zoom`: Zoom level (1–21)
+- `width`, `height`: Image dimensions in pixels (default: 600×400)
+- `path`: Optional polyline of GPS coordinates to overlay on map
+- `markers`: Optional array of marker locations
+
+**Static Map response:**
+- `url`: HTTPS URL to static map image
+- `cache_key`: Optional identifier for offline caching
+
+**Elevation Lookup request:**
+- `locations`: Array of {latitude, longitude} objects (up to 1000 points)
+
+**Elevation Lookup response:**
+- `results`: Array of {latitude, longitude, elevation_meters} objects
+
+### External integrations
+
+- **Google Maps Static API** (https://maps.googleapis.com/maps/api/staticmap): Generates static map images with paths and markers
+- **Open Elevation API** (https://api.open-elevation.com/api/v1/lookup): Bulk elevation data for coordinates
+- **Supabase**: Optional coordination for user preferences (reserved for future use)
+
+## 3. Code structure and key components
+
+### File map
+
+```
+backend/map-backend/
+├── main.py                     # FastAPI app setup, lifespan, startup hooks
+├── config.py                   # Environment variables & settings
+├── routes/
+│   ├── maps.py                # Static map endpoints (/api/maps/*)
+│   └── elevation.py           # Elevation endpoints (/api/elevation/*)
+├── services/
+│   ├── static_map_client.py   # Google Maps Static API client
+│   └── elevation_client.py    # Open Elevation API wrapper
+├── middleware/
+│   └── auth.py                # JWT extraction (optional auth)
+├── CURL_TESTS.md              # Manual endpoint testing guide
+├── LOCAL_SETUP.md             # Local development walkthrough
+└── requirements.txt           # Python dependencies
+```
+
+### Entry points
+
+- **main.py**: Initializes FastAPI app, registers routes, starts ASGI server on port 5200
+- **routes/maps.py**: Defines static map endpoints; receives coordinate/zoom inputs, calls static_map_client, returns image URL or binary image
+- **routes/elevation.py**: Defines elevation lookup endpoints; receives location arrays, calls elevation_client, returns enriched data
+
+### Critical logic
+
+1. **Static map generation** (maps.py): Accepts center lat/lng and zoom; constructs Google Maps Static API URL with authentication; returns HTTPS image URL
+2. **Elevation lookup** (elevation.py): Batches coordinate requests in chunks of ≤1000; calls Open Elevation API; returns elevation in meters for each point
+3. **Response caching**: Optionally caches elevation results in Supabase or Redis to reduce repeated API calls
+4. **Error handling**: Gracefully handles external API failures (returns 503 Service Unavailable); logs errors for monitoring
+
+### Configuration
+
+Environment variables (set via `.env` or deployment config):
+- `GOOGLE_MAPS_API_KEY`: Google Maps Static API key
+- `OPEN_ELEVATION_API_URL`: Open Elevation API endpoint (default: https://api.open-elevation.com/api/v1/lookup)
+- `JWT_SECRET`: Shared secret for token validation (from deployment config)
+- `HOST`, `PORT`: Server bind address (default: 127.0.0.1:5200)
+- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`: Optional, for caching coordination with Supabase
+
+## 4. Development and maintenance guidelines
+
+### Setup instructions
+
+1. **Install and run:**
+   ```bash
+   cd backend/map-backend
+   python -m venv venv
+   source venv/bin/activate  # Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+   cp .env.example .env
+   # Edit .env: set GOOGLE_MAPS_API_KEY, OPEN_ELEVATION_API_URL, JWT_SECRET
+   python main.py
+   ```
+
+2. **Obtain API credentials:**
+   - Google Maps Static API: Create project in Google Cloud Console, enable Static Maps API, generate API key
+   - Open Elevation API: Free service; no key required (but rate-limited; optional fallback to paid elevation service)
+
+### Testing strategy
+
+- Unit tests for map URL construction and elevation request batching
+- Integration tests against live Google Maps and Open Elevation APIs (use test coordinates)
+- Manual curl tests in CURL_TESTS.md for endpoint verification
+
+**Run tests:**
 ```bash
-cd backend/map-backend
-pip install -r requirements.txt
+pytest tests/
+pytest tests/ -v --tb=short  # Verbose output
 ```
 
-2. Create `.env` file (use `.env.example` as template):
+### Code standards
+
+- Service classes encapsulate external API calls (separation of concerns)
+- Routes handle HTTP marshaling; services handle business logic
+- Config.py centralizes all environment variable loading
+- Shared auth middleware via `backend/shared/auth.py` (consistent token validation)
+
+### Common pitfalls
+
+- **Google Maps API key leakage**: Never commit `.env` file; rotate keys if accidentally exposed
+- **Elevation API rate limits**: Batch requests and implement retry logic; consider caching results
+- **Coordinate validation**: Ensure latitude (-90..90) and longitude (-180..180) are valid before sending to external APIs
+- **Cache invalidation**: If caching elevation results, set TTL appropriately (e.g., 7 days for static terrain)
+
+### Logging and monitoring
+
+- Logs: Standard Python logging to stdout
+- Key log points: External API calls (request/response), rate limit hits, authentication errors
+- Monitor: External API latency, cache hit ratio, token validation failures
+
+## 5. Deployment and operations
+
+### Build and deployment
+
 ```bash
-cp .env.example .env
+# Local Docker build
+docker build -t syntrak-map-backend:latest .
+
+# Via docker-compose from backend root
+cd backend
+docker-compose up -d syntrak-map-backend
 ```
 
-3. Configure environment variables:
-```env
-SUPABASE_URL=your_supabase_url
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-JWT_SECRET=your_jwt_secret
-MAPBOX_ACCESS_TOKEN=your_mapbox_token
-```
+Service runs on port 5200 and communicates with Google Maps and Open Elevation API over HTTPS.
 
-4. Run the server:
-```bash
-python main.py
-```
+### Runtime requirements
 
-Or with uvicorn:
-```bash
-uvicorn main:app --reload --port 5200
-```
+- Python 3.11+ (FastAPI, Pydantic)
+- Internet access to Google Maps Static API and Open Elevation API (HTTPS)
+- Environment variables: `GOOGLE_MAPS_API_KEY`, `JWT_SECRET`
+- Shared backend/shared/ directory for auth utilities
 
-### Docker
+### Health checks
 
-Build and run with Docker:
-```bash
-docker build -t map-backend .
-docker run -p 5200:5200 --env-file .env map-backend
-```
+- **Liveness**: HTTP GET `/health` (returns 200 if service running)
+- **Readiness**: Successful external API call (test static map or elevation endpoint)
 
-Or use docker-compose from project root:
-```bash
-docker-compose up map-backend
-```
+### Backward compatibility
 
-## API Endpoints
+- Static map endpoint response format (URL + cache_key) should remain stable
+- Adding optional parameters to elevation request is non-breaking
+- Version API if major contract changes needed (e.g., elevation units)
 
-### Health & Status
+## 6. Examples and usage
 
-- `GET /` - Service information
-- `GET /health` - Health check endpoint
-
-### Static Maps
-
-- `POST /api/maps/static` - Generate static map URL with advanced options
-- `POST /api/maps/static/image` - Fetch static map image as binary
-- `GET /api/maps/static/simple` - Simple static map URL generation
-
-### Elevation
-
-- `POST /api/elevation/lookup` - Bulk elevation lookup (up to 1000 points)
-- `GET /api/elevation/point` - Single point elevation lookup
-
-## API Examples
-
-### Generate Static Map URL
+### Generate static map image
 
 ```bash
 curl -X POST http://localhost:5200/api/maps/static \
   -H "Content-Type: application/json" \
   -d '{
-    "center_lat": 37.7749,
-    "center_lng": -122.4194,
-    "zoom": 12,
+    "center_lat": 39.2847,
+    "center_lng": -106.5007,
+    "zoom": 13,
     "width": 600,
     "height": 400
   }'
 ```
 
-### Get Elevation Data
+Response:
+```json
+{"url": "https://maps.googleapis.com/maps/api/staticmap?..."}
+```
+
+### Generate map with activity path overlay
+
+```bash
+curl -X POST http://localhost:5200/api/maps/static \
+  -H "Content-Type: application/json" \
+  -d '{
+    "center_lat": 39.2847,
+    "center_lng": -106.5007,
+    "zoom": 13,
+    "path": [
+      {"lat": 39.2847, "lng": -106.5007},
+      {"lat": 39.2848, "lng": -106.5006},
+      {"lat": 39.2850, "lng": -106.5005}
+    ]
+  }'
+```
+
+### Lookup elevation for GPS points
 
 ```bash
 curl -X POST http://localhost:5200/api/elevation/lookup \
   -H "Content-Type: application/json" \
   -d '{
     "locations": [
-      {"latitude": 37.7749, "longitude": -122.4194},
-      {"latitude": 37.7849, "longitude": -122.4094}
+      {"latitude": 39.2847, "longitude": -106.5007},
+      {"latitude": 39.2848, "longitude": -106.5006}
     ]
   }'
 ```
 
-### Simple Elevation Lookup
+Response:
+```json
+{
+  "results": [
+    {"latitude": 39.2847, "longitude": -106.5007, "elevation_meters": 3208},
+    {"latitude": 39.2848, "longitude": -106.5006, "elevation_meters": 3205}
+  ]
+}
+```
+
+### Simple single-point elevation
 
 ```bash
-curl "http://localhost:5200/api/elevation/point?lat=37.7749&lng=-122.4194"
+curl "http://localhost:5200/api/elevation/point?lat=39.2847&lng=-106.5007"
 ```
 
-## Configuration
+## 7. Troubleshooting and FAQs
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `SUPABASE_URL` | Supabase project URL | Required |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key | Required |
-| `JWT_SECRET` | JWT signing secret | Required |
-| `MAPBOX_ACCESS_TOKEN` | Mapbox API access token | "" |
-| `OPEN_ELEVATION_API_URL` | Elevation API URL | https://api.open-elevation.com/api/v1/lookup |
-| `FASTAPI_ENV` | Environment (development/production) | development |
-| `HOST` | Server host | 127.0.0.1 |
-| `PORT` | Server port | 5200 |
-| `STATIC_MAP_WIDTH` | Default map width | 600 |
-| `STATIC_MAP_HEIGHT` | Default map height | 400 |
-| `STATIC_MAP_ZOOM` | Default zoom level | 12 |
+### Common errors
 
-## Development
+**403 Forbidden (Google Maps API)**: Invalid or restricted API key
+- Check: Google Maps API key is correct and has Static Maps API enabled
+- Check: API key has appropriate usage restrictions (IP allowlist, referrer domain)
+- Check: Quota not exceeded in Google Cloud Console
 
-### Project Structure
+**429 Too Many Requests (Open Elevation)**: Rate limit exceeded
+- Implement exponential backoff for retries
+- Cache elevation results (TTL 7 days)
+- Consider upgrade to paid elevation API if frequent lookups needed
 
-```
-backend/map-backend/
-├── main.py                 # FastAPI app & lifecycle
-├── config.py              # Configuration
-├── requirements.txt       # Python dependencies
-├── Dockerfile            # Docker configuration
-├── .dockerignore         # Docker ignore rules
-├── .env.example          # Environment template
-├── middleware/
-│   └── auth.py           # JWT authentication
-├── routes/
-│   ├── maps.py           # Static map routes
-│   └── elevation.py      # Elevation routes
-└── services/
-    ├── supabase_client.py    # Supabase client
-    ├── static_map_client.py  # Google Maps Static API client
-    └── elevation_client.py   # Google Maps Elevation API client
-```
+**Invalid coordinates**: Latitude or longitude out of range
+- Ensure latitude is -90..90 and longitude is -180..180
+- Check for null or NaN values in GPS data
 
-### Testing
+### Debugging tips
 
-Run the service and test endpoints:
+- Use Google Maps Static API URL builder (https://mapsplatform.google.com/maps-products/#static-maps) to test API calls directly
+- Trace elevation requests via logs; compare against Open Elevation API documentation
+- Test with fixed test coordinates to isolate frontend vs. backend issues
 
-```bash
-# Health check
-curl http://localhost:5200/health
+### Performance tuning
 
-# Service info
-curl http://localhost:5200/
-```
+- Cache static map URLs for repeated center/zoom/path combinations (Redis or Supabase)
+- Batch elevation requests to minimize API calls (supported by Open Elevation API batch endpoint)
+- Consider CDN (CloudFront, Cloudflare) for static map image caching
+- Monitor Google Maps API costs; implement request rate limiting if budget needed
 
-## Authentication
+## 8. Change log and versioning
 
-Most endpoints support optional authentication. Include JWT token in Authorization header:
+### Recent updates
 
-```bash
-curl -X POST http://localhost:5200/api/maps/static \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"center_lat": 37.7749, "center_lng": -122.4194}'
-```
+- **2024-01**: Initial FastAPI service with static map and elevation endpoints
+- **2024-02**: Added optional JWT authentication for usage tracking
+- **2024-03**: Integrated Open Elevation API as primary elevation provider
 
-## Contributing
+### Version compatibility
 
-Follow the existing code structure and patterns from activity-backend and community-backend.
-
-## License
-
-Part of the Syntrak Application project.
+- Map Backend v1 expects: static map requests with {center_lat, center_lng, zoom, width, height}; elevation requests with {locations: [{latitude, longitude}]}
+- Frontend expects map-backend running on port 5200 via app configuration (app_config.dart)
+- Shared backend services (auth) imported from `backend/shared`

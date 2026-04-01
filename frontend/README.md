@@ -2,6 +2,11 @@
 
 Flutter frontend for the Syntrak fitness tracking application.
 
+## Technical Documentation
+
+- `docs/technical_guide.md` - Comprehensive architecture, code structure, operations, and troubleshooting guide
+- `docs/README.md` - Frontend docs index
+
 ## Features
 
 - User authentication (login/register)
@@ -82,4 +87,11 @@ flutter run -t lib/main_dev.dart
 - **geolocator** - GPS location tracking
 - **google_maps_flutter** - Map visualization
 - **permission_handler** - Location permissions
+
+## Documentation Index
+
+- `docs/technical_guide.md`
+- `docs/map.md`
+- `docs/architecture_map_service.md`
+- `docs/testing.md`
 

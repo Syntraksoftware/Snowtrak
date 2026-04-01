@@ -2,6 +2,11 @@
 
 A standalone FastAPI backend for the community feature (Reddit-like functionality).
 
+## Technical Documentation
+
+- `doc/tech.md` - Community backend architecture, contracts, development, operations, and troubleshooting
+- `../docs/technical_guide.md` - Platform-level backend technical guide
+
 ## Overview
 
 This is a separate FastAPI-based microservice handling all community operations:
