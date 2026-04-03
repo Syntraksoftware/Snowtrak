@@ -1,9 +1,9 @@
 """Configuration for Map Backend (FastAPI)."""
 
 from functools import lru_cache
-from typing import List
+from typing import Literal
 
-from pydantic import computed_field
+from pydantic import computed_field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -12,14 +12,23 @@ class Config(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    SUPABASE_URL: str
-    SUPABASE_SERVICE_ROLE_KEY: str
+    MAP_STORAGE_BACKEND: Literal["supabase", "postgis"] = "supabase"
+
+    SUPABASE_URL: str | None = None
+    SUPABASE_SERVICE_ROLE_KEY: str | None = None
+
+    POSTGIS_DSN: str | None = None
+    POSTGIS_HOST: str = "postgis"
+    POSTGIS_PORT: int = 5432
+    POSTGIS_DB: str = "syntrak"
+    POSTGIS_USER: str = "syntrak"
+    POSTGIS_PASSWORD: str = "syntrak_local_dev"
     JWT_SECRET: str
     JWT_ALGORITHM: str = "HS256"
     FASTAPI_ENV: str = "development"
     PORT: int = 5200
     HOST: str = "127.0.0.1"
-    CORS_ORIGINS: List[str] = [
+    CORS_ORIGINS: list[str] = [
         "http://localhost:3000",
         "http://localhost:8080",
         "http://localhost:5173",
@@ -35,8 +44,31 @@ class Config(BaseSettings):
 
     @computed_field
     @property
+    def postgis_dsn(self) -> str:
+        # Build DSN from individual fields when POSTGIS_DSN is not set.
+        if self.POSTGIS_DSN:
+            return self.POSTGIS_DSN
+        return (
+            f"postgresql://{self.POSTGIS_USER}:{self.POSTGIS_PASSWORD}"
+            f"@{self.POSTGIS_HOST}:{self.POSTGIS_PORT}/{self.POSTGIS_DB}"
+        )
+
+    @computed_field
+    @property
     def DEBUG(self) -> bool:
         return self.FASTAPI_ENV == "development"
+
+    @model_validator(mode="after")
+    def validate_storage_backend_requirements(self):
+        if (
+            self.MAP_STORAGE_BACKEND == "supabase"
+            and (not self.SUPABASE_URL or not self.SUPABASE_SERVICE_ROLE_KEY)
+        ):
+            raise ValueError(
+                "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required when "
+                "MAP_STORAGE_BACKEND=supabase"
+            )
+        return self
 
 
 @lru_cache(maxsize=1)

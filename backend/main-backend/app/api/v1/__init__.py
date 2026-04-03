@@ -1,8 +1,10 @@
 """
 API v1 router aggregation.
 """
+
 from fastapi import APIRouter
-from app.api.v1 import auth, users, notifications
+
+from app.api.v1 import auth, notifications, users
 
 api_router = APIRouter(prefix="/api/v1")
 

@@ -1,4 +1,5 @@
 """Maps router aggregator."""
+
 from fastapi import APIRouter
 
 from routes.maps_dynamic_routes import router as maps_dynamic_router

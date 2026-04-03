@@ -16,13 +16,13 @@ Database Tables:
 
 from __future__ import annotations
 
+from .activities import ActivityOperations
 from .base import SupabaseBase
-from .users import UserOperations
+from .comments import CommentOperations
+from .posts import PostOperations
 from .profiles import ProfileOperations
 from .subthreads import SubthreadOperations
-from .posts import PostOperations
-from .comments import CommentOperations
-from .activities import ActivityOperations
+from .users import UserOperations
 
 
 class SupabaseClient(
@@ -35,7 +35,7 @@ class SupabaseClient(
 ):
     """
     Unified Supabase client combining all operations.
-    
+
     Uses multiple inheritance (mixin pattern) to combine:
     - UserOperations: user_info table CRUD
     - ProfileOperations: profiles table CRUD
@@ -43,9 +43,10 @@ class SupabaseClient(
     - PostOperations: posts table CRUD
     - CommentOperations: comments table CRUD
     - ActivityOperations: activities table CRUD
-    
+
     All classes inherit from SupabaseBase which handles connection management.
     """
+
     pass
 
 

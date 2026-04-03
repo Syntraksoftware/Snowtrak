@@ -113,13 +113,15 @@ Environment variables (set via `.env` or deployment config):
 
 2. **Install and run:**
    ```bash
-   cd backend/activity-backend
-   python -m venv venv
-   source venv/bin/activate  # Windows: venv\Scripts\activate
-   pip install -r requirements.txt
+  # From repository root
+  python3.11 -m venv .venv
+  ./.venv/bin/pip install -r backend/requirements.txt
+
+  cd backend/activity-backend
+  ../../.venv/bin/python -m pip install -r requirements.txt
    cp .env.example .env
    # Edit .env: set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, JWT_SECRET
-   python main.py
+  ../../.venv/bin/python main.py
    ```
 
 ### Testing strategy

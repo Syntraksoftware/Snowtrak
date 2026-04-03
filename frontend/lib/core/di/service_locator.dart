@@ -51,6 +51,12 @@ Future<void> setupServiceLocatorWithEnvironment({
       defaultValue: false,
     ),
   );
+  AppLogger.instance.debug(
+    '[Config] env=${appConfig.environment.name} '
+    'main=${appConfig.mainApiBaseUrl} '
+    'activity=${appConfig.activityApiBaseUrl} '
+    'community=${appConfig.communityApiBaseUrl}',
+  );
 
   final tokenStore = AuthTokenStore();
   sl.registerSingleton<AuthTokenStore>(tokenStore);

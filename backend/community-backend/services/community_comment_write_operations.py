@@ -1,8 +1,9 @@
 """Write-oriented comment Supabase operations for community service."""
-import logging
-from typing import Any, Dict, List, Optional
 
-from services.constants.community_tables import COMMENTS, COMMENT_VOTES
+import logging
+from typing import Any
+
+from services.constants.community_tables import COMMENT_VOTES, COMMENTS
 from services.helpers.engagement_ops import set_vote
 
 logger = logging.getLogger(__name__)
@@ -16,9 +17,9 @@ class CommunityCommentWriteOperations:
         user_id: str,
         post_id: str,
         content: str,
-        parent_id: Optional[str] = None,
-        media_urls: Optional[List[str]] = None,
-    ) -> Optional[Dict[str, Any]]:
+        parent_id: str | None = None,
+        media_urls: list[str] | None = None,
+    ) -> dict[str, Any] | None:
         """Create a new comment."""
         try:
             payload = {
@@ -44,7 +45,7 @@ class CommunityCommentWriteOperations:
         comment_id: str,
         user_id: str,
         content: str,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Update a comment if it belongs to the requesting user."""
         try:
             current_comment = self.get_comment_by_id(comment_id)
@@ -53,7 +54,12 @@ class CommunityCommentWriteOperations:
             if current_comment.get("user_id") != user_id:
                 return None
 
-            response = self._client.table(COMMENTS).update({"content": content}).eq("id", comment_id).execute()
+            response = (
+                self._client.table(COMMENTS)
+                .update({"content": content})
+                .eq("id", comment_id)
+                .execute()
+            )
             response_data = getattr(response, "data", None)
             if isinstance(response_data, list) and response_data:
                 return self.get_comment_by_id(comment_id)
@@ -67,7 +73,7 @@ class CommunityCommentWriteOperations:
         comment_id: str,
         user_id: str,
         vote_type: int,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Set or remove a comment vote for a user."""
         try:
             if vote_type not in (-1, 0, 1):

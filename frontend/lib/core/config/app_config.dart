@@ -39,11 +39,9 @@ class AppConfig {
     final runtimeActivity = prefs.getString(_activityOverrideKey);
     final runtimeCommunity = prefs.getString(_communityOverrideKey);
 
-    final defineMain = const String.fromEnvironment('MAIN_API_BASE_URL');
-    final defineActivity =
-        const String.fromEnvironment('ACTIVITY_API_BASE_URL');
-    final defineCommunity =
-        const String.fromEnvironment('COMMUNITY_API_BASE_URL');
+    const defineMain = String.fromEnvironment('MAIN_API_BASE_URL');
+    const defineActivity = String.fromEnvironment('ACTIVITY_API_BASE_URL');
+    const defineCommunity = String.fromEnvironment('COMMUNITY_API_BASE_URL');
 
     return AppConfig(
       environment: env,
@@ -94,9 +92,9 @@ class AppConfig {
       case AppEnvironment.dev:
         return AppConfig(
           environment: environment,
-          mainApiBaseUrl: 'http://127.0.0.1:8080/api/v1',
-          activityApiBaseUrl: 'http://127.0.0.1:5100/api/v1',
-          communityApiBaseUrl: 'http://127.0.0.1:5001/api/v1',
+          mainApiBaseUrl: 'http://localhost:8080/api/v1',
+          activityApiBaseUrl: 'http://localhost:5100/api/v1',
+          communityApiBaseUrl: 'http://localhost:5001/api/v1',
         );
       case AppEnvironment.staging:
         return AppConfig(

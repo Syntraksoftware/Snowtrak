@@ -1,8 +1,9 @@
 """Write-oriented post Supabase operations for community service."""
-import logging
-from typing import Any, Dict, List, Optional
 
-from services.constants.community_tables import POST_REPOSTS, POSTS, POST_VOTES
+import logging
+from typing import Any
+
+from services.constants.community_tables import POST_REPOSTS, POST_VOTES, POSTS
 from services.helpers.engagement_ops import set_vote
 
 logger = logging.getLogger(__name__)
@@ -17,12 +18,12 @@ class CommunityPostWriteOperations:
         subthread_id: str,
         title: str,
         content: str,
-        quoted_post_id: Optional[str] = None,
-        repost_of_post_id: Optional[str] = None,
-        quoted_comment_id: Optional[str] = None,
-        repost_of_comment_id: Optional[str] = None,
-        media_urls: Optional[List[str]] = None,
-    ) -> Optional[Dict[str, Any]]:
+        quoted_post_id: str | None = None,
+        repost_of_post_id: str | None = None,
+        quoted_comment_id: str | None = None,
+        repost_of_comment_id: str | None = None,
+        media_urls: list[str] | None = None,
+    ) -> dict[str, Any] | None:
         """Create a new post."""
         try:
             if quoted_post_id and not self.get_post_by_id(quoted_post_id):
@@ -34,7 +35,7 @@ class CommunityPostWriteOperations:
             if repost_of_comment_id and not self.get_comment_by_id(repost_of_comment_id):
                 return None
 
-            payload: Dict[str, Any] = {
+            payload: dict[str, Any] = {
                 "user_id": user_id,
                 "subthread_id": subthread_id,
                 "title": title,
@@ -69,9 +70,9 @@ class CommunityPostWriteOperations:
         self,
         post_id: str,
         user_id: str,
-        title: Optional[str] = None,
-        content: Optional[str] = None,
-    ) -> Optional[Dict[str, Any]]:
+        title: str | None = None,
+        content: str | None = None,
+    ) -> dict[str, Any] | None:
         """Update a post when it belongs to the requesting user."""
         try:
             current_post = self.get_post_by_id(post_id)
@@ -80,7 +81,7 @@ class CommunityPostWriteOperations:
             if current_post.get("user_id") != user_id:
                 return None
 
-            update_payload: Dict[str, Any] = {}
+            update_payload: dict[str, Any] = {}
             if title is not None:
                 update_payload["title"] = title
             if content is not None:
@@ -89,7 +90,9 @@ class CommunityPostWriteOperations:
             if not update_payload:
                 return current_post
 
-            response = self._client.table(POSTS).update(update_payload).eq("post_id", post_id).execute()
+            response = (
+                self._client.table(POSTS).update(update_payload).eq("post_id", post_id).execute()
+            )
             response_data = getattr(response, "data", None)
             if isinstance(response_data, list) and response_data:
                 return self.get_post_by_id(post_id)
@@ -103,7 +106,7 @@ class CommunityPostWriteOperations:
         post_id: str,
         user_id: str,
         vote_type: int,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Set or remove a post vote for a user."""
         try:
             if vote_type not in (-1, 0, 1):
@@ -166,7 +169,7 @@ class CommunityPostWriteOperations:
         post_id: str,
         user_id: str,
         reposted: bool,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Create or remove repost marker for a post."""
         try:
             post = self.get_post_by_id(post_id)
@@ -174,10 +177,17 @@ class CommunityPostWriteOperations:
                 return None
 
             if reposted:
-                existing_response = self._client.table(POST_REPOSTS).select("id").eq(
-                    "post_id",
-                    post_id,
-                ).eq("user_id", user_id).limit(1).execute()
+                existing_response = (
+                    self._client.table(POST_REPOSTS)
+                    .select("id")
+                    .eq(
+                        "post_id",
+                        post_id,
+                    )
+                    .eq("user_id", user_id)
+                    .limit(1)
+                    .execute()
+                )
                 existing_data = getattr(existing_response, "data", None)
                 if not (isinstance(existing_data, list) and existing_data):
                     self._client.table(POST_REPOSTS).insert(
@@ -192,10 +202,15 @@ class CommunityPostWriteOperations:
                     user_id,
                 ).execute()
 
-            count_response = self._client.table(POST_REPOSTS).select("id").eq(
-                "post_id",
-                post_id,
-            ).execute()
+            count_response = (
+                self._client.table(POST_REPOSTS)
+                .select("id")
+                .eq(
+                    "post_id",
+                    post_id,
+                )
+                .execute()
+            )
             count_rows = getattr(count_response, "data", None)
             repost_count = len(count_rows) if isinstance(count_rows, list) else 0
 

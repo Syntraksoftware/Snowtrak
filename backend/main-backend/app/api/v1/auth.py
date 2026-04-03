@@ -1,4 +1,5 @@
 """Authentication router aggregator."""
+
 from fastapi import APIRouter
 
 from app.api.v1.auth_login_route import router as auth_login_router

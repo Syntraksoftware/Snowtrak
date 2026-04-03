@@ -101,9 +101,7 @@ class TestPostEndpoints:
         assert response.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
 
     def test_create_post_with_media_urls(self, client):
-        url = (
-            "https://stub.supabase.co/storage/v1/object/public/community-media/u/y.png"
-        )
+        url = "https://stub.supabase.co/storage/v1/object/public/community-media/u/y.png"
         response = client.post(
             "/api/v1/posts",
             json={

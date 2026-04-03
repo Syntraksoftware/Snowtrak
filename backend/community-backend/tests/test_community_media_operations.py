@@ -1,4 +1,5 @@
 """Unit tests for community media upload normalization."""
+
 from services.community_media_operations import normalize_upload_mime_and_extension
 
 

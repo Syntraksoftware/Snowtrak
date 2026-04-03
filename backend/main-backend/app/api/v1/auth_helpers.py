@@ -1,5 +1,6 @@
 """Shared helpers for authentication route modules."""
-from datetime import datetime, timedelta, timezone
+
+from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, status
 
@@ -18,7 +19,7 @@ def build_auth_session(user: User) -> AuthSession:
 
     access_token = create_access_token(token_data)
     refresh_token = create_refresh_token(token_data)
-    expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
+    expires_at = datetime.now(UTC) + timedelta(minutes=settings.access_token_expire_minutes)
 
     return AuthSession(
         access_token=access_token,
@@ -43,7 +44,7 @@ def build_user_from_supabase_record(supabase_user_record: dict, error_context: s
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Invalid user record for {error_context}",
-        )
+        ) from None
 
     is_active = supabase_user_record.get("is_active", True)
     return User(

@@ -1,6 +1,6 @@
 """Static map route handlers."""
+
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
@@ -15,7 +15,7 @@ router = APIRouter()
 @router.post("/static", response_model=StaticMapUrlResponse)
 async def generate_static_map_url(
     request: StaticMapRequest,
-    user_id: Optional[str] = Depends(get_optional_user),
+    user_id: str | None = Depends(get_optional_user),
 ):
     """Generate a URL for a static map image."""
     try:
@@ -49,13 +49,13 @@ async def generate_static_map_url(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate static map: {str(exception)}",
-        )
+        ) from None
 
 
 @router.post("/static/image")
 async def fetch_static_map_image(
     request: StaticMapRequest,
-    user_id: Optional[str] = Depends(get_optional_user),
+    user_id: str | None = Depends(get_optional_user),
 ):
     """Fetch static map image as binary data."""
     try:
@@ -86,17 +86,17 @@ async def fetch_static_map_image(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch static map image: {str(exception)}",
-        )
+        ) from None
 
 
 @router.get("/static/simple")
 async def get_simple_static_map(
     lat: float,
     lng: float,
-    zoom: Optional[int] = 12,
-    width: Optional[int] = 600,
-    height: Optional[int] = 400,
-    user_id: Optional[str] = Depends(get_optional_user),
+    zoom: int | None = 12,
+    width: int | None = 600,
+    height: int | None = 400,
+    user_id: str | None = Depends(get_optional_user),
 ):
     """Simple GET endpoint for static map URL generation."""
     try:
@@ -125,4 +125,4 @@ async def get_simple_static_map(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate static map: {str(exception)}",
-        )
+        ) from None

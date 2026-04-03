@@ -1,10 +1,17 @@
 """Social and interaction routes for activities."""
+
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from middleware.auth import get_current_user
-from models import CommentCreate, CommentResponse, CommentsListResponse, ShareLinkResponse, ToggleKudosResponse
+from models import (
+    CommentCreate,
+    CommentResponse,
+    CommentsListResponse,
+    ShareLinkResponse,
+    ToggleKudosResponse,
+)
 from services.supabase_client import get_activity_client
 
 logger = logging.getLogger(__name__)
@@ -26,7 +33,7 @@ async def toggle_kudos(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None
 
 
 @router.get("/{activity_id}/comments", response_model=CommentsListResponse)
@@ -38,7 +45,9 @@ async def list_comments(
     """Get comments for an activity."""
     activity_client = get_activity_client()
     try:
-        comment_list_response = activity_client.list_comments(activity_id, limit=limit, offset=offset)
+        comment_list_response = activity_client.list_comments(
+            activity_id, limit=limit, offset=offset
+        )
         return CommentsListResponse(
             items=comment_list_response["items"],
             total=comment_list_response["total"],
@@ -48,10 +57,12 @@ async def list_comments(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None
 
 
-@router.post("/{activity_id}/comments", response_model=CommentResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{activity_id}/comments", response_model=CommentResponse, status_code=status.HTTP_201_CREATED
+)
 async def add_comment(
     activity_id: str,
     data: CommentCreate,
@@ -65,7 +76,7 @@ async def add_comment(
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to add comment",
-            )
+            ) from None
         return created_comment
     except HTTPException:
         raise
@@ -74,7 +85,7 @@ async def add_comment(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None
 
 
 @router.post("/{activity_id}/share", response_model=ShareLinkResponse)
@@ -92,4 +103,4 @@ async def create_share_link(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None

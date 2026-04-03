@@ -1,4 +1,5 @@
 """Token refresh endpoint for authentication routes."""
+
 import logging
 
 from fastapi import APIRouter, HTTPException, status
@@ -32,14 +33,14 @@ def refresh_token(request: RefreshTokenRequest) -> AuthSession:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token type",
-            )
+            ) from None
 
         user_identifier = token_data.user_id
         if not user_identifier:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token",
-            )
+            ) from None
 
         if supabase_client.is_configured():
             supabase_user_record = supabase_client.get_user_info_by_id(user_identifier)
@@ -47,13 +48,13 @@ def refresh_token(request: RefreshTokenRequest) -> AuthSession:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="User not found or inactive",
-                )
+                ) from None
 
             if not supabase_user_record.get("is_active", True):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="User not found or inactive",
-                )
+                ) from None
 
             user = build_user_from_supabase_record(
                 supabase_user_record=supabase_user_record,
@@ -66,7 +67,7 @@ def refresh_token(request: RefreshTokenRequest) -> AuthSession:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User not found or inactive",
-            )
+            ) from None
 
         return build_auth_session(user)
 
@@ -75,4 +76,4 @@ def refresh_token(request: RefreshTokenRequest) -> AuthSession:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Invalid refresh token: {str(exception)}",
-        )
+        ) from None

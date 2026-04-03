@@ -1,4 +1,5 @@
 """Avatar upload route for user profiles."""
+
 import logging
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
@@ -22,20 +23,20 @@ async def upload_avatar(
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Database not configured",
-        )
+        ) from None
 
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="File must be an image",
-        )
+        ) from None
 
     file_extension = file.filename.split(".")[-1] if "." in file.filename else "jpg"
     if file_extension not in ["jpg", "jpeg", "png", "gif", "webp"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Unsupported image format. Use jpg, png, gif, or webp",
-        )
+        ) from None
 
     try:
         file_content = await file.read()
@@ -44,7 +45,7 @@ async def upload_avatar(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="File size exceeds 5MB limit",
-            )
+            ) from None
 
         existing_profile = supabase_client.get_profile_by_id(current_user.id)
         old_avatar_url = None
@@ -60,7 +61,7 @@ async def upload_avatar(
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to upload avatar",
-            )
+            ) from None
 
         if old_avatar_url and old_avatar_url != new_avatar_url:
             supabase_client.delete_avatar(current_user.id, old_avatar_url)
@@ -73,7 +74,7 @@ async def upload_avatar(
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to update profile with new avatar",
-            )
+            ) from None
 
         logger.info(f"User {current_user.id} uploaded new avatar")
         return ProfileResponse(**updated_profile)
@@ -85,4 +86,4 @@ async def upload_avatar(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to upload avatar",
-        )
+        ) from None

@@ -47,10 +47,9 @@ Backend is organized as service-oriented FastAPI apps:
 
 ## 4. development and maintenance guidelines
 ### setup instructions
-1. `cd backend`
-2. `python3.11 -m venv .venv`
-3. `./.venv/bin/pip install -r requirements.txt`
-4. `python run.py`
+1. From the repository root: `python3.11 -m venv .venv`
+2. `./.venv/bin/pip install -r backend/requirements.txt`
+3. `cd backend` then `python run.py` (subprocesses use `../.venv/bin/python`; you may use that interpreter directly if you prefer)
 
 ### testing strategy
 - run `pytest` per service.

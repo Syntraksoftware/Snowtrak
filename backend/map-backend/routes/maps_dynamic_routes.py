@@ -1,6 +1,6 @@
 """Dynamic map route handlers."""
+
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse
@@ -16,7 +16,7 @@ router = APIRouter()
 @router.post("/dynamic", response_model=DynamicMapHtmlResponse)
 async def generate_dynamic_map_html(
     request: DynamicMapRequest,
-    user_id: Optional[str] = Depends(get_optional_user),
+    user_id: str | None = Depends(get_optional_user),
 ):
     """Generate an interactive map as HTML."""
     try:
@@ -53,13 +53,13 @@ async def generate_dynamic_map_html(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate dynamic map: {str(exception)}",
-        )
+        ) from None
 
 
 @router.post("/dynamic/html")
 async def serve_dynamic_map_html(
     request: DynamicMapRequest,
-    user_id: Optional[str] = Depends(get_optional_user),
+    user_id: str | None = Depends(get_optional_user),
 ):
     """Serve an interactive map as raw HTML."""
     try:
@@ -88,17 +88,17 @@ async def serve_dynamic_map_html(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate dynamic map: {str(exception)}",
-        )
+        ) from None
 
 
 @router.get("/dynamic/simple")
 async def get_simple_dynamic_map(
     lat: float,
     lng: float,
-    zoom: Optional[int] = 12,
-    width: Optional[int] = 800,
-    height: Optional[int] = 500,
-    user_id: Optional[str] = Depends(get_optional_user),
+    zoom: int | None = 12,
+    width: int | None = 800,
+    height: int | None = 500,
+    user_id: str | None = Depends(get_optional_user),
 ):
     """Simple GET endpoint that returns interactive map HTML."""
     try:
@@ -119,4 +119,4 @@ async def get_simple_dynamic_map(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate dynamic map: {str(exception)}",
-        )
+        ) from None

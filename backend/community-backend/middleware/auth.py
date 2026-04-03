@@ -1,8 +1,10 @@
 """Authentication utilities for JWT verification."""
+
 import logging
 
-from config import get_config
 from shared.auth import build_auth_dependencies
+
+from config import get_config
 
 config = get_config()
 logger = logging.getLogger(__name__)

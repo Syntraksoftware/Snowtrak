@@ -1,37 +1,40 @@
 #!/bin/bash
-# Script to run all backend tests with coverage
+# Run main-backend tests using the shared repo-root virtual environment.
 
 set -e
 
-echo "🧪 Running backend tests..."
+echo "🧪 Running main-backend tests..."
 
-cd "$(dirname "$0")/.."
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+MAIN_BACKEND="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$MAIN_BACKEND/../.." && pwd)"
+VENV_DIR="$REPO_ROOT/.venv"
+ACTIVATE="$VENV_DIR/bin/activate"
 
-# Check if virtual environment exists
-if [ ! -d "venv" ]; then
-    echo "📦 Creating virtual environment..."
-    python3 -m venv venv
+if [ ! -f "$ACTIVATE" ]; then
+  echo "❌ No venv at $VENV_DIR"
+  echo "   From repo root: python3 -m venv .venv && ./.venv/bin/pip install -r backend/requirements.txt"
+  exit 1
 fi
 
-# Activate virtual environment
-echo "🔌 Activating virtual environment..."
-source venv/bin/activate
+cd "$MAIN_BACKEND"
 
-# Upgrade pip first
+echo "🔌 Using $VENV_DIR"
+# shellcheck source=/dev/null
+source "$ACTIVATE"
+
 echo "⬆️  Upgrading pip..."
 pip install --upgrade pip --quiet
 
-# Install dependencies
 echo "📦 Installing dependencies..."
-pip install -q -r requirements.txt -r requirements-test.txt
+pip install -q -r requirements.txt
+if [ -f requirements-test.txt ]; then
+  pip install -q -r requirements-test.txt
+fi
 
-# Run tests with coverage
 echo "🔍 Running tests with coverage..."
 pytest
 
-# Check coverage threshold
 echo "📊 Coverage report generated in htmlcov/index.html"
 echo "🌐 Open with: open htmlcov/index.html"
-
 echo "✅ Tests completed!"
-

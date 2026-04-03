@@ -97,11 +97,13 @@ backend/map-backend/
 ### Configuration
 
 Environment variables (set via `.env` or deployment config):
+- `MAP_STORAGE_BACKEND`: `supabase` (default) or `postgis`
 - `GOOGLE_MAPS_API_KEY`: Google Maps Static API key
 - `OPEN_ELEVATION_API_URL`: Open Elevation API endpoint (default: https://api.open-elevation.com/api/v1/lookup)
 - `JWT_SECRET`: Shared secret for token validation (from deployment config)
 - `HOST`, `PORT`: Server bind address (default: 127.0.0.1:5200)
-- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`: Optional, for caching coordination with Supabase
+- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`: Required when `MAP_STORAGE_BACKEND=supabase`
+- `POSTGIS_DSN` or `POSTGIS_HOST/PORT/DB/USER/PASSWORD`: Used when `MAP_STORAGE_BACKEND=postgis`
 
 ## 4. Development and maintenance guidelines
 
@@ -109,13 +111,15 @@ Environment variables (set via `.env` or deployment config):
 
 1. **Install and run:**
    ```bash
-   cd backend/map-backend
-   python -m venv venv
-   source venv/bin/activate  # Windows: venv\Scripts\activate
-   pip install -r requirements.txt
+  # From repository root
+  python3.11 -m venv .venv
+  ./.venv/bin/pip install -r backend/requirements.txt
+
+  cd backend/map-backend
+  ../../.venv/bin/python -m pip install -r requirements.txt
    cp .env.example .env
    # Edit .env: set GOOGLE_MAPS_API_KEY, OPEN_ELEVATION_API_URL, JWT_SECRET
-   python main.py
+  ../../.venv/bin/python main.py
    ```
 
 2. **Obtain API credentials:**
@@ -165,6 +169,13 @@ docker build -t syntrak-map-backend:latest .
 # Via docker-compose from backend root
 cd backend
 docker-compose up -d syntrak-map-backend
+
+# Run map-backend with local PostGIS storage ownership
+MAP_STORAGE_BACKEND=postgis docker-compose up -d postgis map-backend
+
+# Optional: initialize local map storage tables
+psql "postgresql://syntrak:syntrak_local_dev@localhost:5432/syntrak" \
+  -f map-backend/engine/geometry/001_init_postgis_storage.sql
 ```
 
 Service runs on port 5200 and communicates with Google Maps and Open Elevation API over HTTPS.

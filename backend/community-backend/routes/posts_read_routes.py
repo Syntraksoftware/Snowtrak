@@ -1,14 +1,16 @@
 """Read-oriented post routes."""
+
 import logging
 import os
 import sys
-from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 # Add backend directory to path for shared imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from shared import ListResponse
 
 from middleware.auth import get_optional_user
 from routes.community_models import (
@@ -20,7 +22,6 @@ from routes.community_models import (
 )
 from routes.list_response_builder import build_paginated_list_response
 from services.supabase_client import get_community_client
-from shared import ListResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -28,8 +29,8 @@ router = APIRouter()
 _MAX_COMMENTS_BATCH = 50
 
 
-def _dedupe_post_ids(raw: List[str]) -> List[str]:
-    ordered: List[str] = []
+def _dedupe_post_ids(raw: list[str]) -> list[str]:
+    ordered: list[str] = []
     for item in raw:
         key = (item or "").strip()
         if key and key not in ordered:
@@ -40,7 +41,7 @@ def _dedupe_post_ids(raw: List[str]) -> List[str]:
 @router.post("/comments/batch", response_model=CommentsBatchResponse)
 async def batch_post_comments(
     data: CommentsBatchRequest,
-    current_user: Optional[str] = Depends(get_optional_user),
+    current_user: str | None = Depends(get_optional_user),
 ):
     """
     Load comments for many posts in one round trip (Supabase single `in` filter).
@@ -52,7 +53,7 @@ async def batch_post_comments(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"At most {_MAX_COMMENTS_BATCH} distinct post_ids per batch",
-        )
+        ) from None
 
     community_client = get_community_client()
     try:
@@ -63,10 +64,7 @@ async def batch_post_comments(
         items = [
             PostCommentsBundle(
                 post_id=pid,
-                comments=[
-                    CommunityCommentResponse(**row)
-                    for row in by_post.get(pid, [])
-                ],
+                comments=[CommunityCommentResponse(**row) for row in by_post.get(pid, [])],
             )
             for pid in ordered
         ]
@@ -78,17 +76,17 @@ async def batch_post_comments(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None
 
 
 def list_feed_posts(
     request: Request,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    current_user: Optional[str] = Depends(get_optional_user),
+    current_user: str | None = Depends(get_optional_user),
 ):
     """Global feed: all posts across subthreads, newest first.
-    
+
     NOTE: This function is registered directly in main.py at GET /api/v1/feed
     (not via the posts router) to avoid routing precedence issues with /{post_id}.
     """
@@ -116,7 +114,7 @@ def list_feed_posts(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None
 
 
 @router.get("/{post_id}", response_model=CommunityPostResponse)
@@ -129,7 +127,7 @@ async def get_post(post_id: UUID):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Post not found",
-            )
+            ) from None
 
         return post_record
     except HTTPException:
@@ -139,16 +137,16 @@ async def get_post(post_id: UUID):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None
 
 
 @router.get("/user/{user_id}", response_model=ListResponse)
 async def list_posts_by_user(
     request: Request,
     user_id: str,
-    limit: int = Query(20, ge=1, le=100), # le: max limit allowed 
+    limit: int = Query(20, ge=1, le=100),  # le: max limit allowed
     offset: int = Query(0, ge=0),
-    current_user: Optional[str] = Depends(get_optional_user),
+    current_user: str | None = Depends(get_optional_user),
 ):
     """List posts by user identifier."""
     community_client = get_community_client()
@@ -176,14 +174,14 @@ async def list_posts_by_user(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None
 
 
 @router.get("/{post_id}/comments", response_model=ListResponse)
 async def list_post_comments(
     request: Request,
     post_id: UUID,
-    current_user: Optional[str] = Depends(get_optional_user),
+    current_user: str | None = Depends(get_optional_user),
 ):
     """List comments for a post."""
     community_client = get_community_client()
@@ -194,7 +192,7 @@ async def list_post_comments(
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Post not found",
-            )
+            ) from None
 
         comment_records = community_client.list_comments_by_post(
             pid,
@@ -202,8 +200,7 @@ async def list_post_comments(
         )
         total_records = community_client.count_comments_by_post(pid)
         comment_items = [
-            CommunityCommentResponse(**comment_record)
-            for comment_record in comment_records
+            CommunityCommentResponse(**comment_record) for comment_record in comment_records
         ]
 
         return build_paginated_list_response(
@@ -220,7 +217,7 @@ async def list_post_comments(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None
 
 
 @router.get("/{post_id}/conversation", response_model=ListResponse)

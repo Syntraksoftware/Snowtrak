@@ -218,7 +218,7 @@ curl -X POST http://127.0.0.1:8080/api/v1/notifications/test \
 ### Common errors
 
 **Connection refused (127.0.0.1:8080)**:
-- main-backend not running: `cd backend/main-backend && source venv/bin/activate && python run.py`
+- main-backend not running: `cd backend/main-backend && ../../.venv/bin/python run.py`
 - Wrong URL for physical device: Update script to use Mac's IP address (e.g., `http://192.168.1.X:8080`)
 - Port 8080 in use: Check with `lsof -i :8080` and kill conflicting process
 

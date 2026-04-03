@@ -1,25 +1,23 @@
 """Shared helpers for standardized paginated list responses."""
-from typing import List
 
 from fastapi import Request
-
 from shared import ListMeta, ListResponse, PaginationMeta, get_request_id
 
 
 def build_paginated_list_response(
     request: Request,
-    items: List,
+    items: list,
     limit: int,
     offset: int,
     total: int,
 ) -> ListResponse:
     """
     Build a standardized list response with pagination metadata.
-    Demo: 
+    Demo:
     {
         request_id: "abc123",
         pagination: {
-            limit: 20,  
+            limit: 20,
             offset: 0,
             total: 100,
             next_cursor: null, ->  identifier for the next page, offset based pagination

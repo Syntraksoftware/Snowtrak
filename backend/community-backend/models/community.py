@@ -4,48 +4,49 @@ Community data models.
 These classes represent the core entities in the community feature.
 They mirror the Supabase schema and are used for type safety and validation.
 """
-from typing import Optional
+
 from datetime import datetime
-from uuid import UUID
 
 
 class Subthread:
     """
     Represents a community subthread (similar to a subreddit).
-    
+
     Attributes:
         id: UUID primary key
         name: Unique name/slug for the subthread
         description: Optional description of the subthread
         created_at: Timestamp when subthread was created
     """
-    
+
     def __init__(
         self,
         name: str,
-        description: Optional[str] = None,
-        id: Optional[str] = None,
-        created_at: Optional[datetime] = None,
+        description: str | None = None,
+        id: str | None = None,
+        created_at: datetime | None = None,
     ):
         self.id = id
         self.name = name
         self.description = description
         self.created_at = created_at or datetime.utcnow()
-    
+
     def to_dict(self):
         """Convert to dictionary for API responses."""
         return {
             "id": self.id,
             "name": self.name,
             "description": self.description,
-            "created_at": self.created_at.isoformat() if isinstance(self.created_at, datetime) else self.created_at,
+            "created_at": self.created_at.isoformat()
+            if isinstance(self.created_at, datetime)
+            else self.created_at,
         }
 
 
 class Post:
     """
     Represents a community post.
-    
+
     Attributes:
         post_id: UUID primary key
         user_id: UUID foreign key to user_info table
@@ -54,15 +55,15 @@ class Post:
         content: Post body/content
         created_at: Timestamp when post was created
     """
-    
+
     def __init__(
         self,
         user_id: str,
         subthread_id: str,
         title: str,
         content: str,
-        post_id: Optional[str] = None,
-        created_at: Optional[datetime] = None,
+        post_id: str | None = None,
+        created_at: datetime | None = None,
     ):
         self.post_id = post_id
         self.user_id = user_id
@@ -70,7 +71,7 @@ class Post:
         self.title = title
         self.content = content
         self.created_at = created_at or datetime.utcnow()
-    
+
     def to_dict(self):
         """Convert to dictionary for API responses."""
         return {
@@ -79,14 +80,16 @@ class Post:
             "subthread_id": self.subthread_id,
             "title": self.title,
             "content": self.content,
-            "created_at": self.created_at.isoformat() if isinstance(self.created_at, datetime) else self.created_at,
+            "created_at": self.created_at.isoformat()
+            if isinstance(self.created_at, datetime)
+            else self.created_at,
         }
 
 
 class Comment:
     """
     Represents a comment on a post (supports nested comments).
-    
+
     Attributes:
         id: UUID primary key
         user_id: UUID foreign key to user_info table
@@ -96,15 +99,15 @@ class Comment:
         content: Comment text
         created_at: Timestamp when comment was created
     """
-    
+
     def __init__(
         self,
         user_id: str,
         post_id: str,
         content: str,
-        parent_id: Optional[str] = None,
-        id: Optional[str] = None,
-        created_at: Optional[datetime] = None,
+        parent_id: str | None = None,
+        id: str | None = None,
+        created_at: datetime | None = None,
     ):
         self.id = id
         self.user_id = user_id
@@ -113,7 +116,7 @@ class Comment:
         self.has_parent = parent_id is not None
         self.content = content
         self.created_at = created_at or datetime.utcnow()
-    
+
     def to_dict(self):
         """Convert to dictionary for API responses."""
         return {
@@ -123,5 +126,7 @@ class Comment:
             "parent_id": self.parent_id,
             "has_parent": self.has_parent,
             "content": self.content,
-            "created_at": self.created_at.isoformat() if isinstance(self.created_at, datetime) else self.created_at,
+            "created_at": self.created_at.isoformat()
+            if isinstance(self.created_at, datetime)
+            else self.created_at,
         }

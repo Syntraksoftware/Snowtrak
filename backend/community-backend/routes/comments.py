@@ -1,4 +1,5 @@
 """Comment routes."""
+
 import logging
 import os
 import sys
@@ -41,7 +42,7 @@ async def create_comment(
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Post not found",
-            )
+            ) from None
 
         if data.parent_id:
             raise HTTPException(
@@ -50,7 +51,7 @@ async def create_comment(
                     "Nested comment threads are disabled. "
                     "Post a top-level comment and mention users with @username."
                 ),
-            )
+            ) from None
 
         media_urls = normalize_media_urls(data.media_urls)
         body = (data.content or "").strip()
@@ -71,7 +72,7 @@ async def create_comment(
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to create comment",
-            )
+            ) from None
 
         return created_comment
     except HTTPException:
@@ -81,7 +82,7 @@ async def create_comment(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None
 
 
 @router.get("/{comment_id}", response_model=CommunityCommentResponse)
@@ -94,7 +95,7 @@ async def get_comment(comment_id: str):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Comment not found",
-            )
+            ) from None
 
         return comment_record
     except HTTPException:
@@ -104,7 +105,7 @@ async def get_comment(comment_id: str):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None
 
 
 @router.patch("/{comment_id}", response_model=CommunityCommentResponse)
@@ -125,7 +126,7 @@ async def update_comment(
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Comment not found or unauthorized",
-            )
+            ) from None
 
         return updated_comment
     except HTTPException:
@@ -135,7 +136,7 @@ async def update_comment(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None
 
 
 @router.post("/{comment_id}/vote", response_model=CommentVoteResponse)
@@ -158,7 +159,7 @@ async def vote_comment(
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Comment not found or vote operation failed",
-            )
+            ) from None
 
         return vote_result
     except HTTPException:
@@ -168,7 +169,7 @@ async def vote_comment(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None
 
 
 @router.delete("/{comment_id}", response_model=CommunityDeleteCommentResponse)
@@ -184,7 +185,7 @@ async def delete_comment(
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Comment not found or unauthorized",
-            )
+            ) from None
 
         return CommunityDeleteCommentResponse(
             message="Comment and nested replies deleted successfully",
@@ -197,4 +198,4 @@ async def delete_comment(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None

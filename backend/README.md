@@ -21,7 +21,7 @@ This approach:
 
 - Uses configuration from `config.py` (settings, PORT, HOST, DEBUG)
 - Loads environment variables from `.env` file
-- Works with the shared Python virtual environment at `/backend/.venv`
+- Works with the shared Python virtual environment at the **repository root** (`.venv/`)
 - Provides consistent behavior across all services
 
 ### Start All Services (1 Terminal, 1 Command)
@@ -59,7 +59,7 @@ You can also navigate to a service directory and run it directly:
 cd backend/main-backend
 python run.py
 
-# Or with the shared venv explicitly:
+# Or with the shared venv explicitly (repo root .venv):
 ../../.venv/bin/python run.py
 ```
 
@@ -142,10 +142,10 @@ curl http://127.0.0.1:5200/health
 
 ### Shared Virtual Environment
 
-All services use a shared Python environment located at `/backend/.venv`:
+All services use a shared Python environment at the **repository root**: `.venv/`
 
 ```bash
-# View Python version
+# From repository root — view Python version
 ./.venv/bin/python --version
 
 # View installed packages
@@ -158,9 +158,9 @@ All services use a shared Python environment located at `/backend/.venv`:
 ### Creating the Environment (if needed)
 
 ```bash
-cd /backend
+# From repository root (parent of backend/)
 python3.11 -m venv .venv
-./.venv/bin/pip install -r requirements.txt
+./.venv/bin/pip install -r backend/requirements.txt
 ```
 
 ## Service Documentation

@@ -38,3 +38,7 @@ pillow>=10.0.0
 
 # Testing
 pytest>=8.3.0
+
+# Dev tooling (see pyproject.toml for Ruff / mypy settings)
+ruff>=0.8.0
+mypy>=1.13.0

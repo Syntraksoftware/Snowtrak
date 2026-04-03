@@ -1,12 +1,11 @@
 """Base Supabase client with connection management."""
+
 from __future__ import annotations
 
-from typing import Optional
 import logging
 
-from supabase import create_client, Client
-
 from app.core.config import settings
+from supabase import Client, create_client
 
 logger = logging.getLogger(__name__)
 
@@ -14,17 +13,17 @@ logger = logging.getLogger(__name__)
 class SupabaseBase:
     """
     Base wrapper around Supabase Python SDK.
-    
+
     Handles connection initialization and configuration checking.
     """
 
-    def __init__(self, url: Optional[str] = None, service_key: Optional[str] = None) -> None:
+    def __init__(self, url: str | None = None, service_key: str | None = None) -> None:
         # Access settings attributes defensively to satisfy type checkers
         cfg_url = getattr(settings, "supabase_url", None)
         cfg_key = getattr(settings, "supabase_service_role_key", None)
         self._url = url or cfg_url
         self._key = service_key or cfg_key
-        self._client: Optional[Client] = None
+        self._client: Client | None = None
 
         if self._url and self._key:
             try:
@@ -46,6 +45,6 @@ class SupabaseBase:
         return self._client is not None
 
     @property
-    def client(self) -> Optional[Client]:
+    def client(self) -> Client | None:
         """Get the underlying Supabase client."""
         return self._client

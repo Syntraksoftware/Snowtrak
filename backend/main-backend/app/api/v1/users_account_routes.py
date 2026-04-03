@@ -1,4 +1,5 @@
 """Account-level user routes."""
+
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -40,7 +41,7 @@ def update_current_user_profile(
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="Failed to update user profile",
-                )
+                ) from None
 
             if user_update.first_name is not None:
                 current_user.first_name = user_update.first_name
@@ -55,7 +56,7 @@ def update_current_user_profile(
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to update user profile",
-            )
+            ) from None
     else:
         if user_update.first_name is not None:
             current_user.first_name = user_update.first_name

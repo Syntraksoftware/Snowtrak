@@ -1,4 +1,5 @@
 """Register endpoint for authentication routes."""
+
 import logging
 
 from fastapi import APIRouter, HTTPException, status
@@ -24,20 +25,20 @@ router = APIRouter()
 )
 def register(user_data: UserCreate) -> AuthSession:
     """Register a new user account."""
-    normalized_email = user_data.email.strip().lower() 
+    normalized_email = user_data.email.strip().lower()
 
     if supabase_client.is_configured():
         if supabase_client.email_exists(normalized_email):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="An account with this email already exists",
-            )
+            ) from None
     else:
-        if user_store.exists_by_email(normalized_email): 
+        if user_store.exists_by_email(normalized_email):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="An account with this email already exists",
-            )
+            ) from None
 
     hashed_password = hash_password(user_data.password)
     user = User(
@@ -62,7 +63,7 @@ def register(user_data: UserCreate) -> AuthSession:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="Failed to register user. Please try again later.",
-                )
+                ) from None
             logger.info(f"User {user.email} registered successfully in Supabase")
         except HTTPException:
             raise
@@ -71,7 +72,7 @@ def register(user_data: UserCreate) -> AuthSession:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Registration failed. Please try again later.",
-            )
+            ) from None
     else:
         user_store.create(user)
         logger.warning("Supabase not configured; user stored locally only")

@@ -22,24 +22,24 @@ tests/
 **Important**: Python packages must be installed in a virtual environment (not system-wide).
 
 ```bash
-cd backend
+cd /path/to/syntrak-application
 
-# Create virtual environment (if it doesn't exist)
-python3 -m venv venv
+# Create shared virtual environment at repo root (if it doesn't exist)
+python3.11 -m venv .venv
 
-# Activate virtual environment
-source venv/bin/activate  # macOS/Linux
-# or
-# venv\Scripts\activate  # Windows
+# Install runtime + test dependencies
+./.venv/bin/pip install -r backend/requirements.txt
+./.venv/bin/pip install -r backend/main-backend/requirements-test.txt
 
-# Install test dependencies
-pip install -r requirements.txt -r requirements-test.txt
+# Optional activation
+source .venv/bin/activate  # macOS/Linux
+# .venv\Scripts\activate  # Windows
 ```
 
 ### Quick Start (Using Test Script)
 
 ```bash
-cd backend
+cd backend/main-backend
 ./tests/run_tests.sh
 ```
 

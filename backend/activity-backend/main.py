@@ -8,10 +8,11 @@ DO NOT run this file directly.
 Activity Backend - FastAPI Application
 Minimal service for skiing activity records.
 """
+
 import logging
-from contextlib import asynccontextmanager
-import sys
 import os
+import sys
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,9 +20,11 @@ from fastapi.middleware.cors import CORSMiddleware
 # Add backend directory to path for shared imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from config import get_config
-from services.supabase_client import initialize_activity_client
 from shared import add_request_id_middleware, setup_exception_handlers
+
+from config import get_config
+from routes.activities import router as activities_router
+from services.supabase_client import initialize_activity_client
 
 # Configure logging
 logging.basicConfig(
@@ -38,6 +41,7 @@ def _log_owned_domains_banner() -> None:
     logger.info("SERVICE OWNERSHIP: activity-backend")
     logger.info("domains: activities")
     logger.info("routes: /api/v1/activities")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -77,8 +81,6 @@ app.add_middleware(
 )
 
 # Routers
-from routes.activities import router as activities_router
-
 app.include_router(activities_router)
 
 

@@ -3,9 +3,9 @@ from fastapi.testclient import TestClient
 
 import main as community_main
 from middleware.auth import get_current_user, get_optional_user
-from routes import subthreads as subthreads_routes
 from routes import comments as comments_routes
 from routes import media_routes, posts_read_routes, posts_write_routes
+from routes import subthreads as subthreads_routes
 from services.community_media_operations import (
     CommunityMediaUploadResult,
     normalize_upload_mime_and_extension,
@@ -16,9 +16,7 @@ _MEDIA_MAX = 50 * 1024 * 1024
 
 # Matches test_community_api STUB_POST_ID (UUID path params avoid /posts/feed collision).
 STUB_POST_ID = "11111111-1111-1111-1111-111111111111"
-STUB_MEDIA_URL = (
-    "https://stub.supabase.co/storage/v1/object/public/community-media/user-1/x.png"
-)
+STUB_MEDIA_URL = "https://stub.supabase.co/storage/v1/object/public/community-media/user-1/x.png"
 
 
 class StubCommunityClient:
@@ -161,7 +159,10 @@ class StubCommunityClient:
         return [dict(self.comment)]
 
     def list_comments_by_post_ids(self, post_ids, current_user_id=None):
-        return {pid: self.list_comments_by_post(pid, current_user_id=current_user_id) for pid in post_ids}
+        return {
+            pid: self.list_comments_by_post(pid, current_user_id=current_user_id)
+            for pid in post_ids
+        }
 
     def count_comments_by_post(self, post_id):
         return 1 if post_id == STUB_POST_ID else 0

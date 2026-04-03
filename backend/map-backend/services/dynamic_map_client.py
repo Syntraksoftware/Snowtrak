@@ -1,7 +1,7 @@
 """Service for generating dynamic (interactive) map HTML using Google Maps JS API."""
+
 import json
 import logging
-from typing import Optional, List, Tuple
 
 from config import get_config
 
@@ -21,14 +21,14 @@ class DynamicMapClient:
         self,
         center_lat: float,
         center_lng: float,
-        zoom: Optional[int] = None,
-        width: Optional[int] = None,
-        height: Optional[int] = None,
-        path: Optional[List[Tuple[float, float]]] = None,
-        markers: Optional[List[Tuple[float, float]]] = None,
-        map_id: Optional[str] = None,
-        language: Optional[str] = None,
-        region: Optional[str] = None,
+        zoom: int | None = None,
+        width: int | None = None,
+        height: int | None = None,
+        path: list[tuple[float, float]] | None = None,
+        markers: list[tuple[float, float]] | None = None,
+        map_id: str | None = None,
+        language: str | None = None,
+        region: str | None = None,
     ) -> str:
         """
         Generate an interactive Google Maps HTML document.
@@ -41,12 +41,8 @@ class DynamicMapClient:
         markers = markers or []
         path = path or []
 
-        markers_json = json.dumps([
-            {"lat": lat, "lng": lng} for lat, lng in markers
-        ])
-        path_json = json.dumps([
-            {"lat": lat, "lng": lng} for lat, lng in path
-        ])
+        markers_json = json.dumps([{"lat": lat, "lng": lng} for lat, lng in markers])
+        path_json = json.dumps([{"lat": lat, "lng": lng} for lat, lng in path])
 
         query_params = {
             "key": self.api_key,
@@ -114,7 +110,7 @@ class DynamicMapClient:
         return html
 
 
-_dynamic_map_client: Optional[DynamicMapClient] = None
+_dynamic_map_client: DynamicMapClient | None = None
 
 
 def get_dynamic_map_client() -> DynamicMapClient:

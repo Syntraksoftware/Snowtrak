@@ -2,20 +2,21 @@
 In-memory user storage (fallback when Supabase not configured).
 For development/demo only - data lost on restart.
 """
-from typing import Dict, Optional
-from datetime import datetime, timezone
+
 import uuid
+from datetime import UTC, datetime
 
 
 class User:
     """Simple user data class."""
+
     def __init__(
         self,
         email: str,
         hashed_password: str,
-        first_name: Optional[str] = None,
-        last_name: Optional[str] = None,
-        id: Optional[str] = None,
+        first_name: str | None = None,
+        last_name: str | None = None,
+        id: str | None = None,
         is_active: bool = True,
     ):
         # Use provided id or generate a real UUID for Supabase compatibility
@@ -25,32 +26,32 @@ class User:
         self.first_name = first_name
         self.last_name = last_name
         self.is_active = is_active
-        self.created_at = datetime.now(timezone.utc)
-        self.last_login_at: Optional[datetime] = None
+        self.created_at = datetime.now(UTC)
+        self.last_login_at: datetime | None = None
 
 
 class UserStore:
     """In-memory user storage."""
-    
+
     def __init__(self):
-        self._users: Dict[str, User] = {}  # id -> User
-        self._email_index: Dict[str, str] = {}  # email -> id
-    
-    def get_by_id(self, user_id: str) -> Optional[User]:
+        self._users: dict[str, User] = {}  # id -> User
+        self._email_index: dict[str, str] = {}  # email -> id
+
+    def get_by_id(self, user_id: str) -> User | None:
         """Get user by ID."""
         return self._users.get(user_id)
-    
-    def get_by_email(self, email: str) -> Optional[User]:
+
+    def get_by_email(self, email: str) -> User | None:
         """Get user by email."""
         user_id = self._email_index.get(email.lower())
         return self._users.get(user_id) if user_id else None
-    
+
     def create(self, user: User) -> User:
         """Create new user."""
         self._users[user.id] = user
         self._email_index[user.email.lower()] = user.id
         return user
-    
+
     def exists_by_email(self, email: str) -> bool:
         """Check if email is already registered."""
         return email.lower() in self._email_index
@@ -60,27 +61,29 @@ class UserStore:
 user_store = UserStore()
 
 
-class Activity: 
+class Activity:
     """
-    Activity data class for in memory storage: 
+    Activity data class for in memory storage:
     """
-    
-    def __init__(self,
+
+    def __init__(
+        self,
         user_id: str,
         type: str,
         distance: float,
         duration: int,
         start_time: datetime,
         end_time: datetime,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
+        name: str | None = None,
+        description: str | None = None,
         elevation_gain: float = 0,
         average_pace: float = 0,
         max_pace: float = 0,
-        calories: Optional[int] = None,
+        calories: int | None = None,
         is_public: bool = True,
-        id: Optional[str] = None,
-        locations: Optional[list] = None,) -> None:
+        id: str | None = None,
+        locations: list | None = None,
+    ) -> None:
         self.id = id or str(uuid.uuid4())
         self.user_id = user_id
         self.type = type
@@ -95,32 +98,31 @@ class Activity:
         self.max_pace = max_pace
         self.calories = calories
         self.is_public = is_public
-        self.created_at = datetime.now(timezone.utc)
+        self.created_at = datetime.now(UTC)
         self.locations = locations or []
-        
-        
+
+
 class ActivityStore:
     """In-memory activity storage."""
-    
+
     def __init__(self):
-        self._activities: Dict[str, Activity] = {}  # id -> Activity
-        self._user_index: Dict[str, str] = {}  # user_id -> id
-        
-    def get_by_id(self, activity_id: str) -> Optional[Activity]:
+        self._activities: dict[str, Activity] = {}  # id -> Activity
+        self._user_index: dict[str, str] = {}  # user_id -> id
+
+    def get_by_id(self, activity_id: str) -> Activity | None:
         """Get activity by ID."""
         return self._activities.get(activity_id)
-        
-    def get_by_user_id(self, user_id:str, limit: int = 20, offset: int = 0) -> list[Activity]: 
-        # offset is the starting index for pagination 
+
+    def get_by_user_id(self, user_id: str, limit: int = 20, offset: int = 0) -> list[Activity]:
+        # offset is the starting index for pagination
         """Get activites for a user, newest first"""
         activity_ids = self._user_index.get(user_id, [])
-        # sort by created_at descending 
+        # sort by created_at descending
         activities = [self._activities[id] for id in activity_ids]
-        activities.sort(key = lambda a: a.created_at, reverse = True)
+        activities.sort(key=lambda a: a.created_at, reverse=True)
         # get the last limit activities
-        return activities[offset:offset + limit] # return a list of activities
-    
-        
+        return activities[offset : offset + limit]  # return a list of activities
+
     def create(self, activity: Activity) -> Activity:
         """Create new activity."""
         self._activities[activity.id] = activity
@@ -129,8 +131,8 @@ class ActivityStore:
             self._user_index[activity.user_id] = []
         self._user_index[activity.user_id].append(activity.id)
         return activity
-    
-    def update(self, activity_id: str, **kwargs) -> Optional[Activity]:
+
+    def update(self, activity_id: str, **kwargs) -> Activity | None:
         """Update activity fields."""
         activity = self._activities.get(activity_id)
         if activity:
@@ -138,7 +140,7 @@ class ActivityStore:
                 if hasattr(activity, key) and value is not None:
                     setattr(activity, key, value)
         return activity
-    
+
     def delete(self, activity_id: str) -> bool:
         """Delete activity."""
         # Attempt to remove the activity from the _activities dictionary.
@@ -154,7 +156,7 @@ class ActivityStore:
             # Indicate successful deletion.
             return True
         return False
-    
+
+
 activity_store = ActivityStore()
 # global instance of the activity store, used to store and manage activities in memory
- 

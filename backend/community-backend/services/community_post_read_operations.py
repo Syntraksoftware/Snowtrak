@@ -1,7 +1,8 @@
 """Read-oriented post Supabase operations for community service."""
+
 import logging
 from collections import defaultdict
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from services.mappers.community_row_mappers import flatten_user_info
 
@@ -13,9 +14,9 @@ class CommunityPostReadOperations:
 
     def _attach_engagement_fields(
         self,
-        posts: List[Dict[str, Any]],
-        current_user_id: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        posts: list[dict[str, Any]],
+        current_user_id: str | None = None,
+    ) -> list[dict[str, Any]]:
         """Hydrate feed payload with like/repost counts and current-user flags."""
         if not posts:
             return posts
@@ -25,15 +26,18 @@ class CommunityPostReadOperations:
         if not post_ids:
             return posts
 
-        like_counts: Dict[str, int] = defaultdict(int)
-        liked_by_current_user: Dict[str, bool] = defaultdict(bool)
-        repost_counts: Dict[str, int] = defaultdict(int)
-        reposted_by_current_user: Dict[str, bool] = defaultdict(bool)
+        like_counts: dict[str, int] = defaultdict(int)
+        liked_by_current_user: dict[str, bool] = defaultdict(bool)
+        repost_counts: dict[str, int] = defaultdict(int)
+        reposted_by_current_user: dict[str, bool] = defaultdict(bool)
 
         try:
-            vote_response = self._client.table("post_votes").select(
-                "post_id, user_id, vote_value"
-            ).in_("post_id", post_ids).execute()
+            vote_response = (
+                self._client.table("post_votes")
+                .select("post_id, user_id, vote_value")
+                .in_("post_id", post_ids)
+                .execute()
+            )
             vote_rows = getattr(vote_response, "data", None)
             if isinstance(vote_rows, list):
                 for row in vote_rows:
@@ -52,9 +56,12 @@ class CommunityPostReadOperations:
             logger.warning("Failed to hydrate post_votes engagement fields: %s", exception)
 
         try:
-            repost_response = self._client.table("post_reposts").select(
-                "post_id, user_id"
-            ).in_("post_id", post_ids).execute()
+            repost_response = (
+                self._client.table("post_reposts")
+                .select("post_id, user_id")
+                .in_("post_id", post_ids)
+                .execute()
+            )
             repost_rows = getattr(repost_response, "data", None)
             if isinstance(repost_rows, list):
                 for row in repost_rows:
@@ -67,11 +74,14 @@ class CommunityPostReadOperations:
         except Exception as exception:
             logger.warning("Failed to hydrate post_reposts engagement fields: %s", exception)
 
-        duplicate_repost_counts: Dict[str, int] = defaultdict(int)
+        duplicate_repost_counts: dict[str, int] = defaultdict(int)
         try:
-            dup_response = self._client.table("posts").select(
-                "repost_of_post_id"
-            ).in_("repost_of_post_id", post_ids).execute()
+            dup_response = (
+                self._client.table("posts")
+                .select("repost_of_post_id")
+                .in_("repost_of_post_id", post_ids)
+                .execute()
+            )
             dup_rows = getattr(dup_response, "data", None)
             if isinstance(dup_rows, list):
                 for row in dup_rows:
@@ -83,9 +93,13 @@ class CommunityPostReadOperations:
 
         try:
             if current_user_id:
-                dup_user = self._client.table("posts").select(
-                    "repost_of_post_id"
-                ).in_("repost_of_post_id", post_ids).eq("user_id", current_user_id).execute()
+                dup_user = (
+                    self._client.table("posts")
+                    .select("repost_of_post_id")
+                    .in_("repost_of_post_id", post_ids)
+                    .eq("user_id", current_user_id)
+                    .execute()
+                )
                 dup_user_rows = getattr(dup_user, "data", None)
                 if isinstance(dup_user_rows, list):
                     for row in dup_user_rows:
@@ -102,19 +116,17 @@ class CommunityPostReadOperations:
             post["repost_count"] = int(repost_counts.get(post_id, 0)) + int(
                 duplicate_repost_counts.get(post_id, 0)
             )
-            post["reposted_by_current_user"] = bool(
-                reposted_by_current_user.get(post_id, False)
-            )
+            post["reposted_by_current_user"] = bool(reposted_by_current_user.get(post_id, False))
             # Persisted share counts can be wired later; keep key stable for clients.
             post["share_count"] = int(post.get("share_count", 0) or 0)
         return posts
 
-    def _hydrate_quoted_posts(self, posts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _hydrate_quoted_posts(self, posts: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Attach nested quoted_post preview for rows with quoted_post_id."""
         if not posts:
             return posts
 
-        quoted_ids: List[str] = []
+        quoted_ids: list[str] = []
         for post in posts:
             raw = post.get("quoted_post_id")
             if raw is None:
@@ -124,14 +136,19 @@ class CommunityPostReadOperations:
                 quoted_ids.append(key)
 
         unique_ids = list(dict.fromkeys(quoted_ids))
-        by_id: Dict[str, Dict[str, Any]] = {}
+        by_id: dict[str, dict[str, Any]] = {}
 
         if unique_ids:
             try:
-                response = self._client.table("posts").select(
-                    "post_id, user_id, title, content, created_at, "
-                    "user_info!posts_user_id_fkey(email, first_name, last_name)"
-                ).in_("post_id", unique_ids).execute()
+                response = (
+                    self._client.table("posts")
+                    .select(
+                        "post_id, user_id, title, content, created_at, "
+                        "user_info!posts_user_id_fkey(email, first_name, last_name)"
+                    )
+                    .in_("post_id", unique_ids)
+                    .execute()
+                )
                 rows = getattr(response, "data", None)
                 if isinstance(rows, list):
                     for row in rows:
@@ -155,12 +172,12 @@ class CommunityPostReadOperations:
                 post["quoted_post"] = None
         return posts
 
-    def _hydrate_quoted_comments(self, posts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _hydrate_quoted_comments(self, posts: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Attach nested quoted_comment preview for rows with quoted_comment_id."""
         if not posts:
             return posts
 
-        qc_ids: List[str] = []
+        qc_ids: list[str] = []
         for post in posts:
             raw = post.get("quoted_comment_id")
             if raw is None:
@@ -170,14 +187,19 @@ class CommunityPostReadOperations:
                 qc_ids.append(key)
 
         unique_ids = list(dict.fromkeys(qc_ids))
-        by_id: Dict[str, Dict[str, Any]] = {}
+        by_id: dict[str, dict[str, Any]] = {}
 
         if unique_ids:
             try:
-                response = self._client.table("comments").select(
-                    "id, user_id, content, created_at, "
-                    "user_info!comments_user_id_fkey(email, first_name, last_name)"
-                ).in_("id", unique_ids).execute()
+                response = (
+                    self._client.table("comments")
+                    .select(
+                        "id, user_id, content, created_at, "
+                        "user_info!comments_user_id_fkey(email, first_name, last_name)"
+                    )
+                    .in_("id", unique_ids)
+                    .execute()
+                )
                 rows = getattr(response, "data", None)
                 if isinstance(rows, list):
                     for row in rows:
@@ -204,13 +226,17 @@ class CommunityPostReadOperations:
     def get_post_by_id(
         self,
         post_id: str,
-        current_user_id: Optional[str] = None,
-    ) -> Optional[Dict[str, Any]]:
+        current_user_id: str | None = None,
+    ) -> dict[str, Any] | None:
         """Get post by identifier with author information."""
         try:
-            response = self._client.table("posts").select(
-                "*, user_info!posts_user_id_fkey(email, first_name, last_name)"
-            ).eq("post_id", post_id).limit(1).execute()
+            response = (
+                self._client.table("posts")
+                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name)")
+                .eq("post_id", post_id)
+                .limit(1)
+                .execute()
+            )
             response_data = getattr(response, "data", None)
             if isinstance(response_data, list) and response_data:
                 post = response_data[0]
@@ -227,13 +253,18 @@ class CommunityPostReadOperations:
         subthread_id: str,
         limit: int = 20,
         offset: int = 0,
-        current_user_id: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        current_user_id: str | None = None,
+    ) -> list[dict[str, Any]]:
         """List posts in a subthread with author information."""
         try:
-            response = self._client.table("posts").select(
-                "*, user_info!posts_user_id_fkey(email, first_name, last_name)"
-            ).eq("subthread_id", subthread_id).order("created_at", desc=True).range(offset, offset + limit - 1).execute()
+            response = (
+                self._client.table("posts")
+                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name)")
+                .eq("subthread_id", subthread_id)
+                .order("created_at", desc=True)
+                .range(offset, offset + limit - 1)
+                .execute()
+            )
             response_data = getattr(response, "data", None)
             if isinstance(response_data, list):
                 for post in response_data:
@@ -256,13 +287,18 @@ class CommunityPostReadOperations:
         user_id: str,
         limit: int = 20,
         offset: int = 0,
-        current_user_id: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        current_user_id: str | None = None,
+    ) -> list[dict[str, Any]]:
         """List posts authored by a user with author information."""
         try:
-            response = self._client.table("posts").select(
-                "*, user_info!posts_user_id_fkey(email, first_name, last_name)"
-            ).eq("user_id", user_id).order("created_at", desc=True).range(offset, offset + limit - 1).execute()
+            response = (
+                self._client.table("posts")
+                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name)")
+                .eq("user_id", user_id)
+                .order("created_at", desc=True)
+                .range(offset, offset + limit - 1)
+                .execute()
+            )
             response_data = getattr(response, "data", None)
             if isinstance(response_data, list):
                 for post in response_data:
@@ -289,7 +325,12 @@ class CommunityPostReadOperations:
         try:
             from postgrest import CountMethod
 
-            response = self._client.table("posts").select("post_id", count=CountMethod.exact).eq("subthread_id", subthread_id).execute()
+            response = (
+                self._client.table("posts")
+                .select("post_id", count=CountMethod.exact)
+                .eq("subthread_id", subthread_id)
+                .execute()
+            )
             return getattr(response, "count", 0) or 0
         except Exception as exception:
             logger.exception("Failed to count posts for subthread %s: %s", subthread_id, exception)
@@ -299,13 +340,17 @@ class CommunityPostReadOperations:
         self,
         limit: int = 20,
         offset: int = 0,
-        current_user_id: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        current_user_id: str | None = None,
+    ) -> list[dict[str, Any]]:
         """All posts across subthreads, newest first (global feed)."""
         try:
-            response = self._client.table("posts").select(
-                "*, user_info!posts_user_id_fkey(email, first_name, last_name)"
-            ).order("created_at", desc=True).range(offset, offset + limit - 1).execute()
+            response = (
+                self._client.table("posts")
+                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name)")
+                .order("created_at", desc=True)
+                .range(offset, offset + limit - 1)
+                .execute()
+            )
             response_data = getattr(response, "data", None)
             if isinstance(response_data, list):
                 for post in response_data:
@@ -332,7 +377,9 @@ class CommunityPostReadOperations:
         try:
             from postgrest import CountMethod
 
-            response = self._client.table("posts").select("post_id", count=CountMethod.exact).execute()
+            response = (
+                self._client.table("posts").select("post_id", count=CountMethod.exact).execute()
+            )
             return getattr(response, "count", 0) or 0
         except Exception as exception:
             logger.exception("Failed to count all posts: %s", exception)
