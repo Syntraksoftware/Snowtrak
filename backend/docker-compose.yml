@@ -62,3 +62,23 @@ services:
     ports:
       - "5200:5200"
     restart: unless-stopped
+
+  # Optional local Postgres+PostGIS for offline dev. Production geo data lives on Supabase (Postgres + PostGIS).
+  postgis:
+    image: postgis/postgis:16-3.4
+    container_name: syntrak-postgis
+    env_file:
+      - ./postgres.env
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgis_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgis_data:

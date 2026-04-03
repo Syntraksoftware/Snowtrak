@@ -13,6 +13,7 @@ dependencies:
   # State Management
   provider: ^6.1.1
   get_it: ^7.7.0
+  riverpod: ^2.5.0
 
   # Networking
   http: ^1.1.0
@@ -22,9 +23,19 @@ dependencies:
   geolocator: ^10.1.0
   permission_handler: ^11.1.0
 
-  # Maps
+  # Maps & geo
+  # Raster/vector map widgets (MapLibre GL)
+  # 0.25+ needs Dart >=3.5; ^0.20 stays compatible with sdk: '>=3.0.0'
+  maplibre_gl: ^0.20.0
+  # Google Maps integration
   google_maps_flutter: ^2.5.0
+  # Encode/decode polylines for routes on the map
   flutter_polyline_points: ^2.0.0
+  # Lat/lng math (distance, bearing, bounds)
+  latlong2: ^0.9.1
+  # GPS smoothing/filtering: implemented in `lib/services/gps_filter_service.dart` (no pub package).
+
+  # FIT import: pub.dev `fit_parser` is Dart 2 only (sdk <3). Use e.g. `dart_fit_decoder` when you add FIT parsing.
 
   # Storage
   shared_preferences: ^2.2.2
@@ -34,16 +45,22 @@ dependencies:
   image_picker: ^1.0.7
   video_player: ^2.9.2
 
+  # Files
+  file_picker: ^10.0.0
+
   # UI
   cupertino_icons: ^1.0.6
   intl: ^0.20.2
   table_calendar: ^3.1.2
   http_parser: ^4.1.2
+  fl_chart: ^0.65.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
+  freezed: ^2.5.0
+  json_serializable: ^6.9.0
 
 flutter:
   uses-material-design: true
@@ -51,4 +68,3 @@ flutter:
   assets:
     - assets/images/
     - assets/logos/
-
