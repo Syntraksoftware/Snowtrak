@@ -71,7 +71,7 @@ def get_storage_health() -> dict[str, str | bool]:
                 "backend": "postgis",
                 "initialized": bool(_storage_state.get("initialized", False)),
                 "status": "unhealthy",
-                "error": str(exception),
+                "error": "storage_error",
             }
 
     return {
