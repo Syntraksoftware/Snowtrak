@@ -55,10 +55,13 @@ dependencies:
   http_parser: ^4.1.2
   fl_chart: ^0.65.0
 
+  freezed_annotation: ^2.4.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
+  build_runner: ^2.4.13
   freezed: ^2.5.0
   json_serializable: ^6.9.0
 
