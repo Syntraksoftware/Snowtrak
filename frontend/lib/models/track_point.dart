@@ -5,9 +5,9 @@ part 'track_point.freezed.dart';
 
 /// Atomic GPS sample used across recording, map, and analytics pipelines.
 @immutable
-@freezed
+@freezed ///create immutable data classes and union types for different types of track points
 class TrackPoint with _$TrackPoint {
-  const TrackPoint._();
+  const TrackPoint._(); 
 
   const factory TrackPoint({
     required double lat,
@@ -15,16 +15,14 @@ class TrackPoint with _$TrackPoint {
     required double elevationM,
     required DateTime timestamp,
     required double speedKmh,
-    int? heartRate,
-    SegmentType? segmentType, // Optional classification for a point along a ski activity (lift vs descent, etc.).
+    PointSegmentType? segmentType,
   }) = _TrackPoint;
 }
 
-/// Optional classification for a point along a ski activity (lift vs descent, etc.).
-enum SegmentType {
-  //todo: add more segment types 
-  
+/// Per-point hint before Engine 2 produces [Segment]s ([SegmentType]).
+enum PointSegmentType {
   lift,
   run,
   transition,
 }
+

@@ -21,8 +21,7 @@ mixin _$TrackPoint {
   double get elevationM => throw _privateConstructorUsedError;
   DateTime get timestamp => throw _privateConstructorUsedError;
   double get speedKmh => throw _privateConstructorUsedError;
-  int? get heartRate => throw _privateConstructorUsedError;
-  SegmentType? get segmentType => throw _privateConstructorUsedError;
+  PointSegmentType? get segmentType => throw _privateConstructorUsedError;
 
   /// Create a copy of TrackPoint
   /// with the given fields replaced by the non-null parameter values.
@@ -43,8 +42,7 @@ abstract class $TrackPointCopyWith<$Res> {
       double elevationM,
       DateTime timestamp,
       double speedKmh,
-      int? heartRate,
-      SegmentType? segmentType});
+      PointSegmentType? segmentType});
 }
 
 /// @nodoc
@@ -67,7 +65,6 @@ class _$TrackPointCopyWithImpl<$Res, $Val extends TrackPoint>
     Object? elevationM = null,
     Object? timestamp = null,
     Object? speedKmh = null,
-    Object? heartRate = freezed,
     Object? segmentType = freezed,
   }) {
     return _then(_value.copyWith(
@@ -91,14 +88,10 @@ class _$TrackPointCopyWithImpl<$Res, $Val extends TrackPoint>
           ? _value.speedKmh
           : speedKmh // ignore: cast_nullable_to_non_nullable
               as double,
-      heartRate: freezed == heartRate
-          ? _value.heartRate
-          : heartRate // ignore: cast_nullable_to_non_nullable
-              as int?,
       segmentType: freezed == segmentType
           ? _value.segmentType
           : segmentType // ignore: cast_nullable_to_non_nullable
-              as SegmentType?,
+              as PointSegmentType?,
     ) as $Val);
   }
 }
@@ -117,8 +110,7 @@ abstract class _$$TrackPointImplCopyWith<$Res>
       double elevationM,
       DateTime timestamp,
       double speedKmh,
-      int? heartRate,
-      SegmentType? segmentType});
+      PointSegmentType? segmentType});
 }
 
 /// @nodoc
@@ -139,7 +131,6 @@ class __$$TrackPointImplCopyWithImpl<$Res>
     Object? elevationM = null,
     Object? timestamp = null,
     Object? speedKmh = null,
-    Object? heartRate = freezed,
     Object? segmentType = freezed,
   }) {
     return _then(_$TrackPointImpl(
@@ -163,14 +154,10 @@ class __$$TrackPointImplCopyWithImpl<$Res>
           ? _value.speedKmh
           : speedKmh // ignore: cast_nullable_to_non_nullable
               as double,
-      heartRate: freezed == heartRate
-          ? _value.heartRate
-          : heartRate // ignore: cast_nullable_to_non_nullable
-              as int?,
       segmentType: freezed == segmentType
           ? _value.segmentType
           : segmentType // ignore: cast_nullable_to_non_nullable
-              as SegmentType?,
+              as PointSegmentType?,
     ));
   }
 }
@@ -184,7 +171,6 @@ class _$TrackPointImpl extends _TrackPoint with DiagnosticableTreeMixin {
       required this.elevationM,
       required this.timestamp,
       required this.speedKmh,
-      this.heartRate,
       this.segmentType})
       : super._();
 
@@ -199,13 +185,11 @@ class _$TrackPointImpl extends _TrackPoint with DiagnosticableTreeMixin {
   @override
   final double speedKmh;
   @override
-  final int? heartRate;
-  @override
-  final SegmentType? segmentType;
+  final PointSegmentType? segmentType;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'TrackPoint(lat: $lat, lon: $lon, elevationM: $elevationM, timestamp: $timestamp, speedKmh: $speedKmh, heartRate: $heartRate, segmentType: $segmentType)';
+    return 'TrackPoint(lat: $lat, lon: $lon, elevationM: $elevationM, timestamp: $timestamp, speedKmh: $speedKmh, segmentType: $segmentType)';
   }
 
   @override
@@ -218,7 +202,6 @@ class _$TrackPointImpl extends _TrackPoint with DiagnosticableTreeMixin {
       ..add(DiagnosticsProperty('elevationM', elevationM))
       ..add(DiagnosticsProperty('timestamp', timestamp))
       ..add(DiagnosticsProperty('speedKmh', speedKmh))
-      ..add(DiagnosticsProperty('heartRate', heartRate))
       ..add(DiagnosticsProperty('segmentType', segmentType));
   }
 
@@ -235,15 +218,13 @@ class _$TrackPointImpl extends _TrackPoint with DiagnosticableTreeMixin {
                 other.timestamp == timestamp) &&
             (identical(other.speedKmh, speedKmh) ||
                 other.speedKmh == speedKmh) &&
-            (identical(other.heartRate, heartRate) ||
-                other.heartRate == heartRate) &&
             (identical(other.segmentType, segmentType) ||
                 other.segmentType == segmentType));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, lat, lon, elevationM, timestamp,
-      speedKmh, heartRate, segmentType);
+  int get hashCode => Object.hash(
+      runtimeType, lat, lon, elevationM, timestamp, speedKmh, segmentType);
 
   /// Create a copy of TrackPoint
   /// with the given fields replaced by the non-null parameter values.
@@ -261,8 +242,7 @@ abstract class _TrackPoint extends TrackPoint {
       required final double elevationM,
       required final DateTime timestamp,
       required final double speedKmh,
-      final int? heartRate,
-      final SegmentType? segmentType}) = _$TrackPointImpl;
+      final PointSegmentType? segmentType}) = _$TrackPointImpl;
   const _TrackPoint._() : super._();
 
   @override
@@ -276,9 +256,7 @@ abstract class _TrackPoint extends TrackPoint {
   @override
   double get speedKmh;
   @override
-  int? get heartRate;
-  @override
-  SegmentType? get segmentType;
+  PointSegmentType? get segmentType;
 
   /// Create a copy of TrackPoint
   /// with the given fields replaced by the non-null parameter values.
