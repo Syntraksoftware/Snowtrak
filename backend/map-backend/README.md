@@ -54,6 +54,14 @@ Static map image URL + elevation data
 **Elevation Lookup response:**
 - `results`: Array of {latitude, longitude, elevation_meters} objects
 
+**Elevation correction (`POST /api/elevation/correct`):**
+- Request/response types live in `backend/shared/track_pipeline_schemas.py` as `ElevationCorrectionRequest` / `ElevationCorrectionResponse` (mirrors Dart `TrackPoint` and the map pipeline contract).
+- Up to 512 points per call; returns the same track with `elevation_m` filled from the configured elevation API.
+
+Canonical Pydantic models for the full track pipeline (`TrackPointIn`, `ProcessedTrackOut`, `SegmentOut`, `ActivityStatsOut`, `RunSummaryOut`, `TrailMatchRequest`/`Response`, `ActivityIn`/`Out`, etc.) also live in that shared module for use across services.
+
+**Note:** Server-generated **dynamic map HTML** was removed; the mobile app renders maps natively.
+
 ### External integrations
 
 - **Google Maps Static API** (https://maps.googleapis.com/maps/api/staticmap): Generates static map images with paths and markers

@@ -163,68 +163,41 @@ curl -X GET "${MAP_BACKEND_URL}/api/maps/static/simple?lat=37.7749&lng=-122.4194
 }
 ```
 
-## Dynamic Map Endpoints (Interactive)
+## Elevation correction (pipeline contract)
 
-**Important:** Do **not** open the HTML via `file://` or you'll hit
-`RefererNotAllowedMapError`. Serve it via HTTP.
+Interactive maps are rendered in the Flutter app (`google_maps_flutter` / MapLibre). This service
+exposes **static** map URLs/images and **elevation** utilities only.
 
-### 7. Dynamic Map HTML (POST)
+### 7. Track elevation correction (POST)
 
-Returns interactive map HTML (Google Maps JS API) with markers and a polyline path.
-
-```bash
-curl -X POST "${MAP_BACKEND_URL}/api/maps/dynamic/html" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "center_lat": 37.7749,
-    "center_lng": -122.4194,
-    "zoom": 12,
-    "width": 900,
-    "height": 600,
-    "markers": [
-      [37.7749, -122.4194],
-      [37.7849, -122.4094]
-    ],
-    "path": [
-      [37.7749, -122.4194],
-      [37.7790, -122.4140],
-      [37.7849, -122.4094]
-    ]
-  }' > map.html
-
-python3 -m http.server 8088
-```
-
-Open: `http://localhost:8088/map.html`
-
-### 8. Dynamic Map JSON (POST)
-
-Returns JSON containing HTML with a polyline path.
+Uses `shared.track_pipeline_schemas.ElevationCorrectionRequest`: a list of `TrackPointIn` samples;
+response returns the same points with `elevation_m` filled from the DEM provider (same backend as
+`/lookup`, max 512 points per request).
 
 ```bash
-curl -X POST "${MAP_BACKEND_URL}/api/maps/dynamic" \
+curl -X POST "${MAP_BACKEND_URL}/api/elevation/correct" \
   -H "Content-Type: application/json" \
   -d '{
-    "center_lat": 37.7749,
-    "center_lng": -122.4194,
-    "zoom": 12,
-    "width": 900,
-    "height": 600,
-    "markers": [
-      [37.7749, -122.4194],
-      [37.7849, -122.4094]
-    ],
-    "path": [
-      [37.7749, -122.4194],
-      [37.7790, -122.4140],
-      [37.7849, -122.4094]
+    "points": [
+      {
+        "lat": 40.7128,
+        "lon": -74.0060,
+        "timestamp": "2024-01-15T12:00:00+00:00",
+        "speed_kmh": 0.0
+      },
+      {
+        "lat": 40.7130,
+        "lon": -74.0055,
+        "timestamp": "2024-01-15T12:00:05+00:00",
+        "speed_kmh": 12.5
+      }
     ]
   }'
 ```
 
 ## Elevation Endpoints
 
-### 9. Bulk Elevation Lookup (POST)
+### 8. Bulk Elevation Lookup (POST)
 
 Get elevation data for multiple coordinates (up to 1000).
 
@@ -273,7 +246,7 @@ curl -X POST "${MAP_BACKEND_URL}/api/elevation/lookup" \
 }
 ```
 
-### 10. Single Point Elevation Lookup (GET)
+### 9. Single Point Elevation Lookup (GET)
 
 Get elevation data for a single coordinate using a simple GET endpoint.
 
@@ -437,32 +410,21 @@ Step "5. Static Map Image (POST)"
 Invoke-WebRequest -Method Post -Uri "$BASE_URL/api/maps/static/image" -ContentType "application/json" -Body $staticBody -OutFile "map_image.png"
 Write-Host "Saved map_image.png"
 
-$dynamicBody = @{
-  center_lat = 37.7749
-  center_lng = -122.4194
-  zoom = 12
-  width = 900
-  height = 600
-  # Unary comma prevents nested arrays from flattening during JSON conversion.
-  markers = @(
-    , @(37.7749, -122.4194)
-    , @(37.7849, -122.4094)
-  )
-  path = @(
-    , @(37.7749, -122.4194)
-    , @(37.7790, -122.4140)
-    , @(37.7849, -122.4094)
+$correctBody = @{
+  points = @(
+    @{
+      lat = 40.7128
+      lon = -74.0060
+      timestamp = "2024-01-15T12:00:00Z"
+      speed_kmh = 0.0
+    }
   )
 } | ConvertTo-Json -Depth 10 -Compress
 
-Step "6. Dynamic Map HTML (POST)"
-Invoke-WebRequest -Method Post -Uri "$BASE_URL/api/maps/dynamic/html" -ContentType "application/json" -Body $dynamicBody -OutFile "dynamic_map.html"
-Write-Host "Saved dynamic_map.html"
+Step "6. Elevation correction (POST /api/elevation/correct)"
+Invoke-RestMethod -Method Post -Uri "$BASE_URL/api/elevation/correct" -ContentType "application/json" -Body $correctBody | ConvertTo-Json -Depth 10
 
-Step "7. Dynamic Map JSON (POST)"
-Invoke-RestMethod -Method Post -Uri "$BASE_URL/api/maps/dynamic" -ContentType "application/json" -Body $dynamicBody | ConvertTo-Json -Depth 10
-
-Step "8. Single Point Elevation (GET)"
+Step "7. Single Point Elevation (GET)"
 Invoke-RestMethod -Method Get -Uri "$BASE_URL/api/elevation/point?lat=40.7128&lng=-74.0060" | ConvertTo-Json -Depth 10
 
 $elevationBody = @{
@@ -472,11 +434,10 @@ $elevationBody = @{
   )
 } | ConvertTo-Json -Depth 10 -Compress
 
-Step "9. Bulk Elevation Lookup (POST)"
+Step "8. Bulk Elevation Lookup (POST)"
 Invoke-RestMethod -Method Post -Uri "$BASE_URL/api/elevation/lookup" -ContentType "application/json" -Body $elevationBody | ConvertTo-Json -Depth 10
 
 Write-Host "`n========== Tests Complete ==========" -ForegroundColor Green
-Write-Host "To view dynamic map: run 'py -m http.server 8088' and open http://localhost:8088/dynamic_map.html"
 ```
 
 Run it:

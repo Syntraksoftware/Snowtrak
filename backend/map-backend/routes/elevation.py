@@ -3,6 +3,11 @@
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from shared.track_pipeline_schemas import (
+    ElevationCorrectionRequest,
+    ElevationCorrectionResponse,
+    TrackPointOut,
+)
 
 from middleware.auth import get_optional_user
 from models.elevation import ElevationRequest, ElevationResponse, ElevationResult
@@ -10,6 +15,62 @@ from services.elevation_client import get_elevation_client
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/elevation", tags=["elevation"])
+
+
+@router.post("/correct", response_model=ElevationCorrectionResponse)
+async def correct_track_elevation(
+    request: ElevationCorrectionRequest,
+    user_id: str | None = Depends(get_optional_user),
+):
+    """
+    Fill or overwrite `elevation_m` using the configured DEM provider (same client as /lookup).
+
+    Mirrors the `TrackPoint` / `ElevationCorrectionRequest` contract in `shared.track_pipeline_schemas`.
+    """
+    try:
+        client = get_elevation_client()
+        coordinates = [(p.lat, p.lon) for p in request.points]
+        raw = await client.get_elevation(coordinates)
+        if len(raw) != len(request.points):
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Elevation provider returned a mismatched result count",
+            )
+
+        corrected: list[TrackPointOut] = []
+        for pt, row in zip(request.points, raw, strict=True):
+            elev = row.get("elevation")
+            if elev is None:
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail="Elevation provider omitted elevation for a coordinate",
+                )
+            corrected.append(
+                TrackPointOut(
+                    lat=pt.lat,
+                    lon=pt.lon,
+                    elevation_m=float(elev),
+                    timestamp=pt.timestamp,
+                    speed_kmh=pt.speed_kmh,
+                    segment_type=pt.segment_type,
+                )
+            )
+
+        logger.info(
+            "Elevation correction for %s points (user: %s)",
+            len(corrected),
+            user_id or "anonymous",
+        )
+        return ElevationCorrectionResponse(points=corrected)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Error correcting elevation: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to correct elevation: {e!s}",
+        ) from None
 
 
 @router.post("/lookup", response_model=ElevationResponse)
