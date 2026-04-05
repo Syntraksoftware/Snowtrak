@@ -168,6 +168,10 @@ flutter analyze
 dart format --output=none --set-exit-if-changed .
 ```
 
+**Alembic**:
+- Is used to manage changes to the database schema over time, allowing you to version, upgrade, or rollback database structures in a controlled, trackable way. 
+- In this context, Alembic is used to create and evolve all map-related database tables and PostGIS extensions within the project, ensuring the schema stays in sync with code changes through migration scripts instead of raw SQL files.
+
 **References:** [Dart style](https://dart.dev/guides/language/effective-dart/style), [Ruff](https://docs.astral.sh/ruff/), [mypy](https://mypy.readthedocs.io/)
 
 ### Security

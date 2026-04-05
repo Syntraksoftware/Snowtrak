@@ -15,9 +15,14 @@ python-multipart>=0.0.17
 supabase>=2.4.0
 postgrest>=0.16.4
 asyncpg>=0.30.0
+psycopg[binary]>=3.2.0
 
 # Database: schema migrations
 alembic>=1.13.0
+
+# Database: map-backend PostGIS ORM (also in map-backend/requirements.txt)
+sqlalchemy>=2.0.0
+geoalchemy2>=0.14.0
 
 # Configuration & validation
 python-dotenv>=1.0.1

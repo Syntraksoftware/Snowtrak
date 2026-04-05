@@ -76,18 +76,33 @@ Canonical Pydantic models for the full track pipeline (`TrackPointIn`, `Processe
 backend/map-backend/
 ├── main.py                     # FastAPI app setup, lifespan, startup hooks
 ├── config.py                   # Environment variables & settings
+├── db/                         # SQLAlchemy ORM for PostGIS (optional; see below)
+│   ├── base.py
+│   └── orm_models.py          # ski_runs, ski_lifts, activities, track_points, segments
 ├── routes/
 │   ├── maps.py                # Static map endpoints (/api/maps/*)
 │   └── elevation.py           # Elevation endpoints (/api/elevation/*)
 ├── services/
 │   ├── static_map_client.py   # Google Maps Static API client
 │   └── elevation_client.py    # Open Elevation API wrapper
+├── engine/geometry/           # Legacy reference SQL (prefer Alembic under backend/db/)
+│   ├── 001_init_postgis_storage.sql
+│   └── 002_map_pipeline_tables.sql
 ├── middleware/
 │   └── auth.py                # JWT extraction (optional auth)
 ├── CURL_TESTS.md              # Manual endpoint testing guide
 ├── LOCAL_SETUP.md             # Local development walkthrough
 └── requirements.txt           # Python dependencies
 ```
+
+### PostGIS ORM applicability
+
+- **Requires PostGIS** on the target database (`CREATE EXTENSION postgis;`). The optional Docker service `postgis` (`docker compose --profile postgis up postgis`) provides this; plain Postgres without the extension cannot store `geometry` columns.
+- **Supabase** is Postgres: enable the PostGIS extension in the dashboard if you want these tables in the same project as other data.
+- **Schema `map_trail`**: pipeline tables (`ski_runs`, `ski_lifts`, `activities`, `track_points`, `segments`) live in this schema so they do **not** collide with `public.activities` (or other tables) from Supabase / activity-backend.
+- **Alembic (canonical DDL):** from `backend/`, install deps (`psycopg`, `alembic`, `sqlalchemy`, `geoalchemy2`), set `SYNTRAK_DATABASE_URL=postgresql+psycopg://USER:PASS@HOST:PORT/DB`, then `alembic upgrade head`. Migrations live in `backend/db/migrations/versions/`. If port **5432** on your machine is already used by another Postgres, set `POSTGRES_PORT` (see `postgres.env.example`) when starting Docker PostGIS.
+- **`001_init_postgis_storage.sql`**: optional standalone script; revision `001_initial` also creates `map_cache_entries` and `elevation_samples` in `public` with GiST indexes.
+- Engine/session wiring (`create_engine`, sessions) can follow in a later change.
 
 ### Entry points
 
