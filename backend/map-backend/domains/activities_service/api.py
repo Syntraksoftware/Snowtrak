@@ -25,7 +25,7 @@ from shared.track_pipeline_schemas import (
     TrackPointOut,
 )
 
-from domains.activities_service.adapters import require_pool_conn
+from domains.activities_service.infra import get_activities_conn
 
 logger = logging.getLogger(__name__)
 
@@ -212,7 +212,7 @@ async def _detail_response(
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=MapActivityDetailResponse)
 async def create_activity(
     body: MapActivityCreateRequest,
-    conn: asyncpg.Connection = Depends(require_pool_conn),
+    conn: asyncpg.Connection = Depends(get_activities_conn),
 ) -> MapActivityDetailResponse:
     stats_blob = _stats_blob_for_insert(body)
     recorded_at = body.processed_track.recorded_at
@@ -271,7 +271,7 @@ async def create_activity(
 @router.get("/{activity_id}", response_model=MapActivityDetailResponse)
 async def get_activity(
     activity_id: UUID,
-    conn: asyncpg.Connection = Depends(require_pool_conn),
+    conn: asyncpg.Connection = Depends(get_activities_conn),
 ) -> MapActivityDetailResponse:
     try:
         return await _detail_response(conn, activity_id)
@@ -290,7 +290,7 @@ async def list_activities(
     user_id: UUID = Query(..., description="Filter activities for this user"),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
-    conn: asyncpg.Connection = Depends(require_pool_conn),
+    conn: asyncpg.Connection = Depends(get_activities_conn),
 ) -> MapActivityListResponse:
     count_sql = "SELECT count(*)::int FROM map_trail.activities WHERE user_id = $1::uuid"
     list_sql = """

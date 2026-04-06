@@ -20,7 +20,7 @@ from shared.track_pipeline_schemas import (
     TrackPointOut,
 )
 
-from domains.elevation_dem_service.adapters import batch_correct
+from domains.elevation_dem_service.infra import correct_dem_batch as batch_correct
 
 logger = logging.getLogger(__name__)
 

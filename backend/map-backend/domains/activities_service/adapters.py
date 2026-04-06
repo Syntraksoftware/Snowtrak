@@ -1,5 +1,7 @@
-"""External dependency adapters for activities_service."""
+"""Compatibility shim for activities_service external dependencies."""
 
-from db.connection import require_pool_conn
+from domains.activities_service.infra import get_activities_conn
 
-__all__ = ["require_pool_conn"]
+require_pool_conn = get_activities_conn
+
+__all__ = ["require_pool_conn", "get_activities_conn"]

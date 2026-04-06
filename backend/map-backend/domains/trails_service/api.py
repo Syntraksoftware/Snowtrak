@@ -20,7 +20,7 @@ from shared.track_pipeline_schemas import (
 )
 from shared.trail_detection_thresholds import TRAIL_MATCH_RADIUS_M
 
-from domains.trails_service.adapters import DescentSegmentInput, get_pool, match_all_descents
+from domains.trails_service.infra import DescentSegmentInput, get_trails_conn, match_descents
 
 logger = logging.getLogger(__name__)
 
@@ -37,17 +37,6 @@ FROM map_trail.ski_runs AS r
 WHERE r.geom && ST_MakeEnvelope($1::float8, $2::float8, $3::float8, $4::float8, 4326)
 ORDER BY r.name NULLS LAST, r.id::text
 """
-
-
-async def get_trails_conn() -> AsyncGenerator[asyncpg.Connection, None]:
-    pool = get_pool()
-    if pool is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Postgres pool not configured (set SYNTRAK_DATABASE_URL)",
-        )
-    async with pool.acquire() as conn:
-        yield conn
 
 
 def _point_in_to_out(p: TrackPointIn) -> TrackPointOut:
@@ -114,7 +103,7 @@ async def match_trails(
         return TrailMatchResponse(segments=segments)
 
     try:
-        matches = await match_all_descents(conn, descent_inputs, TRAIL_MATCH_RADIUS_M)
+        matches = await match_descents(conn, descent_inputs, TRAIL_MATCH_RADIUS_M)
     except Exception as e:
         logger.exception("trail match failed")
         raise HTTPException(

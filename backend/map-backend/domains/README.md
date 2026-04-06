@@ -41,3 +41,9 @@ No runtime behavior changes should be introduced in this step.
 - trails_service/adapters.py: DB pool + trail matcher adapters.
 - elevation_dem_service/adapters.py: DEM provider adapter (`batch_correct`).
 - sync_worker_service/job.py: domain-owned sync job entrypoint for scheduler/manual runs.
+
+## Step D boundaries
+
+- Each domain now has `ports.py` for dependency contracts and `infra.py` for default implementations.
+- API modules call `infra.py` instead of importing shared infra directly.
+- Existing `adapters.py` files are compatibility shims that forward to `infra.py`.
