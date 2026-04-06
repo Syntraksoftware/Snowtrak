@@ -25,13 +25,34 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from config import get_config
 from db.connection import close_pool, create_pool, get_pool
 from domains.activities_service.api import router as activities_router
+from domains.activities_service.infra import get_activities_conn as activities_conn_impl
+from domains.activities_service.ports import set_activities_conn_provider
 from domains.elevation_dem_service.api import router as elevation_dem_router
+from domains.elevation_dem_service.infra import correct_dem_batch
+from domains.elevation_dem_service.ports import set_batch_correct_provider
 from domains.sync_worker_service.job import run_openskimap_sync
+from domains.sync_worker_service.infra import run_sync as sync_runner_impl
+from domains.sync_worker_service.ports import set_sync_runner_provider
 from domains.trails_service.api import router as trails_router
+from domains.trails_service.infra import (
+    get_trails_conn as trails_conn_impl,
+    match_descents as descent_matcher_impl,
+)
+from domains.trails_service.ports import (
+    set_descent_matcher_provider,
+    set_trails_conn_provider,
+)
 from services.storage_backend import get_storage_health, initialize_storage_backend
 from zoneinfo import ZoneInfo
 
 logger = logging.getLogger(__name__)
+
+
+set_activities_conn_provider(activities_conn_impl)
+set_trails_conn_provider(trails_conn_impl)
+set_descent_matcher_provider(descent_matcher_impl)
+set_batch_correct_provider(correct_dem_batch)
+set_sync_runner_provider(sync_runner_impl)
 
 
 async def _openskimap_scheduled_sync() -> None:

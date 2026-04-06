@@ -47,7 +47,7 @@ async def test_elevation_correct_returns_dem_values(
         assert coords.shape == (2, 2)
         return np.array([123.4, 456.7], dtype=np.float64)
 
-    monkeypatch.setattr("domains.elevation_dem_service.api.batch_correct", fake_batch)
+    monkeypatch.setattr("domains.elevation_dem_service.ports.batch_correct", fake_batch)
 
     body = {
         "points": [
@@ -90,7 +90,7 @@ async def test_elevation_correct_cache_hits_on_identical_bbox_and_points(
         calls["n"] += 1
         return np.array([99.0], dtype=np.float64)
 
-    monkeypatch.setattr("domains.elevation_dem_service.api.batch_correct", fake_batch)
+    monkeypatch.setattr("domains.elevation_dem_service.ports.batch_correct", fake_batch)
     body = _sample_request()
 
     transport = httpx.ASGITransport(app=dem_app)
@@ -112,7 +112,7 @@ async def test_elevation_correct_cache_miss_when_points_differ(
         n = coords.shape[0]
         return np.arange(100.0, 100.0 + n, dtype=np.float64)
 
-    monkeypatch.setattr("domains.elevation_dem_service.api.batch_correct", fake_batch)
+    monkeypatch.setattr("domains.elevation_dem_service.ports.batch_correct", fake_batch)
 
     transport = httpx.ASGITransport(app=dem_app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
@@ -131,7 +131,7 @@ async def test_elevation_correct_502_on_dem_nan(
     dem_app: FastAPI, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(
-        "domains.elevation_dem_service.api.batch_correct",
+        "domains.elevation_dem_service.ports.batch_correct",
         lambda *a, **k: np.array([float("nan")], dtype=np.float64),
     )
 

@@ -8,7 +8,8 @@ from unittest.mock import AsyncMock, MagicMock
 import httpx
 import pytest
 from fastapi import FastAPI
-from domains.trails_service.api import get_trails_conn, router
+from domains.trails_service.ports import get_trails_conn
+from domains.trails_service.api import router
 
 
 def _iso_ts() -> str:

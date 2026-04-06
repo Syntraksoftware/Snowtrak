@@ -2,7 +2,7 @@
 
 import asyncpg
 
-from domains.sync_worker_service.infra import run_sync
+from domains.sync_worker_service.ports import run_sync
 
 
 async def run_openskimap_sync(conn: asyncpg.Connection, url: str | None = None) -> int:

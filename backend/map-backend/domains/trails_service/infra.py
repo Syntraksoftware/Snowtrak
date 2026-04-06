@@ -6,7 +6,9 @@ import asyncpg
 from fastapi import HTTPException, status
 
 from db.connection import get_pool
-from services.trail_matcher import DescentSegmentInput, match_all_descents
+from services.trail_matcher import match_all_descents
+
+from domains.trails_service.ports import DescentSegmentInput
 
 
 async def get_trails_conn() -> AsyncGenerator[asyncpg.Connection, None]:

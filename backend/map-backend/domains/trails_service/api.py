@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import json
 import logging
-from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 import asyncpg
@@ -20,7 +19,7 @@ from shared.track_pipeline_schemas import (
 )
 from shared.trail_detection_thresholds import TRAIL_MATCH_RADIUS_M
 
-from domains.trails_service.infra import DescentSegmentInput, get_trails_conn, match_descents
+from domains.trails_service.ports import DescentSegmentInput, get_trails_conn, match_descents
 
 logger = logging.getLogger(__name__)
 

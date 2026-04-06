@@ -10,7 +10,7 @@ import httpx
 import pytest
 from fastapi import FastAPI
 
-from domains.activities_service.infra import get_activities_conn
+from domains.activities_service.ports import get_activities_conn
 from domains.activities_service.api import router
 
 

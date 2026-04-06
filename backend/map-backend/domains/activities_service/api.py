@@ -25,7 +25,7 @@ from shared.track_pipeline_schemas import (
     TrackPointOut,
 )
 
-from domains.activities_service.infra import get_activities_conn
+from domains.activities_service.ports import get_activities_conn
 
 logger = logging.getLogger(__name__)
 

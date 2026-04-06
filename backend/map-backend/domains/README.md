@@ -44,3 +44,8 @@ No runtime behavior changes should be introduced in this step.
 
 - Deprecated `adapters.py` compatibility files are removed.
 - Consumers should import providers/implementations from `infra.py` and contracts from `ports.py`.
+
+## Step F boundaries
+
+- `application.py` is the composition root and wires port providers to infra implementations at startup.
+- Domain APIs now look up behavior through ports modules, so tests and runtime wiring can swap implementations cleanly.

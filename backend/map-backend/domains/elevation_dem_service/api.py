@@ -20,7 +20,7 @@ from shared.track_pipeline_schemas import (
     TrackPointOut,
 )
 
-from domains.elevation_dem_service.infra import correct_dem_batch as batch_correct
+from domains.elevation_dem_service import ports as elevation_ports
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +110,7 @@ async def correct_elevation_dem(request: ElevationCorrectionRequest) -> Elevatio
     coords = np.array([[p.lat, p.lon] for p in request.points], dtype=np.float64)
 
     def _run_batch() -> np.ndarray:
-        return batch_correct(coords, ensure_tiles=True)
+        return elevation_ports.batch_correct(coords, ensure_tiles=True)
 
     try:
         elevs = await asyncio.to_thread(_run_batch)
