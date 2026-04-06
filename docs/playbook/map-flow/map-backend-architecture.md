@@ -1,7 +1,6 @@
-# Step G Domain Architecture Guide
+# Map Backend Domain Architecture Guide
 
-This document is a standalone guide for the current map-backend domain architecture.
-It does not replace or modify earlier READMEs.
+This document describes the current map-backend domain architecture.
 
 ## 1. Goals
 
@@ -94,9 +93,29 @@ When adding a new domain (example: `weather_service`):
 - Route tests patch ports-level wrappers where practical.
 - Keep a smoke suite that validates app startup, route registration, and baseline behavior.
 - Add contract tests for ports wrappers to ensure each provider binding matches expected signatures.
+- Run architecture guard tests to ensure api.py never imports services/* or db.connection directly.
 
-## 10. Near-Term Next Steps (Optional)
+## 10. Architecture Guard Tests
+
+Architecture enforcement is automated via `test_architecture_rules.py`.
+
+The guard ensures:
+
+- ✓ `api.py` must not import from `services`
+- ✓ `api.py` must not import from `db.connection`
+- ✓ `api.py` must not import internal domain models
+- ✓ All `api.py` files must import from `ports` (the stable contract)
+
+Run the tests:
+
+```bash
+pytest backend/tests/test_architecture_rules.py -v
+```
+
+This prevents architectural drift and ensures layer separation remains enforced automatically.
+
+## 11. Near-Term Next Steps (Optional)
 
 - Add explicit dependency container object (instead of module-level provider state) for stricter lifecycle control.
 - Add startup assertion checks that all required providers are bound.
-- Add architecture tests to prevent direct `api.py -> services/*` imports.
+- Add environment-specific provider binding (e.g., mock vs. real implementations per deployment).
