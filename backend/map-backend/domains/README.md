@@ -13,7 +13,7 @@ This folder defines the target package boundaries for splitting map-backend into
 
 - Domain packages must not import each other directly.
 - Shared contracts must come from backend/shared.
-- Database access should go through each domain's own adapter module.
+- Database/external access should go through each domain's own infra module.
 - Do not add sys.path mutation in domain modules.
 
 ## Migration map (current -> target)
@@ -35,15 +35,12 @@ No runtime behavior changes should be introduced in this step.
 - Legacy `backend/routers` and `backend/map-backend/routes` are removed.
 - Step C completed: each domain API now uses a local adapter/job boundary for external infra.
 
-## Step C boundaries
-
-- activities_service/adapters.py: DB dependency adapter (`require_pool_conn`).
-- trails_service/adapters.py: DB pool + trail matcher adapters.
-- elevation_dem_service/adapters.py: DEM provider adapter (`batch_correct`).
-- sync_worker_service/job.py: domain-owned sync job entrypoint for scheduler/manual runs.
-
 ## Step D boundaries
 
 - Each domain now has `ports.py` for dependency contracts and `infra.py` for default implementations.
 - API modules call `infra.py` instead of importing shared infra directly.
-- Existing `adapters.py` files are compatibility shims that forward to `infra.py`.
+
+## Step E boundaries
+
+- Deprecated `adapters.py` compatibility files are removed.
+- Consumers should import providers/implementations from `infra.py` and contracts from `ports.py`.

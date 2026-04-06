@@ -10,7 +10,7 @@ import httpx
 import pytest
 from fastapi import FastAPI
 
-from domains.activities_service.adapters import require_pool_conn
+from domains.activities_service.infra import get_activities_conn
 from domains.activities_service.api import router
 
 
@@ -49,7 +49,7 @@ def override_activities_db(activities_app: FastAPI, mock_conn: MagicMock):
     async def _dep():
         yield mock_conn
 
-    activities_app.dependency_overrides[require_pool_conn] = _dep
+    activities_app.dependency_overrides[get_activities_conn] = _dep
     yield
     activities_app.dependency_overrides.clear()
 
