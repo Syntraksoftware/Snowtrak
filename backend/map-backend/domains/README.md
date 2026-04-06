@@ -28,3 +28,8 @@ This folder defines the target package boundaries for splitting map-backend into
 
 Step A is scaffolding only.
 No runtime behavior changes should be introduced in this step.
+
+## Current status
+
+- Step B completed: API modules now live under these domain packages.
+- Legacy `backend/routers` and `backend/map-backend/routes` are removed.

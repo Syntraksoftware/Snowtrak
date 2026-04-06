@@ -74,7 +74,7 @@ Canonical Pydantic models for the full track pipeline (`TrackPointIn`, `Processe
 
 ```
 backend/map-backend/
-├── domains/                    # Step A split-service boundaries (scaffold)
+├── domains/                    # Domain-owned API modules (active)
 │   ├── activities_service/
 │   ├── trails_service/
 │   ├── elevation_dem_service/
@@ -85,12 +85,7 @@ backend/map-backend/
 ├── orm/                        # SQLAlchemy ORM for PostGIS (optional; see below)
 │   ├── base.py
 │   └── orm_models.py          # ski_runs, ski_lifts, activities, track_points, segments
-├── routes/
-│   ├── maps.py                # Static map endpoints (/api/maps/*)
-│   └── elevation.py           # Elevation endpoints (/api/elevation/*)
 ├── services/
-│   ├── static_map_client.py   # Google Maps Static API client
-│   ├── elevation_client.py    # Open Elevation API wrapper
 │   ├── openskimap_sync.py     # GeoJSON → map_trail.ski_runs (optional scheduled sync)
 │   ├── storage_backend.py
 │   └── supabase_client.py
@@ -187,15 +182,16 @@ backend/map-backend/
 ### Entry points
 
 - **main.py**: Initializes FastAPI app, registers routes, starts ASGI server on port 5200
-- **routes/maps.py**: Defines static map endpoints; receives coordinate/zoom inputs, calls static_map_client, returns image URL or binary image
-- **routes/elevation.py**: Defines elevation lookup endpoints; receives location arrays, calls elevation_client, returns enriched data
+- **domains/elevation_dem_service/api.py**: Defines `POST /elevation/correct` (Copernicus DEM correction)
+- **domains/trails_service/api.py**: Defines trail matching and resort GeoJSON endpoints
+- **domains/activities_service/api.py**: Defines map activity persistence/read endpoints
 
 ### Critical logic
 
-1. **Static map generation** (maps.py): Accepts center lat/lng and zoom; constructs Google Maps Static API URL with authentication; returns HTTPS image URL
-2. **Elevation lookup** (elevation.py): Batches coordinate requests in chunks of ≤1000; calls Open Elevation API; returns elevation in meters for each point
-3. **Response caching**: Optionally caches elevation results in Supabase or Redis to reduce repeated API calls
-4. **Error handling**: Gracefully handles external API failures (returns 503 Service Unavailable); logs errors for monitoring
+1. **DEM elevation correction** (`/elevation/correct`): Corrects track point elevations using Copernicus DEM tiles with response caching.
+2. **Trail matching** (`/trails/match`): Maps descent segments to named ski runs in `map_trail.ski_runs`.
+3. **Resort GeoJSON** (`/trails/resort`): Returns vector line features for runs in a requested bounding box.
+4. **Activity persistence** (`/activities*`): Stores and retrieves processed tracks, points, segments, and stats.
 
 ### Configuration
 
