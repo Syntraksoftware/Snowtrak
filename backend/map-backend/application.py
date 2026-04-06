@@ -26,8 +26,8 @@ from config import get_config
 from db.connection import close_pool, create_pool, get_pool
 from domains.activities_service.api import router as activities_router
 from domains.elevation_dem_service.api import router as elevation_dem_router
+from domains.sync_worker_service.job import run_openskimap_sync
 from domains.trails_service.api import router as trails_router
-from services.openskimap_sync import sync_ski_runs_from_openskimap
 from services.storage_backend import get_storage_health, initialize_storage_backend
 from zoneinfo import ZoneInfo
 
@@ -44,7 +44,7 @@ async def _openskimap_scheduled_sync() -> None:
         return
     try:
         async with pool.acquire() as conn:
-            n = await sync_ski_runs_from_openskimap(
+            n = await run_openskimap_sync(
                 conn,
                 url=cfg.OPENSKIMAP_RUNS_GEOJSON_URL,
             )

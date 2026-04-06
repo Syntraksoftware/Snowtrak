@@ -25,7 +25,7 @@ from shared.track_pipeline_schemas import (
     TrackPointOut,
 )
 
-from db.connection import require_pool_conn
+from domains.activities_service.adapters import require_pool_conn
 
 logger = logging.getLogger(__name__)
 

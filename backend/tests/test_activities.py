@@ -10,7 +10,7 @@ import httpx
 import pytest
 from fastapi import FastAPI
 
-from db.connection import require_pool_conn
+from domains.activities_service.adapters import require_pool_conn
 from domains.activities_service.api import router
 
 

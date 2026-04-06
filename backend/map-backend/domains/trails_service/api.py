@@ -20,8 +20,7 @@ from shared.track_pipeline_schemas import (
 )
 from shared.trail_detection_thresholds import TRAIL_MATCH_RADIUS_M
 
-from db.connection import get_pool
-from services.trail_matcher import DescentSegmentInput, match_all_descents
+from domains.trails_service.adapters import DescentSegmentInput, get_pool, match_all_descents
 
 logger = logging.getLogger(__name__)
 

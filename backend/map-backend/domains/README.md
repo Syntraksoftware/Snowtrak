@@ -33,3 +33,11 @@ No runtime behavior changes should be introduced in this step.
 
 - Step B completed: API modules now live under these domain packages.
 - Legacy `backend/routers` and `backend/map-backend/routes` are removed.
+- Step C completed: each domain API now uses a local adapter/job boundary for external infra.
+
+## Step C boundaries
+
+- activities_service/adapters.py: DB dependency adapter (`require_pool_conn`).
+- trails_service/adapters.py: DB pool + trail matcher adapters.
+- elevation_dem_service/adapters.py: DEM provider adapter (`batch_correct`).
+- sync_worker_service/job.py: domain-owned sync job entrypoint for scheduler/manual runs.
