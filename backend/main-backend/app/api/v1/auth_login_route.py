@@ -1,6 +1,7 @@
 """Login endpoint for authentication routes."""
+
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, status
 
@@ -33,7 +34,7 @@ def login(credentials: LoginRequest) -> AuthSession:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password",
-            )
+            ) from None
 
         hashed_password = supabase_user_record.get("hashed_password", "")
         if not verify_password(credentials.password, hashed_password):
@@ -41,13 +42,13 @@ def login(credentials: LoginRequest) -> AuthSession:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password",
-            )
+            ) from None
 
         if not supabase_user_record.get("is_active", True):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Account is disabled",
-            )
+            ) from None
 
         try:
             supabase_client.update_user_last_login(supabase_user_record.get("id"))
@@ -58,7 +59,7 @@ def login(credentials: LoginRequest) -> AuthSession:
             supabase_user_record=supabase_user_record,
             error_context=normalized_email,
         )
-        user.last_login_at = datetime.now(timezone.utc)
+        user.last_login_at = datetime.now(UTC)
         logger.info(f"User {credentials.email} logged in via Supabase")
         return build_auth_session(user)
 
@@ -68,13 +69,13 @@ def login(credentials: LoginRequest) -> AuthSession:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
-        )
+        ) from None
 
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account is disabled",
-        )
+        ) from None
 
-    user.last_login_at = datetime.now(timezone.utc)
+    user.last_login_at = datetime.now(UTC)
     return build_auth_session(user)

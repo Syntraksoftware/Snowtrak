@@ -1,11 +1,16 @@
 """Core create, read, update, and delete routes for activities."""
+
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from middleware.auth import get_current_user, get_optional_user
-from models import DeleteResponse, FrontendActivityCreate, FrontendActivityResponse, FrontendActivityUpdate
+from models import (
+    DeleteResponse,
+    FrontendActivityCreate,
+    FrontendActivityResponse,
+    FrontendActivityUpdate,
+)
 from routes.activity_transformers import (
     compute_metrics_from_locations,
     convert_to_location_points,
@@ -59,7 +64,7 @@ async def create_activity(
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to create activity",
-            )
+            ) from None
 
         frontend_payload = map_activity_to_frontend_payload(
             created_activity,
@@ -74,13 +79,13 @@ async def create_activity(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None
 
 
 @router.get("/{activity_id}", response_model=FrontendActivityResponse)
 async def get_activity(
     activity_id: str,
-    user_id: Optional[str] = Depends(get_optional_user),
+    user_id: str | None = Depends(get_optional_user),
 ):
     """Get activity details formatted for frontend."""
     activity_client = get_activity_client()
@@ -90,7 +95,7 @@ async def get_activity(
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Activity not found",
-            )
+            ) from None
 
         visibility = str(activity_record.get("visibility", "private")).lower()
         owner_id = str(activity_record.get("user_id", ""))
@@ -100,7 +105,7 @@ async def get_activity(
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Activity not found",
-            )
+            ) from None
 
         frontend_payload = map_activity_to_frontend_payload(activity_record)
         return FrontendActivityResponse(**frontend_payload)
@@ -111,7 +116,7 @@ async def get_activity(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None
 
 
 @router.put("/{activity_id}", response_model=FrontendActivityResponse)
@@ -141,7 +146,7 @@ async def update_activity(
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Activity not found or not authorized",
-            )
+            ) from None
 
         frontend_payload = map_activity_to_frontend_payload(updated_activity)
         return FrontendActivityResponse(**frontend_payload)
@@ -152,7 +157,7 @@ async def update_activity(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None
 
 
 @router.delete("/{activity_id}", response_model=DeleteResponse)
@@ -168,7 +173,7 @@ async def delete_activity(
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Activity not found or not authorized",
-            )
+            ) from None
 
         return DeleteResponse(
             message="Activity deleted",
@@ -181,4 +186,4 @@ async def delete_activity(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None

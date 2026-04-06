@@ -1,5 +1,6 @@
 """Shared vote/repost persistence helpers."""
-from typing import Any, Dict
+
+from typing import Any
 
 
 def set_vote(
@@ -25,21 +26,21 @@ def set_vote(
             .limit(1)
             .execute()
         )
-        payload: Dict[str, Any] = {
+        payload: dict[str, Any] = {
             entity_field: entity_id,
             "user_id": user_id,
             "vote_value": vote_type,
         }
-        if isinstance(getattr(existing, "data", None), list) and getattr(existing, "data"):
+        if isinstance(getattr(existing, "data", None), list) and existing.data:
             client.table(table_name).update({"vote_value": vote_type}).eq(
                 entity_field, entity_id
             ).eq("user_id", user_id).execute()
         else:
             client.table(table_name).insert(payload).execute()
 
-    score_response = client.table(table_name).select("vote_value").eq(
-        entity_field, entity_id
-    ).execute()
+    score_response = (
+        client.table(table_name).select("vote_value").eq(entity_field, entity_id).execute()
+    )
     score_rows = getattr(score_response, "data", None)
     if not isinstance(score_rows, list):
         return 0

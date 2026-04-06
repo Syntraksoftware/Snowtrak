@@ -1,12 +1,13 @@
 """Transformers and response builders for activity routes."""
-from datetime import datetime
+
 import math
-from typing import Any, Dict, List, Optional
+from datetime import datetime
+from typing import Any
 
 from fastapi import Request
+from shared import ListMeta, ListResponse, PaginationMeta, get_request_id
 
 from models import FrontendActivityResponse, LocationPoint
-from shared import ListMeta, ListResponse, PaginationMeta, get_request_id
 
 
 def parse_iso_timestamp(timestamp_value: str) -> datetime:
@@ -39,7 +40,7 @@ def calculate_haversine_distance_meters(
     return earth_radius_meters * central_angle
 
 
-def compute_metrics_from_locations(location_records: List[Dict[str, Any]]) -> Dict[str, float]:
+def compute_metrics_from_locations(location_records: list[dict[str, Any]]) -> dict[str, float]:
     """Compute distance and elevation gain from ordered location records."""
     total_distance_meters = 0.0
     total_elevation_gain_meters = 0.0
@@ -67,7 +68,7 @@ def compute_metrics_from_locations(location_records: List[Dict[str, Any]]) -> Di
     }
 
 
-def convert_to_location_points(location_records: List[Dict[str, Any]]) -> List[LocationPoint]:
+def convert_to_location_points(location_records: list[dict[str, Any]]) -> list[LocationPoint]:
     """Convert frontend location records to storage location points."""
     return [
         LocationPoint(
@@ -82,10 +83,10 @@ def convert_to_location_points(location_records: List[Dict[str, Any]]) -> List[L
 
 def convert_to_frontend_locations(
     activity_identifier: str,
-    gps_path_records: List[Dict[str, Any]],
-) -> List[Dict[str, Any]]:
+    gps_path_records: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
     """Convert storage GPS points to frontend location payload."""
-    frontend_location_records: List[Dict[str, Any]] = []
+    frontend_location_records: list[dict[str, Any]] = []
     for gps_path_record in gps_path_records:
         latitude_value = gps_path_record.get("lat") if isinstance(gps_path_record, dict) else None
         longitude_value = gps_path_record.get("lng") if isinstance(gps_path_record, dict) else None
@@ -98,10 +99,14 @@ def convert_to_frontend_locations(
                 "activity_id": activity_identifier,
                 "latitude": latitude_value,
                 "longitude": longitude_value,
-                "altitude": gps_path_record.get("elevation") if isinstance(gps_path_record, dict) else None,
+                "altitude": gps_path_record.get("elevation")
+                if isinstance(gps_path_record, dict)
+                else None,
                 "accuracy": None,
                 "speed": None,
-                "timestamp": gps_path_record.get("timestamp") if isinstance(gps_path_record, dict) else None,
+                "timestamp": gps_path_record.get("timestamp")
+                if isinstance(gps_path_record, dict)
+                else None,
             }
         )
 
@@ -109,14 +114,18 @@ def convert_to_frontend_locations(
 
 
 def map_activity_to_frontend_payload(
-    activity_record: Dict[str, Any],
-    fallback_start_time: Optional[str] = None,
-    fallback_end_time: Optional[str] = None,
-) -> Dict[str, Any]:
+    activity_record: dict[str, Any],
+    fallback_start_time: str | None = None,
+    fallback_end_time: str | None = None,
+) -> dict[str, Any]:
     """Map backend activity records into frontend response payload shape."""
     distance_meters = activity_record.get("distance_meters") or activity_record.get("distance") or 0
-    duration_seconds = activity_record.get("duration_seconds") or activity_record.get("duration") or 0
-    elevation_gain_meters = activity_record.get("elevation_gain_meters") or activity_record.get("elevation_gain") or 0
+    duration_seconds = (
+        activity_record.get("duration_seconds") or activity_record.get("duration") or 0
+    )
+    elevation_gain_meters = (
+        activity_record.get("elevation_gain_meters") or activity_record.get("elevation_gain") or 0
+    )
 
     start_time = (
         activity_record.get("start_time")
@@ -171,12 +180,12 @@ def map_activity_to_frontend_payload(
 
 def build_activity_list_response(
     request: Request,
-    frontend_items: List[FrontendActivityResponse],
+    frontend_items: list[FrontendActivityResponse],
     limit: int,
     offset: int,
     total: int,
-    deprecated_parameters: Optional[List[str]] = None,
-    deprecation_information: Optional[str] = None,
+    deprecated_parameters: list[str] | None = None,
+    deprecation_information: str | None = None,
 ) -> ListResponse:
     """Build a standardized list response with pagination metadata."""
     request_id = get_request_id(request)

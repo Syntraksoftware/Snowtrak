@@ -1,22 +1,24 @@
 """Supabase client for Activity Backend (skiing activity records)."""
-from __future__ import annotations
-from typing import Optional, List, Dict, Any
-import logging
-from uuid import uuid4
-from datetime import datetime
 
-from supabase import create_client, Client
+from __future__ import annotations
+
+import logging
+from datetime import datetime
+from typing import Any
+from uuid import uuid4
+
 from postgrest import CountMethod
+from supabase import Client, create_client
 
 from config import get_config
 
 logger = logging.getLogger(__name__)
 
 # Global client instance - initialized at startup
-_activity_client: Optional["ActivitySupabaseClient"] = None
+_activity_client: ActivitySupabaseClient | None = None
 
 
-def initialize_activity_client() -> "ActivitySupabaseClient":
+def initialize_activity_client() -> ActivitySupabaseClient:
     """Initialize Supabase client once at application startup."""
     global _activity_client
     config = get_config()
@@ -26,10 +28,12 @@ def initialize_activity_client() -> "ActivitySupabaseClient":
     return _activity_client
 
 
-def get_activity_client() -> "ActivitySupabaseClient":
+def get_activity_client() -> ActivitySupabaseClient:
     """Get initialized Supabase client. Raises if not initialized."""
     if _activity_client is None:
-        raise RuntimeError("Activity client not initialized. Call initialize_activity_client() at startup.")
+        raise RuntimeError(
+            "Activity client not initialized. Call initialize_activity_client() at startup."
+        )
     return _activity_client
 
 
@@ -49,13 +53,13 @@ class ActivitySupabaseClient:
         start_time: str,
         end_time: str,
         activity_type: str,
-        gps_path: List[Dict[str, Any]],
+        gps_path: list[dict[str, Any]],
         duration_seconds: int,
         distance_meters: float,
         elevation_gain_meters: float,
         visibility: str = "private",
-        description: Optional[str] = None,
-    ) -> Optional[Dict[str, Any]]:
+        description: str | None = None,
+    ) -> dict[str, Any] | None:
         payload = {
             "user_id": user_id,
             "name": name,
@@ -76,8 +80,13 @@ class ActivitySupabaseClient:
             return data[0]
         return None
 
-    def list_activities(self, limit: int = 20, offset: int = 0) -> Dict[str, Any]:
-        resp = self._client.table("activities").select("*", count=CountMethod.exact).range(offset, offset + limit - 1).execute()
+    def list_activities(self, limit: int = 20, offset: int = 0) -> dict[str, Any]:
+        resp = (
+            self._client.table("activities")
+            .select("*", count=CountMethod.exact)
+            .range(offset, offset + limit - 1)
+            .execute()
+        )
         data = getattr(resp, "data", []) or []
         total = getattr(resp, "count", 0) or 0
         return {"items": data, "total": total}
@@ -87,12 +96,16 @@ class ActivitySupabaseClient:
         user_id: str,
         limit: int = 20,
         offset: int = 0,
-        search: Optional[str] = None,
-        activity_type: Optional[str] = None,
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        query = self._client.table("activities").select("*", count=CountMethod.exact).eq("user_id", user_id)
+        search: str | None = None,
+        activity_type: str | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> dict[str, Any]:
+        query = (
+            self._client.table("activities")
+            .select("*", count=CountMethod.exact)
+            .eq("user_id", user_id)
+        )
         if activity_type:
             query = query.eq("activity_type", activity_type)
         if search:
@@ -107,7 +120,7 @@ class ActivitySupabaseClient:
         total = getattr(resp, "count", 0) or 0
         return {"items": data, "total": total}
 
-    def get_activity_by_id(self, activity_id: str) -> Optional[Dict[str, Any]]:
+    def get_activity_by_id(self, activity_id: str) -> dict[str, Any] | None:
         resp = self._client.table("activities").select("*").eq("id", activity_id).limit(1).execute()
         data = getattr(resp, "data", None)
         if isinstance(data, list) and data:
@@ -118,10 +131,10 @@ class ActivitySupabaseClient:
         self,
         activity_id: str,
         user_id: str,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        visibility: Optional[str] = None,
-    ) -> Optional[Dict[str, Any]]:
+        name: str | None = None,
+        description: str | None = None,
+        visibility: str | None = None,
+    ) -> dict[str, Any] | None:
         update_fields = {}
         if name is not None:
             update_fields["name"] = name
@@ -145,15 +158,28 @@ class ActivitySupabaseClient:
         return None
 
     def delete_activity(self, activity_id: str, user_id: str) -> bool:
-        resp = self._client.table("activities").delete().eq("id", activity_id).eq("user_id", user_id).execute()
+        resp = (
+            self._client.table("activities")
+            .delete()
+            .eq("id", activity_id)
+            .eq("user_id", user_id)
+            .execute()
+        )
         deleted = getattr(resp, "data", None)
         return bool(deleted)
 
     # ------------------------------------------------------------------
     # Kudos (like/unlike)
     # ------------------------------------------------------------------
-    def toggle_kudos(self, activity_id: str, user_id: str) -> Dict[str, Any]:
-        existing = self._client.table("activity_kudos").select("id").eq("activity_id", activity_id).eq("user_id", user_id).limit(1).execute()
+    def toggle_kudos(self, activity_id: str, user_id: str) -> dict[str, Any]:
+        existing = (
+            self._client.table("activity_kudos")
+            .select("id")
+            .eq("activity_id", activity_id)
+            .eq("user_id", user_id)
+            .limit(1)
+            .execute()
+        )
         rows = getattr(existing, "data", []) or []
         if rows:
             # Unlike
@@ -161,14 +187,18 @@ class ActivitySupabaseClient:
             return {"liked": False}
         else:
             # Like
-            payload = {"activity_id": activity_id, "user_id": user_id, "created_at": datetime.utcnow().isoformat() + "Z"}
+            payload = {
+                "activity_id": activity_id,
+                "user_id": user_id,
+                "created_at": datetime.utcnow().isoformat() + "Z",
+            }
             self._client.table("activity_kudos").insert(payload).execute()
             return {"liked": True}
 
     # ------------------------------------------------------------------
     # Comments
     # ------------------------------------------------------------------
-    def list_comments(self, activity_id: str, limit: int = 50, offset: int = 0) -> Dict[str, Any]:
+    def list_comments(self, activity_id: str, limit: int = 50, offset: int = 0) -> dict[str, Any]:
         resp = (
             self._client.table("activity_comments")
             .select("*", count=CountMethod.exact)
@@ -181,7 +211,7 @@ class ActivitySupabaseClient:
         total = getattr(resp, "count", 0) or 0
         return {"items": data, "total": total}
 
-    def add_comment(self, activity_id: str, user_id: str, content: str) -> Optional[Dict[str, Any]]:
+    def add_comment(self, activity_id: str, user_id: str, content: str) -> dict[str, Any] | None:
         payload = {
             "activity_id": activity_id,
             "user_id": user_id,
@@ -197,7 +227,7 @@ class ActivitySupabaseClient:
     # ------------------------------------------------------------------
     # Sharing
     # ------------------------------------------------------------------
-    def create_share_link(self, activity_id: str, user_id: str) -> Dict[str, Any]:
+    def create_share_link(self, activity_id: str, user_id: str) -> dict[str, Any]:
         token = uuid4().hex
         payload = {
             "activity_id": activity_id,

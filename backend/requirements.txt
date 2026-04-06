@@ -1,28 +1,49 @@
 # Unified backend requirements for all services
 # (main-backend, community-backend, activity-backend, map-backend)
 
-# Core FastAPI & ASGI
+# Core: FastAPI & ASGI 
 fastapi>=0.110.0
 uvicorn[standard]>=0.23.0
 
-# Authentication & Security
+# Authentication & security
 python-jose[cryptography]>=3.3.0
 bcrypt>=4.2.1
 PyJWT>=2.8.0
 python-multipart>=0.0.17
 
-# Database & ORM
+# Database: Supabase / Postgres client
 supabase>=2.4.0
 postgrest>=0.16.4
+asyncpg>=0.30.0
+psycopg[binary]>=3.2.0
 
-# Environment & Config
+# Database: schema migrations
+alembic>=1.13.0
+
+# Database: map-backend PostGIS ORM (also in map-backend/requirements.txt)
+sqlalchemy>=2.0.0
+geoalchemy2>=0.14.0
+
+# Configuration & validation
 python-dotenv>=1.0.1
 pydantic>=2.11.7
 pydantic-settings>=2.7.1
 email-validator>=2.0.0
 
-# HTTP & Client
+# HTTP client
 httpx>=0.27.0
 
-# Image Processing (for maps)
+# Geospatial & raster (map-backend: tiles, rasters, geometry)
+rasterio>=1.4.0
+numpy>=1.26.0
+shapely>=2.0.1
+
+# Image processing (map tiles / thumbnails)
 pillow>=10.0.0
+
+# Testing
+pytest>=8.3.0
+
+# Dev tooling (see pyproject.toml for Ruff / mypy settings)
+ruff>=0.8.0
+mypy>=1.13.0

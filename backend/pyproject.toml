@@ -1,0 +1,65 @@
+# Syntrak backend — Ruff + mypy (runtime deps stay in requirements.txt).
+#
+#   (repo root) python3 -m venv .venv && ./.venv/bin/pip install -r backend/requirements.txt
+#   (from backend/) ../.venv/bin/ruff check . && ../.venv/bin/ruff format --check .
+# Or: source .venv/bin/activate from repo root, then cd backend && ruff check .
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["shared", "db", "main-backend", "community-backend", "activity-backend", "map-backend"]
+extend-exclude = [
+  ".venv",
+  "venv",
+  "**/venv",
+  "__pycache__",
+]
+
+[tool.ruff.lint]
+select = [
+  "E",   # pycodestyle errors
+  "W",   # pycodestyle warnings
+  "F",   # pyflakes
+  "I",   # isort
+  "UP",  # pyupgrade
+  "B",   # flake8-bugbear
+  "SIM", # flake8-simplify
+]
+ignore = [
+  "E501", # line length handled by formatter preference
+  # FastAPI uses Depends(), Query(), File(), etc. in parameter defaults by design.
+  "B008",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Barrel re-exports: one combined import block reads better than isort-split lines.
+"main-backend/app/schemas/__init__.py" = ["I001"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+show_error_codes = true
+pretty = true
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = "."
+exclude = "(?x)(^|/)(\\.venv|venv|__pycache__|build|dist)/"
+# Third-party without stubs; tighten per-module as you add types.
+ignore_missing_imports = true
+
+# Service dirs use hyphens (not importable as top-level packages). From backend/, run e.g.:
+#   mypy shared run.py
+#   mypy map-backend
+#   mypy community-backend
+# Or add py.typed + package layout per service over time.
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false

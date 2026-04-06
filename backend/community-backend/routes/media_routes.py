@@ -1,4 +1,5 @@
 """Upload media for community posts/comments (Supabase Storage)."""
+
 import logging
 import os
 import sys
@@ -7,8 +8,9 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from middleware.auth import get_current_user
 from pydantic import BaseModel
+
+from middleware.auth import get_current_user
 from services.constants.media_constants import (
     BUCKET_MISSING_MSG,
     STORAGE_MSG,
@@ -38,7 +40,7 @@ async def upload_community_media(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Empty file",
-            )
+            ) from None
 
         content_type = file.content_type or "application/octet-stream"
         name = (file.filename or "upload").lower()
@@ -54,27 +56,27 @@ async def upload_community_media(
             raise HTTPException(
                 status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
                 detail=TOO_LARGE_MSG,
-            )
+            ) from None
         if result.error == "unsupported_type":
             raise HTTPException(
                 status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
                 detail=UNSUPPORTED_MSG,
-            )
+            ) from None
         if result.error == "bucket_not_found":
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail=BUCKET_MISSING_MSG,
-            )
+            ) from None
         if result.error == "storage_error":
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail=STORAGE_MSG,
-            )
+            ) from None
         if not result.url:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Upload failed",
-            )
+            ) from None
         return MediaUploadResponse(url=result.url)
     except HTTPException:
         raise
@@ -83,4 +85,4 @@ async def upload_community_media(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None

@@ -49,10 +49,12 @@ backend/community-backend/
 ### 1. Install Dependencies
 
 ```bash
+# From repository root
+python3.11 -m venv .venv
+./.venv/bin/pip install -r backend/requirements.txt
+
 cd backend/community-backend
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
+../../.venv/bin/python -m pip install -r requirements.txt
 ```
 
 ### 2. Configure Environment
@@ -83,11 +85,10 @@ Run the SQL from `../backend/app/community/SUPABASE_SCHEMA.md` in your Supabase 
 python3.12 --version
 
 # If yes, use it:
-python3.12 -m venv venv
-source venv/bin/activate
-pip install --upgrade pip setuptools wheel
-pip install -r requirements.txt
-python run.py
+cd backend/community-backend
+../../.venv/bin/python -m pip install --upgrade pip setuptools wheel
+../../.venv/bin/python -m pip install -r requirements.txt
+../../.venv/bin/python run.py
 ```
 
 The server will start on `http://localhost:5001`
@@ -190,16 +191,14 @@ This enables:
 ```bash
 # Install runtime + test dependencies
 cd backend/community-backend
-source venv/bin/activate   # if using a venv
-pip install -r requirements-test.txt
+../../.venv/bin/python -m pip install -r requirements-test.txt
 ```
 
 **Run tests:**
 
 ```bash
 cd backend/community-backend
-source venv/bin/activate   # if using a venv
-python -m pytest tests/test_community_api.py -q
+../../.venv/bin/python -m pytest tests/test_community_api.py -q
 ```
 
 **Important:** Run pytest from this directory so `import main` resolves correctly.

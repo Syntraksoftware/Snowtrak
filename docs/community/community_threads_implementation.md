@@ -283,15 +283,17 @@ for each rawPost in posts:
 
 ### Setup (backend)
 
-From repo root (adjust for your venv/tooling):
+From repository root (shared `.venv`):
 
 ```bash
+python3.11 -m venv .venv
+./.venv/bin/pip install -r backend/requirements.txt
+
 cd backend/community-backend
-# install deps per project README / requirements
-python -m pytest tests/test_community_api.py -q
+../../.venv/bin/python -m pytest tests/test_community_api.py -q
 ```
 
-Ensure `pydantic-settings`, `fastapi`, `pytest`, and `supabase` are installed in the active environment.
+Ensure `pydantic-settings`, `fastapi`, `pytest`, and `supabase` are installed in the shared repo-root environment.
 
 ### Setup (frontend)
 

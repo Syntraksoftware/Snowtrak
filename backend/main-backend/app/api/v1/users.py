@@ -1,4 +1,5 @@
 """Users router aggregator."""
+
 from fastapi import APIRouter
 
 from app.api.v1.users_account_routes import router as users_account_router

@@ -9,25 +9,32 @@ Community Backend - FastAPI Application
 
 A standalone microservice for Reddit-like community features.
 """
+
+import logging
+import os
+import sys
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
-import logging
-import sys
-import os
 
 # Add backend directory to path for shared imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from config import get_config
-from services.supabase_client import initialize_community_client
 from shared import ListResponse, add_request_id_middleware, setup_exception_handlers
-from shared.deprecation import add_deprecation_middleware, COMMUNITY_BACKEND_DEPRECATIONS
+from shared.deprecation import COMMUNITY_BACKEND_DEPRECATIONS, add_deprecation_middleware
+
+from config import get_config
+from routes.comments import router as comments_router
+from routes.media_routes import router as media_router
+from routes.posts import router as posts_router
+from routes.posts_read_routes import list_feed_posts
+from routes.subthreads import router as subthreads_router
+from services.supabase_client import initialize_community_client
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -39,7 +46,9 @@ def _log_owned_domains_banner() -> None:
     logger.info("=" * 64)
     logger.info("SERVICE OWNERSHIP: community-backend")
     logger.info("domains: community (subthreads/posts/comments)")
-    logger.info("routes: /api/subthreads, /api/posts, /api/comments, /api/posts/comments/batch, /api/posts/{id}/conversation")
+    logger.info(
+        "routes: /api/subthreads, /api/posts, /api/comments, /api/posts/comments/batch, /api/posts/{id}/conversation"
+    )
     logger.info("=" * 64)
 
 
@@ -50,7 +59,7 @@ async def lifespan(app: FastAPI):
     logger.info(f"Starting Community Backend on {config.HOST}:{config.PORT}")
     logger.info(f"Environment: {config.FASTAPI_ENV}")
     logger.info(f"Debug mode: {config.DEBUG}")
-    
+
     # Initialize Supabase client at startup (thread-safe, single instance)
     try:
         initialize_community_client()
@@ -59,9 +68,9 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"❌ Failed to initialize services: {e}")
         raise
-    
+
     yield
-    
+
     # Shutdown
     logger.info("Shutting down Community Backend")
 
@@ -71,7 +80,7 @@ app = FastAPI(
     title="Community Backend API",
     description="Reddit-like community microservice",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Add request ID middleware (must be before other middleware)
@@ -93,12 +102,6 @@ app.add_middleware(
 )
 
 # Import and include routers
-from routes.posts_read_routes import list_feed_posts
-from routes.subthreads import router as subthreads_router
-from routes.posts import router as posts_router
-from routes.comments import router as comments_router
-from routes.media_routes import router as media_router
-
 # Canonical global feed endpoint
 # Registered directly (not via posts router) to avoid routing precedence with GET /{post_id}.
 # IMPORTANT: This is the ONLY official feed endpoint. Clients must use GET /api/v1/feed
@@ -111,7 +114,7 @@ app.add_api_route(
     tags=["posts"],
     summary="Global feed (canonical endpoint)",
     description="Fetch all posts across all subthreads, newest first. "
-                "This is the only official feed endpoint.",
+    "This is the only official feed endpoint.",
 )
 
 # Mount routers at /api/v1 (new version - standard)
@@ -132,28 +135,18 @@ app.include_router(media_router, prefix="/api/media", tags=["media_deprecated"])
 @app.get("/")
 def root():
     """Root endpoint."""
-    return {
-        "service": "Community Backend",
-        "version": "1.0.0",
-        "status": "running"
-    }
+    return {"service": "Community Backend", "version": "1.0.0", "status": "running"}
 
 
 @app.get("/health")
 def health():
     """Health check endpoint."""
-    return {
-        "status": "healthy",
-        "service": "community-backend"
-    }
+    return {"status": "healthy", "service": "community-backend"}
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
-        "main:app",
-        host=config.HOST,
-        port=config.PORT,
-        reload=config.DEBUG,
-        log_level="info"
+        "main:app", host=config.HOST, port=config.PORT, reload=config.DEBUG, log_level="info"
     )

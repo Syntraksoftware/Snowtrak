@@ -1,8 +1,10 @@
 """List routes for activity feed and current user activities."""
+
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from shared import ListResponse
+from shared.query_migration import FILTER_MAPPING, check_deprecated_params
 
 from middleware.auth import get_current_user
 from models import FrontendActivityResponse
@@ -11,8 +13,6 @@ from routes.activity_transformers import (
     map_activity_to_frontend_payload,
 )
 from services.supabase_client import get_activity_client
-from shared import ListResponse
-from shared.query_migration import FILTER_MAPPING, check_deprecated_params
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -39,7 +39,7 @@ async def list_activities(
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Activity list response was not in expected format",
-            )
+            ) from None
 
         activity_records = activity_list_response.get("items", [])
         total_items = activity_list_response.get("total", len(activity_records))
@@ -59,16 +59,16 @@ async def list_activities(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve activities",
-        )
+        ) from None
 
 
 @router.get("/me", response_model=ListResponse)
 async def list_my_activities(
     request: Request,
-    search: Optional[str] = None,
-    activity_type: Optional[str] = None,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
+    search: str | None = None,
+    activity_type: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     user_id: str = Depends(get_current_user),
@@ -91,7 +91,7 @@ async def list_my_activities(
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="User activity list response was not in expected format",
-            )
+            ) from None
 
         activity_records = user_activity_list_response.get("items", [])
         total_items = user_activity_list_response.get("total", len(activity_records))
@@ -120,4 +120,4 @@ async def list_my_activities(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve user activities",
-        )
+        ) from None

@@ -1,11 +1,12 @@
 """Upload binaries to Supabase Storage (community-media bucket)."""
+
 from __future__ import annotations
 
 import logging
 import time
 import uuid
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Literal
 
 from services.constants.media_constants import MEDIA_BUCKET, MEDIA_MAX_BYTES
 
@@ -69,14 +70,14 @@ UploadErrorCode = Literal[
 
 @dataclass(frozen=True)
 class CommunityMediaUploadResult:
-    url: Optional[str] = None
-    error: Optional[UploadErrorCode] = None
+    url: str | None = None
+    error: UploadErrorCode | None = None
 
 
 def normalize_upload_mime_and_extension(
-    content_type: Optional[str],
-    extension: Optional[str],
-) -> Optional[tuple[str, str]]:
+    content_type: str | None,
+    extension: str | None,
+) -> tuple[str, str] | None:
     """
     Resolve (content-type for storage, storage file extension) or None if unsupported.
 
@@ -140,9 +141,7 @@ class CommunityMediaOperations:
         ct, ext = normalized
         if ext == "jpg":
             ext = "jpeg"
-        safe_user = (
-            "".join(c for c in user_id if c.isalnum() or c in "-_")[:128] or "anon"
-        )
+        safe_user = "".join(c for c in user_id if c.isalnum() or c in "-_")[:128] or "anon"
         object_name = f"{safe_user}/{int(time.time() * 1000)}-{uuid.uuid4().hex[:10]}.{ext}"
 
         try:

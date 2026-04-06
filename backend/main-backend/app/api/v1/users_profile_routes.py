@@ -1,4 +1,5 @@
 """Profile routes for authenticated and public user profile access."""
+
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -17,7 +18,7 @@ def _ensure_database_configured() -> None:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Database not configured",
-        )
+        ) from None
 
 
 def _build_default_full_name(current_user: User) -> str | None:
@@ -47,7 +48,7 @@ def get_current_user_profile_endpoint(
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="Failed to create profile",
-                )
+                ) from None
 
         return ProfileResponse(**profile_data)
     except HTTPException:
@@ -57,7 +58,7 @@ def get_current_user_profile_endpoint(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get user profile",
-        )
+        ) from None
 
 
 @router.put("/me/profile", response_model=ProfileResponse)
@@ -77,7 +78,7 @@ def update_current_user_profile_endpoint(
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail="Username already taken",
-                )
+                ) from None
 
         existing_profile = supabase_client.get_profile_by_id(current_user.id)
         if existing_profile is None:
@@ -97,7 +98,7 @@ def update_current_user_profile_endpoint(
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to update profile",
-            )
+            ) from None
 
         logger.info(f"User {current_user.id} profile updated")
         return ProfileResponse(**updated_profile)
@@ -108,7 +109,7 @@ def update_current_user_profile_endpoint(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user profile",
-        )
+        ) from None
 
 
 @router.get("/{user_id}/profile", response_model=ProfileResponse)
@@ -124,7 +125,7 @@ def get_user_profile_by_id(
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Profile not found",
-            )
+            ) from None
 
         return ProfileResponse(**profile_data)
     except HTTPException:
@@ -134,4 +135,4 @@ def get_user_profile_by_id(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get user profile",
-        )
+        ) from None

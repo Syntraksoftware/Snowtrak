@@ -99,9 +99,15 @@ class FakeQuery:
                 payload["id"] = f"sub-{uuid.uuid4().hex[:6]}"
             if self.table_name == "posts" and "post_id" not in payload:
                 payload["post_id"] = f"post-{uuid.uuid4().hex[:6]}"
-            if self.table_name in {"comments", "post_votes", "comment_votes"} and "id" not in payload:
+            if (
+                self.table_name in {"comments", "post_votes", "comment_votes"}
+                and "id" not in payload
+            ):
                 payload["id"] = f"row-{uuid.uuid4().hex[:6]}"
-            if self.table_name in {"subthreads", "posts", "comments"} and "created_at" not in payload:
+            if (
+                self.table_name in {"subthreads", "posts", "comments"}
+                and "created_at" not in payload
+            ):
                 payload["created_at"] = "2026-01-02T00:00:00Z"
             table_rows.append(payload)
             return FakeResponse(data=[payload])

@@ -1,9 +1,9 @@
 """
 Activity helper functions for response conversion.
 """
-from typing import List
-from app.schemas.activity import ActivityResponse, LocationResponse
+
 from app.core.storage import Activity
+from app.schemas.activity import ActivityResponse, LocationResponse
 
 
 def activity_dict_to_response(activity: dict) -> ActivityResponse:
@@ -61,7 +61,7 @@ def activity_model_to_response(activity: Activity) -> ActivityResponse:
     )
 
 
-def locations_to_dict(locations: list) -> List[dict]:
+def locations_to_dict(locations: list) -> list[dict]:
     """Convert LocationCreate list to dict format for storage."""
     return [
         {

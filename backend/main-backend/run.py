@@ -2,7 +2,9 @@
 Development server runner.
 Run with: python run.py
 """
+
 import uvicorn
+
 from app.core.config import settings
 
 if __name__ == "__main__":

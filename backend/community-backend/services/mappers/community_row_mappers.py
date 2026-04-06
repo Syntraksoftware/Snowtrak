@@ -1,8 +1,9 @@
 """Shared row mapping helpers for community read operations."""
-from typing import Any, Dict
+
+from typing import Any
 
 
-def flatten_user_info(row: Dict[str, Any], field: str = "user_info") -> None:
+def flatten_user_info(row: dict[str, Any], field: str = "user_info") -> None:
     author = row.get(field)
     if not author:
         return

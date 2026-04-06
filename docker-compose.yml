@@ -18,3 +18,13 @@ services:
     extends:
       file: ./backend/docker-compose.yml
       service: map-backend
+
+  # Optional local PostGIS; production uses Supabase PostGIS.
+  postgis:
+    extends:
+      file: ./backend/docker-compose.yml
+      service: postgis
+
+# Required when using `extends` for postgis (child file volumes are not merged).
+volumes:
+  postgis_data:

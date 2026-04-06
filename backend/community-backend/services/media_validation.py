@@ -1,7 +1,6 @@
 """Shared rules for community media URLs attached to posts/comments."""
-from __future__ import annotations
 
-from typing import List, Optional
+from __future__ import annotations
 
 from services.constants.media_constants import MEDIA_BUCKET
 
@@ -11,11 +10,11 @@ MAX_MEDIA_ATTACHMENTS = 4
 MAX_MEDIA_URL_LENGTH = 2048
 
 
-def normalize_media_urls(raw: Optional[List[str]]) -> List[str]:
+def normalize_media_urls(raw: list[str] | None) -> list[str]:
     """Return up to four validated URLs pointing at community-media bucket."""
     if not raw:
         return []
-    out: List[str] = []
+    out: list[str] = []
     for item in raw[:MAX_MEDIA_ATTACHMENTS]:
         url = (item or "").strip()
         if not url or len(url) > MAX_MEDIA_URL_LENGTH:

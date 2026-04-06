@@ -1,4 +1,5 @@
 """Write-oriented post routes."""
+
 import logging
 import os
 import sys
@@ -13,8 +14,8 @@ from middleware.auth import get_current_user
 from routes.community_models import (
     CommunityDeletePostResponse,
     CommunityPostResponse,
-    PostRepostResponse,
     PostCreate,
+    PostRepostResponse,
     PostUpdate,
     PostVoteRequest,
     PostVoteResponse,
@@ -43,7 +44,7 @@ async def create_post(
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Subthread not found",
-            )
+            ) from None
 
         quoted_id = (data.quoted_post_id or "").strip() or None
         quoted_comment_id = (data.quoted_comment_id or "").strip() or None
@@ -51,7 +52,7 @@ async def create_post(
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Cannot quote both a post and a comment",
-            )
+            ) from None
 
         if quoted_id:
             qpost = community_client.get_post_by_id(quoted_id)
@@ -59,7 +60,7 @@ async def create_post(
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Quoted post not found",
-                )
+                ) from None
 
         if quoted_comment_id:
             qcom = community_client.get_comment_by_id(quoted_comment_id)
@@ -67,7 +68,7 @@ async def create_post(
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Quoted comment not found",
-                )
+                ) from None
 
         repost_of_id = (data.repost_of_post_id or "").strip() or None
         repost_of_comment_id = (data.repost_of_comment_id or "").strip() or None
@@ -75,7 +76,7 @@ async def create_post(
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Cannot duplicate-repost both a post and a comment",
-            )
+            ) from None
 
         if repost_of_id:
             parent = community_client.get_post_by_id(repost_of_id)
@@ -83,7 +84,7 @@ async def create_post(
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Repost target post not found",
-                )
+                ) from None
 
         if repost_of_comment_id:
             parent_comment = community_client.get_comment_by_id(repost_of_comment_id)
@@ -91,7 +92,7 @@ async def create_post(
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Repost target comment not found",
-                )
+                ) from None
 
         media_urls = normalize_media_urls(data.media_urls)
         body = (data.content or "").strip()
@@ -106,7 +107,7 @@ async def create_post(
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Duplicate repost must include content or media from the source",
-            )
+            ) from None
 
         created_post = community_client.create_post(
             user_id=user_id,
@@ -123,7 +124,7 @@ async def create_post(
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to create post",
-            )
+            ) from None
 
         return created_post
     except HTTPException:
@@ -133,7 +134,7 @@ async def create_post(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None
 
 
 @router.post("/{post_id}/repost", response_model=PostRepostResponse)
@@ -155,11 +156,11 @@ async def repost_post(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="Could not save repost. If this continues, check that "
                     "the post_reposts table exists (see community-backend SQL setup).",
-                )
+                ) from None
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Post not found",
-            )
+            ) from None
         return result
     except HTTPException:
         raise
@@ -168,7 +169,7 @@ async def repost_post(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None
 
 
 @router.delete("/{post_id}/repost", response_model=PostRepostResponse)
@@ -190,11 +191,11 @@ async def undo_repost_post(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="Could not update repost. If this continues, check that "
                     "the post_reposts table exists (see community-backend SQL setup).",
-                )
+                ) from None
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Post not found",
-            )
+            ) from None
         return result
     except HTTPException:
         raise
@@ -203,7 +204,7 @@ async def undo_repost_post(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None
 
 
 @router.patch("/{post_id}", response_model=CommunityPostResponse)
@@ -225,7 +226,7 @@ async def update_post(
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Post not found or unauthorized",
-            )
+            ) from None
 
         return updated_post
     except HTTPException:
@@ -235,7 +236,7 @@ async def update_post(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None
 
 
 @router.post("/{post_id}/vote", response_model=PostVoteResponse)
@@ -260,11 +261,11 @@ async def vote_post(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="Could not save vote. If this continues, check that "
                     "the post_votes table exists (see community-backend SQL setup).",
-                )
+                ) from None
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Post not found",
-            )
+            ) from None
 
         return vote_result
     except HTTPException:
@@ -274,7 +275,7 @@ async def vote_post(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None
 
 
 @router.delete("/{post_id}", response_model=CommunityDeletePostResponse)
@@ -290,7 +291,7 @@ async def delete_post(
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Post not found or unauthorized",
-            )
+            ) from None
 
         return CommunityDeletePostResponse(
             message="Post and all comments deleted successfully",
@@ -303,4 +304,4 @@ async def delete_post(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
-        )
+        ) from None

@@ -10,17 +10,20 @@ The test suite covers both backend (Python/FastAPI) and frontend (Flutter) compo
 
 ### Setup
 
-**Important**: Use a virtual environment (Python is externally managed on macOS).
+**Important**: Use the shared virtual environment at the repository root (`.venv`) for all backend services.
 
 ```bash
+# From repository root
+python3.11 -m venv .venv
+./.venv/bin/pip install -r backend/requirements.txt
+
 cd backend
 
-# Create and activate virtual environment
-python3 -m venv venv
-source venv/bin/activate  # macOS/Linux
+# Optional activation
+source ../.venv/bin/activate  # macOS/Linux
 
 # Install dependencies
-pip install -r requirements.txt -r requirements-test.txt
+../.venv/bin/pip install -r requirements-test.txt
 ```
 
 **Or use the test script:**

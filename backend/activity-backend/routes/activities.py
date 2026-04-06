@@ -1,4 +1,5 @@
 """Activity router aggregator."""
+
 from fastapi import APIRouter
 
 from routes.activities_list_routes import router as activities_list_router

@@ -1,4 +1,5 @@
 """Post router aggregator."""
+
 from fastapi import APIRouter
 
 from routes.posts_read_routes import router as posts_read_router

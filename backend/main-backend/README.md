@@ -7,10 +7,12 @@ FastAPI backend for authentication with Supabase integration. Supports persisten
 ### 1. Setup Environment
 
 ```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # macOS/Linux
-pip install -r requirements.txt
+# From repository root
+python3.11 -m venv .venv
+./.venv/bin/pip install -r backend/requirements.txt
+
+cd backend/main-backend
+../../.venv/bin/python -m pip install -r requirements.txt
 ```
 
 ### 2. Configure Supabase (Optional but Recommended)

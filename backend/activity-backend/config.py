@@ -1,7 +1,6 @@
 """Configuration for Activity Backend (FastAPI)."""
 
 from functools import lru_cache
-from typing import List
 
 from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -19,7 +18,7 @@ class Config(BaseSettings):
     FASTAPI_ENV: str = "development"
     PORT: int = 5100
     HOST: str = "127.0.0.1"
-    CORS_ORIGINS: List[str] = [
+    CORS_ORIGINS: list[str] = [
         "http://localhost:3000",
         "http://localhost:8080",
         "http://localhost:5173",

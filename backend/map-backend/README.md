@@ -54,6 +54,14 @@ Static map image URL + elevation data
 **Elevation Lookup response:**
 - `results`: Array of {latitude, longitude, elevation_meters} objects
 
+**Elevation correction (`POST /api/elevation/correct`):**
+- Request/response types live in `backend/shared/track_pipeline_schemas.py` as `ElevationCorrectionRequest` / `ElevationCorrectionResponse` (mirrors Dart `TrackPoint` and the map pipeline contract).
+- Up to 512 points per call; returns the same track with `elevation_m` filled from the configured elevation API.
+
+Canonical Pydantic models for the full track pipeline (`TrackPointIn`, `ProcessedTrackOut`, `SegmentOut`, `ActivityStatsOut`, `RunSummaryOut`, `TrailMatchRequest`/`Response`, `ActivityIn`/`Out`, etc.) also live in that shared module for use across services.
+
+**Note:** Server-generated **dynamic map HTML** was removed; the mobile app renders maps natively.
+
 ### External integrations
 
 - **Google Maps Static API** (https://maps.googleapis.com/maps/api/staticmap): Generates static map images with paths and markers
@@ -68,18 +76,33 @@ Static map image URL + elevation data
 backend/map-backend/
 ├── main.py                     # FastAPI app setup, lifespan, startup hooks
 ├── config.py                   # Environment variables & settings
+├── db/                         # SQLAlchemy ORM for PostGIS (optional; see below)
+│   ├── base.py
+│   └── orm_models.py          # ski_runs, ski_lifts, activities, track_points, segments
 ├── routes/
 │   ├── maps.py                # Static map endpoints (/api/maps/*)
 │   └── elevation.py           # Elevation endpoints (/api/elevation/*)
 ├── services/
 │   ├── static_map_client.py   # Google Maps Static API client
 │   └── elevation_client.py    # Open Elevation API wrapper
+├── engine/geometry/           # Legacy reference SQL (prefer Alembic under backend/db/)
+│   ├── 001_init_postgis_storage.sql
+│   └── 002_map_pipeline_tables.sql
 ├── middleware/
 │   └── auth.py                # JWT extraction (optional auth)
 ├── CURL_TESTS.md              # Manual endpoint testing guide
 ├── LOCAL_SETUP.md             # Local development walkthrough
 └── requirements.txt           # Python dependencies
 ```
+
+### PostGIS ORM applicability
+
+- **Requires PostGIS** on the target database (`CREATE EXTENSION postgis;`). The optional Docker service `postgis` (`docker compose --profile postgis up postgis`) provides this; plain Postgres without the extension cannot store `geometry` columns.
+- **Supabase** is Postgres: enable the PostGIS extension in the dashboard if you want these tables in the same project as other data.
+- **Schema `map_trail`**: pipeline tables (`ski_runs`, `ski_lifts`, `activities`, `track_points`, `segments`) live in this schema so they do **not** collide with `public.activities` (or other tables) from Supabase / activity-backend.
+- **Alembic (canonical DDL):** from `backend/`, install deps (`psycopg`, `alembic`, `sqlalchemy`, `geoalchemy2`), set `SYNTRAK_DATABASE_URL=postgresql+psycopg://USER:PASS@HOST:PORT/DB`, then `alembic upgrade head`. Migrations live in `backend/db/migrations/versions/`. If port **5432** on your machine is already used by another Postgres, set `POSTGRES_PORT` (see `postgres.env.example`) when starting Docker PostGIS.
+- **`001_init_postgis_storage.sql`**: optional standalone script; revision `001_initial` also creates `map_cache_entries` and `elevation_samples` in `public` with GiST indexes.
+- Engine/session wiring (`create_engine`, sessions) can follow in a later change.
 
 ### Entry points
 
@@ -97,11 +120,13 @@ backend/map-backend/
 ### Configuration
 
 Environment variables (set via `.env` or deployment config):
+- `MAP_STORAGE_BACKEND`: `supabase` (default) or `postgis`
 - `GOOGLE_MAPS_API_KEY`: Google Maps Static API key
 - `OPEN_ELEVATION_API_URL`: Open Elevation API endpoint (default: https://api.open-elevation.com/api/v1/lookup)
 - `JWT_SECRET`: Shared secret for token validation (from deployment config)
 - `HOST`, `PORT`: Server bind address (default: 127.0.0.1:5200)
-- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`: Optional, for caching coordination with Supabase
+- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`: Required when `MAP_STORAGE_BACKEND=supabase`
+- `POSTGIS_DSN` or `POSTGIS_HOST/PORT/DB/USER/PASSWORD`: Used when `MAP_STORAGE_BACKEND=postgis`
 
 ## 4. Development and maintenance guidelines
 
@@ -109,13 +134,15 @@ Environment variables (set via `.env` or deployment config):
 
 1. **Install and run:**
    ```bash
-   cd backend/map-backend
-   python -m venv venv
-   source venv/bin/activate  # Windows: venv\Scripts\activate
-   pip install -r requirements.txt
+  # From repository root
+  python3.11 -m venv .venv
+  ./.venv/bin/pip install -r backend/requirements.txt
+
+  cd backend/map-backend
+  ../../.venv/bin/python -m pip install -r requirements.txt
    cp .env.example .env
    # Edit .env: set GOOGLE_MAPS_API_KEY, OPEN_ELEVATION_API_URL, JWT_SECRET
-   python main.py
+  ../../.venv/bin/python main.py
    ```
 
 2. **Obtain API credentials:**
@@ -165,6 +192,13 @@ docker build -t syntrak-map-backend:latest .
 # Via docker-compose from backend root
 cd backend
 docker-compose up -d syntrak-map-backend
+
+# Run map-backend with local PostGIS storage ownership
+MAP_STORAGE_BACKEND=postgis docker-compose up -d postgis map-backend
+
+# Optional: initialize local map storage tables
+psql "postgresql://syntrak:syntrak_local_dev@localhost:5432/syntrak" \
+  -f map-backend/engine/geometry/001_init_postgis_storage.sql
 ```
 
 Service runs on port 5200 and communicates with Google Maps and Open Elevation API over HTTPS.

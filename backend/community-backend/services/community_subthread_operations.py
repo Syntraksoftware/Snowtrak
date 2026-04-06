@@ -1,6 +1,7 @@
 """Subthread-related Supabase operations for community service."""
+
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -11,8 +12,8 @@ class CommunitySubthreadOperations:
     def create_subthread(
         self,
         name: str,
-        description: Optional[str] = None,
-    ) -> Optional[Dict[str, Any]]:
+        description: str | None = None,
+    ) -> dict[str, Any] | None:
         """Create a new subthread."""
         try:
             payload = {
@@ -29,10 +30,16 @@ class CommunitySubthreadOperations:
             logger.exception("Failed to create subthread %s: %s", name, exception)
             return None
 
-    def get_subthread_by_id(self, subthread_id: str) -> Optional[Dict[str, Any]]:
+    def get_subthread_by_id(self, subthread_id: str) -> dict[str, Any] | None:
         """Get subthread by identifier."""
         try:
-            response = self._client.table("subthreads").select("*").eq("id", subthread_id).limit(1).execute()
+            response = (
+                self._client.table("subthreads")
+                .select("*")
+                .eq("id", subthread_id)
+                .limit(1)
+                .execute()
+            )
             response_data = getattr(response, "data", None)
             if isinstance(response_data, list) and response_data:
                 return response_data[0]
@@ -41,10 +48,12 @@ class CommunitySubthreadOperations:
             logger.exception("Failed to get subthread %s: %s", subthread_id, exception)
             return None
 
-    def get_subthread_by_name(self, name: str) -> Optional[Dict[str, Any]]:
+    def get_subthread_by_name(self, name: str) -> dict[str, Any] | None:
         """Get subthread by name."""
         try:
-            response = self._client.table("subthreads").select("*").eq("name", name).limit(1).execute()
+            response = (
+                self._client.table("subthreads").select("*").eq("name", name).limit(1).execute()
+            )
             response_data = getattr(response, "data", None)
             if isinstance(response_data, list) and response_data:
                 return response_data[0]
@@ -53,10 +62,16 @@ class CommunitySubthreadOperations:
             logger.exception("Failed to get subthread by name %s: %s", name, exception)
             return None
 
-    def list_subthreads(self, limit: int = 50) -> List[Dict[str, Any]]:
+    def list_subthreads(self, limit: int = 50) -> list[dict[str, Any]]:
         """List all subthreads ordered by newest first."""
         try:
-            response = self._client.table("subthreads").select("*").order("created_at", desc=True).limit(limit).execute()
+            response = (
+                self._client.table("subthreads")
+                .select("*")
+                .order("created_at", desc=True)
+                .limit(limit)
+                .execute()
+            )
             response_data = getattr(response, "data", None)
             return response_data if isinstance(response_data, list) else []
         except Exception as exception:
