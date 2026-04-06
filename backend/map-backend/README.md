@@ -74,9 +74,15 @@ Canonical Pydantic models for the full track pipeline (`TrackPointIn`, `Processe
 
 ```
 backend/map-backend/
+├── domains/                    # Step A split-service boundaries (scaffold)
+│   ├── activities_service/
+│   ├── trails_service/
+│   ├── elevation_dem_service/
+│   ├── sync_worker_service/
+│   └── README.md
 ├── main.py                     # FastAPI app setup, lifespan, startup hooks
 ├── config.py                   # Environment variables & settings
-├── db/                         # SQLAlchemy ORM for PostGIS (optional; see below)
+├── orm/                        # SQLAlchemy ORM for PostGIS (optional; see below)
 │   ├── base.py
 │   └── orm_models.py          # ski_runs, ski_lifts, activities, track_points, segments
 ├── routes/
@@ -84,7 +90,10 @@ backend/map-backend/
 │   └── elevation.py           # Elevation endpoints (/api/elevation/*)
 ├── services/
 │   ├── static_map_client.py   # Google Maps Static API client
-│   └── elevation_client.py    # Open Elevation API wrapper
+│   ├── elevation_client.py    # Open Elevation API wrapper
+│   ├── openskimap_sync.py     # GeoJSON → map_trail.ski_runs (optional scheduled sync)
+│   ├── storage_backend.py
+│   └── supabase_client.py
 ├── engine/geometry/           # Legacy reference SQL (prefer Alembic under backend/db/)
 │   ├── 001_init_postgis_storage.sql
 │   └── 002_map_pipeline_tables.sql
@@ -97,12 +106,83 @@ backend/map-backend/
 
 ### PostGIS ORM applicability
 
-- **Requires PostGIS** on the target database (`CREATE EXTENSION postgis;`). The optional Docker service `postgis` (`docker compose --profile postgis up postgis`) provides this; plain Postgres without the extension cannot store `geometry` columns.
-- **Supabase** is Postgres: enable the PostGIS extension in the dashboard if you want these tables in the same project as other data.
-- **Schema `map_trail`**: pipeline tables (`ski_runs`, `ski_lifts`, `activities`, `track_points`, `segments`) live in this schema so they do **not** collide with `public.activities` (or other tables) from Supabase / activity-backend.
-- **Alembic (canonical DDL):** from `backend/`, install deps (`psycopg`, `alembic`, `sqlalchemy`, `geoalchemy2`), set `SYNTRAK_DATABASE_URL=postgresql+psycopg://USER:PASS@HOST:PORT/DB`, then `alembic upgrade head`. Migrations live in `backend/db/migrations/versions/`. If port **5432** on your machine is already used by another Postgres, set `POSTGRES_PORT` (see `postgres.env.example`) when starting Docker PostGIS.
-- **`001_init_postgis_storage.sql`**: optional standalone script; revision `001_initial` also creates `map_cache_entries` and `elevation_samples` in `public` with GiST indexes.
-- Engine/session wiring (`create_engine`, sessions) can follow in a later change.
+- **Requires PostGIS**:
+  - Target database must have PostGIS enabled (`CREATE EXTENSION postgis;`)
+  - Optional Docker service (`docker compose --profile postgis up postgis`) provides PostGIS
+  - Plain Postgres without PostGIS cannot store `geometry` columns
+
+- **Supabase compatibility**:
+  - Supabase uses Postgres; enable PostGIS extension in the Supabase dashboard to support these tables
+
+- **Schema organization**:
+  - All map-related pipeline tables (`ski_runs`, `ski_lifts`, `activities`, `track_points`, `segments`) are in the `map_trail` schema
+  - Prevents collisions with `public.activities` or other Supabase/activity-backend tables
+
+- **Database migrations (Alembic/DDL)**:
+  - From `backend/`, install dependencies: `psycopg`, `alembic`, `sqlalchemy`, `geoalchemy2`
+  - Set environment variable: `SYNTRAK_DATABASE_URL=postgresql+psycopg://USER:PASS@HOST:PORT/DB`
+  - Run migrations: `alembic upgrade head`
+  - Migration files are in `backend/db/migrations/versions/`
+  - If port **5432** is in use, set `POSTGRES_PORT` (see `postgres.env.example`) when starting Docker PostGIS
+
+- **Standalone SQL initialization**:
+  - `001_init_postgis_storage.sql` can be used instead of Alembic
+  - Revision `001_initial` creates `map_cache_entries` and `elevation_samples` in `public` with GiST indexes
+
+- **Database connection pool (`backend/db/connection.py`)**:
+  - Module-level `_pool`: one global `asyncpg.Pool | None`, created at app startup if DSN is provided
+  - `normalize_asyncpg_dsn(url)`: converts DSN by stripping the driver for asyncpg compatibility
+  - `create_pool(...)`:
+    - If `_pool` exists, does nothing (idempotent)
+    - DSN order of precedence: argument → `SYNTRAK_DATABASE_URL` → no pool if unset
+    - Uses `asyncpg.create_pool(...)` with config params
+  - `close_pool()`: closes and clears `_pool` (run on app shutdown)
+  - `get_pool()`: returns pool or None (if never created/no DB URL)
+  - `get_db()` (FastAPI dependency):
+    - Requires live pool or raises RuntimeError
+    - Borrows a connection as a short-lived context (`async with pool.acquire() as connection`)
+    - Yields the connection to the route, which auto-releases after use
+
+- **App integration (`map-backend/main.py`)**:
+  - Pool handled in FastAPI’s lifespan:
+    - After `initialize_storage_backend()`
+    - Pool creation logic:
+      - If `SYNTRAK_DATABASE_URL` set: `await create_pool(dsn=dsn)`
+      - Else if `MAP_STORAGE_BACKEND == "postgis"`: `await create_pool(dsn=config.postgis_dsn)`
+      - Else: `await create_pool()` (may result in no pool if URL unset)
+    - App serves traffic after pool is initialized (`yield`)
+    - On shutdown: `await close_pool()`
+    - Asyncpg pool is optional—if no DB URL, app runs without it and routes with `Depends(get_db)` will fail
+
+- **Python import path and Docker**:
+  - Local: `main.py` extends `sys.path` to include `backend/` if needed
+  - Docker: `db/` is placed alongside app to ensure imports like `from db.connection import ...` work
+
+- **Using the DB pool in a FastAPI route** (pattern, not yet in use):
+  ```python
+  from fastapi import Depends
+  from db.connection import get_db
+  import asyncpg
+
+  @router.get("/example")
+  async def example(conn: asyncpg.Connection = Depends(get_db)):
+      row = await conn.fetchrow("SELECT 1 AS n")
+      return {"n": row["n"]}
+  ```
+  - `get_db` is an async generator dependency: yields connection to handler, then releases it back after use
+
+- **Comparison: asyncpg vs. SQLAlchemy/Alembic**:
+  - Alembic/GeoAlchemy2: migrations, ORM metadata (typically uses sync driver e.g. `psycopg`)
+  - asyncpg pool: used for async, runtime SQL (e.g. raw queries, spatial operations) without blocking
+  - Both can access the same Postgres DB; asyncpg just normalizes URL differently
+
+- **OpenSkiMap GeoJSON sync (`services/openskimap_sync.py`)**:
+  - OpenSkiMap’s site uses vector tiles from `tiles.openskimap.org` (see [openskimap.org front-end](https://github.com/russellporter/openskimap.org)); bulk GeoJSON is not published as a single daily file on that CDN, so you typically host output from [openskidata-processor](https://github.com/russellporter/openskidata-processor) (`prepare-geojson`) or another FeatureCollection of run lines.
+  - `download_geojson(url=...)`: HTTPS fetch; defaults to `OPENSKIMAP_RUNS_GEOJSON_URL`; appends a date `v=YYYYMMDD` query param for cache busting.
+  - `parse_runs(geojson)`: keeps `LineString` features and the longest line from `MultiLineString`; reads `name` / `piste:difficulty`-style properties and a stable `source_id` for upserts.
+  - `upsert_to_postgis(conn, runs)`: `INSERT ... ON CONFLICT (source_id) DO UPDATE` into `map_trail.ski_runs` (requires Alembic revision `002_ski_runs_source` for the `source_id` column + unique index).
+  - When **both** `OPENSKIMAP_SYNC_ENABLED=true` and a non-empty `OPENSKIMAP_RUNS_GEOJSON_URL` are set (`openskimap_sync_armed` on `Config`), `main.py` registers an **APScheduler** `AsyncIOScheduler` (UTC) job at **03:00** daily. Enabling sync without a URL fails **Pydantic** validation at startup.
+  - **Manual first ingest:** `backend/scripts/run_initial_sync.py` — loads env, then either fetches a URL (`sync_ski_runs_from_openskimap`) or reads a local file with `--file` (`sync_ski_runs_from_geojson_file`). Prints `COUNT(*)` on `map_trail.ski_runs` and a sample `ST_DWithin` query. Does not require `OPENSKIMAP_SYNC_ENABLED`. Local test files: put GeoJSON under `backend/data/` (gitignored). Example: `./.venv/bin/python backend/scripts/run_initial_sync.py --file backend/data/runs.geojson`.
 
 ### Entry points
 
