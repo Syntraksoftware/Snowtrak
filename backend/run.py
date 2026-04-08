@@ -26,6 +26,7 @@ def _venv_python_path() -> Path:
         return repo_root / ".venv" / "Scripts" / "python.exe"
     return repo_root / ".venv" / "bin" / "python"
 
+
 # Service configurations: name -> (service_dir, port, host)
 SERVICES = {
     "main": {

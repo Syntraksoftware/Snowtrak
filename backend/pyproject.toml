@@ -7,7 +7,7 @@
 [tool.ruff]
 target-version = "py311"
 line-length = 100
-src = ["shared", "db", "main-backend", "community-backend", "activity-backend", "map-backend"]
+src = ["shared", "db", "routers", "main-backend", "community-backend", "activity-backend", "map-backend"]
 extend-exclude = [
   ".venv",
   "venv",
@@ -34,6 +34,16 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 # Barrel re-exports: one combined import block reads better than isort-split lines.
 "main-backend/app/schemas/__init__.py" = ["I001"]
+# `sys.path` must be adjusted before `from db.connection` when running from monorepo layout.
+"map-backend/main.py" = ["E402", "I001"]
+# Deferred imports after ``sys.path`` bootstrap for ``db`` / ``services``.
+"scripts/run_initial_sync.py" = ["I001"]
+# ``map-backend`` must be on ``sys.path`` before ``services.dem_service``.
+"routers/elevation.py" = ["E402", "I001"]
+"routers/trails.py" = ["E402", "I001"]
+"routers/activities.py" = ["E402", "I001"]
+"map-backend/application.py" = ["E402", "I001"]
+"main.py" = ["E402", "I001"]
 
 [tool.ruff.format]
 quote-style = "double"
