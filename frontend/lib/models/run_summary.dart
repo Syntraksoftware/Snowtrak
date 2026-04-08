@@ -13,11 +13,15 @@ class RunSummary with _$RunSummary {
   const RunSummary._();
 
   const factory RunSummary({
+    required String runNumber,
     required double distanceKm,
     required double verticalDropM,
     required double topSpeedKmh,
     required double avgSpeedKmh,
     required Duration movingTime,
+    required double startElevM,
+    required double endElevM,
     String? trailName,
+    String? difficulty,
   }) = _RunSummary;
 }

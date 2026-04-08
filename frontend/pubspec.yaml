@@ -56,6 +56,8 @@ dependencies:
   fl_chart: ^0.65.0
 
   freezed_annotation: ^2.4.4
+  gpx: ^2.3.0
+  fit_parser: ^2.0.0
 
 dev_dependencies:
   flutter_test:

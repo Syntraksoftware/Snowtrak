@@ -16,10 +16,12 @@ final _privateConstructorUsedError = UnsupportedError(
 
 /// @nodoc
 mixin _$ElevationChartData {
-  List<FlSpot> get spots => throw _privateConstructorUsedError;
+  List<FlSpot> get spots =>
+      throw _privateConstructorUsedError; // x = distance along route, y = elevation (routes are horizontal, elevation is vertical, consider this in 2D plane)
   List<({double end, double start})> get liftBandRanges =>
       throw _privateConstructorUsedError;
-  double get minElevM => throw _privateConstructorUsedError;
+  double get minElevM =>
+      throw _privateConstructorUsedError; // minimum elevation in meters
   double get maxElevM => throw _privateConstructorUsedError;
 
   /// Create a copy of ElevationChartData
@@ -158,7 +160,9 @@ class _$ElevationChartDataImpl extends _ElevationChartData
     return EqualUnmodifiableListView(_spots);
   }
 
+// x = distance along route, y = elevation (routes are horizontal, elevation is vertical, consider this in 2D plane)
   final List<({double end, double start})> _liftBandRanges;
+// x = distance along route, y = elevation (routes are horizontal, elevation is vertical, consider this in 2D plane)
   @override
   List<({double end, double start})> get liftBandRanges {
     if (_liftBandRanges is EqualUnmodifiableListView) return _liftBandRanges;
@@ -168,6 +172,7 @@ class _$ElevationChartDataImpl extends _ElevationChartData
 
   @override
   final double minElevM;
+// minimum elevation in meters
   @override
   final double maxElevM;
 
@@ -228,11 +233,12 @@ abstract class _ElevationChartData extends ElevationChartData {
   const _ElevationChartData._() : super._();
 
   @override
-  List<FlSpot> get spots;
+  List<FlSpot>
+      get spots; // x = distance along route, y = elevation (routes are horizontal, elevation is vertical, consider this in 2D plane)
   @override
   List<({double end, double start})> get liftBandRanges;
   @override
-  double get minElevM;
+  double get minElevM; // minimum elevation in meters
   @override
   double get maxElevM;
 
