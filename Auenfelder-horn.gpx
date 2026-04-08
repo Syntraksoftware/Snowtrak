@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx creator="Garmin Connect" version="1.1"
+  xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/11.xsd"
+  xmlns:ns3="http://www.garmin.com/xmlschemas/TrackPointExtension/v1"
+  xmlns="http://www.topografix.com/GPX/1/1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns2="http://www.garmin.com/xmlschemas/GpxExtensions/v3">
+  <metadata>
+    <name>Lech-Juppenspitz-Warth</name>
+    <link href="connect.garmin.com">
+      <text>Garmin Connect</text>
+    </link>
+    <time>2022-01-13T16:19:45.000Z</time>
+  </metadata>
+  <trk>
+    <name>Lech-Juppenspitz-Warth</name>
+    <trkseg>
+      <trkpt lat="47.2262011" lon="10.1021449">
+        <ele>2309.794677734375</ele>
+        <time>2022-01-13T16:19:45.000Z</time>
+      </trkpt>
+      <trkpt lat="47.2283034" lon="10.1023307">
+        <ele>2300.99462890625</ele>
+        <time>2022-01-13T16:19:45.070Z</time>
+      </trkpt>
+      <trkpt lat="47.2308713" lon="10.1052253">
+        <ele>2297.656494140625</ele>
+        <time>2022-01-13T16:19:45.248Z</time>
+      </trkpt>
+      <trkpt lat="47.2318418" lon="10.1045947">
+        <ele>2373.307373046875</ele>
+        <time>2022-01-13T16:19:45.462Z</time>
+      </trkpt>
+      <trkpt lat="47.2345739" lon="10.1065264">
+        <ele>2263.921630859375</ele>
+        <time>2022-01-13T16:19:45.777Z</time>
+      </trkpt>
+      <trkpt lat="47.2368607" lon="10.109092">
+        <ele>2256.96826171875</ele>
+        <time>2022-01-13T16:19:46.188Z</time>
+      </trkpt>
+      <trkpt lat="47.2379249" lon="10.114675">
+        <ele>2151.263916015625</ele>
+        <time>2022-01-13T16:19:46.730Z</time>
+      </trkpt>
+      <trkpt lat="47.2382398" lon="10.121056">
+        <ele>1947.0902099609375</ele>
+        <time>2022-01-13T16:19:47.418Z</time>
+      </trkpt>
+      <trkpt lat="47.2371888" lon="10.1273576">
+        <ele>1730.9537353515625</ele>
+        <time>2022-01-13T16:19:48.253Z</time>
+      </trkpt>
+      <trkpt lat="47.2393815" lon="10.1294664">
+        <ele>1661.719482421875</ele>
+        <time>2022-01-13T16:19:49.176Z</time>
+      </trkpt>
+      <trkpt lat="47.2416282" lon="10.1274978">
+        <ele>1654.4892578125</ele>
+        <time>2022-01-13T16:19:50.186Z</time>
+      </trkpt>
+      <trkpt lat="47.2428225" lon="10.124567">
+        <ele>1653.366943359375</ele>
+        <time>2022-01-13T16:19:51.273Z</time>
+      </trkpt>
+      <trkpt lat="47.2438764" lon="10.1238687">
+        <ele>1651.239990234375</ele>
+        <time>2022-01-13T16:19:52.399Z</time>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>
