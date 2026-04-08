@@ -1,7 +1,7 @@
 """
 Pydantic v2 API contracts mirroring frontend Dart models under `frontend/lib/models/`.
 
-Separate service from google map html service rendering 
+Separate service from google map html service rendering
 Used as the canonical shape for map/track pipeline payloads across services.
 
 Field names use snake_case; JSON matches typical Flutter `json_serializable` output.
@@ -14,12 +14,10 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import StrEnum
-from typing import Annotated, Self
-
+from typing import Annotated, Any, Self
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-
-
 
 
 class PointSegmentType(StrEnum):
@@ -52,13 +50,14 @@ class ActivityType(StrEnum):
 
 # --- Track pipeline (Dart: TrackPoint, ProcessedTrack, Segment) ---
 
+
 class TrackPointIn(BaseModel):
     """Atomic GPS sample (input). `elevation_m` optional when requesting DEM correction.
-    
+
     DEM Correction: process that uses a digital elevation model (DEM) to correct the elevation of a track point.
     """
 
-    model_config = ConfigDict(extra="forbid") # any extra fields are forbidden
+    model_config = ConfigDict(extra="forbid")  # any extra fields are forbidden
 
     lat: Annotated[float, Field(ge=-90, le=90)]
     lon: Annotated[float, Field(ge=-180, le=180)]
@@ -71,7 +70,7 @@ class TrackPointIn(BaseModel):
 class TrackPointOut(BaseModel):
     """
     Atomic GPS sample (output); elevation from sensor or corrected.
-    After DEM correction is applied: 
+    After DEM correction is applied:
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -150,6 +149,7 @@ class RunSummaryOut(BaseModel):
 
 # --- Engine 5 chart (Dart: FlSpot + LiftBandRange) ---
 
+
 class ChartSpot(BaseModel):
     """One `fl_chart` sample: x = distance along route, y = elevation (m)."""
 
@@ -198,6 +198,7 @@ class ElevationCorrectionResponse(BaseModel):
 
 # --- Trail matching (Engine / resort integration) ---
 
+
 class TrailMatchRequest(BaseModel):
     """Match track geometry to named trails (implementation-specific)."""
 
@@ -207,14 +208,26 @@ class TrailMatchRequest(BaseModel):
     points: list[TrackPointIn] | None = Field(
         None, description="Alternative to processed_track when no Engine 1 id exists yet"
     )
-    resort_id: str | None = None
+    segments: list[SegmentOut] | None = Field(
+        None,
+        description=(
+            "Engine 2 segments; only ``descent`` slices are matched to ``map_trail.ski_runs``. "
+            "If omitted, the server treats the full track as a single descent."
+        ),
+    )
+    resort_id: str | None = Field(
+        None, description="Reserved for future resort-scoped layers; ignored by the current matcher"
+    )
 
     @model_validator(mode="after")
     def require_track_payload(self) -> Self:
         has_track = self.processed_track is not None
         has_points = self.points is not None and len(self.points) > 0
-        if not has_track and not has_points:
-            raise ValueError("Provide processed_track or a non-empty points list")
+        has_segments = self.segments is not None and len(self.segments) > 0
+        if not has_track and not has_points and not has_segments:
+            raise ValueError(
+                "Provide processed_track, a non-empty points list, or non-empty segments"
+            )
         return self
 
 
@@ -308,3 +321,62 @@ class ActivityOut(BaseModel):
     stats: ActivityStatsOut | None = None
     run_summaries: list[RunSummaryOut] | None = None
     elevation_chart: ElevationChartDataOut | None = None
+
+
+# --- map_trail SQL persistence (Postgres `map_trail.*` tables) ---
+
+
+class MapActivityCreateRequest(BaseModel):
+    """Persist a full pipeline activity: header + ordered points + segment slices."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    user_id: UUID
+    processed_track: ProcessedTrackIn
+    segments: list[SegmentOut] = Field(default_factory=list)
+    stats: dict[str, Any] | ActivityStatsOut | None = None
+
+    @model_validator(mode="after")
+    def _segment_indices(self) -> Self:
+        n = len(self.processed_track.points)
+        if n == 0:
+            raise ValueError("processed_track.points must not be empty")
+        for seg in self.segments:
+            if seg.start_index < 0 or seg.end_index < 0:
+                raise ValueError("segment indices must be non-negative")
+            if seg.start_index > seg.end_index:
+                raise ValueError("segment start_index must be <= end_index")
+            if seg.end_index >= n:
+                raise ValueError("segment end_index must be < number of track points")
+        return self
+
+
+class MapActivityDetailResponse(BaseModel):
+    """Activity row plus reconstructed processed track and segments (indices are inclusive)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    user_id: str
+    recorded_at: datetime
+    stats: dict[str, Any] | None = None
+    processed_track: ProcessedTrackOut
+    segments: list[SegmentOut]
+
+
+class MapActivityListItem(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    user_id: str
+    recorded_at: datetime
+    stats: dict[str, Any] | None = None
+
+
+class MapActivityListResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    items: list[MapActivityListItem]
+    total: int
+    limit: int
+    offset: int

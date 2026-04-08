@@ -1,90 +1,25 @@
 """
-⚠️ DEPRECATION NOTICE: This file is the application definition only.
-DO NOT run this file directly.
+FastAPI map service entry for ``uvicorn main:app`` when cwd is ``map-backend/``.
 
-✅ Use the standardized entry point instead:
-   python run.py
-
-Map Backend - FastAPI Application
-Service for static map images and elevation correction.
+Unified monorepo entry (same ``app`` surface): ``backend/main.py`` → ``uvicorn main:app``
+from ``backend/`` with ``PYTHONPATH`` including ``backend`` and ``map-backend``, or use
+``python -m uvicorn main:app`` after ``cd backend``.
 """
 
-import logging
-from contextlib import asynccontextmanager
+from __future__ import annotations
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+import sys
+from pathlib import Path
+
+_this_dir = Path(__file__).resolve().parent
+if not (_this_dir / "db" / "connection.py").exists():
+    sys.path.insert(0, str(_this_dir.parent))
 
 from config import get_config
-from routes.elevation import router as elevation_router
-from routes.maps import router as maps_router
-from services.storage_backend import get_storage_health, initialize_storage_backend
+from application import create_app
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-logger = logging.getLogger(__name__)
-
+app = create_app()
 config = get_config()
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Startup/shutdown lifecycle."""
-    logger.info(f"Starting Map Backend on {config.HOST}:{config.PORT}")
-    logger.info(f"Environment: {config.FASTAPI_ENV} | Debug: {config.DEBUG}")
-
-    # Initialize configured map storage backend once at startup.
-    try:
-        initialize_storage_backend()
-        logger.info("✅ Storage backend initialized successfully")
-    except Exception as e:
-        logger.error(f"❌ Failed to initialize storage backend: {e}")
-        raise
-
-    yield
-
-    logger.info("Shutting down Map Backend")
-
-
-app = FastAPI(
-    title="Map Backend API",
-    description="Service for static map images and elevation correction",
-    version="1.0.0",
-    lifespan=lifespan,
-)
-
-# CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=config.CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
-)
-
-# Routers
-app.include_router(maps_router)
-app.include_router(elevation_router)
-
-
-@app.get("/")
-def root():
-    return {"service": "Map Backend", "status": "running", "version": "1.0.0"}
-
-
-@app.get("/health")
-def health():
-    storage = get_storage_health()
-    status = "healthy" if storage.get("status") == "healthy" else "degraded"
-    return {
-        "status": status,
-        "service": "map-backend",
-        "storage": storage,
-    }
-
 
 if __name__ == "__main__":
     import uvicorn

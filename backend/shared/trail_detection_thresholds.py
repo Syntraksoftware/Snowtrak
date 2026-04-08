@@ -4,7 +4,7 @@ Trail / segment detection tuning.
 Mirror of `frontend/lib/core/constants/trail_detection_thresholds.dart`.
 Change values in one place only by editing both files together (or generating from a single manifest later).
 
-when offline, the Dart files on the user's phone are used to configure the app, and when the app connects to the server, the configuration values from the server override the local ones. 
+when offline, the Dart files on the user's phone are used to configure the app, and when the app connects to the server, the configuration values from the server override the local ones.
 this file is used to configure the app when connected to the server.
 """
 

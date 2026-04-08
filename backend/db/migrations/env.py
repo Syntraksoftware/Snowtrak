@@ -1,4 +1,4 @@
-"""Alembic environment: PostGIS migrations for map-backend ORM (`map-backend/db/`)."""
+"""Alembic environment: PostGIS migrations for map-backend ORM (`map-backend/orm/`)."""
 
 from __future__ import annotations
 
@@ -15,8 +15,8 @@ _BACKEND_ROOT = Path(__file__).resolve().parents[2]
 _MAP_BACKEND_ROOT = _BACKEND_ROOT / "map-backend"
 sys.path.insert(0, str(_MAP_BACKEND_ROOT))
 
-from db import orm_models  # noqa: E402, F401 — register models on Base.metadata
-from db.base import Base  # noqa: E402
+from orm import orm_models  # noqa: E402, F401 — register models on Base.metadata
+from orm.base import Base  # noqa: E402
 
 config = context.config
 
