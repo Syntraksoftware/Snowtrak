@@ -103,6 +103,10 @@ frontend/android/local.properties
 **/.venv/
 **/venv/
 
+# Large local GeoJSON / extracts for map ingest (see backend/scripts/run_initial_sync.py --file)
+backend/data/*
+!backend/data/.gitkeep
+
 # Python artifacts (repo-wide)
 __pycache__/
 *.py[cod]
