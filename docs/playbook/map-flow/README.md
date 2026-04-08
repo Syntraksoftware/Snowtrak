@@ -16,7 +16,7 @@ The numbered engines are logical stages in the client-side track pipeline (imple
 | **1**  | **Normalization** — turn raw recordings or file imports into one consistent time-ordered track: stable units, cleaned points, identity and provenance (`gpx` / `fit` / `live`).                                                                                                                        | `ProcessedTrack`                                            |
 | **2**  | **Segmentation** — classify motion along the track (descent, lift, flat, pause), slice the point list with `startIndex` / `endIndex`, optional trail/difficulty hints for matching.                                                                                                                    | `List<Segment>`                                             |
 | **3**  | **Activity analytics** — activity-level totals and per-descent rollups for summaries, lists, and skiing-oriented metrics (distance, vertical, speeds, moving time, trail count).                                                                                                                       | `ActivityStats` + `List<RunSummary>`                        |
-| **4**  | **Downstream product logic** — anything that needs a normalized track plus segments and/or stats but is not chart-specific (e.g. trail matching responses, social or resort features, exports). Concrete outputs are feature-specific; inputs are typically `ProcessedTrack` and Engine 2–3 artifacts. | (per feature; e.g. trail match contracts in shared schemas) |
+| **4**  | **Downstream product logic** — anything that needs a normalized track plus segments and/or stats but is not chart-specific (e.g. trail matching responses, social or resort features, exports). Concrete outputs are feature-specific; inputs are typically `ProcessedTrack` and Engine 2–3 artifacts. | (per feature; e.g. [trail-matcher.md](./trail-matcher.md), trail match contracts in shared schemas) |
 | **5**  | **Elevation visualization** — data shaped for `fl_chart`: distance vs elevation samples, min/max elevation, and lift intervals along the horizontal axis for shaded bands.                                                                                                                             | `ElevationChartData`                                        |
 
 
@@ -59,39 +59,72 @@ Implementations may live in `frontend/lib/map/` or dedicated services as the cod
 
 **map-backend** does not own the Engine 1–5 pipeline. It provides **static map images** and **elevation** utilities over HTTP (Google Static Maps and the configured elevation API), so the app can enrich points or render previews without embedding keys in the client. See `backend/map-backend/README.md` for routes and env vars.
 
+### HTTP routing (map-backend)
+
+- **Main entry:** The FastAPI app is built by `backend/map-backend/application.py` (`create_app()`). **`backend/map-backend/main.py`** is what `run.py` / Docker use (`uvicorn main:app` from `map-backend/`). **`backend/main.py`** re-exports the same `app` for a unified entry from `backend/` (e.g. `python -m uvicorn main:app --host 127.0.0.1 --port 5200`).
+- **Maps endpoints (`/api/maps`):**
+  - `POST /api/maps/static`: Get a static map URL (JSON).
+  - `POST /api/maps/static/image`: Get a map image (bytes).
+  - `GET /api/maps/static/simple`: Get a simplified static map.
+- **Elevation endpoints (`/api/elevation`):**
+  - `POST /api/elevation/correct`: Fix/fill elevations for multiple points.
+  - `POST /api/elevation/lookup`: Lookup elevations for multiple points.
+  - `GET /api/elevation/point`: Lookup elevation for one point.
+  - **`POST /elevation/correct`** (Copernicus GLO-30 via `dem_service`, bbox-keyed response cache): see [dem-copernicus-glo30.md](./dem-copernicus-glo30.md).
+- **Meta endpoints:** `GET /` shows service info; `GET /health` checks health and storage status.
+- **Background task (not an HTTP endpoint):** OpenSkiMap GeoJSON sync runs on a **daily schedule** only when **`OPENSKIMAP_SYNC_ENABLED`** and **`OPENSKIMAP_RUNS_GEOJSON_URL`** are both set. There is no public HTTP route for the bulk file; imported runs live in PostGIS (`map_trail.ski_runs`).
+- **Trails (`/trails`, PostGIS, needs DB pool):**
+  - **`POST /trails/match`**: **`TrailMatchRequest`** → **`TrailMatchResponse`** (per-descent names on **`SegmentOut`**).
+  - **`GET /trails/resort?bbox=min_lon,min_lat,max_lon,max_lat`**: GeoJSON **`FeatureCollection`** for **`map_trail.ski_runs`** (Engine 4 layer).
+  - Details: [trail-matcher.md](./trail-matcher.md).
+
+
+### Data download (who pulls what from where)
+- App sends HTTPS JSON requests to map-backend (no full ski map is sent to the phone).
+- Map-backend fetches map/elevation data from Google APIs (or others) using secure server keys; returns results to app or caches them.
+#### Secure server keys (API credentials)
+- Map-backend (when **both** OpenSkiMap env flags are set) daily downloads run GeoJSON from the configured URL, upserts `map_trail.ski_runs`, and does not push that bulk file to the app.
+- Only the PostGIS database stores the ski run data; raw GeoJSON files are not needed in cloud storage unless team decides otherwise.
+
+
 **PostGIS persistence (optional):** see **Alembic and map-related database** below.
 
-## Alembic and map-related database 
+## Alembic and map-related database
 
 ### What changed
 
 - **Before:** PostGIS DDL lived mainly in raw SQL under `backend/map-backend/engine/geometry/` (`001_init_postgis_storage.sql` for cache/elevation tables, setting up database for storage; `002_map_pipeline_tables.sql` for ski runs, lifts, activities, track points, segments).
-
-- **Now:** **Alembic** is the canonical way to create and evolve that schema. Revision `**001_initial`** (`backend/db/migrations/versions/001_initial_postgis_and_map_trail.py`) was added and `**alembic upgrade head**` applies everything in one transaction-aware flow. The old `002_*.sql` file is **not** the source of truth anymore (it only points at Alembic); you can still use `001_*.sql` as a human-readable reference for the public cache tables, but Alembic’s initial revision creates those tables too so a fresh DB only needs Alembic.
+- **Now:** **Alembic** is the canonical way to create and evolve that schema. Revision `**001_initial`** (`backend/db/migrations/versions/001_initial_postgis_and_map_trail.py`) was added and `**alembic upgrade head`** applies everything in one transaction-aware flow. The old `002_*.sql` file is **not** the source of truth anymore (it only points at Alembic); you can still use `001_*.sql` as a human-readable reference for the public cache tables, but Alembic’s initial revision creates those tables too so a fresh DB only needs Alembic.
 
 **Alembic**:
+
 - Is used to manage changes to the database schema over time, allowing you to version, upgrade, or rollback database structures in a controlled, trackable way. 
 - In this context, Alembic is used to create and evolve all map-related database tables and PostGIS extensions within the project, ensuring the schema stays in sync with code changes through migration scripts instead of raw SQL files.
 
-### Where things live
+### File locations: 
 
-| Piece                     | Location                                                                |
-| ------------------------- | ----------------------------------------------------------------------- |
-| Alembic config            | `backend/alembic.ini` (`script_location` → `db/migrations`), root level |
-| Migration env + revisions | `backend/db/migrations/` (`env.py`, `versions/…`)                       |
-| SQLAlchemy ORM (map geo)  | `backend/map-backend/db/` (`orm_models.py` aligned with migrations)     |
 
-`env.py` prepends加序號 `**map-backend/` to `sys.path` and imports `Base` / ORM models so metadata stays aligned with the Python definitions.
+| Piece                         | Location                                                                                  |
+| ----------------------------- | ----------------------------------------------------------------------------------------- |
+| Alembic config                | `backend/alembic.ini` (`script_location` → `db/migrations`), root level                   |
+| Migration env + revisions     | `backend/db/migrations/` (`env.py`, `versions/…`; `001_initial`, `002_ski_runs_source`)   |
+| SQLAlchemy ORM (map geo)      | `backend/map-backend/orm/` (`orm_models.py` aligned with migrations)                      |
+| Asyncpg pool + `get_db`       | `backend/db/connection.py` (opened in map-backend FastAPI `lifespan`)                     |
+| OpenSkiMap-style GeoJSON sync | `backend/map-backend/services/openskimap_sync.py` (optional APScheduler job in `main.py`) |
+
+
+`env.py` prepends `map-backend/` to `sys.path` and imports `Base` / ORM models from `orm` so metadata stays aligned with the Python definitions.
 
 ### How to run migrations
 
-From `**backend/**`:
+From `**backend/`**:
 
 1. Install Python deps that include `**alembic**`, `**sqlalchemy**`, `**geoalchemy2**`, and `**psycopg**` (sync URL `postgresql+psycopg://…`).
-2. Set `**SYNTRAK_DATABASE_URL**` to your Postgres URL (overrides `sqlalchemy.url` in `alembic.ini` when present).
-3. Run `**alembic upgrade head**`.
+2. In **Supabase** SQL Editor: `CREATE EXTENSION IF NOT EXISTS postgis;`
+3. Set `**SYNTRAK_DATABASE_URL**` to your **Supabase direct Postgres** URI (`postgresql+psycopg://…`, typically `db.<ref>.supabase.co:5432`; see `backend/db/migrations/README.md`). This overrides `sqlalchemy.url` in `alembic.ini`.
+4. Run `**alembic upgrade head**`.
 
-Details: `backend/db/migrations/README.md`. If another Postgres already uses **host port 5432**, start the optional Docker PostGIS service on a different host port via `**POSTGRES_PORT`** (see `backend/postgres.env.example`).
+Details and troubleshooting: `backend/db/migrations/README.md`. Optional **Docker PostGIS** (offline) uses `postgres.env` + `POSTGRES_PORT` if port **5432** is busy.
 
 ### Current database layout (map-related)
 
@@ -105,7 +138,6 @@ All of this requires the **PostGIS** extension (`CREATE EXTENSION postgis` — i
     - `center`: `GEOGRAPHY(POINT, 4326)`, supports geospatial queries (has a GiST index).
     - `cache_key`: Uniquely identifies each cached map preview.
     - Stores info like zoom, dimensions, provider, URL, and expiry.
-
 - `**elevation_samples`**  
   - Stores sampled elevation data for specific locations.
   - Key columns:
@@ -117,37 +149,202 @@ All of this requires the **PostGIS** extension (`CREATE EXTENSION postgis` — i
 *These tables are for caching and lookup efficiency in map-backend; all pipeline data lives under the `map_trail` schema.*
 
 **Schema `map_trail` (resort geometry + recorded track pipeline — avoids name clashes)**
+
 - Pipeline tables are **not** in `public` so they do not collide with `**public.activities`** (or similar) from Supabase / activity-backend.
 
 
-| Table                    | Role                                                                            |
-| ------------------------ | ------------------------------------------------------------------------------- |
-| `map_trail.ski_runs`     | Resort run polylines (`geometry(LINESTRING, 4326)` + GiST)                      |
-| `map_trail.ski_lifts`    | Lift polylines + GiST                                                           |
-| `map_trail.activities`   | Session header: `user_id`, `recorded_at`, `**stats` JSONB**                     |
-| `map_trail.track_points` | Samples: `geometry(POINTZ, 4326)`, `speed_kmh`, `segment_type` + GiST on `geom` |
-| `map_trail.segments`     | Classified intervals: `type`, `start_idx`, `end_idx`, `trail_name`              |
+| Table                    | Role                                                                                                                                         |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `map_trail.ski_runs`     | Resort run polylines (`geometry(LINESTRING, 4326)` + GiST); optional `source_id` (unique) for bulk upserts (migration `002_ski_runs_source`) |
+| `map_trail.ski_lifts`    | Lift polylines + GiST                                                                                                                        |
+| `map_trail.activities`   | Session header: `user_id`, `recorded_at`, `stats` (JSONB)                                                                                    |
+| `map_trail.track_points` | Samples: `geometry(POINTZ, 4326)`, `speed_kmh`, `segment_type` + GiST on `geom`                                                              |
+| `map_trail.segments`     | Classified intervals: `type`, `start_idx`, `end_idx`, `trail_name`                                                                           |
+
 
 - **GiST** is created on every geography/geometry column above so spatial predicates such as `**ST_DWithin`** can use an index.
 
 > What is `ST_DWithin`?
-- [`ST_DWithin`](https://postgis.net/docs/ST_DWithin.html) is a spatial SQL function provided by PostGIS (the geospatial extension for PostgreSQL).
+
+- `[ST_DWithin](https://postgis.net/docs/ST_DWithin.html)` is a spatial SQL function provided by PostGIS (the geospatial extension for PostgreSQL).
 - Determines whether two geometries (such as points, lines, or polygons) are within a specified distance of each other.
 - Usage example: `ST_DWithin(geom1, geom2, distance_in_meters)` returns `TRUE` if `geom1` is within `distance_in_meters` of `geom2`.
-
 - "Within a specified distance" means that one object (such as a point or line) is close enough to another object, as defined by a distance you provide. 
-
 - For example, with `ST_DWithin`, you can ask: “Is this GPS point within 50 meters of this trail polyline?” If the answer is yes (the distance between them is less than or equal to 50 meters), the function returns `TRUE`.
 - Used in mapping applications to quickly find features (like trails, lifts, or landmarks) that are near a given location, enabling fast spatial searches and matching.
-
 - For map-backend, this is heavily used for:
   - Finding all trails or features within a radius of a GPS sample (for proximity-based searches)
   - Quickly matching points to polylines (e.g., determining if a recorded GPS track is "on" a given trail)
 - Because `ST_DWithin` leverages GiST indexes on geometry/geography columns, these spatial queries are fast—even on large datasets.
 
-### What map-backend does *not* do yet
+### Asyncpg pool (runtime SQL)
 
-The FastAPI app does not automatically open a SQLAlchemy session on each request; **ORM + Alembic are ready**, but **connection pooling / CRUD routes** are a follow-up. Map APIs today remain static maps + elevation HTTP endpoints unless you wire the engine to `SYNTRAK_DATABASE_URL` (or the same DSN as Alembic).
+- Uses a pool of TCP connections to Postgres for efficient query handling.
+- Each HTTP request borrows a connection (`async with pool.acquire()`), runs SQL, then returns it.
+- Main pool logic in `backend/db/connection.py`: `create_pool()`, `close_pool()`, `get_pool()`, `get_db()`, `normalize_asyncpg_dsn()`.
+- FastAPI app lifecycle (`backend/map-backend/main.py`): pool created at startup (`create_pool()`), closed on shutdown.
+- Connection provided to routes via FastAPI's dependency injection: `Depends(get_db)`.
+- DSN handling: `normalize_asyncpg_dsn()` converts URLs for asyncpg compatibility.
+- Docker image includes all DB connection code.
+- Database schema migrations use Alembic/ORM, but API queries run as raw SQL via asyncpg (no SQLAlchemy session).
+
+
+### Alembic `002_ski_runs_source` (`map_trail.ski_runs.source_id`)
+
+**Migration: Add ski run `source_id` for upserts**
+- Migration file: `backend/db/migrations/versions/002_ski_runs_source_id.py`
+- Adds `source_id` column (`TEXT`, nullable, unique) to `map_trail.ski_runs`
+- Creates unique index on `source_id` for upserts (`INSERT ... ON CONFLICT (source_id) DO UPDATE`)
+- ORM mirror: `SkiRun.source_id` in `backend/map-backend/orm/orm_models.py`
+- To apply: run `alembic upgrade head` with correct DB URL
+
+**OpenSkiMap GeoJSON sync (`openskimap_sync`):**
+- Loads run polylines from GeoJSON into `map_trail.ski_runs` using `source_id` for idempotent upserts
+- Main logic: `backend/map-backend/services/openskimap_sync.py`
+- Pipeline:
+  - Downloads GeoJSON via `httpx` (URL from env or parameter, cache-busting enabled)
+  - Parses each run, extracting name, difficulty, and a stable ID (`source_id`)
+  - Stores runs via PostGIS using upsert (`ON CONFLICT (source_id) DO UPDATE`)
+- Daily **03:00 UTC** job is registered only when **`OPENSKIMAP_SYNC_ENABLED`** and a non-empty **`OPENSKIMAP_RUNS_GEOJSON_URL`** are both set (`config.openskimap_sync_armed`). If sync is enabled without a URL, **config validation fails** at startup.
+- Upstream GeoJSON must be provided/hosted manually (OpenSkiMap does not host a bulk file)
+- Key dependencies: `httpx`, `asyncpg`, `shapely`, `apscheduler`
+
+
+### Sample GeoJSON input (sync)
+
+Minimal shape the parser accepts (one run line; add more objects under `features` for batches):
+
+```json
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 123456789,
+        "name": "Example Run",
+        "piste:difficulty": "advanced"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[6.8, 45.8], [6.801, 45.801], [6.802, 45.799]]
+      }
+    }
+  ]
+}
+```
+
+- **MultiLineString:** longest component line is kept as the stored `LINESTRING`.
+- **Missing name:** stored as `"Unnamed run"` (truncated to DB length limits in code).
+
+### Sample structures (client pipeline, Dart)
+
+- **Sources:** `frontend/lib/models/track_point.dart`, `segment.dart`, `processed_track.dart`, etc.; mirrored in `backend/shared/track_pipeline_schemas.py` for HTTP.
+- **TrackPoint fields:** `lat`, `lon`, `elevationM`, `timestamp`, `speedKmh`, optional `segmentType` (`PointSegmentType`: lift, run, transition) — per-point hint before Engine 2.
+- **Segment fields:** `type` (`SegmentType`: descent, lift, flat, pause), `points` (list of `TrackPoint`), `startIndex`, `endIndex`, optional `trailName`, `difficulty` — Engine 2 output.
+
+Illustrative JSON (API-style; Dart uses typed `DateTime` and nested `points` on real `Segment` objects):
+
+```json
+{
+  "lat": 45.92,
+  "lon": 6.87,
+  "elevationM": 2100.0,
+  "timestamp": "2026-04-05T10:00:00.000Z",
+  "speedKmh": 12.4,
+  "segmentType": "run"
+}
+```
+
+```json
+{
+  "type": "descent",
+  "startIndex": 0,
+  "endIndex": 42,
+  "trailName": "Example trail",
+  "difficulty": "advanced",
+  "points": [{ "lat": 45.92, "lon": 6.87, "elevationM": 2100, "timestamp": "2026-04-05T10:00:00.000Z", "speedKmh": 15.0 }]
+}
+```
+
+### In-memory parsed row (`ParsedSkiRun`)
+
+
+| Field          | Type         | Notes                                                           |
+| -------------- | ------------ | --------------------------------------------------------------- |
+| `source_id`    | `str`        | e.g. `openskimap:123456789` or `openskimap:idx:0`               |
+| `name`         | `str`        | max 512 chars in DB                                             |
+| `difficulty`   | `str | None` | max 64 chars in DB                                              |
+| `geom_geojson` | `str`        | JSON `LineString` (may include Z); DB insert uses `ST_Force2D(ST_GeomFromGeoJSON(...))` |
+
+
+### PostGIS row (`map_trail.ski_runs`) after sync
+
+- `**id`:** `UUID` default `gen_random_uuid()` (unchanged on upsert).
+- `**source_id`:** external stable key for `ON CONFLICT`.
+- `**name`**, `**difficulty`:** from feature properties.
+- `**geom`:** `geometry(LINESTRING, 4326)` from GeoJSON; upstream dumps may be **LineString Z** — ingest uses **`ST_Force2D`** so the column stays 2D.
+
+### Upsert SQL (reference)
+
+```164:174:backend/map-backend/services/openskimap_sync.py
+UPSERT_SQL = """
+INSERT INTO map_trail.ski_runs (source_id, name, difficulty, geom)
+VALUES (
+    $1, $2, $3,
+    ST_SetSRID(ST_Force2D(ST_GeomFromGeoJSON($4::text)), 4326)
+)
+ON CONFLICT (source_id) DO UPDATE SET
+    name = EXCLUDED.name,
+    difficulty = EXCLUDED.difficulty,
+    geom = EXCLUDED.geom
+"""
+```
+
+### Scheduler wiring (reference)
+
+```88:100:backend/map-backend/main.py
+    scheduler: AsyncIOScheduler | None = None
+    if config.openskimap_sync_armed:
+        scheduler = AsyncIOScheduler(timezone=ZoneInfo("UTC"))
+        scheduler.add_job(
+            _openskimap_scheduled_sync,
+            "cron",
+            hour=3,
+            minute=0,
+            id="openskimap_ski_runs_sync",
+            replace_existing=True,
+        )
+        scheduler.start()
+        logger.info("OpenSkiMap ski_runs sync scheduled daily at 03:00 UTC")
+```
+
+### Optional: `get_db` in a route
+
+```python
+from fastapi import Depends
+import asyncpg
+from db.connection import get_db
+
+@router.get("/example")
+async def example(conn: asyncpg.Connection = Depends(get_db)):
+    row = await conn.fetchrow("SELECT 1 AS n")
+    return {"n": row["n"]}
+```
+
+### Related code (quick index)
+
+- `backend/db/connection.py` — asyncpg pool, `get_db`.
+- `backend/map-backend/main.py` — lifespan, pool DSN selection, OpenSkiMap scheduler.
+- `backend/map-backend/config.py` — PostGIS DSN pieces, OpenSkiMap env flags.
+- `backend/map-backend/services/openskimap_sync.py` — download / parse / upsert / `sync_ski_runs_from_openskimap`.
+- `backend/scripts/run_initial_sync.py` — manual first ingest + `COUNT(*)` + `ST_DWithin` verification (uses `SYNTRAK_DATABASE_URL` + `OPENSKIMAP_RUNS_GEOJSON_URL`).
+- `backend/db/migrations/versions/001_initial_postgis_and_map_trail.py` — PostGIS + `map_trail` tables + GiST.
+- `backend/db/migrations/versions/002_ski_runs_source_id.py` — `ski_runs.source_id` + unique index.
+- `backend/map-backend/orm/orm_models.py` — `SkiRun`, `SkiLift`, `Activity`, `TrackPoint`, `Segment`.
+- `backend/shared/track_pipeline_schemas.py` — Pydantic mirrors of Dart pipeline types.
+- `frontend/lib/core/constants/trail_detection_thresholds.dart` + `backend/shared/trail_detection_thresholds.py` — shared detection constants.
+- `frontend/lib/models/` — Dart pipeline models (`TrackPoint`, `Segment`, `ProcessedTrack`, `ActivityStats`, …).
 
 ## Python API contracts (Pydantic v2)
 
@@ -162,7 +359,7 @@ Canonical request/response models mirroring the Dart types in `frontend/lib/mode
 | `ActivityStatsOut`, `RunSummaryOut`                          | Engine 3 aggregates.                                                                               |
 | `ElevationChartDataOut`, `ChartSpot`, `LiftBandRange`        | Engine 5 chart payload.                                                                            |
 | `ElevationCorrectionRequest` / `ElevationCorrectionResponse` | `POST /api/elevation/correct` body (map-backend).                                                  |
-| `TrailMatchRequest` / `TrailMatchResponse`                   | Trail-name matching contract (implementations TBD).                                                |
+| `TrailMatchRequest` / `TrailMatchResponse`                   | Trail-name matching contract (implementations TBD); see [trail-matcher.md](./trail-matcher.md).    |
 | `ActivityIn` / `ActivityOut`                                 | Activity create/read aligned with the Flutter `Activity` model plus optional pipeline attachments. |
 
 
@@ -177,8 +374,7 @@ Segmentation and trail matching share the same numeric tuning in two places; **k
 
 Values: descent VV −0.5 m/s, lift VV +0.3 m/s, pause speed ≤2 km/h for ≥8 s, RDP ε 0.0001 (degrees), trail match radius 50 m.
 
-- `trailMatchRadiusM` defines how close a track sample must be to a trail polyline (within 50 meters) for it to be considered a match. This ensures that only samples that are physically near (and plausibly on) a given trail are matched to its name, reducing false positives from nearby but
-separate paths.
+**Trail search radius** (how **`trailMatchRadiusM`** / **`TRAIL_MATCH_RADIUS_M`** map to PostGIS matching and representative points): [trail-matcher.md](./trail-matcher.md#radius-and-shared-thresholds).
 
 ## Ramer-Douglas-Peucker(RDP tolerance):
 
@@ -189,6 +385,7 @@ separate paths.
 
 ## Related docs
 
+- [trail-matcher.md](./trail-matcher.md) — PostGIS trail matching against `map_trail.ski_runs`, Python API, Supabase SQL samples.
 - `docs/service-ownership.md` — which backend owns which domain (map-backend is geography/utilities, not activity CRUD).
 - `frontend/docs/map.md` — recording state machine, widgets, and persistence direction.
 

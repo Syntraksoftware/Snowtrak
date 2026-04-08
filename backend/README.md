@@ -13,6 +13,17 @@ Syntrak backend consists of 4 microservices, all using a unified Python environm
 
 ## Starting Services
 
+Use the **repository-root** virtual environment (`.venv/` next to `backend/`), not a venv inside `backend/`. If you previously used `backend/.venv`, **move to the root `.venv`** (recreate at repo root and reinstall from `backend/requirements.txt`—see [Python Environment](#python-environment)). Always add or upgrade packages in that root `.venv` so all four services share one interpreter.
+
+**Activate the venv** (each new shell), from the repository root:
+
+```bash
+cd /path/to/syntrak-application   # repository root
+source .venv/bin/activate
+```
+
+Then run backend commands from `backend/` with plain `python` (the active interpreter is the root `.venv`). Alternatively, without activating: `../.venv/bin/python` from `backend/`, or `./.venv/bin/python backend/run.py` from the repo root.
+
 ### Unified Entry Point
 
 All services follow the same standardized entry point: **`python run.py`**
@@ -21,12 +32,13 @@ This approach:
 
 - Uses configuration from `config.py` (settings, PORT, HOST, DEBUG)
 - Loads environment variables from `.env` file
-- Works with the shared Python virtual environment at the **repository root** (`.venv/`)
+- Expects the shared interpreter at **repository root** `.venv/` (activate it, or call that `python` explicitly)
 - Provides consistent behavior across all services
 
 ### Start All Services (1 Terminal, 1 Command)
 
 ```bash
+# From repo root after: source .venv/bin/activate
 cd backend
 python run.py
 ```
@@ -37,7 +49,7 @@ This launches all 4 services in parallel with graceful shutdown on Ctrl+C.
 
 ```bash
 cd backend
-python run.py --service <service-name>
+python run.py --service <service-name>   # with root .venv activated
 ```
 
 Available services: `main`, `community`, `activity`, `map`
@@ -62,6 +74,18 @@ python run.py
 # Or with the shared venv explicitly (repo root .venv):
 ../../.venv/bin/python run.py
 ```
+
+Example for map-backend:
+
+```bash
+cd backend/map-backend
+python run.py
+# same idea: ../../.venv/bin/python run.py if the venv is not activated
+```
+
+### Map-backend: `main.py` is not legacy
+
+`backend/map-backend/main.py` defines the FastAPI **`app`** object (routes, middleware, lifespan, DB pool hooks). **`map-backend/run.py`** is the process entry point: it starts Uvicorn with `main:app`. **Keep both files.** You should not run `python main.py` as a script (there is no `if __name__ == "__main__"` server block); that is what the comment at the top of `main.py` is about—not that the module is deprecated or removable.
 
 ## ⚙️ Configuration
 
@@ -94,6 +118,10 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 # JWT
 JWT_SECRET=your-jwt-secret
 ```
+
+### Map schema migrations (Supabase Postgres)
+
+`map_trail` ski runs, lifts, activities, and related tables are managed with **Alembic** under `backend/db/migrations/`. Apply them against your **Supabase** database (enable the **PostGIS** extension in the SQL editor first). Set **`SYNTRAK_DATABASE_URL`** to a **`postgresql+psycopg://`** direct connection string, then from `backend/` run `alembic upgrade head`. Full steps: `backend/db/migrations/README.md`.
 
 ## Entry Point Details
 
@@ -142,7 +170,9 @@ curl http://127.0.0.1:5200/health
 
 ### Shared Virtual Environment
 
-All services use a shared Python environment at the **repository root**: `.venv/`
+All services use a single environment at the **repository root**: `.venv/` (sibling of `backend/`, `frontend/`, etc.). Do not rely on a separate `backend/.venv`; if you still have an old one, migrate to the root layout and remove the duplicate to avoid confusion.
+
+**Daily use:** from the repo root, `source .venv/bin/activate`, then `cd backend` and run `python`, `pytest`, `alembic`, etc. **Upgrading deps:** always use this root venv’s `pip` (or `pip install -r backend/requirements.txt` while activated).
 
 ```bash
 # From repository root — view Python version
@@ -151,16 +181,18 @@ All services use a shared Python environment at the **repository root**: `.venv/
 # View installed packages
 ./.venv/bin/pip list
 
-# Install new dependency for all services
+# Install or upgrade a dependency for all services (repo root)
 ./.venv/bin/pip install <package>
+./.venv/bin/pip install -r backend/requirements.txt
 ```
 
-### Creating the Environment (if needed)
+### Creating or recreating the environment
 
 ```bash
 # From repository root (parent of backend/)
 python3.11 -m venv .venv
 ./.venv/bin/pip install -r backend/requirements.txt
+source .venv/bin/activate
 ```
 
 ## Service Documentation
