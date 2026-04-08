@@ -10,6 +10,7 @@ Developer utility scripts provide quick access to common testing tasks and repos
 - `check_secrets.sh` — Scan tracked files for accidentally committed credentials or tokens
 - `send_notification.sh` — Send test notifications to the Flutter app running on device/simulator
 - `notification_demo.sh` — Automated demonstration of all notification types
+- `visualize_trail.py` — Render a GPX trail preview and call the map-backend trail matcher
 
 ## 2. Architecture overview
 
@@ -56,7 +57,8 @@ scripts/
 ├── README.md                  # This file
 ├── check_secrets.sh          # Secret pattern scanner
 ├── send_notification.sh       # Test notification sender
-└── notification_demo.sh       # Multi-notification demonstration
+├── notification_demo.sh      # Multi-notification demonstration
+└── visualize_trail.py        # GPX trail visualizer + trail matcher helper
 ```
 
 ### Entry points
@@ -192,6 +194,14 @@ Exit code 0 = no secrets found; proceed with commit. Exit code 1 = patterns dete
 ./scripts/notification_demo.sh
 # Sends 6 notification types with 3-second delays between each
 ```
+
+### Visualize a GPX trail
+
+```bash
+python3 scripts/visualize_trail.py ../Auenfelder-horn.gpx --base-url http://127.0.0.1:5202
+```
+
+The script writes an HTML file into `trail_visualizations/` and prints the trail-match JSON response.
 
 ### Direct curl testing
 
