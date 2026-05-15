@@ -112,4 +112,4 @@ coverage.xml
 htmlcov/
 
 *.html/
-*.png/
+*.png/backend/data/*.geojson
