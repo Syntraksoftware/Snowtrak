@@ -1,0 +1,12 @@
+# Root gitignore
+.venv/
+__pycache__/
+build/
+frontend/build/
+frontend/.dart_tool/
+frontend/.idea/
+frontend/ios/Pods/
+backend/.venv/
+backend/data/*.geojson
+.env
+*.p8

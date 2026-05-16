@@ -1,0 +1,536 @@
+import 'package:flutter/material.dart';
+import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:provider/provider.dart';
+import 'package:syntrak/core/activity_helpers.dart';
+import 'package:syntrak/models/activity.dart';
+import 'package:syntrak/providers/activity_provider.dart';
+import 'package:syntrak/services/location_service.dart';
+import 'package:syntrak/services/map_config.dart';
+import 'package:syntrak/screens/activities/activity_detail_screen.dart';
+
+class MapsScreen extends StatefulWidget {
+  const MapsScreen({super.key});
+
+  @override
+  State<MapsScreen> createState() => _MapsScreenState();
+}
+
+class _MapsScreenState extends State<MapsScreen> {
+  final LocationService _locationService = LocationService();
+  MapLibreMapController? _mapController;
+  CameraPosition? _initialCameraPosition;
+  MapVisualStyle _selectedStyle = MapVisualStyle.terrain;
+  bool _isLoading = true;
+  bool _hasError = false;
+  String? _errorMessage;
+  List<Activity> _activities = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeMap();
+    _loadActivities();
+  }
+
+  Future<void> _initializeMap() async {
+    try {
+      // Check permissions
+      final hasPermission = await _locationService.checkPermissions();
+
+      if (!hasPermission) {
+        // Use default location if no permission
+        setState(() {
+          _initialCameraPosition = const CameraPosition(
+            target: LatLng(37.7749, -122.4194), // San Francisco
+            zoom: 12,
+          );
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Get current position
+      final position = await _locationService
+          .getCurrentPosition()
+          .timeout(const Duration(seconds: 10));
+
+      if (position != null) {
+        setState(() {
+          _initialCameraPosition = CameraPosition(
+            target: LatLng(position.latitude, position.longitude),
+            zoom: 13,
+          );
+          _isLoading = false;
+        });
+      } else {
+        // Fallback to default
+        setState(() {
+          _initialCameraPosition = const CameraPosition(
+            target: LatLng(37.7749, -122.4194),
+            zoom: 12,
+          );
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('[MapsScreen] Error initializing map: $e');
+      setState(() {
+        _hasError = true;
+        _errorMessage = 'Failed to initialize map';
+        _isLoading = false;
+        _initialCameraPosition = const CameraPosition(
+          target: LatLng(37.7749, -122.4194),
+          zoom: 12,
+        );
+      });
+    }
+  }
+
+  Future<void> _loadActivities() async {
+    try {
+      final provider = Provider.of<ActivityProvider>(context, listen: false);
+      await provider.loadActivities();
+      
+      setState(() {
+        _activities = provider.activities;
+      });
+    } catch (e) {
+      debugPrint('[MapsScreen] Error loading activities: $e');
+    }
+  }
+
+  void _showActivityDetails(Activity activity) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ActivityDetailScreen(activityId: activity.id),
+      ),
+    );
+  }
+
+  Future<void> _centerOnMyLocation() async {
+    final position = await _locationService.getCurrentPosition();
+    if (position != null && _mapController != null) {
+      await _mapController!.animateCamera(
+        CameraUpdate.newLatLngZoom(
+          LatLng(position.latitude, position.longitude),
+          15,
+        ),
+      );
+    }
+  }
+
+  Future<void> _zoomIn() async {
+    if (_mapController == null) {
+      return;
+    }
+    await _mapController!.animateCamera(CameraUpdate.zoomIn());
+  }
+
+  Future<void> _zoomOut() async {
+    if (_mapController == null) {
+      return;
+    }
+    await _mapController!.animateCamera(CameraUpdate.zoomOut());
+  }
+
+  void _setStyle(MapVisualStyle style) {
+    if (_selectedStyle == style) {
+      return;
+    }
+
+    setState(() {
+      _selectedStyle = style;
+      _mapController = null;
+    });
+
+    final source = MapConfig.resolvedSourceLabel(style);
+    final needsMapTiler = style == MapVisualStyle.terrain;
+    final suffix = needsMapTiler && !MapConfig.hasMapTilerApiKey
+        ? ' (MAPTILER_API_KEY not set)'
+        : '';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Map style: $source$suffix'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_hasError && _initialCameraPosition == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Maps'),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.map_outlined,
+                  size: 80,
+                  color: Colors.grey[400],
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  _errorMessage ?? 'Failed to load map',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _hasError = false;
+                      _isLoading = true;
+                    });
+                    _initializeMap();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF4500),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (_isLoading || _initialCameraPosition == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Maps'),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF4500)),
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Maps'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.my_location),
+            onPressed: _centerOnMyLocation,
+            tooltip: 'Center on my location',
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          MapLibreMap(
+            key: ValueKey<String>('maps-${_selectedStyle.name}'),
+            styleString: MapConfig.styleForMode(_selectedStyle),
+            initialCameraPosition: _initialCameraPosition!,
+            myLocationEnabled: false,
+            onMapCreated: (controller) {
+              setState(() {
+                _mapController = controller;
+              });
+            },
+          ),
+          // Activity list overlay
+          if (_activities.isNotEmpty)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: 120,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, -5),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Text(
+                        '${_activities.length} Activities',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        itemCount: _activities.length,
+                        itemBuilder: (context, index) {
+                          final activity = _activities[index];
+                          return _ActivityCard(
+                            activity: activity,
+                            onTap: () => _showActivityDetails(activity),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          Positioned(
+            top: 16,
+            right: 12,
+            child: _StyleToggle(
+              selectedStyle: _selectedStyle,
+              onSelected: _setStyle,
+            ),
+          ),
+
+          Positioned(
+            right: 12,
+            bottom: _activities.isNotEmpty ? 140 : 24,
+            child: _ZoomControls(
+              onZoomIn: _zoomIn,
+              onZoomOut: _zoomOut,
+            ),
+          ),
+
+          Positioned(
+            left: 12,
+            bottom: _activities.isNotEmpty ? 140 : 24,
+            child: FloatingActionButton.small(
+              heroTag: 'maps-center-location',
+              backgroundColor: const Color(0xFF1A73E8),
+              foregroundColor: Colors.white,
+              onPressed: _centerOnMyLocation,
+              tooltip: 'Center on my location',
+              child: const Icon(Icons.my_location),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StyleToggle extends StatelessWidget {
+  const _StyleToggle({
+    required this.selectedStyle,
+    required this.onSelected,
+  });
+
+  final MapVisualStyle selectedStyle;
+  final void Function(MapVisualStyle style) onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _StyleToggleButton(
+            label: '2D',
+            selected: selectedStyle == MapVisualStyle.clean2d,
+            onTap: () => onSelected(MapVisualStyle.clean2d),
+          ),
+          _StyleToggleButton(
+            label: 'Terrain',
+            selected: selectedStyle == MapVisualStyle.terrain,
+            onTap: () => onSelected(MapVisualStyle.terrain),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StyleToggleButton extends StatelessWidget {
+  const _StyleToggleButton({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? const Color(0xFFFF5A1F) : Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected ? Colors.white : Colors.black87,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ZoomControls extends StatelessWidget {
+  const _ZoomControls({
+    required this.onZoomIn,
+    required this.onZoomOut,
+  });
+
+  final Future<void> Function() onZoomIn;
+  final Future<void> Function() onZoomOut;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.add),
+            onPressed: () => onZoomIn(),
+            tooltip: 'Zoom in',
+          ),
+          Container(
+            width: 30,
+            height: 1,
+            color: Colors.black12,
+          ),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.remove),
+            onPressed: () => onZoomOut(),
+            tooltip: 'Zoom out',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActivityCard extends StatelessWidget {
+  final Activity activity;
+  final VoidCallback onTap;
+
+  const _ActivityCard({
+    required this.activity,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 200,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    ActivityHelpers.getActivityIcon(activity.type),
+                    color: ActivityHelpers.getActivityColor(activity.type),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      activity.type.displayName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                activity.formattedDistance,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                activity.formattedDuration,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+}
