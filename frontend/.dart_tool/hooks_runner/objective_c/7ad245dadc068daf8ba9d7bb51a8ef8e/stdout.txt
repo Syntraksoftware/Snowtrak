@@ -1,0 +1,63 @@
+Running `(cd /Users/matthewng/.pub-cache/hosted/pub.dev/objective_c-9.3.0/; TMPDIR=/var/folders/b8/gjds38ms6m7ghjsg5vv4c6r40000gn/T/ PATH=/Users/matthewng/Library/Application Support/Code/User/globalStorage/github.copilot-chat/debugCommand:/Users/matthewng/Library/Application Support/Code/User/globalStorage/github.copilot-chat/copilotCli:/Users/matthewng/.bun/bin:/Users/matthewng/.nvm/versions/node/v24.13.0/bin:/Users/matthewng/.gem/ruby/3.4.0/bin:/opt/homebrew/lib/ruby/gems/3.4.0/bin:/opt/homebrew/opt/ruby/bin:/opt/homebrew/opt/postgresql@16/bin:/Users/matthewng/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/path/to/streamlit:/path/to/python:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin:/Library/TeX/texbin:/Users/matthewng/Library/Application Support/Code/User/globalStorage/github.copilot-chat/debugCommand:/Users/matthewng/Library/Application Support/Code/User/globalStorage/github.copilot-chat/copilotCli:/Users/matthewng/Library/Application Support/Cursor/User/globalStorage/atopile.atopile/uv:/Users/matthewng/.bun/bin:/Users/matthewng/.nvm/versions/node/v24.13.0/bin:/Users/matthewng/.gem/ruby/3.4.0/bin:/opt/homebrew/lib/ruby/gems/3.4.0/bin:/opt/homebrew/opt/ruby/bin:/opt/homebrew/opt/postgresql@16/bin:/Users/matthewng/.local/bin:/Users/matthewng/Desktop/flutter/bin:/Users/matthewng/.vscode/extensions/ms-python.debugpy-2025.18.0-darwin-arm64/bundled/scripts/noConfigScripts:/Users/matthewng/.vscode/extensions/vscjava.vscode-java-debug-0.58.5/bundled/scripts/noConfigScripts:/Users/matthewng/Desktop/flutter/bin HOME=/Users/matthewng /Users/matthewng/Desktop/flutter/bin/cache/dart-sdk/bin/dart --packages=/Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/package_config.json /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/objective_c/7ad245dadc068daf8ba9d7bb51a8ef8e/hook.dill --config=/Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/objective_c/7ad245dadc068daf8ba9d7bb51a8ef8e/input.json )`.
+INFO: 2026-05-01 16:59:19.189932: Running `/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang --version`.
+
+INFO: 2026-05-01 16:59:19.351909: Running `/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang --version`.
+
+INFO: 2026-05-01 16:59:19.376729: Running: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk -target arm64-apple-darwin -mmacos-version-min=13 -c /Users/matthewng/.pub-cache/hosted/pub.dev/objective_c-9.3.0/src/include/dart_api_dl.c -fpic -I src -o /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/include/dart_api_dl.c.o
+
+INFO: 2026-05-01 16:59:19.377261: Running: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk -target arm64-apple-darwin -mmacos-version-min=13 -c /Users/matthewng/.pub-cache/hosted/pub.dev/objective_c-9.3.0/src/objective_c.c -fpic -I src -o /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/objective_c.c.o
+
+INFO: 2026-05-01 16:59:19.377718: Running: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk -target arm64-apple-darwin -mmacos-version-min=13 -x objective-c -fobjc-arc -c /Users/matthewng/.pub-cache/hosted/pub.dev/objective_c-9.3.0/src/input_stream_adapter.m -fpic -I src -o /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/input_stream_adapter.m.o
+
+INFO: 2026-05-01 16:59:19.378043: Running: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk -target arm64-apple-darwin -mmacos-version-min=13 -x objective-c -fobjc-arc -c /Users/matthewng/.pub-cache/hosted/pub.dev/objective_c-9.3.0/src/objective_c.m -fpic -I src -o /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/objective_c.m.o
+
+INFO: 2026-05-01 16:59:19.378254: Running: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk -target arm64-apple-darwin -mmacos-version-min=13 -x objective-c -fobjc-arc -c /Users/matthewng/.pub-cache/hosted/pub.dev/objective_c-9.3.0/src/observer.m -fpic -I src -o /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/observer.m.o
+
+INFO: 2026-05-01 16:59:19.378419: Running: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk -target arm64-apple-darwin -mmacos-version-min=13 -x objective-c -fobjc-arc -c /Users/matthewng/.pub-cache/hosted/pub.dev/objective_c-9.3.0/src/ns_number.m -fpic -I src -o /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/ns_number.m.o
+
+INFO: 2026-05-01 16:59:19.378617: Running: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk -target arm64-apple-darwin -mmacos-version-min=13 -x objective-c -fobjc-arc -c /Users/matthewng/.pub-cache/hosted/pub.dev/objective_c-9.3.0/src/protocol.m -fpic -I src -o /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/protocol.m.o
+
+INFO: 2026-05-01 16:59:19.378843: Running: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk -target arm64-apple-darwin -mmacos-version-min=13 -x objective-c -fobjc-arc -c /Users/matthewng/.pub-cache/hosted/pub.dev/objective_c-9.3.0/src/objective_c_bindings_generated.m -fpic -I src -o /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/objective_c_bindings_generated.m.o
+
+INFO: 2026-05-01 16:59:19.499383: 
+INFO: 2026-05-01 16:59:19.499530: 
+INFO: 2026-05-01 16:59:19.499578: Generated /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/include/dart_api_dl.c.o
+
+INFO: 2026-05-01 16:59:19.499977: 
+INFO: 2026-05-01 16:59:19.500011: 
+INFO: 2026-05-01 16:59:19.500044: Generated /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/objective_c.c.o
+
+INFO: 2026-05-01 16:59:19.502844: 
+INFO: 2026-05-01 16:59:19.502893: 
+INFO: 2026-05-01 16:59:19.502917: Generated /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/test/util.c.o
+
+INFO: 2026-05-01 16:59:19.506305: 
+INFO: 2026-05-01 16:59:19.506342: 
+INFO: 2026-05-01 16:59:19.506359: Generated /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/observer.m.o
+
+INFO: 2026-05-01 16:59:19.510125: 
+INFO: 2026-05-01 16:59:19.510158: 
+INFO: 2026-05-01 16:59:19.510176: Generated /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/protocol.m.o
+
+INFO: 2026-05-01 16:59:19.785727: 
+INFO: 2026-05-01 16:59:19.785792: 
+INFO: 2026-05-01 16:59:19.785810: Generated /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/ns_number.m.o
+
+INFO: 2026-05-01 16:59:19.792767: 
+INFO: 2026-05-01 16:59:19.792806: 
+INFO: 2026-05-01 16:59:19.792825: Generated /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/objective_c.m.o
+
+INFO: 2026-05-01 16:59:19.793979: 
+INFO: 2026-05-01 16:59:19.794011: 
+INFO: 2026-05-01 16:59:19.794030: Generated /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/input_stream_adapter.m.o
+
+INFO: 2026-05-01 16:59:19.818228: 
+INFO: 2026-05-01 16:59:19.818263: 
+INFO: 2026-05-01 16:59:19.818280: Generated /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/objective_c_bindings_generated.m.o
+
+INFO: 2026-05-01 16:59:19.818669: Running: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -shared -Wl,-encryptable -undefined dynamic_lookup -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk -target arm64-apple-darwin -mmacos-version-min=13 /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/include/dart_api_dl.c.o /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/objective_c.c.o /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/test/util.c.o /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/input_stream_adapter.m.o /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/objective_c.m.o /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/observer.m.o /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/ns_number.m.o /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/protocol.m.o /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/objective_c_bindings_generated.m.o -o /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/objective_c.dylib
+
+INFO: 2026-05-01 16:59:19.970313: 
+INFO: 2026-05-01 16:59:19.970385: 
+INFO: 2026-05-01 16:59:19.970406: Generated /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/objective_c.dylib
+

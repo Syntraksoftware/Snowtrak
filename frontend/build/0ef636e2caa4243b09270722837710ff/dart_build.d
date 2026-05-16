@@ -1,0 +1,1 @@
+ /Users/matthewng/Desktop/syntrak-application/frontend/build/0ef636e2caa4243b09270722837710ff/dart_build_result.json:  /Users/matthewng/Desktop/flutter/bin/cache/dart-sdk/version /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/package_config.json /Users/matthewng/Desktop/syntrak-application/frontend/pubspec.yaml

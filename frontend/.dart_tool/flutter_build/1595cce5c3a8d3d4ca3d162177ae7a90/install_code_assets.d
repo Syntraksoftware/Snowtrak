@@ -1,0 +1,1 @@
+ /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/flutter_build/1595cce5c3a8d3d4ca3d162177ae7a90/native_assets.json:  /Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/9f22e6a04e/objective_c.dylib

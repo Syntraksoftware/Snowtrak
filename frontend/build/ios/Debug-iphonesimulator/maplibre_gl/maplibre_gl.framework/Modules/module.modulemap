@@ -1,0 +1,11 @@
+framework module maplibre_gl {
+  umbrella header "maplibre_gl-umbrella.h"
+
+  export *
+  module * { export * }
+}
+
+module maplibre_gl.Swift {
+  header "maplibre_gl-Swift.h"
+  requires objc
+}
