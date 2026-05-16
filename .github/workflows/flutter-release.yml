@@ -1,0 +1,37 @@
+name: Flutter iOS Release (TestFlight)
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-upload:
+    name: Build iOS and Upload to App Store
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 'stable'
+
+      - name: Install deps
+        run: |
+          flutter pub get
+
+      - name: Build iOS (ipa)
+        run: |
+          flutter build ipa --release --export-options-plist=ios/ExportOptions.plist
+
+      - name: Upload to App Store (fastlane)
+        env:
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          FASTLANE_SESSION: ${{ secrets.FASTLANE_SESSION }}
+        run: |
+          gem install fastlane -v 2.211.0
+          cd ios
+          fastlane upload_to_app_store
+
+    # NOTE: set secrets `APP_STORE_CONNECT_API_KEY`, `FASTLANE_SESSION`, and any match/cert secrets in repo settings.
