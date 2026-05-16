@@ -1,0 +1,23 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Build and upload to TestFlight"
+  lane :beta do
+    # Use App Store Connect API key from environment
+    api_key = app_store_connect_api_key(
+      key_id: ENV['ASC_KEY_ID'],
+      issuer_id: ENV['ASC_ISSUER_ID'],
+      key_filepath: ENV['ASC_KEY_PATH'] || "/tmp/AuthKey.p8"
+    )
+
+    build_app(
+      scheme: "Runner",
+      export_method: "app-store",
+      export_options: {
+        provisioningProfiles: { ENV['APP_IDENTIFIER'] => ENV['PROV_PROFILE_NAME'] }
+      }
+    )
+
+    upload_to_testflight(api_key: api_key)
+  end
+end
