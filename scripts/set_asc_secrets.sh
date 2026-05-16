@@ -5,6 +5,9 @@ usage() {
   cat <<EOF
 Usage: $0 -k /path/AuthKey_ABC.p8 -K KEY_ID -I ISSUER_ID -R owner/repo [-a APP_IDENTIFIER] [-p PROV_PROFILE_NAME]
 
+Example:
+  $0 -k /path/AuthKey_G5S7HHQ55Y.p8 -K G5S7HHQ55Y -I e667b27b-f347-48b3-94de-39f7149d196d -R owner/repo
+
 Sets GitHub Actions secrets needed for the iOS TestFlight workflow:
   - ASC_KEY_BASE64 (base64-encoded .p8)
   - ASC_KEY_ID
@@ -53,8 +56,8 @@ fi
 
 echo "Encoding key and uploading secrets to repo: $REPO"
 
-# Base64 encode without newlines
-ASC_KEY_BASE64=$(base64 "$KEY_PATH" | tr -d '\n')
+# Base64 encode without newlines (portable: read via stdin for macOS/Linux)
+ASC_KEY_BASE64=$(base64 < "$KEY_PATH" | tr -d '\n')
 
 echo "Setting ASC_KEY_BASE64..."
 gh secret set ASC_KEY_BASE64 --repo "$REPO" --body "$ASC_KEY_BASE64"

@@ -155,6 +155,20 @@ Scripts should remain stable; changes to notification type enums require coordin
 
 ## 6. Examples and usage
 
+### Set up TestFlight / App Store Connect secrets
+
+Use the helper script to upload the ASC key and identifiers required by the iOS TestFlight workflow:
+
+```bash
+./scripts/set_asc_secrets.sh \
+  -k /path/AuthKey_G5S7HHQ55Y.p8 \
+  -K G5S7HHQ55Y \
+  -I e667b27b-f347-48b3-94de-39f7149d196d \
+  -R owner/repo
+```
+
+This sets the `ASC_KEY_BASE64`, `ASC_KEY_ID`, and `ASC_ISSUER_ID` GitHub secrets consumed by [`.github/workflows/ios-testflight.yml`](../.github/workflows/ios-testflight.yml) and [`frontend/ios/fastlane/Fastfile`](../frontend/ios/fastlane/Fastfile).
+
 ### Scan for secrets before committing
 
 ```bash
