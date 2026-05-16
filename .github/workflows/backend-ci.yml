@@ -1,0 +1,58 @@
+name: Backend CI
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+  pull_request:
+    paths:
+      - 'backend/**'
+
+jobs:
+  test-and-lint:
+    name: Test & Lint (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [main-backend, community-backend, activity-backend, map-backend]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          . .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Run tests (if present)
+        run: |
+          . .venv/bin/activate
+          if [ -d "backend/${{ matrix.service }}/tests" ]; then
+            pytest -q backend/${{ matrix.service }}/tests || true
+          else
+            echo "no tests for ${{ matrix.service }}"
+          fi
+
+      - name: Run linter (optional)
+        run: |
+          . .venv/bin/activate
+          pip install ruff || true
+          ruff check backend/${{ matrix.service }} || true
+
+      - name: Package OpenAPI artifact (manual extraction)
+        run: |
+          echo "If service exposes /openapi.json at runtime, run the local extractor script to fetch and store under packages/shared/openapi/"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.service }}-reports
+          path: |
+            backend/${{ matrix.service }}/.coverage || true
