@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="syntrak-test-fixture" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>Fixture track</name>
+    <trkseg>
+      <trkpt lat="47.5" lon="8.5">
+        <ele>1200.5</ele>
+        <time>2026-01-01T10:00:00Z</time>
+      </trkpt>
+      <trkpt lat="47.51" lon="8.51">
+        <time>2026-01-01T10:01:00Z</time>
+      </trkpt>
+    </trkseg>
+    <trkseg>
+      <trkpt lat="47.52" lon="8.52">
+        <ele>1180.0</ele>
+        <time>2026-01-01T10:02:00Z</time>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

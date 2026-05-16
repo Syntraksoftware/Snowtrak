@@ -1,0 +1,31 @@
+{
+  "inputPath": "test/engines/ingestion/parsers/fixtures/sample_track.gpx",
+  "rawPointCount": 3,
+  "processedPointCount": 2,
+  "allElevationPresent": true,
+  "allSpeedPresent": true,
+  "under1500": true,
+  "demMode": "mock",
+  "demBaseUrl": null,
+  "track": {
+    "id": "debug-track",
+    "sourceType": "gpx",
+    "recordedAt": "2026-01-01T10:00:00.000Z",
+    "points": [
+      {
+        "lat": 47.5,
+        "lon": 8.5,
+        "elevationM": 1218.155,
+        "timestamp": "2026-01-01T10:00:00.000Z",
+        "speedKmh": 0.0
+      },
+      {
+        "lat": 47.52000000395479,
+        "lon": 8.520000003954786,
+        "elevationM": 1218.165600002096,
+        "timestamp": "2026-01-01T10:02:00.000Z",
+        "speedKmh": 40.25538826880652
+      }
+    ]
+  }
+}

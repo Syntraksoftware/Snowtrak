@@ -1,0 +1,86 @@
+services:
+  main-backend:
+    build:
+      context: .
+      dockerfile: ./main-backend/Dockerfile
+    env_file:
+      - ./main-backend/.env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DEBUG=False
+      - HOST=0.0.0.0
+      - PORT=8080
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  community-backend:
+    build:
+      context: .
+      dockerfile: ./community-backend/Dockerfile
+    env_file:
+      - ./community-backend/.env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - FASTAPI_ENV=production
+      - HOST=0.0.0.0
+      - PORT=5001
+    ports:
+      - "5001:5001"
+    restart: unless-stopped
+
+  activity-backend:
+    build:
+      context: .
+      dockerfile: ./activity-backend/Dockerfile
+    env_file:
+      - ./activity-backend/.env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - FASTAPI_ENV=production
+      - HOST=0.0.0.0
+      - PORT=5100
+    ports:
+      - "5100:5100"
+    restart: unless-stopped
+
+  map-backend:
+    build:
+      context: .
+      dockerfile: ./map-backend/Dockerfile
+    env_file:
+      - ./map-backend/.env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - FASTAPI_ENV=production
+      - HOST=0.0.0.0
+      - PORT=5200
+      - MAP_STORAGE_BACKEND=${MAP_STORAGE_BACKEND:-supabase}
+      - POSTGIS_HOST=postgis
+      - POSTGIS_PORT=5432
+      - POSTGIS_DB=${POSTGRES_DB:-syntrak}
+      - POSTGIS_USER=${POSTGRES_USER:-syntrak}
+      - POSTGIS_PASSWORD=${POSTGRES_PASSWORD:-syntrak_local_dev}
+    ports:
+      - "5200:5200"
+    restart: unless-stopped
+
+  # Optional local Postgres+PostGIS for offline dev. Production geo data lives on Supabase (Postgres + PostGIS).
+  postgis:
+    image: postgis/postgis:16-3.4
+    profiles: ["postgis"]
+    env_file:
+      - ./postgres.env
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgis_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgis_data:
