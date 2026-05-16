@@ -1,0 +1,12 @@
+{
+  "assets": {},
+  "config": {
+    "build_asset_types": [],
+    "linking_enabled": false
+  },
+  "out_dir_shared": "/Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/shared/objective_c/build/",
+  "out_file": "/Users/matthewng/Desktop/syntrak-application/frontend/.dart_tool/hooks_runner/objective_c/337ce265dcc475d72fd7c043591321ec/output.json",
+  "package_name": "objective_c",
+  "package_root": "/Users/matthewng/.pub-cache/hosted/pub.dev/objective_c-9.3.0/",
+  "user_defines": {}
+}
