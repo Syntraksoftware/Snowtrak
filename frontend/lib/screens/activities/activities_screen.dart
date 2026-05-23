@@ -12,7 +12,7 @@ import 'package:syntrak/screens/activities/widgets/introduction_card.dart';
 import 'package:syntrak/screens/activities/widgets/trending_card.dart';
 import 'package:syntrak/screens/activities/widgets/weather_card.dart';
 import 'package:syntrak/screens/activities/widgets/welcome_message.dart';
-import 'package:syntrak/screens/profile/user_profile_screen.dart';
+import 'package:syntrak/screens/home/home_tab_scope.dart';
 
 class ActivitiesScreen extends StatefulWidget {
   const ActivitiesScreen({super.key});
@@ -80,12 +80,6 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
             final username =
                 user?.firstName ?? user?.email.split('@')[0] ?? 'User';
 
-            // Debug: Print user data to help diagnose issues
-            if (user != null) {
-              print(
-                  '🔍 [Home/Feed] User: ${user.firstName ?? "N/A"} ${user.lastName ?? "N/A"} (${user.email})');
-            }
-
             return RefreshIndicator(
               onRefresh: () async {
                 await _loadWeather();
@@ -97,19 +91,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
                   SliverToBoxAdapter(
                     child: ActivitiesHeader(
                       onAvatarTap: () {
-                        print(
-                          '🔍 [ActivitiesScreen] Avatar tapped, navigating to profile',
-                        );
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const UserProfileScreen(),
-                          ),
-                        ).then((_) {
-                          print(
-                            '🔍 [ActivitiesScreen] Returned from profile screen',
-                          );
-                        });
+                        HomeTabScope.selectTabOrNull(context, 4);
                       },
                     ),
                   ),
