@@ -13,6 +13,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Print Xcode version and enforce Xcode 26
+        run: |
+          echo "xcodebuild version:" 
+          xcodebuild -version || true
+          if ! xcodebuild -version | grep -q "Xcode 26"; then
+            echo "ERROR: Xcode 26 is required to build/upload this app.\n- Use a machine with Xcode 26 installed (local or self-hosted runner)\n- Or update the GitHub runner to one that includes Xcode 26." >&2
+            exit 1
+          fi
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
