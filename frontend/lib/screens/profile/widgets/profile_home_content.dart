@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/screens/profile/widgets/profile_layout_primitives.dart';
-import 'package:syntrak/screens/settings/settings_screen.dart';
+import 'package:syntrak/screens/profile/widgets/profile_privacy_controls.dart';
 import 'package:syntrak/ui/liquid/liquid_section_card.dart';
 import 'package:syntrak/ui/liquid/snowtrak_auth_theme.dart';
 
@@ -25,7 +25,7 @@ class ProfileHomeContent extends StatelessWidget {
         const SizedBox(height: SyntrakSpacing.md),
         _socialSection(),
         const SizedBox(height: SyntrakSpacing.md),
-        _privacySection(context),
+        _privacySection(),
         const SizedBox(height: SyntrakSpacing.xl),
       ],
     );
@@ -224,48 +224,13 @@ class ProfileHomeContent extends StatelessWidget {
     );
   }
 
-  Widget _privacySection(BuildContext context) {
+  Widget _privacySection() {
     return LiquidSectionCard(
       icon: Icons.shield_outlined,
       title: 'Privacy controls',
       subtitle: 'Location data and visibility',
       iconColor: _accent,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const ProfileToggleRow(
-            icon: Icons.home_work_outlined,
-            title: 'Privacy zones',
-            subtitle: 'Hide start and end points near home or work',
-          ),
-          const ProfileToggleRow(
-            icon: Icons.map_outlined,
-            title: 'Map visibility',
-            subtitle: 'Hide maps, pace, or heart rate on public activities',
-          ),
-          const ProfileToggleRow(
-            icon: Icons.lock_person_outlined,
-            title: 'Profile privacy',
-            subtitle: 'Require approval before followers see activity maps',
-          ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                );
-              },
-              icon: const Icon(Icons.settings_outlined, size: 18),
-              label: const Text('Open settings'),
-              style: TextButton.styleFrom(
-                foregroundColor: _accent,
-              ),
-            ),
-          ),
-        ],
-      ),
+      child: const ProfilePrivacyControls(),
     );
   }
 }
