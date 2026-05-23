@@ -1,0 +1,45 @@
+services:
+  main-backend:
+    build:
+      context: ../
+      dockerfile: ./main-backend/Dockerfile
+    env_file:
+      - ./env/staging.env
+    environment:
+      PYTHONUNBUFFERED: "1"
+      FASTAPI_ENV: staging
+      HOST: 0.0.0.0
+      PORT: 8080
+    ports:
+      - "18080:8080"
+    restart: unless-stopped
+
+  community-backend:
+    build:
+      context: ../
+      dockerfile: ./community-backend/Dockerfile
+    env_file:
+      - ./env/staging.env
+    environment:
+      PYTHONUNBUFFERED: "1"
+      FASTAPI_ENV: staging
+      HOST: 0.0.0.0
+      PORT: 5001
+    ports:
+      - "15001:5001"
+    restart: unless-stopped
+
+  activity-backend:
+    build:
+      context: ../
+      dockerfile: ./activity-backend/Dockerfile
+    env_file:
+      - ./env/staging.env
+    environment:
+      PYTHONUNBUFFERED: "1"
+      FASTAPI_ENV: staging
+      HOST: 0.0.0.0
+      PORT: 5100
+    ports:
+      - "15100:5100"
+    restart: unless-stopped
