@@ -3,7 +3,7 @@ name: iOS Staging
 on:
   workflow_dispatch:
   push:
-    branches: [ develop ]
+    branches: [ develop, main ]
 
 jobs:
   build-and-upload:
