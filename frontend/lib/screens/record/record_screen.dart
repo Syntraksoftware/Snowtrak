@@ -423,12 +423,7 @@ class _RecordScreenState extends State<RecordScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      color: SyntrakColors.textPrimary,
-                      onPressed:
-                          _isRecording ? null : () => Navigator.pop(context),
-                    ),
+                    const SizedBox(width: 48),
                     if (_isRecording)
                       Container(
                         padding: const EdgeInsets.symmetric(
