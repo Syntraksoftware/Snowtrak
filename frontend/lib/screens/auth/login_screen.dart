@@ -27,9 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
@@ -43,10 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (!success) {
-      showAuthErrorSnackBar(
-        context,
-        authProvider.error ?? 'Login failed',
-      );
+      showAuthErrorSnackBar(context, authProvider.error ?? 'Login failed');
     }
   }
 
@@ -54,6 +49,15 @@ class _LoginScreenState extends State<LoginScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const RegisterScreen()),
+    );
+  }
+
+  void _showComingSoon(String provider) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$provider sign-in coming soon'),
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
@@ -65,66 +69,77 @@ class _LoginScreenState extends State<LoginScreen> {
           return const Scaffold(
             body: Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(SyntrakColors.primary),
+                valueColor: AlwaysStoppedAnimation<Color>(SnowtrakAuthTheme.brand),
               ),
             ),
           );
         }
 
-        return LiquidAuthScaffold(
-          title: 'Welcome back',
-          body: LiquidSurface(
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  LiquidTextField(
-                    controller: _emailController,
-                    label: 'Email',
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Enter your email';
-                      }
-                      if (!value.contains('@')) {
-                        return 'Enter a valid email';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: SyntrakSpacing.md),
-                  LiquidTextField(
-                    controller: _passwordController,
-                    label: 'Password',
-                    obscureText: true,
-                    textInputAction: TextInputAction.done,
-                    onFieldSubmitted: (_) => _handleLogin(),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Enter your password';
-                      }
-                      if (value.length < 6) {
-                        return 'At least 6 characters';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: SyntrakSpacing.lg),
-                  LiquidButton(
-                    label: 'Log in',
-                    isLoading: _isLoading,
-                    onPressed: _handleLogin,
-                  ),
-                ],
-              ),
+        return AuthPageScaffold(
+          title: 'Log in to Snowtrak',
+          body: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AuthLabeledField(
+                  label: 'Email',
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Enter your email';
+                    }
+                    if (!value.contains('@')) {
+                      return 'Enter a valid email';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: SyntrakSpacing.lg),
+                AuthLabeledField(
+                  label: 'Password',
+                  controller: _passwordController,
+                  obscureText: true,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => _handleLogin(),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Enter your password';
+                    }
+                    if (value.length < 6) {
+                      return 'At least 6 characters';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: SyntrakSpacing.xl),
+                AuthPrimaryButton(
+                  label: 'Log In',
+                  isLoading: _isLoading,
+                  onPressed: _handleLogin,
+                ),
+                const SizedBox(height: SyntrakSpacing.xl),
+                const AuthOrDivider(),
+                const SizedBox(height: SyntrakSpacing.xl),
+                AuthSocialButton(
+                  provider: AuthSocialProvider.google,
+                  onPressed: () => _showComingSoon('Google'),
+                ),
+                const SizedBox(height: SyntrakSpacing.md),
+                AuthSocialButton(
+                  provider: AuthSocialProvider.apple,
+                  onPressed: () => _showComingSoon('Apple'),
+                ),
+                const SizedBox(height: SyntrakSpacing.xl),
+                AuthAccountLink(
+                  prompt: "Don't have an account?",
+                  actionLabel: 'Sign up',
+                  onPressed: _openRegister,
+                ),
+              ],
             ),
-          ),
-          footer: LiquidFooterLink(
-            prompt: 'No account?',
-            actionLabel: 'Sign up',
-            onPressed: _openRegister,
           ),
         );
       },
