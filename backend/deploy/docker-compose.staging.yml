@@ -11,7 +11,7 @@ services:
       HOST: 0.0.0.0
       PORT: 8080
     ports:
-      - "18080:8080"
+      - "127.0.0.1:18080:8080"
     restart: unless-stopped
 
   community-backend:
@@ -26,7 +26,7 @@ services:
       HOST: 0.0.0.0
       PORT: 5001
     ports:
-      - "15001:5001"
+      - "127.0.0.1:15001:5001"
     restart: unless-stopped
 
   activity-backend:
@@ -41,5 +41,5 @@ services:
       HOST: 0.0.0.0
       PORT: 5100
     ports:
-      - "15100:5100"
+      - "127.0.0.1:15100:5100"
     restart: unless-stopped
