@@ -11,7 +11,6 @@ import 'package:syntrak/screens/activities/widgets/activities_header.dart';
 import 'package:syntrak/screens/activities/widgets/introduction_card.dart';
 import 'package:syntrak/screens/activities/widgets/trending_card.dart';
 import 'package:syntrak/screens/activities/widgets/weather_card.dart';
-import 'package:syntrak/screens/activities/widgets/welcome_message.dart';
 import 'package:syntrak/screens/home/home_tab_scope.dart';
 
 class ActivitiesScreen extends StatefulWidget {
@@ -34,7 +33,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
           Provider.of<ActivityProvider>(context, listen: false);
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final contextRepository = context.read<ActivitiesContextRepository>();
-      _setWeatherLoading(true);
+      _initializeWeather(contextRepository);
       _controller.loadInitialData(
         activityProvider: activityProvider,
         authProvider: authProvider,
@@ -44,8 +43,28 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
     });
   }
 
+  Future<void> _initializeWeather(
+    ActivitiesContextRepository contextRepository,
+  ) async {
+    final cached = await contextRepository.readCachedWeather();
+    if (!mounted) return;
+    if (cached != null) {
+      setState(() {
+        _weatherData = cached;
+        _isLoadingWeather = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoadingWeather = true;
+    });
+  }
+
   Future<void> _loadWeather() async {
-    _setWeatherLoading(true);
+    if (_weatherData == null) {
+      _setWeatherLoading(true);
+    }
     final contextRepository = context.read<ActivitiesContextRepository>();
     await _controller.refreshData(
       activityProvider: context.read<ActivityProvider>(),
@@ -90,15 +109,11 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
                   // Custom header with bell and profile
                   SliverToBoxAdapter(
                     child: ActivitiesHeader(
+                      username: username,
                       onAvatarTap: () {
                         HomeTabScope.selectTabOrNull(context, 4);
                       },
                     ),
-                  ),
-
-                  // Welcome message
-                  SliverToBoxAdapter(
-                    child: WelcomeMessage(username: username),
                   ),
 
                   // Weather card

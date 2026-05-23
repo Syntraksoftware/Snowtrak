@@ -1,84 +1,70 @@
 import 'package:flutter/material.dart';
 import 'package:syntrak/core/theme.dart';
+import 'package:syntrak/screens/activities/widgets/home_action_row.dart';
+import 'package:syntrak/screens/activities/widgets/home_section_card.dart';
+import 'package:syntrak/screens/activities/widgets/home_section_spacing.dart';
+import 'package:syntrak/screens/home/home_tab_scope.dart';
+import 'package:syntrak/ui/liquid/auth_primary_button.dart';
+import 'package:syntrak/ui/liquid/snowtrak_auth_theme.dart';
 
-class TrendingCard extends StatelessWidget {
+class TrendingCard extends StatefulWidget {
   const TrendingCard({super.key});
 
   @override
+  State<TrendingCard> createState() => _TrendingCardState();
+}
+
+class _TrendingCardState extends State<TrendingCard> {
+  int _selectedIndex = 0;
+
+  static const _items = [
+    _TrendingItem(
+      title: 'Powder day at Whistler',
+      subtitle: '42 athletes posted runs today',
+    ),
+    _TrendingItem(
+      title: '100K vertical February',
+      subtitle: 'Challenge · 128 joined',
+    ),
+  ];
+
+  @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        SyntrakSpacing.md,
-        0,
-        SyntrakSpacing.md,
-        SyntrakSpacing.md,
-      ),
-      child: Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-          side: BorderSide(
-            color: SyntrakColors.divider,
-            width: 1,
-          ),
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                SyntrakColors.accent.withOpacity(0.1),
-                SyntrakColors.primary.withOpacity(0.1),
-              ],
+    return HomeSectionSpacing(
+      child: HomeSectionCard(
+        icon: Icons.trending_up,
+        title: 'Trending now',
+        subtitle: 'Tap to preview, explore below',
+        iconColor: SnowtrakAuthTheme.brand,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var i = 0; i < _items.length; i++) ...[
+              if (i > 0) const SizedBox(height: SyntrakSpacing.xs),
+              HomeActionRow(
+                title: _items[i].title,
+                subtitle: _items[i].subtitle,
+                icon: _selectedIndex == i
+                    ? Icons.check_circle_outline
+                    : Icons.radio_button_unchecked,
+                onTap: () => setState(() => _selectedIndex = i),
+              ),
+            ],
+            const SizedBox(height: SyntrakSpacing.sm),
+            AuthPrimaryButton(
+              label: 'Explore community',
+              onPressed: () => HomeTabScope.selectTabOrNull(context, 1),
             ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(SyntrakSpacing.md),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.trending_up,
-                      color: SyntrakColors.accent,
-                      size: 24,
-                    ),
-                    const SizedBox(width: SyntrakSpacing.sm),
-                    Text(
-                      'Trending Now',
-                      style: SyntrakTypography.headlineSmall.copyWith(
-                        color: SyntrakColors.textPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: SyntrakSpacing.md),
-                Text(
-                  'Join the community and see what\'s popular this week!',
-                  style: SyntrakTypography.bodyMedium.copyWith(
-                    color: SyntrakColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: SyntrakSpacing.sm),
-                ElevatedButton(
-                  onPressed: () {
-                    // TODO: Navigate to trending/community
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: SyntrakColors.accent,
-                    foregroundColor: SyntrakColors.textOnPrimary,
-                  ),
-                  child: const Text('Explore'),
-                ),
-              ],
-            ),
-          ),
+          ],
         ),
       ),
     );
   }
+}
+
+class _TrendingItem {
+  const _TrendingItem({required this.title, required this.subtitle});
+
+  final String title;
+  final String subtitle;
 }

@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/models/weather.dart';
+import 'package:syntrak/screens/activities/widgets/home_section_card.dart';
+import 'package:syntrak/screens/activities/widgets/home_section_spacing.dart';
+import 'package:syntrak/screens/activities/widgets/home_selectable_chip.dart';
+import 'package:syntrak/ui/liquid/snowtrak_auth_theme.dart';
 
-class WeatherCard extends StatelessWidget {
+class WeatherCard extends StatefulWidget {
   const WeatherCard({
     super.key,
     required this.isLoading,
@@ -14,150 +18,123 @@ class WeatherCard extends StatelessWidget {
   final WeatherData? weatherData;
 
   @override
+  State<WeatherCard> createState() => _WeatherCardState();
+}
+
+class _WeatherCardState extends State<WeatherCard> {
+  int _selectedDayIndex = 0;
+
+  @override
+  void didUpdateWidget(covariant WeatherCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.weatherData != widget.weatherData) {
+      _selectedDayIndex = 0;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        SyntrakSpacing.md,
-        0,
-        SyntrakSpacing.md,
-        SyntrakSpacing.md,
+    return HomeSectionSpacing(
+      child: HomeSectionCard(
+        icon: Icons.wb_cloudy_outlined,
+        title: "Today's conditions",
+        subtitle: 'Tap a day for the forecast',
+        iconColor: SnowtrakAuthTheme.brand,
+        child: _buildBody(),
       ),
-      child: Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-          side: BorderSide(
-            color: SyntrakColors.divider,
-            width: 1,
-          ),
+    );
+  }
+
+  Widget _buildBody() {
+    if (widget.isLoading) {
+      return const SizedBox(
+        height: 72,
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      );
+    }
+
+    if (widget.weatherData == null) {
+      return Text(
+        'Enable location or pull to refresh.',
+        style: SyntrakTypography.bodySmall.copyWith(
+          color: SyntrakColors.textTertiary,
         ),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                SyntrakColors.primary.withOpacity(0.1),
-                SyntrakColors.secondary.withOpacity(0.1),
-              ],
+      );
+    }
+
+    final data = widget.weatherData!;
+    final forecastDays = data.weeklyForecast.take(3).toList();
+    final selectedIndex = _selectedDayIndex - 1;
+    final selected = selectedIndex >= 0 && selectedIndex < forecastDays.length
+        ? forecastDays[selectedIndex]
+        : null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(data.condition.emoji, style: const TextStyle(fontSize: 32)),
+            const SizedBox(width: SyntrakSpacing.sm),
+            Text(
+              '${data.temperature.toStringAsFixed(0)}°',
+              style: SyntrakTypography.displaySmall.copyWith(
+                color: SyntrakColors.textPrimary,
+                fontWeight: FontWeight.w700,
+                fontSize: 28,
+                height: 1,
+              ),
             ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(SyntrakSpacing.md),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Today's Highlights",
-                  style: SyntrakTypography.headlineSmall.copyWith(
-                    color: SyntrakColors.textPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
+            const SizedBox(width: SyntrakSpacing.sm),
+            Expanded(
+              child: Text(
+                '${data.condition.description} · ${data.windSpeed.toStringAsFixed(0)} km/h wind',
+                style: SyntrakTypography.bodySmall.copyWith(
+                  color: SyntrakColors.textSecondary,
                 ),
-                const SizedBox(height: SyntrakSpacing.md),
-                if (isLoading)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(SyntrakSpacing.lg),
-                      child: CircularProgressIndicator(),
-                    ),
-                  )
-                else if (weatherData != null)
-                  SizedBox(
-                    width: double.infinity,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              weatherData!.condition.emoji,
-                              style: const TextStyle(fontSize: 48),
-                            ),
-                            const SizedBox(width: SyntrakSpacing.md),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  '${weatherData!.temperature.toStringAsFixed(1)}°C',
-                                  style:
-                                      SyntrakTypography.displaySmall.copyWith(
-                                    color: SyntrakColors.textPrimary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: SyntrakSpacing.xs),
-                                Text(
-                                  weatherData!.condition.description,
-                                  style: SyntrakTypography.bodyMedium.copyWith(
-                                    color: SyntrakColors.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        if (weatherData!.weeklyForecast.isNotEmpty)
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              ...weatherData!.weeklyForecast.take(3).map((
-                                forecast,
-                              ) {
-                                final dayName =
-                                    DateFormat('E').format(forecast.date);
-                                return Padding(
-                                  padding: const EdgeInsets.only(
-                                    bottom: SyntrakSpacing.xs,
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        dayName,
-                                        style: SyntrakTypography.labelSmall
-                                            .copyWith(
-                                          color: SyntrakColors.textTertiary,
-                                        ),
-                                      ),
-                                      const SizedBox(width: SyntrakSpacing.xs),
-                                      Text(
-                                        '${forecast.maxTemp.toStringAsFixed(0)}°',
-                                        style: SyntrakTypography.labelSmall
-                                            .copyWith(
-                                          color: SyntrakColors.textSecondary,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }),
-                            ],
-                          ),
-                      ],
-                    ),
-                  )
-                else
-                  Padding(
-                    padding: const EdgeInsets.all(SyntrakSpacing.md),
-                    child: Text(
-                      'Weather data unavailable',
-                      style: SyntrakTypography.bodyMedium.copyWith(
-                        color: SyntrakColors.textTertiary,
-                      ),
-                    ),
-                  ),
-              ],
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
+          ],
         ),
-      ),
+        if (forecastDays.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: SyntrakSpacing.xs,
+            runSpacing: SyntrakSpacing.xs,
+            children: [
+              HomeSelectableChip(
+                label: 'Now',
+                dense: true,
+                selected: _selectedDayIndex == 0,
+                onTap: () => setState(() => _selectedDayIndex = 0),
+              ),
+              for (var i = 0; i < forecastDays.length; i++)
+                HomeSelectableChip(
+                  label:
+                      '${DateFormat('E').format(forecastDays[i].date)} ${forecastDays[i].maxTemp.toStringAsFixed(0)}°',
+                  dense: true,
+                  selected: _selectedDayIndex == i + 1,
+                  onTap: () => setState(() => _selectedDayIndex = i + 1),
+                ),
+            ],
+          ),
+          if (selected != null) ...[
+            const SizedBox(height: SyntrakSpacing.xs),
+            Text(
+              'High ${selected.maxTemp.toStringAsFixed(0)}° · '
+              'Low ${selected.minTemp.toStringAsFixed(0)}° · '
+              'Avg ${selected.avgTemp.toStringAsFixed(0)}°',
+              style: SyntrakTypography.labelSmall.copyWith(
+                color: SnowtrakAuthTheme.brand,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ],
+      ],
     );
   }
 }
