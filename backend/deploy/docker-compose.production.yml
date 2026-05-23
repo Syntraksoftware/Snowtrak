@@ -1,0 +1,61 @@
+services:
+  main-backend:
+    build:
+      context: ../
+      dockerfile: ./main-backend/Dockerfile
+    env_file:
+      - ./env/production.env
+    environment:
+      PYTHONUNBUFFERED: "1"
+      FASTAPI_ENV: production
+      HOST: 0.0.0.0
+      PORT: 8080
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  community-backend:
+    build:
+      context: ../
+      dockerfile: ./community-backend/Dockerfile
+    env_file:
+      - ./env/production.env
+    environment:
+      PYTHONUNBUFFERED: "1"
+      FASTAPI_ENV: production
+      HOST: 0.0.0.0
+      PORT: 5001
+    ports:
+      - "5001:5001"
+    restart: unless-stopped
+
+  activity-backend:
+    build:
+      context: ../
+      dockerfile: ./activity-backend/Dockerfile
+    env_file:
+      - ./env/production.env
+    environment:
+      PYTHONUNBUFFERED: "1"
+      FASTAPI_ENV: production
+      HOST: 0.0.0.0
+      PORT: 5100
+    ports:
+      - "5100:5100"
+    restart: unless-stopped
+
+  map-backend:
+    build:
+      context: ../
+      dockerfile: ./map-backend/Dockerfile
+    env_file:
+      - ./env/production.env
+    environment:
+      PYTHONUNBUFFERED: "1"
+      FASTAPI_ENV: production
+      HOST: 0.0.0.0
+      PORT: 5200
+      MAP_STORAGE_BACKEND: supabase
+    ports:
+      - "5200:5200"
+    restart: unless-stopped

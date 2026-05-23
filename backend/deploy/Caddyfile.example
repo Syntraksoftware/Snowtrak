@@ -1,0 +1,27 @@
+staging-main.example.com {
+	reverse_proxy localhost:18080
+}
+
+staging-community.example.com {
+	reverse_proxy localhost:15001
+}
+
+staging-activity.example.com {
+	reverse_proxy localhost:15100
+}
+
+main.example.com {
+	reverse_proxy localhost:8080
+}
+
+community.example.com {
+	reverse_proxy localhost:5001
+}
+
+activity.example.com {
+	reverse_proxy localhost:5100
+}
+
+map.example.com {
+	reverse_proxy localhost:5200
+}

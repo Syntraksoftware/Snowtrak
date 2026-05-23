@@ -1,0 +1,40 @@
+name: Deploy Backend to VPS
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Deployment target
+        required: true
+        default: staging
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            cd "${{ secrets.VPS_APP_DIR }}"
+            git fetch origin
+
+            if [ "${{ inputs.environment }}" = "production" ]; then
+              git checkout main
+              git reset --hard origin/main
+              docker compose -f backend/deploy/docker-compose.production.yml up -d --build
+            else
+              git checkout develop
+              git reset --hard origin/develop
+              docker compose -f backend/deploy/docker-compose.staging.yml up -d --build
+            fi
+
+            docker image prune -f
