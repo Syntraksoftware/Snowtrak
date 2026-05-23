@@ -1,13 +1,14 @@
-name: Flutter iOS Release (TestFlight)
+name: iOS Production Release
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - 'v*'
 
 jobs:
   build-and-upload:
-    name: Build iOS and Upload to App Store
+    name: Build iOS and Upload to App Store Connect
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,23 +16,27 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: 'stable'
+          flutter-version: '3.38.6'
 
-      - name: Install deps
-        run: |
-          flutter pub get
-
-      - name: Build iOS (ipa)
-        run: |
-          flutter build ipa --release --export-options-plist=ios/ExportOptions.plist
-
-      - name: Upload to App Store (fastlane)
+      - name: Decode ASC key
         env:
-          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
-          FASTLANE_SESSION: ${{ secrets.FASTLANE_SESSION }}
+          ASC_KEY_BASE64: ${{ secrets.ASC_KEY_BASE64 }}
         run: |
-          gem install fastlane -v 2.211.0
-          cd ios
-          fastlane upload_to_app_store
+          echo "$ASC_KEY_BASE64" | base64 --decode > /tmp/AuthKey.p8
 
-    # NOTE: set secrets `APP_STORE_CONNECT_API_KEY`, `FASTLANE_SESSION`, and any match/cert secrets in repo settings.
+      - name: Install bundler and fastlane
+        run: |
+          gem install bundler
+          cd frontend/ios
+          bundle install
+
+      - name: Build and upload production release
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_PATH: /tmp/AuthKey.p8
+          APP_IDENTIFIER: ${{ secrets.APP_IDENTIFIER }}
+          PROV_PROFILE_NAME: ${{ secrets.PROV_PROFILE_NAME }}
+        run: |
+          cd frontend/ios
+          bundle exec fastlane production
