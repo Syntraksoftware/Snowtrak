@@ -1,27 +1,30 @@
+# Replace the example domains with your real DNS names.
+# Caddy will automatically obtain and renew TLS certificates.
+
 staging-main.example.com {
-	reverse_proxy localhost:18080
+	reverse_proxy 127.0.0.1:18080
 }
 
 staging-community.example.com {
-	reverse_proxy localhost:15001
+	reverse_proxy 127.0.0.1:15001
 }
 
 staging-activity.example.com {
-	reverse_proxy localhost:15100
+	reverse_proxy 127.0.0.1:15100
 }
 
 main.example.com {
-	reverse_proxy localhost:8080
+	reverse_proxy 127.0.0.1:8080
 }
 
 community.example.com {
-	reverse_proxy localhost:5001
+	reverse_proxy 127.0.0.1:5001
 }
 
 activity.example.com {
-	reverse_proxy localhost:5100
+	reverse_proxy 127.0.0.1:5100
 }
 
 map.example.com {
-	reverse_proxy localhost:5200
+	reverse_proxy 127.0.0.1:5200
 }
