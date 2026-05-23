@@ -1,4 +1,4 @@
-name: iOS TestFlight
+name: iOS Staging
 
 on:
   workflow_dispatch:
@@ -26,16 +26,8 @@ jobs:
       - name: Install bundler and fastlane
         run: |
           gem install bundler
-          bundle install || true
-
-      - name: Prepare env
-        env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-          APP_IDENTIFIER: ${{ secrets.APP_IDENTIFIER }}
-          PROV_PROFILE_NAME: ${{ secrets.PROV_PROFILE_NAME }}
-        run: |
-          export ASC_KEY_PATH=/tmp/AuthKey.p8
+          cd frontend/ios
+          bundle install
 
       - name: Build and upload to TestFlight
         env:
@@ -46,4 +38,4 @@ jobs:
           PROV_PROFILE_NAME: ${{ secrets.PROV_PROFILE_NAME }}
         run: |
           cd frontend/ios
-          bundle exec fastlane beta
+          bundle exec fastlane staging

@@ -51,12 +51,13 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   String? _routeError;
 
   final StatsEngine _statsEngine = const StatsEngine();
-  late final Dio _mapDio;
-  late final GpsIngestionEngine _gpsIngestionEngine;
-  late final SegmentDetectionEngine _segmentDetectionEngine;
-  late final MapRenderingEngine _mapRenderingEngine;
+  Dio? _mapDio;
+  GpsIngestionEngine? _gpsIngestionEngine;
+  SegmentDetectionEngine? _segmentDetectionEngine;
+  MapRenderingEngine? _mapRenderingEngine;
   MapLibreMapController? _mapController;
   bool _mapReady = false;
+  bool _mapFeaturesEnabled = true;
   int? _selectedRunIndex;
   MapColorMode _selectedColorMode = MapColorMode.segment;
   MapVisualStyle _selectedMapStyle = MapVisualStyle.terrain;
@@ -65,6 +66,11 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   void initState() {
     super.initState();
     final appConfig = sl<AppConfig>();
+    _mapFeaturesEnabled = appConfig.enableMapFeatures;
+    if (!_mapFeaturesEnabled) {
+      _loadActivity();
+      return;
+    }
     final mapBaseUrl = _normalizeMapBaseUrl(appConfig.mapApiBaseUrl);
     _mapDio = Dio(
       BaseOptions(
@@ -76,19 +82,19 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
     _segmentDetectionEngine = SegmentDetectionEngine(
       trailMatcher: TrailMatcher(
-        apiClient: DioTrailMatchApiClient(_mapDio),
+        apiClient: DioTrailMatchApiClient(_mapDio!),
       ),
     );
 
     _gpsIngestionEngine = GpsIngestionEngine(
       elevationCorrector: ElevationCorrector(
-        apiClient: DioApiClient(_mapDio),
+        apiClient: DioApiClient(_mapDio!),
       ),
     );
 
     _mapRenderingEngine = MapRenderingEngine(
       skiTrailLoader: SkiMapLayerLoader(
-        apiClient: DioSkiMapApiClient(_mapDio),
+        apiClient: DioSkiMapApiClient(_mapDio!),
       ),
     );
 
@@ -97,7 +103,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
   @override
   void dispose() {
-    _mapDio.close(force: true);
+    _mapDio?.close(force: true);
     super.dispose();
   }
 
@@ -153,6 +159,13 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   }
 
   Future<void> _uploadGpx() async {
+    if (!_mapFeaturesEnabled) {
+      setState(() {
+        _routeError = 'Map features are disabled in staging for this beta build.';
+      });
+      return;
+    }
+
     final pick = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: const <String>['gpx'],
@@ -181,7 +194,15 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     });
 
     try {
-      final track = await _gpsIngestionEngine.processGpxFile(File(path));
+      final gpsIngestionEngine = _gpsIngestionEngine;
+      if (gpsIngestionEngine == null) {
+        setState(() {
+          _routeError = 'Map features are not available in this lane.';
+        });
+        return;
+      }
+
+      final track = await gpsIngestionEngine.processGpxFile(File(path));
       await _applyTrack(track);
       if (!mounted) {
         return;
@@ -210,9 +231,24 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       _track = track;
     });
 
+    if (!_mapFeaturesEnabled) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _segments = const <Segment>[];
+        _descentSegments = const <Segment>[];
+        _runSummaries = const <RunSummary>[];
+        _activityStats = null;
+        _selectedRunIndex = null;
+      });
+      return;
+    }
+
     List<Segment> segments;
     try {
-      segments = await _segmentDetectionEngine.detect(track);
+      segments = await _segmentDetectionEngine!.detect(track);
     } catch (_) {
       segments = _localFallbackSegments(track.points);
       if (segments.isNotEmpty && mounted) {
@@ -342,19 +378,23 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   double _degToRad(double value) => value * (pi / 180);
 
   Future<void> _initialiseMapIfReady() async {
+    if (!_mapFeaturesEnabled) {
+      return;
+    }
+
     final controller = _mapController;
     final track = _track;
     if (!_mapReady || controller == null || track == null || _segments.isEmpty) {
       return;
     }
 
-    await _mapRenderingEngine.initialise(
+    await _mapRenderingEngine!.initialise(
       controller,
       track: track,
       segments: _segments,
       initialColorMode: _selectedColorMode,
     );
-    await _mapRenderingEngine.fitToTrack(track);
+    await _mapRenderingEngine!.fitToTrack(track);
   }
 
   Future<void> _onRunTap(int index) async {
@@ -366,9 +406,13 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       _selectedRunIndex = index;
     });
 
+    if (!_mapFeaturesEnabled) {
+      return;
+    }
+
     final segment = _descentSegments[index];
-    await _mapRenderingEngine.highlightSegment(segment);
-    await _mapRenderingEngine.zoomToSegment(segment);
+    await _mapRenderingEngine!.highlightSegment(segment);
+    await _mapRenderingEngine!.zoomToSegment(segment);
   }
 
   Future<void> _onColorModeSelected(MapColorMode mode) async {
@@ -380,7 +424,11 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       _selectedColorMode = mode;
     });
 
-    unawaited(_mapRenderingEngine.setColorMode(mode));
+    if (!_mapFeaturesEnabled) {
+      return;
+    }
+
+    unawaited(_mapRenderingEngine!.setColorMode(mode));
   }
 
   Future<void> _zoomIn() async {
@@ -453,7 +501,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
           IconButton(
             icon: const Icon(Icons.upload_file),
             tooltip: 'Upload GPX',
-            onPressed: _isPreparingRoute ? null : _uploadGpx,
+            onPressed: _isPreparingRoute || !_mapFeaturesEnabled ? null : _uploadGpx,
           ),
           IconButton(
             icon: const Icon(Icons.delete),
@@ -469,42 +517,78 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
               height: 300,
               child: Stack(
                 children: [
-                  MapLibreMap(
-                    key: ValueKey<String>('activity-${_selectedMapStyle.name}'),
-                    styleString: MapConfig.styleForMode(_selectedMapStyle),
-                    initialCameraPosition: CameraPosition(
-                      target: mapCenter,
-                      zoom: hasRenderableTrack ? 13 : 10,
+                  if (_mapFeaturesEnabled)
+                    MapLibreMap(
+                      key: ValueKey<String>('activity-${_selectedMapStyle.name}'),
+                      styleString: MapConfig.styleForMode(_selectedMapStyle),
+                      initialCameraPosition: CameraPosition(
+                        target: mapCenter,
+                        zoom: hasRenderableTrack ? 13 : 10,
+                      ),
+                      onMapCreated: (controller) {
+                        _mapController = controller;
+                      },
+                      onStyleLoadedCallback: () async {
+                        _mapReady = true;
+                        await _initialiseMapIfReady();
+                      },
+                    )
+                  else
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Map features disabled in staging',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'This lane keeps the beta focused on thread and activity flows while avoiding the unstable map backend.',
+                          ),
+                        ],
+                      ),
                     ),
-                    onMapCreated: (controller) {
-                      _mapController = controller;
-                    },
-                    onStyleLoadedCallback: () async {
-                      _mapReady = true;
-                      await _initialiseMapIfReady();
-                    },
-                  ),
-                  Positioned(
-                    top: 10,
-                    right: 10,
-                    child: _MapStyleToggle(
-                      selectedStyle: _selectedMapStyle,
-                      onSelected: _setMapStyle,
+                  if (_mapFeaturesEnabled)
+                    Positioned(
+                      top: 10,
+                      right: 10,
+                      child: _MapStyleToggle(
+                        selectedStyle: _selectedMapStyle,
+                        onSelected: _setMapStyle,
+                      ),
                     ),
-                  ),
-                  Positioned(
-                    right: 10,
-                    bottom: 10,
-                    child: _MapZoomControls(
-                      onZoomIn: _zoomIn,
-                      onZoomOut: _zoomOut,
+                  if (_mapFeaturesEnabled)
+                    Positioned(
+                      right: 10,
+                      bottom: 10,
+                      child: _MapZoomControls(
+                        onZoomIn: _zoomIn,
+                        onZoomOut: _zoomOut,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
 
-            if (!hasRenderableTrack && !_isPreparingRoute)
+            if (!_mapFeaturesEnabled)
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+                child: Text(
+                  'Map is disabled in this lane. Thread, activity, and notification features remain available.',
+                ),
+              ),
+
+            if (_mapFeaturesEnabled && !hasRenderableTrack && !_isPreparingRoute)
               const Padding(
                 padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
                 child: Text(

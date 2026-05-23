@@ -9,6 +9,7 @@ class AppConfig {
     required this.activityApiBaseUrl,
     required this.communityApiBaseUrl,
     required this.mapApiBaseUrl,
+    required this.enableMapFeatures,
   });
 
   final AppEnvironment environment;
@@ -16,6 +17,7 @@ class AppConfig {
   final String activityApiBaseUrl;
   final String communityApiBaseUrl;
   final String mapApiBaseUrl;
+  final bool enableMapFeatures;
 
   static const _mainOverrideKey = 'override_main_api_base_url';
   static const _activityOverrideKey = 'override_activity_api_base_url';
@@ -47,6 +49,7 @@ class AppConfig {
     const defineActivity = String.fromEnvironment('ACTIVITY_API_BASE_URL');
     const defineCommunity = String.fromEnvironment('COMMUNITY_API_BASE_URL');
     const defineMap = String.fromEnvironment('MAP_API_BASE_URL');
+    const defineMapFeatures = String.fromEnvironment('ENABLE_MAP_FEATURES');
 
     return AppConfig(
       environment: env,
@@ -65,6 +68,10 @@ class AppConfig {
         defaults.communityApiBaseUrl,
       ),
       mapApiBaseUrl: _firstNonEmpty(runtimeMap, defineMap, defaults.mapApiBaseUrl),
+      enableMapFeatures: _firstNonEmptyBool(
+        defineMapFeatures,
+        defaults.enableMapFeatures,
+      ),
     );
   }
 
@@ -107,6 +114,7 @@ class AppConfig {
           activityApiBaseUrl: 'http://localhost:5100/api/v1',
           communityApiBaseUrl: 'http://localhost:5001/api/v1',
           mapApiBaseUrl: 'http://localhost:5200',
+          enableMapFeatures: true,
         );
       case AppEnvironment.staging:
         return AppConfig(
@@ -115,6 +123,7 @@ class AppConfig {
           activityApiBaseUrl: 'https://staging-activity.syntrak.app/api/v1',
           communityApiBaseUrl: 'https://staging-community.syntrak.app/api/v1',
           mapApiBaseUrl: 'https://staging-map.syntrak.app',
+          enableMapFeatures: false,
         );
       case AppEnvironment.prod:
         return AppConfig(
@@ -123,6 +132,7 @@ class AppConfig {
           activityApiBaseUrl: 'https://activity.syntrak.app/api/v1',
           communityApiBaseUrl: 'https://community.syntrak.app/api/v1',
           mapApiBaseUrl: 'https://map.syntrak.app',
+          enableMapFeatures: true,
         );
     }
   }
@@ -131,6 +141,27 @@ class AppConfig {
     if (v1 != null && v1.trim().isNotEmpty) return v1.trim();
     if (v2 != null && v2.trim().isNotEmpty) return v2.trim();
     return fallback;
+  }
+
+  static bool _firstNonEmptyBool(String? raw, bool fallback) {
+    if (raw == null || raw.trim().isEmpty) {
+      return fallback;
+    }
+
+    switch (raw.trim().toLowerCase()) {
+      case 'true':
+      case '1':
+      case 'yes':
+      case 'on':
+        return true;
+      case 'false':
+      case '0':
+      case 'no':
+      case 'off':
+        return false;
+      default:
+        return fallback;
+    }
   }
 }
 

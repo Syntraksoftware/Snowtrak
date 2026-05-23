@@ -56,7 +56,8 @@ Future<void> setupServiceLocatorWithEnvironment({
     'main=${appConfig.mainApiBaseUrl} '
     'activity=${appConfig.activityApiBaseUrl} '
     'community=${appConfig.communityApiBaseUrl} '
-    'map=${appConfig.mapApiBaseUrl}',
+    'map=${appConfig.mapApiBaseUrl} '
+    'mapEnabled=${appConfig.enableMapFeatures}',
   );
 
   final tokenStore = AuthTokenStore();

@@ -1,2 +1,2 @@
-app_identifier "com.syntrak.app" # replace with your app bundle id
+app_identifier "com.syntrak.snowtrak.app" # replace with your app bundle id
 apple_id "you@company.com" # replace with owner Apple ID

@@ -31,6 +31,9 @@ flutter pub get
 	- `lib/main_prod.dart`
 - Environment defaults and runtime override keys are defined in
 	`lib/core/config/app_config.dart`.
+- `staging` intentionally disables map features so beta testing can focus on
+	auth, activity, notification, and thread flows without touching the unstable
+	map backend.
 
 Examples:
 
@@ -49,6 +52,10 @@ flutter run -t lib/main_dev.dart \
 	--dart-define=MAIN_API_BASE_URL=https://example-main/api/v1 \
 	--dart-define=ACTIVITY_API_BASE_URL=https://example-activity/api/v1 \
 	--dart-define=COMMUNITY_API_BASE_URL=https://example-community/api/v1
+
+# Disable map features explicitly when needed
+flutter run -t lib/main_staging.dart \
+	--dart-define=ENABLE_MAP_FEATURES=false
 ```
 
 3. For Android, add permissions in `android/app/src/main/AndroidManifest.xml`:
@@ -69,6 +76,14 @@ flutter run -t lib/main_dev.dart \
 ```bash
 flutter run -t lib/main_dev.dart
 ```
+
+### Branch and lane mapping
+
+- `dev` branch or local development: `lib/main_dev.dart`, map features on
+- `develop` branch / staging beta: `lib/main_staging.dart`, map features off
+- tagged releases / production: `lib/main_prod.dart`, map features on
+
+For iOS release work, use `bundle exec fastlane dev`, `bundle exec fastlane staging`, and `bundle exec fastlane production` from `frontend/ios`.
 
 6. MapTiler key (local env):
 
