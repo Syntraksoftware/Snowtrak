@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -22,7 +24,19 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>GoogleMapsAPIKey</key>
+	<string>YOUR_GOOGLE_MAPS_API_KEY</string>
 	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Take a photo or video to share in the community.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>We need your location to track your activities</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>We need your location to track your activities</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Attach photos or videos to community posts and replies.</string>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
@@ -41,20 +55,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>We need your location to track your activities</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>We need your location to track your activities</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Attach photos or videos to community posts and replies.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>Take a photo or video to share in the community.</string>
-	<key>GoogleMapsAPIKey</key>
-	<string>YOUR_GOOGLE_MAPS_API_KEY</string>
 </dict>
 </plist>
-
