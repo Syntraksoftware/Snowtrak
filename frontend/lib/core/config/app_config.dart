@@ -109,10 +109,10 @@ class AppConfig {
       case AppEnvironment.staging:
         return AppConfig(
           environment: environment,
-          mainApiBaseUrl: 'https://staging-main.syntrak.app/api/v1',
-          activityApiBaseUrl: 'https://staging-activity.syntrak.app/api/v1',
-          communityApiBaseUrl: 'https://staging-community.syntrak.app/api/v1',
-          mapApiBaseUrl: 'https://staging-map.syntrak.app/api/v1/map',
+          mainApiBaseUrl: 'https://staging-main.syntrak.io/api/v1',
+          activityApiBaseUrl: 'https://staging-activity.syntrak.io/api/v1',
+          communityApiBaseUrl: 'https://staging-community.syntrak.io/api/v1',
+          mapApiBaseUrl: 'https://staging-map.syntrak.io/api/v1/map',
         );
       case AppEnvironment.prod:
         return AppConfig(
