@@ -21,6 +21,8 @@ from fastapi.middleware.cors import CORSMiddleware
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from shared import add_request_id_middleware, setup_exception_handlers
+from shared.openapi_canonical import configure_canonical_openapi
+from shared.rate_limiter import add_redis_rate_limiter
 
 from config import get_config
 from routes.activities import router as activities_router
@@ -34,6 +36,27 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 config = get_config()
+
+
+def _get_rate_limit_policies() -> list[dict]:
+    """Route-level rate limit policies for activity endpoints."""
+    default_policies = [
+        {
+            "path_pattern": "/api/v1/activities",
+            "methods": ["POST"],
+            "limit": 30,
+            "window_seconds": 60,
+        },
+        {
+            "path_pattern": "/api/v1/activities/*",
+            "methods": ["GET", "PUT", "DELETE"],
+            "limit": 100,
+            "window_seconds": 60,
+        },
+    ]
+    if config.RATE_LIMIT_POLICIES:
+        return config.RATE_LIMIT_POLICIES
+    return default_policies
 
 
 def _log_owned_domains_banner() -> None:
@@ -60,9 +83,19 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Activity Backend API",
-    description="Minimal backend for skiing activity records",
+    description="Canonical surface: /api/v1/activities",
     version="1.0.0",
     lifespan=lifespan,
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+)
+
+configure_canonical_openapi(
+    app,
+    service_title="Activity Backend API",
+    service_version="1.0.0",
+    canonical_prefix="/api/v1",
 )
 
 # Add request ID middleware (must be before other middleware)
@@ -70,6 +103,24 @@ add_request_id_middleware(app)
 
 # Setup exception handlers for standardized error responses
 setup_exception_handlers(app)
+
+if config.RATE_LIMIT_ENABLED:
+    add_redis_rate_limiter(
+        app,
+        redis_url=config.RATE_LIMIT_REDIS_URL,
+        namespace=config.RATE_LIMIT_NAMESPACE,
+        policies=_get_rate_limit_policies(),
+        default_limit=config.RATE_LIMIT_DEFAULT_LIMIT,
+        default_window_seconds=config.RATE_LIMIT_DEFAULT_WINDOW_SECONDS,
+        fail_open=config.RATE_LIMIT_FAIL_OPEN,
+    )
+    logger.info(
+        "Redis rate limiter enabled (namespace=%s, redis=%s)",
+        config.RATE_LIMIT_NAMESPACE,
+        config.RATE_LIMIT_REDIS_URL,
+    )
+else:
+    logger.warning("Redis rate limiter disabled via RATE_LIMIT_ENABLED=false")
 
 # CORS
 app.add_middleware(

@@ -71,7 +71,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       _loadActivity();
       return;
     }
-    final mapBaseUrl = _normalizeMapBaseUrl(appConfig.mapApiBaseUrl);
+    final mapBaseUrl = appConfig.mapApiBaseUrl.trim().replaceAll(RegExp(r'/+$'), '');
     _mapDio = Dio(
       BaseOptions(
         baseUrl: mapBaseUrl,
@@ -327,17 +327,6 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       return const <Segment>[];
     }
     return <Segment>[_fallbackSegment(points)];
-  }
-
-  String _normalizeMapBaseUrl(String value) {
-    var trimmed = value.trim();
-    while (trimmed.endsWith('/')) {
-      trimmed = trimmed.substring(0, trimmed.length - 1);
-    }
-    if (trimmed.toLowerCase().endsWith('/api')) {
-      return trimmed.substring(0, trimmed.length - 4);
-    }
-    return trimmed;
   }
 
   double _speedKmh(Location current, Location? previous) {

@@ -143,6 +143,10 @@ class Activity {
   }
 
   factory Activity.fromJson(Map<String, dynamic> json) {
+    return Activity.fromCacheJson(json);
+  }
+
+  factory Activity.fromCacheJson(Map<String, dynamic> json) {
     return Activity(
       id: json['id'],
       userId: json['user_id'],
@@ -177,6 +181,28 @@ class Activity {
       'locations': locations.map((loc) => loc.toJson()).toList(),
       if (thumbnailUrl != null) 'thumbnail_url': thumbnailUrl,
       'is_public': isPublic,
+    };
+  }
+
+  Map<String, dynamic> toCacheJson() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'type': type.value,
+      'name': name,
+      'description': description,
+      'distance': distance,
+      'duration': duration,
+      'elevation_gain': elevationGain,
+      'start_time': startTime.toIso8601String(),
+      'end_time': endTime.toIso8601String(),
+      'average_pace': averagePace,
+      'max_pace': maxPace,
+      'calories': calories,
+      'is_public': isPublic,
+      'created_at': createdAt.toIso8601String(),
+      'locations': locations.map((loc) => loc.toJson()).toList(),
+      if (thumbnailUrl != null) 'thumbnail_url': thumbnailUrl,
     };
   }
 }

@@ -28,6 +28,7 @@ class ThreadsFeedLoader {
   static Future<AppResult<ThreadsFeedLoaderResult>> load({
     required CommunityService service,
     required int pageSize,
+    int offset = 0,
     required Future<AppResult<Map<String, List<Map<String, dynamic>>>>> Function(
       List<String> postIds,
     )
@@ -44,7 +45,10 @@ class ThreadsFeedLoader {
           );
         }
         final activeSubthreadId = pickDefaultSubthreadId(value);
-        final postsResult = await service.getFeedPosts(limit: pageSize);
+        final postsResult = await service.getFeedPosts(
+          limit: pageSize,
+          offset: offset,
+        );
         switch (postsResult) {
           case AppFailure(:final error):
             return AppFailure(error);

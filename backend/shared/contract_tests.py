@@ -366,14 +366,11 @@ class TestContractComplianceIntegration:
         assert "X-Request-ID" in response.headers
 
     def test_deprecated_endpoint_headers(self, client):
-        '''Test legacy endpoint returns deprecation headers.'''
-        response = client.get("/api/subthreads")  # Legacy endpoint
+        '''Example: attach add_deprecation_middleware when phasing out a path.'''
+        # Legacy /api/subthreads mounts were removed; canonical is /api/v1/subthreads.
+        response = client.get("/api/v1/subthreads")
         assert response.status_code in [200, 404]
-
-        # Should have deprecation headers
-        assert "Deprecation" in response.headers
-        assert "Sunset" in response.headers
-        assert "Link" in response.headers
+        assert "Deprecation" not in response.headers
 
     def test_legacy_format_parameter(self, client):
         '''Test backward compatibility format parameter.'''

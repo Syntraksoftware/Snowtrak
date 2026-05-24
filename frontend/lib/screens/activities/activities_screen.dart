@@ -34,6 +34,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final contextRepository = context.read<ActivitiesContextRepository>();
       _initializeWeather(contextRepository);
+      activityProvider.hydrateFromCache();
       _controller.loadInitialData(
         activityProvider: activityProvider,
         authProvider: authProvider,

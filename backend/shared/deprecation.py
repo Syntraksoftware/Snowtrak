@@ -83,24 +83,3 @@ def add_deprecation_middleware(app, deprecation_paths: dict[str, dict[str, str]]
         add_deprecation_middleware(app, deprecation_paths)
     """
     app.add_middleware(DeprecationMiddleware, deprecation_paths=deprecation_paths)
-
-
-# Deprecation configuration for community-backend
-# Legacy /api/* routes deprecated in favor of /api/v1/*
-COMMUNITY_BACKEND_DEPRECATIONS = {
-    "/api/subthreads": {
-        "sunset_date": "Sun, 21 Jun 2026 00:00:00 GMT",
-        "replacement": "/api/v1/subthreads",
-        "message": "Endpoint moved to /api/v1/subthreads. Support ends 2026-06-21.",
-    },
-    "/api/posts": {
-        "sunset_date": "Sun, 21 Jun 2026 00:00:00 GMT",
-        "replacement": "/api/v1/posts",
-        "message": "Endpoint moved to /api/v1/posts. Support ends 2026-06-21.",
-    },
-    "/api/comments": {
-        "sunset_date": "Sun, 21 Jun 2026 00:00:00 GMT",
-        "replacement": "/api/v1/comments",
-        "message": "Endpoint moved to /api/v1/comments. Support ends 2026-06-21.",
-    },
-}

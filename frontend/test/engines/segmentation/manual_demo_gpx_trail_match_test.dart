@@ -291,7 +291,7 @@ class _FallbackTrailMatchApiClient implements TrailMatchApiClient {
 }
 
 List<Dio> _candidateClients() {
-  const envBase = String.fromEnvironment('TRAIL_MATCH_BASE_URL', defaultValue: 'http://localhost:5200');
+  const envBase = String.fromEnvironment('TRAIL_MATCH_BASE_URL', defaultValue: 'http://localhost:5200/api/v1/map');
   final base = envBase.endsWith('/') ? envBase.substring(0, envBase.length - 1) : envBase;
 
   final candidates = <String>{
