@@ -43,9 +43,49 @@ from domains.trails_service.ports import (
     set_trails_conn_provider,
 )
 from services.storage_backend import get_storage_health, initialize_storage_backend
+from shared.rate_limiter import add_redis_rate_limiter
+from shared.openapi_canonical import configure_canonical_openapi
 from zoneinfo import ZoneInfo
 
 logger = logging.getLogger(__name__)
+
+V1_MAP_PREFIX = "/api/v1/map"
+
+
+def _get_rate_limit_policies() -> list[dict]:
+    """Route-level default policies. Specific routes should come first."""
+    cfg = get_config()
+    default_policies = [
+        {
+            "path_pattern": "/api/v1/map/elevation/correct",
+            "methods": ["POST"],
+            "limit": 30,
+            "window_seconds": 60,
+        },
+        {
+            "path_pattern": "/api/v1/map/trails/match",
+            "methods": ["POST"],
+            "limit": 20,
+            "window_seconds": 60,
+        },
+        {
+            "path_pattern": "/api/v1/map/activities",
+            "methods": ["POST"],
+            "limit": 30,
+            "window_seconds": 60,
+        },
+        {
+            "path_pattern": "/api/v1/map/activities/*",
+            "methods": ["GET", "PUT", "DELETE"],
+            "limit": 100,
+            "window_seconds": 60,
+        },
+    ]
+
+    if cfg.RATE_LIMIT_POLICIES:
+        return cfg.RATE_LIMIT_POLICIES
+
+    return default_policies
 
 
 set_activities_conn_provider(activities_conn_impl)
@@ -127,10 +167,38 @@ def create_app() -> FastAPI:
     cfg = get_config()
     app = FastAPI(
         title="Map Backend API",
-        description="Service for elevation, trail matching, and map activity persistence",
+        description="Canonical surface: /api/v1/map/* (elevation, trails, map activities)",
         version="1.0.0",
         lifespan=lifespan,
+        docs_url="/docs",
+        redoc_url="/redoc",
+        openapi_url="/openapi.json",
     )
+
+    configure_canonical_openapi(
+        app,
+        service_title="Map Backend API",
+        service_version="1.0.0",
+        canonical_prefix=V1_MAP_PREFIX,
+    )
+
+    if cfg.RATE_LIMIT_ENABLED:
+        add_redis_rate_limiter(
+            app,
+            redis_url=cfg.RATE_LIMIT_REDIS_URL,
+            namespace=cfg.RATE_LIMIT_NAMESPACE,
+            policies=_get_rate_limit_policies(),
+            default_limit=cfg.RATE_LIMIT_DEFAULT_LIMIT,
+            default_window_seconds=cfg.RATE_LIMIT_DEFAULT_WINDOW_SECONDS,
+            fail_open=cfg.RATE_LIMIT_FAIL_OPEN,
+        )
+        logger.info(
+            "Redis rate limiter enabled (namespace=%s, redis=%s)",
+            cfg.RATE_LIMIT_NAMESPACE,
+            cfg.RATE_LIMIT_REDIS_URL,
+        )
+    else:
+        logger.warning("Redis rate limiter disabled via RATE_LIMIT_ENABLED=false")
 
     app.add_middleware(
         CORSMiddleware,
@@ -140,9 +208,10 @@ def create_app() -> FastAPI:
         allow_headers=["Content-Type", "Authorization"],
     )
 
-    app.include_router(elevation_dem_router)
-    app.include_router(trails_router)
-    app.include_router(activities_router)
+    # Canonical v1 map routes
+    app.include_router(elevation_dem_router, prefix=V1_MAP_PREFIX)
+    app.include_router(trails_router, prefix=V1_MAP_PREFIX)
+    app.include_router(activities_router, prefix=V1_MAP_PREFIX)
 
     @app.get("/")
     def root() -> dict[str, str]:

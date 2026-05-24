@@ -3,7 +3,9 @@ Core configuration module using Pydantic Settings.
 Loads environment variables and provides type-safe config access.
 """
 
-from pydantic import Field, model_validator
+import json
+
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -44,6 +46,25 @@ class Settings(BaseSettings):
     # Supabase
     supabase_url: str | None = Field(default=None, alias="SUPABASE_URL")
     supabase_service_role_key: str | None = Field(default=None, alias="SUPABASE_SERVICE_ROLE_KEY")
+
+    # Redis-backed rate limiter
+    rate_limit_enabled: bool = Field(default=True, alias="RATE_LIMIT_ENABLED")
+    rate_limit_redis_url: str = Field(default="redis://localhost:6379/0", alias="RATE_LIMIT_REDIS_URL")
+    rate_limit_namespace: str = Field(default="main-backend", alias="RATE_LIMIT_NAMESPACE")
+    rate_limit_fail_open: bool = Field(default=True, alias="RATE_LIMIT_FAIL_OPEN")
+    rate_limit_default_limit: int = Field(default=240, alias="RATE_LIMIT_DEFAULT_LIMIT")
+    rate_limit_default_window_seconds: int = Field(default=60, alias="RATE_LIMIT_DEFAULT_WINDOW_SECONDS")
+    rate_limit_policies: list = Field(default_factory=list, alias="RATE_LIMIT_POLICIES")
+
+    @field_validator("rate_limit_policies", mode="before")
+    @classmethod
+    def parse_policies(cls, v: str | list) -> list:
+        """Parse JSON policies string or accept list directly."""
+        if isinstance(v, list):
+            return v
+        if isinstance(v, str):
+            return json.loads(v) if v else []
+        return []
 
     def get_allowed_origins(self) -> list[str]:
         """Get allowed origins as a list."""

@@ -113,7 +113,7 @@ class AppConfig {
           mainApiBaseUrl: 'http://localhost:8080/api/v1',
           activityApiBaseUrl: 'http://localhost:5100/api/v1',
           communityApiBaseUrl: 'http://localhost:5001/api/v1',
-          mapApiBaseUrl: 'http://localhost:5200',
+          mapApiBaseUrl: 'http://localhost:5200/api/v1/map',
           enableMapFeatures: true,
         );
       case AppEnvironment.staging:
@@ -122,7 +122,7 @@ class AppConfig {
           mainApiBaseUrl: 'https://staging-main.syntrak.app/api/v1',
           activityApiBaseUrl: 'https://staging-activity.syntrak.app/api/v1',
           communityApiBaseUrl: 'https://staging-community.syntrak.app/api/v1',
-          mapApiBaseUrl: 'https://staging-map.syntrak.app',
+          mapApiBaseUrl: 'https://staging-map.syntrak.app/api/v1/map',
           enableMapFeatures: false,
         );
       case AppEnvironment.prod:
@@ -131,7 +131,7 @@ class AppConfig {
           mainApiBaseUrl: 'https://main.syntrak.app/api/v1',
           activityApiBaseUrl: 'https://activity.syntrak.app/api/v1',
           communityApiBaseUrl: 'https://community.syntrak.app/api/v1',
-          mapApiBaseUrl: 'https://map.syntrak.app',
+          mapApiBaseUrl: 'https://map.syntrak.app/api/v1/map',
           enableMapFeatures: true,
         );
     }

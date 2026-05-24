@@ -1,4 +1,11 @@
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: syntrak-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
   main-backend:
     build:
       context: .
@@ -10,8 +17,11 @@ services:
       - DEBUG=False
       - HOST=0.0.0.0
       - PORT=8080
+      - RATE_LIMIT_REDIS_URL=redis://redis:6379/0
     ports:
       - "8080:8080"
+    depends_on:
+      - redis
     restart: unless-stopped
 
   community-backend:
@@ -25,8 +35,12 @@ services:
       - FASTAPI_ENV=production
       - HOST=0.0.0.0
       - PORT=5001
+      - RATE_LIMIT_REDIS_URL=redis://redis:6379/0
+      - CACHE_REDIS_URL=redis://redis:6379/0
     ports:
       - "5001:5001"
+    depends_on:
+      - redis
     restart: unless-stopped
 
   activity-backend:
@@ -40,14 +54,18 @@ services:
       - FASTAPI_ENV=production
       - HOST=0.0.0.0
       - PORT=5100
+      - RATE_LIMIT_REDIS_URL=redis://redis:6379/0
     ports:
       - "5100:5100"
+    depends_on:
+      - redis
     restart: unless-stopped
 
   map-backend:
     build:
       context: .
       dockerfile: ./map-backend/Dockerfile
+    container_name: syntrak-map-backend
     env_file:
       - ./map-backend/.env
     environment:
@@ -61,8 +79,11 @@ services:
       - POSTGIS_DB=${POSTGRES_DB:-syntrak}
       - POSTGIS_USER=${POSTGRES_USER:-syntrak}
       - POSTGIS_PASSWORD=${POSTGRES_PASSWORD:-syntrak_local_dev}
+      - RATE_LIMIT_REDIS_URL=redis://redis:6379/0
     ports:
       - "5200:5200"
+    depends_on:
+      - redis
     restart: unless-stopped
 
   # Optional local Postgres+PostGIS for offline dev. Production geo data lives on Supabase (Postgres + PostGIS).

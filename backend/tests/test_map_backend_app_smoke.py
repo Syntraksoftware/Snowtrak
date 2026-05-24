@@ -108,11 +108,14 @@ async def test_map_app_get_routes_return_expected_shape(map_app_full) -> None:
         spec = r_openapi.json()
         assert spec["openapi"].startswith("3.")
         paths = spec["paths"]
-        assert "/trails/match" in paths
-        assert "/trails/resort" in paths
-        assert "/activities" in paths
-        assert "/activities/{activity_id}" in paths
-        assert "/elevation/correct" in paths
+        assert "/api/v1/map/trails/match" in paths
+        assert "/api/v1/map/trails/resort" in paths
+        assert "/api/v1/map/activities" in paths
+        assert "/api/v1/map/activities/{activity_id}" in paths
+        assert "/api/v1/map/elevation/correct" in paths
+        assert spec["info"].get("x-canonical-prefix") == "/api/v1/map"
+        assert "/elevation/correct" not in paths
+        assert "/trails/match" not in paths
 
         r_docs = await client.get("/docs")
         assert r_docs.status_code == 200
@@ -123,9 +126,9 @@ async def test_map_app_get_routes_return_expected_shape(map_app_full) -> None:
 @pytest.mark.parametrize(
     ("method", "path", "kwargs", "expected"),
     [
-        ("POST", "/elevation/correct", {"json": {"points": []}}, 422),
-        ("POST", "/trails/match", {"json": {}}, 422),
-        ("GET", "/trails/resort", {}, 422),
+        ("POST", "/api/v1/map/elevation/correct", {"json": {"points": []}}, 422),
+        ("POST", "/api/v1/map/trails/match", {"json": {}}, 422),
+        ("GET", "/api/v1/map/trails/resort", {}, 422),
     ],
 )
 @pytest.mark.anyio
@@ -142,12 +145,21 @@ async def test_map_app_validation_wired(
 async def test_trails_resort_geojson_schema(map_app_full) -> None:
     transport = httpx.ASGITransport(app=map_app_full)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-        r = await client.get("/trails/resort", params={"bbox": "0,0,1,1"})
+        r = await client.get("/api/v1/map/trails/resort", params={"bbox": "0,0,1,1"})
     assert r.status_code == 200
     body = r.json()
     assert body["type"] == "FeatureCollection"
     assert "features" in body
     assert isinstance(body["features"], list)
+
+
+@pytest.mark.anyio
+async def test_map_v1_path_no_deprecation_headers(map_app_full) -> None:
+    transport = httpx.ASGITransport(app=map_app_full)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        r = await client.post("/api/v1/map/elevation/correct", json={"points": []})
+    assert r.status_code == 422
+    assert "Deprecation" not in r.headers
 
 
 @pytest.mark.anyio
@@ -169,7 +181,7 @@ async def test_elevation_dem_correct_schema(map_app_full) -> None:
         ]
     }
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-        r = await client.post("/elevation/correct", json=body)
+        r = await client.post("/api/v1/map/elevation/correct", json=body)
     assert r.status_code == 200
     ElevationCorrectionResponse.model_validate(r.json())
 
