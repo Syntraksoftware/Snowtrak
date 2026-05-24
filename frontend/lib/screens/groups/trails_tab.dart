@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/models/ski_trail.dart';
-import 'package:syntrak/screens/community/widgets/trail_list_card.dart';
-import 'package:syntrak/screens/community/widgets/trails_filter_sheets.dart';
-import 'package:syntrak/screens/community/widgets/trails_mock_trails.dart';
-import 'package:syntrak/screens/community/widgets/trails_search_bar.dart';
+import 'package:syntrak/screens/groups/widgets/trail_list_card.dart';
+import 'package:syntrak/screens/groups/widgets/trails_filter_sheets.dart';
+import 'package:syntrak/screens/groups/widgets/trails_mock_trails.dart';
+import 'package:syntrak/screens/groups/widgets/trails_search_bar.dart';
 
 class TrailsTab extends StatefulWidget {
   const TrailsTab({super.key});
@@ -108,58 +108,82 @@ class _TrailsTabState extends State<TrailsTab> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Center(
-        child: CircularProgressIndicator(),
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(SyntrakColors.primary),
+        ),
       );
     }
 
-    return Column(
-      children: [
-        TrailsSearchBar(
-          controller: _searchController,
-          focusNode: _searchFocusNode,
-          isSearchFocused: _isSearchFocused,
-          onQueryChanged: _filterTrails,
-          onClear: () {
-            _searchController.clear();
-            _filterTrails();
-          },
-        ),
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: _loadTrails,
-            color: SyntrakColors.primary,
-            child: ListView.builder(
-              padding: EdgeInsets.zero,
-              itemCount: _filteredTrails.length + 2,
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  return _FilterChipsRow(
-                    selectedDifficulty: _selectedDifficulty,
-                    selectedCountry: _selectedCountry,
-                    onDifficultyTap: _pickDifficulty,
-                    onCountryTap: _pickCountry,
-                    onClearFilters: () {
-                      setState(() {
-                        _selectedDifficulty = null;
-                        _selectedCountry = null;
-                      });
-                      _filterTrails();
-                    },
-                  );
-                }
-                if (index == 1) {
-                  return _ResultsHeader(count: _filteredTrails.length);
-                }
-                return Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
-                  child: TrailListCard(trail: _filteredTrails[index - 2]),
-                );
+    return RefreshIndicator(
+      onRefresh: _loadTrails,
+      color: SyntrakColors.primary,
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(
+            child: TrailsSearchBar(
+              controller: _searchController,
+              focusNode: _searchFocusNode,
+              isSearchFocused: _isSearchFocused,
+              onQueryChanged: _filterTrails,
+              onClear: () {
+                _searchController.clear();
+                _filterTrails();
               },
             ),
           ),
-        ),
-      ],
+          SliverToBoxAdapter(
+            child: _FilterChipsRow(
+              selectedDifficulty: _selectedDifficulty,
+              selectedCountry: _selectedCountry,
+              onDifficultyTap: _pickDifficulty,
+              onCountryTap: _pickCountry,
+              onClearFilters: () {
+                setState(() {
+                  _selectedDifficulty = null;
+                  _selectedCountry = null;
+                });
+                _filterTrails();
+              },
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: _ResultsHeader(count: _filteredTrails.length),
+          ),
+          if (_filteredTrails.isEmpty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: Text(
+                  'No trails match your filters',
+                  style: SyntrakTypography.bodyMedium.copyWith(
+                    color: SyntrakColors.textSecondary,
+                  ),
+                ),
+              ),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(
+                SyntrakSpacing.md,
+                0,
+                SyntrakSpacing.md,
+                SyntrakSpacing.lg,
+              ),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: SyntrakSpacing.sm),
+                      child: TrailListCard(trail: _filteredTrails[index]),
+                    );
+                  },
+                  childCount: _filteredTrails.length,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -185,7 +209,7 @@ class _FilterChipsRow extends StatelessWidget {
     final isCountry = selectedCountry != null;
 
     return Container(
-      color: SyntrakColors.surface,
+      color: SyntrakColors.background,
       child: Column(
         children: [
           SizedBox(

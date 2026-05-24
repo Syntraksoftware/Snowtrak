@@ -2,6 +2,7 @@ import 'package:syntrak/core/errors/app_result.dart';
 import 'package:syntrak/models/post.dart';
 import 'package:syntrak/screens/community/community_post_mapper.dart';
 import 'package:syntrak/services/community_service.dart';
+import 'package:syntrak/services/feed/feed_post_sort.dart';
 
 class ThreadsFeedLoaderResult {
   const ThreadsFeedLoaderResult({
@@ -73,7 +74,7 @@ class ThreadsFeedLoader {
                 return AppSuccess(
                   ThreadsFeedLoaderResult(
                     activeSubthreadId: activeSubthreadId,
-                    posts: mapped,
+                    posts: FeedPostSort.byRecent(mapped),
                   ),
                 );
             }
