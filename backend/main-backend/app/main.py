@@ -106,7 +106,7 @@ def create_application() -> FastAPI:
         description="Canonical surface: /api/v1/auth, /api/v1/users, /api/v1/notifications",
         docs_url="/docs" if settings.debug else None,
         redoc_url="/redoc" if settings.debug else None,
-        openapi_url="/openapi.json" if settings.debug else None,
+        openapi_url="/openapi.json",
         lifespan=lifespan,
     )
 
