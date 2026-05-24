@@ -14,10 +14,57 @@ from fastapi.responses import JSONResponse
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../"))
 
 from shared import add_request_id_middleware, setup_exception_handlers
+from shared.openapi_canonical import configure_canonical_openapi
+from shared.rate_limiter import add_redis_rate_limiter
 
 from app.api.v1 import api_router
 from app.core.config import settings
 from app.core.supabase import supabase_client
+
+
+def _get_rate_limit_policies() -> list[dict]:
+    """Route-level rate limit policies for auth and core endpoints."""
+    default_policies = [
+        {
+            "path_pattern": "/api/v1/auth/register",
+            "methods": ["POST"],
+            "limit": 5,
+            "window_seconds": 60,
+        },
+        {
+            "path_pattern": "/api/v1/auth/login",
+            "methods": ["POST"],
+            "limit": 10,
+            "window_seconds": 60,
+        },
+        {
+            "path_pattern": "/api/v1/auth/refresh",
+            "methods": ["POST"],
+            "limit": 30,
+            "window_seconds": 60,
+        },
+        {
+            "path_pattern": "/api/v1/users/*",
+            "methods": ["GET"],
+            "limit": 100,
+            "window_seconds": 60,
+        },
+        {
+            "path_pattern": "/api/v1/users/*",
+            "methods": ["PUT"],
+            "limit": 30,
+            "window_seconds": 60,
+        },
+        {
+            "path_pattern": "/api/v1/*",
+            "methods": ["GET"],
+            "limit": 200,
+            "window_seconds": 60,
+        },
+    ]
+    if settings.rate_limit_policies:
+        return settings.rate_limit_policies
+    return default_policies
 
 
 def _print_owned_domains_banner() -> None:
@@ -56,10 +103,18 @@ def create_application() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
         version=settings.app_version,
-        description="Authentication API for Syntrak with Supabase integration",
+        description="Canonical surface: /api/v1/auth, /api/v1/users, /api/v1/notifications",
         docs_url="/docs" if settings.debug else None,
         redoc_url="/redoc" if settings.debug else None,
+        openapi_url="/openapi.json" if settings.debug else None,
         lifespan=lifespan,
+    )
+
+    configure_canonical_openapi(
+        app,
+        service_title=settings.app_name,
+        service_version=settings.app_version,
+        canonical_prefix="/api/v1",
     )
 
     # Add request ID middleware (must be before other middleware)
@@ -67,6 +122,24 @@ def create_application() -> FastAPI:
 
     # Setup exception handlers for standardized error responses
     setup_exception_handlers(app)
+
+    # Add Redis rate limiter (before CORS to catch rate limit violations early)
+    if settings.rate_limit_enabled:
+        add_redis_rate_limiter(
+            app,
+            redis_url=settings.rate_limit_redis_url,
+            namespace=settings.rate_limit_namespace,
+            policies=_get_rate_limit_policies(),
+            default_limit=settings.rate_limit_default_limit,
+            default_window_seconds=settings.rate_limit_default_window_seconds,
+            fail_open=settings.rate_limit_fail_open,
+        )
+        print(
+            f"Redis rate limiter enabled (namespace={settings.rate_limit_namespace}, "
+            f"redis={settings.rate_limit_redis_url})"
+        )
+    else:
+        print("Redis rate limiter disabled via RATE_LIMIT_ENABLED=false")
 
     # CORS middleware
     app.add_middleware(

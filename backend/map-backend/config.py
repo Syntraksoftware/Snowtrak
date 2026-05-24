@@ -1,10 +1,11 @@
 """Configuration for Map Backend (FastAPI)."""
 
+import json
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import computed_field, model_validator
+from pydantic import Field, computed_field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from shared.jwt_env import JWT_SECRET_FIELD
@@ -52,6 +53,25 @@ class Config(BaseSettings):
     # Scheduler runs only when BOTH are set (see ``openskimap_sync_armed``).
     OPENSKIMAP_SYNC_ENABLED: bool = False
     OPENSKIMAP_RUNS_GEOJSON_URL: str | None = None
+
+    # Redis-backed rate limiter
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_REDIS_URL: str = "redis://localhost:6379/0"
+    RATE_LIMIT_NAMESPACE: str = "map-backend"
+    RATE_LIMIT_FAIL_OPEN: bool = True
+    RATE_LIMIT_DEFAULT_LIMIT: int = 240
+    RATE_LIMIT_DEFAULT_WINDOW_SECONDS: int = 60
+    RATE_LIMIT_POLICIES: list[dict] = Field(default_factory=list)
+
+    @field_validator("RATE_LIMIT_POLICIES", mode="before")
+    @classmethod
+    def parse_policies(cls, v: str | list) -> list:
+        """Parse JSON policies string or accept list directly."""
+        if isinstance(v, list):
+            return v
+        if isinstance(v, str):
+            return json.loads(v) if v else []
+        return []
 
     @computed_field
     @property

@@ -1,8 +1,9 @@
 """Configuration for Activity Backend (FastAPI)."""
 
+import json
 from functools import lru_cache
 
-from pydantic import computed_field
+from pydantic import Field, computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from shared.jwt_env import JWT_SECRET_FIELD
@@ -40,6 +41,25 @@ class Config(BaseSettings):
     # Supabase Storage bucket for raw GPX/FIT uploads
     ACTIVITY_UPLOAD_BUCKET: str = "activity-uploads"
     UPLOAD_URL_EXPIRES_S: int = 3600
+
+    # Redis-backed rate limiter
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_REDIS_URL: str = "redis://localhost:6379/0"
+    RATE_LIMIT_NAMESPACE: str = "activity-backend"
+    RATE_LIMIT_FAIL_OPEN: bool = True
+    RATE_LIMIT_DEFAULT_LIMIT: int = 240
+    RATE_LIMIT_DEFAULT_WINDOW_SECONDS: int = 60
+    RATE_LIMIT_POLICIES: list[dict] = Field(default_factory=list)
+
+    @field_validator("RATE_LIMIT_POLICIES", mode="before")
+    @classmethod
+    def parse_policies(cls, v: str | list) -> list:
+        """Parse JSON policies string or accept list directly."""
+        if isinstance(v, list):
+            return v
+        if isinstance(v, str):
+            return json.loads(v) if v else []
+        return []
 
     @computed_field
     @property

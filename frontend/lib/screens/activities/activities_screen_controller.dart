@@ -29,7 +29,7 @@ class ActivitiesScreenController {
     required ActivitiesContextRepository contextRepository,
     required Future<void> Function(WeatherData? weather) onWeatherLoaded,
   }) async {
-    await activityProvider.loadActivities(refresh: true);
+    await activityProvider.loadActivities(refresh: true, forceNetwork: true);
     await _loadWeatherStaleWhileRevalidate(
       contextRepository: contextRepository,
       onWeatherLoaded: onWeatherLoaded,

@@ -22,7 +22,8 @@ from fastapi.middleware.cors import CORSMiddleware
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from shared import ListResponse, add_request_id_middleware, setup_exception_handlers
-from shared.deprecation import COMMUNITY_BACKEND_DEPRECATIONS, add_deprecation_middleware
+from shared.openapi_canonical import configure_canonical_openapi
+from shared.rate_limiter import add_redis_rate_limiter
 
 from config import get_config
 from routes.comments import router as comments_router
@@ -30,6 +31,7 @@ from routes.media_routes import router as media_router
 from routes.posts import router as posts_router
 from routes.posts_read_routes import list_feed_posts
 from routes.subthreads import router as subthreads_router
+from services.community_cache import close_community_cache, initialize_community_cache
 from services.supabase_client import initialize_community_client
 
 # Configure logging
@@ -41,13 +43,46 @@ logger = logging.getLogger(__name__)
 config = get_config()
 
 
+def _get_rate_limit_policies() -> list[dict]:
+    """Route-level rate limit policies for community endpoints."""
+    default_policies = [
+        {
+            "path_pattern": "/api/v1/posts",
+            "methods": ["POST"],
+            "limit": 20,
+            "window_seconds": 60,
+        },
+        {
+            "path_pattern": "/api/v1/comments",
+            "methods": ["POST"],
+            "limit": 60,
+            "window_seconds": 60,
+        },
+        {
+            "path_pattern": "/api/v1/subthreads",
+            "methods": ["POST"],
+            "limit": 10,
+            "window_seconds": 60,
+        },
+        {
+            "path_pattern": "/api/v1/*",
+            "methods": ["GET"],
+            "limit": 200,
+            "window_seconds": 60,
+        },
+    ]
+    if config.RATE_LIMIT_POLICIES:
+        return config.RATE_LIMIT_POLICIES
+    return default_policies
+
+
 def _log_owned_domains_banner() -> None:
     """Log owned domains and canonical routes at startup."""
     logger.info("=" * 64)
     logger.info("SERVICE OWNERSHIP: community-backend")
     logger.info("domains: community (subthreads/posts/comments)")
     logger.info(
-        "routes: /api/subthreads, /api/posts, /api/comments, /api/posts/comments/batch, /api/posts/{id}/conversation"
+        "routes: /api/v1/feed, /api/v1/subthreads, /api/v1/posts, /api/v1/comments, /api/v1/media"
     )
     logger.info("=" * 64)
 
@@ -63,6 +98,7 @@ async def lifespan(app: FastAPI):
     # Initialize Supabase client at startup (thread-safe, single instance)
     try:
         initialize_community_client()
+        initialize_community_cache()
         logger.info("✅ Supabase Global Client Instance initialized successfully")
         _log_owned_domains_banner()
     except Exception as e:
@@ -72,15 +108,26 @@ async def lifespan(app: FastAPI):
     yield
 
     # Shutdown
+    await close_community_cache()
     logger.info("Shutting down Community Backend")
 
 
 # Create FastAPI app
 app = FastAPI(
     title="Community Backend API",
-    description="Reddit-like community microservice",
+    description="Canonical surface: /api/v1/* (feed, subthreads, posts, comments, media)",
     version="1.0.0",
     lifespan=lifespan,
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+)
+
+configure_canonical_openapi(
+    app,
+    service_title="Community Backend API",
+    service_version="1.0.0",
+    canonical_prefix="/api/v1",
 )
 
 # Add request ID middleware (must be before other middleware)
@@ -89,8 +136,23 @@ add_request_id_middleware(app)
 # Setup exception handlers for standardized error responses
 setup_exception_handlers(app)
 
-# Add deprecation middleware for legacy /api/* routes
-add_deprecation_middleware(app, COMMUNITY_BACKEND_DEPRECATIONS)
+if config.RATE_LIMIT_ENABLED:
+    add_redis_rate_limiter(
+        app,
+        redis_url=config.RATE_LIMIT_REDIS_URL,
+        namespace=config.RATE_LIMIT_NAMESPACE,
+        policies=_get_rate_limit_policies(),
+        default_limit=config.RATE_LIMIT_DEFAULT_LIMIT,
+        default_window_seconds=config.RATE_LIMIT_DEFAULT_WINDOW_SECONDS,
+        fail_open=config.RATE_LIMIT_FAIL_OPEN,
+    )
+    logger.info(
+        "Redis rate limiter enabled (namespace=%s, redis=%s)",
+        config.RATE_LIMIT_NAMESPACE,
+        config.RATE_LIMIT_REDIS_URL,
+    )
+else:
+    logger.warning("Redis rate limiter disabled via RATE_LIMIT_ENABLED=false")
 
 # Configure CORS
 app.add_middleware(
@@ -115,6 +177,7 @@ app.add_api_route(
     summary="Global feed (canonical endpoint)",
     description="Fetch all posts across all subthreads, newest first. "
     "This is the only official feed endpoint.",
+    include_in_schema=True,
 )
 
 # Mount routers at /api/v1 (new version - standard)
@@ -122,14 +185,6 @@ app.include_router(subthreads_router, prefix="/api/v1/subthreads", tags=["subthr
 app.include_router(posts_router, prefix="/api/v1/posts", tags=["posts"])
 app.include_router(comments_router, prefix="/api/v1/comments", tags=["comments"])
 app.include_router(media_router, prefix="/api/v1/media", tags=["media"])
-
-# Legacy /api/* routes deprecated (will be supported for 1 release cycle with deprecation headers)
-# These are mounted after v1 routes so v1 takes precedence in routing
-# Deprecation headers will be added via middleware or response handlers
-app.include_router(subthreads_router, prefix="/api/subthreads", tags=["subthreads_deprecated"])
-app.include_router(posts_router, prefix="/api/posts", tags=["posts_deprecated"])
-app.include_router(comments_router, prefix="/api/comments", tags=["comments_deprecated"])
-app.include_router(media_router, prefix="/api/media", tags=["media_deprecated"])
 
 
 @app.get("/")

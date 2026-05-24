@@ -24,6 +24,7 @@ from routes.validators.community_write_validators import (
     ensure_text_or_media,
     ensure_vote_type,
 )
+from services.community_cache import invalidate_feed_cache
 from services.media_validation import normalize_media_urls
 from services.supabase_client import get_community_client
 
@@ -126,6 +127,8 @@ async def create_post(
                 detail="Failed to create post",
             ) from None
 
+        await invalidate_feed_cache()
+
         return created_post
     except HTTPException:
         raise
@@ -161,6 +164,7 @@ async def repost_post(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Post not found",
             ) from None
+        await invalidate_feed_cache()
         return result
     except HTTPException:
         raise
@@ -196,6 +200,7 @@ async def undo_repost_post(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Post not found",
             ) from None
+        await invalidate_feed_cache()
         return result
     except HTTPException:
         raise
@@ -227,6 +232,8 @@ async def update_post(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Post not found or unauthorized",
             ) from None
+
+        await invalidate_feed_cache()
 
         return updated_post
     except HTTPException:
@@ -267,6 +274,8 @@ async def vote_post(
                 detail="Post not found",
             ) from None
 
+        await invalidate_feed_cache()
+
         return vote_result
     except HTTPException:
         raise
@@ -292,6 +301,8 @@ async def delete_post(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Post not found or unauthorized",
             ) from None
+
+        await invalidate_feed_cache()
 
         return CommunityDeletePostResponse(
             message="Post and all comments deleted successfully",

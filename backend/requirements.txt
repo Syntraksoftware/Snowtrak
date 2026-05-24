@@ -33,7 +33,7 @@ email-validator>=2.0.0
 # HTTP client
 httpx>=0.27.0
 
-# Activity pipeline queue (optional; set REDIS_URL)
+# Redis (rate limiting + community response cache + activity pipeline queue)
 redis>=5.0.0
 
 # Geospatial & raster (map-backend: tiles, rasters, geometry)
