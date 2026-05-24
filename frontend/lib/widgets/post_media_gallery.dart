@@ -3,9 +3,16 @@ import 'package:video_player/video_player.dart';
 
 /// Renders URLs from community `media_urls` (images / GIFs as image; mp4/mov/webm as inline video).
 class PostMediaGallery extends StatelessWidget {
-  const PostMediaGallery({super.key, required this.urls});
+  const PostMediaGallery({
+    super.key,
+    required this.urls,
+    this.borderRadius = const BorderRadius.all(Radius.circular(12)),
+    this.height,
+  });
 
   final List<String> urls;
+  final BorderRadius borderRadius;
+  final double? height;
 
   static bool _looksVideo(String url) {
     final lower = url.toLowerCase();
@@ -26,42 +33,61 @@ class PostMediaGallery extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: _looksVideo(url)
-                  ? PostInlineVideo(url: url)
-                  : Image.network(
-                      url,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (context, child, progress) {
-                        if (progress == null) {
-                          return child;
-                        }
-                        return AspectRatio(
-                          aspectRatio: 16 / 9,
-                          child: Container(
-                            color: Colors.grey.shade200,
-                            child: const Center(
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          ),
-                        );
-                      },
-                      errorBuilder: (_, __, ___) => AspectRatio(
-                        aspectRatio: 16 / 9,
-                        child: Container(
-                          color: Colors.grey.shade200,
-                          child: Icon(
-                            Icons.broken_image_outlined,
-                            size: 40,
-                            color: Colors.grey.shade500,
-                          ),
-                        ),
-                      ),
-                    ),
+              borderRadius: borderRadius,
+              child: height != null
+                  ? SizedBox(
+                      height: height,
+                      width: double.infinity,
+                      child: _mediaForUrl(url, height: height),
+                    )
+                  : _mediaForUrl(url),
             ),
           ),
       ],
     );
+  }
+
+  Widget _mediaForUrl(String url, {double? height}) {
+    if (_looksVideo(url)) {
+      return PostInlineVideo(url: url);
+    }
+
+    final image = Image.network(
+      url,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: height,
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) {
+          return child;
+        }
+        return AspectRatio(
+          aspectRatio: 4 / 3,
+          child: Container(
+            color: Colors.grey.shade200,
+            child: const Center(
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+        );
+      },
+      errorBuilder: (_, __, ___) => AspectRatio(
+        aspectRatio: 4 / 3,
+        child: Container(
+          color: Colors.grey.shade200,
+          child: Icon(
+            Icons.broken_image_outlined,
+            size: 40,
+            color: Colors.grey.shade500,
+          ),
+        ),
+      ),
+    );
+
+    if (height != null) {
+      return image;
+    }
+    return AspectRatio(aspectRatio: 4 / 3, child: image);
   }
 }
 
