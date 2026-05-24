@@ -20,10 +20,10 @@ class TrailsSearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: SyntrakColors.surface,
+      color: SyntrakColors.background,
       padding: const EdgeInsets.fromLTRB(
         SyntrakSpacing.md,
-        SyntrakSpacing.md,
+        SyntrakSpacing.sm,
         SyntrakSpacing.md,
         SyntrakSpacing.sm,
       ),

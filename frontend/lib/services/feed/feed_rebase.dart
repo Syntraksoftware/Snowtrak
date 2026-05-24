@@ -1,5 +1,6 @@
 import 'package:syntrak/models/activity.dart';
 import 'package:syntrak/models/post.dart';
+import 'package:syntrak/services/feed/feed_post_sort.dart';
 
 /// Rebases server feed payloads with recent on-device optimistic state.
 abstract final class FeedRebase {
@@ -7,7 +8,9 @@ abstract final class FeedRebase {
     required List<Post> serverPosts,
     required List<Post> localPosts,
   }) {
-    if (localPosts.isEmpty) return serverPosts;
+    if (localPosts.isEmpty) {
+      return FeedPostSort.byRecent(serverPosts);
+    }
 
     final localById = {for (final post in localPosts) post.id: post};
     final serverIds = serverPosts.map((post) => post.id).toSet();
@@ -35,8 +38,8 @@ abstract final class FeedRebase {
         .where((post) => !serverIds.contains(post.id))
         .toList();
 
-    if (optimisticOnly.isEmpty) return merged;
-    return [...optimisticOnly, ...merged];
+    if (optimisticOnly.isEmpty) return FeedPostSort.byRecent(merged);
+    return FeedPostSort.byRecent([...optimisticOnly, ...merged]);
   }
 
   static List<Activity> mergeActivities({

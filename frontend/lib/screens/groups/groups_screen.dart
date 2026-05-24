@@ -3,6 +3,8 @@ import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/screens/groups/active_tab.dart';
 import 'package:syntrak/screens/groups/challenges_tab.dart';
 import 'package:syntrak/screens/groups/clubs_tab.dart';
+import 'package:syntrak/screens/groups/trails_tab.dart';
+import 'package:syntrak/screens/groups/widgets/groups_tab_bar.dart';
 
 class GroupsScreen extends StatefulWidget {
   const GroupsScreen({super.key});
@@ -18,7 +20,7 @@ class _GroupsScreenState extends State<GroupsScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -33,60 +35,22 @@ class _GroupsScreenState extends State<GroupsScreen>
       backgroundColor: SyntrakColors.background,
       appBar: AppBar(
         title: const Text('Groups'),
+        centerTitle: false,
+        titleSpacing: SyntrakSpacing.md,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: SyntrakColors.surface,
+        foregroundColor: SyntrakColors.textPrimary,
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
+            icon: const Icon(Icons.search_rounded),
             onPressed: () {
               // TODO: Implement search functionality
             },
             tooltip: 'Search',
           ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              // TODO: Implement settings functionality
-            },
-            tooltip: 'Settings',
-          ),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(52),
-          child: Container(
-            decoration: BoxDecoration(
-              color: SyntrakColors.background,
-            ),
-            child: TabBar(
-              controller: _tabController,
-              indicator: BoxDecoration(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(SyntrakRadius.md),
-                  topRight: Radius.circular(SyntrakRadius.md),
-                ),
-                color: SyntrakColors.primary.withOpacity(0.1),
-              ),
-              indicatorSize: TabBarIndicatorSize.tab,
-              indicatorPadding: const EdgeInsets.symmetric(
-                horizontal: SyntrakSpacing.sm,
-                vertical: SyntrakSpacing.xs,
-              ),
-              labelColor: SyntrakColors.primary,
-              unselectedLabelColor: SyntrakColors.textTertiary,
-              labelStyle: SyntrakTypography.labelLarge.copyWith(
-                fontWeight: FontWeight.w600,
-                fontSize: 15,
-              ),
-              unselectedLabelStyle: SyntrakTypography.labelLarge.copyWith(
-                fontSize: 15,
-              ),
-              dividerColor: Colors.transparent,
-              tabs: const [
-                Tab(text: 'Activity'),
-                Tab(text: 'Challenges'),
-                Tab(text: 'Clubs'),
-              ],
-            ),
-          ),
-        ),
+        bottom: GroupsTabBar(controller: _tabController),
       ),
       body: TabBarView(
         controller: _tabController,
@@ -94,9 +58,9 @@ class _GroupsScreenState extends State<GroupsScreen>
           ActiveTab(),
           ChallengesTab(),
           ClubsTab(),
+          TrailsTab(),
         ],
       ),
     );
   }
 }
-

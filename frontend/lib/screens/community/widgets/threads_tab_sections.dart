@@ -75,7 +75,7 @@ class ThreadsFeedBody extends StatelessWidget {
       onRefresh: onRefresh,
       color: SyntrakColors.primary,
       child: ListView.builder(
-        padding: const EdgeInsets.only(top: SyntrakSpacing.sm),
+        padding: const EdgeInsets.only(bottom: SyntrakSpacing.md),
         itemCount: posts.length + 1,
         itemBuilder: (context, index) {
           if (index == 0) {

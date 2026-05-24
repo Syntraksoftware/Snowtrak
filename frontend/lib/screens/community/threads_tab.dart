@@ -25,6 +25,7 @@ import 'package:syntrak/screens/community/threads_tab_sync_coordinator.dart';
 import 'package:syntrak/screens/community/widgets/threads_search_bar.dart';
 import 'package:syntrak/screens/community/widgets/threads_tab_sections.dart';
 import 'package:syntrak/services/feed/community_feed_cache.dart';
+import 'package:syntrak/services/feed/feed_post_sort.dart';
 import 'package:syntrak/services/feed/feed_rebase.dart';
 
 class ThreadsTab extends StatefulWidget {
@@ -99,17 +100,20 @@ class _ThreadsTabState extends State<ThreadsTab> {
   }
 
   void _filterPosts() {
+    FeedPostSort.sortInPlace(_posts);
     final query = _searchController.text.toLowerCase().trim();
     if (query.isEmpty) {
       _filteredPosts = List.from(_posts);
     } else {
-      _filteredPosts = _posts.where((post) {
-        final topic = (post.topic ?? '').toLowerCase();
-        return post.text.toLowerCase().contains(query) ||
-            post.author.displayName.toLowerCase().contains(query) ||
-            post.author.username.toLowerCase().contains(query) ||
-            (topic.isNotEmpty && topic.contains(query));
-      }).toList();
+      _filteredPosts = FeedPostSort.byRecent(
+        _posts.where((post) {
+          final topic = (post.topic ?? '').toLowerCase();
+          return post.text.toLowerCase().contains(query) ||
+              post.author.displayName.toLowerCase().contains(query) ||
+              post.author.username.toLowerCase().contains(query) ||
+              (topic.isNotEmpty && topic.contains(query));
+        }),
+      );
     }
   }
 
@@ -203,8 +207,8 @@ class _ThreadsTabState extends State<ThreadsTab> {
     setState(() {
       _posts
         ..clear()
-        ..addAll(cached.posts);
-      _filteredPosts = List.from(_posts);
+        ..addAll(FeedPostSort.byRecent(cached.posts));
+      _recomputeVisiblePosts();
       _activeSubthreadId = cached.activeSubthreadId;
       _feedOffset = cached.offset;
       _hasMore = cached.posts.length >= _defaultPageSize;
@@ -294,18 +298,20 @@ class _ThreadsTabState extends State<ThreadsTab> {
             return;
           case AppSuccess(:final value):
             _activeSubthreadId = value.activeSubthreadId;
-            final merged = append
-                ? [..._posts, ...value.posts]
-                : FeedRebase.mergeCommunityPosts(
-                    serverPosts: value.posts,
-                    localPosts: previousLocal,
-                  );
+            final merged = FeedPostSort.byRecent(
+              append
+                  ? [..._posts, ...value.posts]
+                  : FeedRebase.mergeCommunityPosts(
+                      serverPosts: value.posts,
+                      localPosts: previousLocal,
+                    ),
+            );
             if (mounted) {
               setState(() {
                 _posts
                   ..clear()
                   ..addAll(merged);
-                _filteredPosts = List.from(_posts);
+                _recomputeVisiblePosts();
                 _feedOffset = _posts.length;
                 _hasMore = value.posts.length >= _defaultPageSize;
                 _isLoading = false;
@@ -342,7 +348,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
       if (value.posts.isEmpty) return;
       await _feedCache.write(
         activeSubthreadId: value.activeSubthreadId,
-        posts: [..._posts, ...value.posts],
+        posts: FeedPostSort.byRecent([..._posts, ...value.posts]),
         offset: _feedOffset + value.posts.length,
       );
     }
