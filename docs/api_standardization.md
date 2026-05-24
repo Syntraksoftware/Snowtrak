@@ -28,7 +28,7 @@ Map routes:
 
 Where Swagger / OpenAPI lives
 
-**Live (runtime, always up to date)**
+**Live (runtime)**
 
 Each FastAPI service generates OpenAPI at boot:
 
@@ -49,16 +49,13 @@ Static copies live under [`packages/shared/openapi/`](../packages/shared/openapi
 | `openapi-activity.json` | activity-backend |
 | `openapi-map.json` | map-backend |
 
-Refresh a snapshot from a running service:
+Refresh all snapshots (no running servers required):
 
 ```bash
-curl -s http://localhost:5200/openapi.json > packages/shared/openapi/openapi-map.json
-curl -s http://localhost:5001/openapi.json > packages/shared/openapi/openapi-community.json
-curl -s http://localhost:5100/openapi.json > packages/shared/openapi/openapi-activity.json
-curl -s http://localhost:8080/openapi.json > packages/shared/openapi/openapi-main.json
+backend/scripts/export_openapi.sh
 ```
 
-See [`packages/shared/openapi/README.md`](../packages/shared/openapi/README.md) for purpose and conventions.
+Implementation: `backend/scripts/generate_openapi_snapshots.py`.
 
 ---
 
@@ -74,7 +71,28 @@ Engine clients use relative paths (`/elevation/correct`, `/trails/match`, …) b
 
 ---
 
+Deprecating routes later
+
+When phasing out a path, attach `backend/shared/deprecation.py` middleware with a sunset config and run the unit tests in `backend/tests/test_deprecation_middleware.py` as a reference.
+
+Example:
+
+```python
+from shared.deprecation import add_deprecation_middleware
+
+add_deprecation_middleware(app, {
+    "/api/v1/old-path": {
+        "sunset_date": "Sun, 21 Dec 2026 00:00:00 GMT",
+        "replacement": "/api/v1/new-path",
+        "message": "Use /api/v1/new-path instead.",
+    },
+})
+```
+
+---
+
 Related
 
 - Client feed cache + Redis rate limiting: [client_feed_cache_and_rate_limiting.md](./client_feed_cache_and_rate_limiting.md)
-- Deprecation middleware (for future use): `backend/shared/deprecation.py`
+- VPS bootstrap script: [backend/deploy/bootstrap_droplet.sh](../backend/deploy/bootstrap_droplet.sh)
+- Map backend beta/staging note: [playbook/map-backend_beta.md](./playbook/map-backend_beta.md)

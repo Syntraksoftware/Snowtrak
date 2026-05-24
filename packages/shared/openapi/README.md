@@ -1,12 +1,27 @@
 # OpenAPI artifacts for shared contracts
 
-Place extracted OpenAPI JSON/YAML files for each backend service in this directory.
+Checked-in OpenAPI JSON for each backend service. Used for frontend codegen, contract review, and CI diffs.
 
-Purpose:
-- Canonical API contracts for frontend code generation and CI checks.
+| File | Service | Canonical prefix |
+|------|---------|------------------|
+| `openapi-main.json` | main-backend | `/api/v1` |
+| `openapi-activity.json` | activity-backend | `/api/v1` |
+| `openapi-community.json` | community-backend | `/api/v1` |
+| `openapi-map.json` | map-backend | `/api/v1/map` |
 
-Example:
-- `openapi-main.json`
-- `openapi-community.json`
+## Refresh snapshots
 
-Do not commit runtime-generated artifacts frequently; prefer storing small, reviewed specs.
+From repo root (no running servers required):
+
+```bash
+backend/scripts/export_openapi.sh
+```
+
+This runs `backend/scripts/generate_openapi_snapshots.py`, which builds each FastAPI app factory and writes filtered canonical schemas.
+
+Live Swagger UI remains at `http://localhost:<port>/docs` when services are running. See [docs/api_standardization.md](../../docs/api_standardization.md).
+
+## When to update
+
+- After adding, renaming, or removing `/api/v1/*` routes
+- Before merging API-facing PRs (include snapshot diff in review)
