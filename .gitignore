@@ -12,4 +12,6 @@ frontend/ios/Pods/
 backend/.venv/
 backend/data/*.geojson
 .env
+backend/deploy/env/staging.env
+backend/deploy/env/production.env
 *.p8
