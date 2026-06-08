@@ -2,7 +2,7 @@
 # Caddy will automatically obtain and renew TLS certificates.
 
 staging-main.example.com {
-	reverse_proxy 127.0.0.1:18080
+	reverse_proxy 127.0.0.1:8080
 }
 
 staging-community.example.com {
