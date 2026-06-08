@@ -11,7 +11,9 @@ frontend/.idea/
 frontend/ios/Pods/
 backend/.venv/
 backend/data/*.geojson
-.env
+**/.env
+!**/.env.example
+backend/postgres.env
 backend/deploy/env/staging.env
 backend/deploy/env/production.env
 *.p8
