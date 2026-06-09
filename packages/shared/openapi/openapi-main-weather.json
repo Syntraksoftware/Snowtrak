@@ -1,0 +1,36 @@
+{
+  "activity_id": 8529483012,
+  "athlete_id": 1234567,
+  "source": "Strava API paired with OpenWeather API",
+  "location": {
+    "latitude": 52.4068,
+    "longitude": -1.5197,
+    "city_hint": "Coventry, UK"
+  },
+  "weather_snapshot": {
+    "timestamp": "2026-06-09T06:30:00Z",
+    "condition": "Partly Cloudy",
+    "condition_code": "802",
+    "icon_url": "https://openweathermap.org",
+    "temperatures": {
+      "ambient_celsius": 16.0,
+      "feels_like_celsius": 15.4,
+      "strava_reported_celsius": 16
+    },
+    "atmosphere": {
+      "humidity_percent": 68,
+      "pressure_hpa": 1014,
+      "uv_index": 3.2
+    },
+    "wind": {
+      "speed_meters_per_second": 4.1,
+      "bearing_degrees": 210,
+      "cardinal_direction": "SSW",
+      "gust_meters_per_second": 6.5
+    },
+    "precipitation": {
+      "probability_percent": 10,
+      "type": "none"
+    }
+  }
+}
