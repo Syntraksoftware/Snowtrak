@@ -22,6 +22,10 @@ class ActivitiesContextRepository {
   }
 
   Future<WeatherData?> getLocalWeather({bool forceRefresh = false}) async {
+    if (!await _locationService.hasLocationAccess()) {
+      return readCachedWeather();
+    }
+
     final position = await _locationService.getCurrentPosition();
     if (position == null) {
       return readCachedWeather();
