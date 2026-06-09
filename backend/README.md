@@ -6,7 +6,7 @@ Syntrak backend consists of 4 microservices, all using a unified Python environm
 
 | Service                     | Port | Host      | Purpose                                        |
 | --------------------------- | ---- | --------- | ---------------------------------------------- |
-| **main-backend**      | 8080 | 0.0.0.0   | Authentication, users, notifications, activity |
+| **main-backend**      | 8080 | 0.0.0.0   | Authentication, users, notifications, weather   |
 | **community-backend** | 5001 | 0.0.0.0   | Posts, threads, comments (Reddit-like)         |
 | **activity-backend**  | 5100 | 127.0.0.1 | GPS tracking, kudos tracking                   |
 | **map-backend**       | 5200 | 127.0.0.1 | Static maps, elevation API (Google Maps)       |
