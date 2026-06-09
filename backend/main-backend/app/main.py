@@ -70,8 +70,8 @@ def _get_rate_limit_policies() -> list[dict]:
 def _print_owned_domains_banner() -> None:
     """Print owned domains and canonical routes at startup."""
     print("SERVICE OWNERSHIP: main-backend")
-    print("domains: auth/users, notifications")
-    print("routes: /api/v1/auth, /api/v1/users, /api/v1/notifications")
+    print("domains: auth/users, notifications, weather")
+    print("routes: /api/v1/auth, /api/v1/users, /api/v1/notifications, /api/v1/weather")
 
 
 @asynccontextmanager
@@ -103,7 +103,7 @@ def create_application() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
         version=settings.app_version,
-        description="Canonical surface: /api/v1/auth, /api/v1/users, /api/v1/notifications",
+        description="Canonical surface: /api/v1/auth, /api/v1/users, /api/v1/notifications, /api/v1/weather",
         docs_url="/docs" if settings.debug else None,
         redoc_url="/redoc" if settings.debug else None,
         openapi_url="/openapi.json",
