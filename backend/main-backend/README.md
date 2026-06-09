@@ -55,6 +55,10 @@ API docs available at `http://localhost:8080/docs`
 - `GET /api/v1/users/me` - Get current user profile
 - `PUT /api/v1/users/me` - Update profile
 
+### Weather
+
+- `POST /api/v1/weather/snapshot` - Normalize a weather snapshot for an activity location
+
 ## 🔑 Example Usage
 
 ### Register
@@ -121,6 +125,8 @@ cp .env.example .env
 - `REFRESH_TOKEN_EXPIRE_DAYS` - Refresh token lifetime (default: 7)
 - `ALLOWED_ORIGINS` - CORS origins (comma-separated, default: localhost:3000)
 - `BCRYPT_ROUNDS` - Password hashing rounds (default: 12)
+- `OPENMETEO_BASE_URL` - Open-Meteo base URL (default: `https://api.open-meteo.com/v1`)
+- `OPENMETEO_TIMEOUT_SECONDS` - Open-Meteo request timeout (default: 10)
 
 ## 💾 Storage
 

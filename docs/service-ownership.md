@@ -7,6 +7,7 @@ One specific backend for each service (activity-related, main-backend handling u
 
 - auth/users: main-backend
 - notifications: main-backend
+- weather: main-backend
 - activities: activity-backend
 - community (subthreads/posts/comments): community-backend
 
@@ -18,7 +19,7 @@ One specific backend for each service (activity-related, main-backend handling u
 
 ## Canonical Base Paths
 
-- main-backend: /api/v1/auth, /api/v1/users, /api/v1/notifications
+- main-backend: /api/v1/auth, /api/v1/users, /api/v1/notifications, /api/v1/weather
   - notification is not yet being implemented
 - activity-backend: /api/v1/activities
 - community-backend: /api/subthreads, /api/posts, /api/comments
