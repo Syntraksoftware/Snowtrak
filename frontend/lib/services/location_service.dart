@@ -8,13 +8,34 @@ import 'package:syntrak/services/gps_filter_service.dart';
 class LocationService {
   bool _isTracking = false;
   Position? _currentPosition;
-  List<app_location.Location> _locations = [];
+  final List<app_location.Location> _locations = [];
   StreamSubscription<Position>? _positionSubscription;
   Position? _lastAcceptedPosition;
 
   bool get isTracking => _isTracking;
   Position? get currentPosition => _currentPosition;
   List<app_location.Location> get locations => List.unmodifiable(_locations);
+
+  Future<bool> hasLocationAccess() async {
+    final geolocatorPermission = await Geolocator.checkPermission();
+    if (geolocatorPermission != LocationPermission.always &&
+        geolocatorPermission != LocationPermission.whileInUse) {
+      AppLogger.instance.debug(
+        '?? [LocationService] Location access unavailable: $geolocatorPermission',
+      );
+      return false;
+    }
+
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      AppLogger.instance.debug(
+        '?? [LocationService] Location access unavailable: services disabled',
+      );
+      return false;
+    }
+
+    return true;
+  }
 
   Future<bool> checkPermissions() async {
     // Check permission_handler status
