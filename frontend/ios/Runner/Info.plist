@@ -24,6 +24,16 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Take a photo or video to share in the community.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>We need your location to track your activities and show local weather conditions.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>We need your location to track your activities and show local weather conditions.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Attach photos or videos to community posts and replies.</string>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
