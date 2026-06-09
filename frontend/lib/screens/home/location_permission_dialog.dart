@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:syntrak/services/location_service.dart';
 
 class LocationPermissionDialog extends StatelessWidget {
@@ -10,24 +9,31 @@ class LocationPermissionDialog extends StatelessWidget {
     required this.locationService,
   });
 
-  static Future<bool?> show(BuildContext context, LocationService locationService) {
+  static Future<bool?> show(
+    BuildContext context,
+    LocationService locationService,
+  ) {
     return showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => LocationPermissionDialog(locationService: locationService),
+      builder: (context) =>
+          LocationPermissionDialog(locationService: locationService),
     );
   }
 
-  Future<void> _handlePermissionRequest(BuildContext context, bool granted) async {
+  void _handlePermissionRequest(
+    BuildContext context,
+    bool granted,
+  ) {
     Navigator.of(context).pop(granted);
 
     if (!granted) {
-      // Show message explaining why we need GPS
+      // Show message explaining why we need GPS.
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'We need your GPS service to record your activities trajectory. You can enable it later in Settings.',
+              'We need your GPS service to record activities and show local weather. You can enable it later in Settings.',
             ),
             duration: Duration(seconds: 5),
             backgroundColor: Colors.orange,
@@ -46,7 +52,7 @@ class LocationPermissionDialog extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Syntrak needs access to your location to track your activities.',
+            'Syntrak needs access to your location to track your activities and show local weather conditions.',
             style: TextStyle(fontSize: 16),
           ),
           SizedBox(height: 16),
@@ -55,12 +61,13 @@ class LocationPermissionDialog extends StatelessWidget {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 8),
-          Text('• Record your activity route'),
-          Text('• Calculate distance and pace'),
-          Text('• Show your route on the map'),
+          Text('- Record your activity route'),
+          Text('- Calculate distance and pace'),
+          Text('- Show your route on the map'),
+          Text('- Show local weather conditions'),
           SizedBox(height: 16),
           Text(
-            'Your location data is only used for activity tracking and is stored securely.',
+            'Your location data is only used for activity tracking and local weather, and is stored securely.',
             style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
           ),
         ],
@@ -73,6 +80,7 @@ class LocationPermissionDialog extends StatelessWidget {
         ElevatedButton(
           onPressed: () async {
             final granted = await locationService.requestPermissions();
+            if (!context.mounted) return;
             _handlePermissionRequest(context, granted);
           },
           style: ElevatedButton.styleFrom(
@@ -85,4 +93,3 @@ class LocationPermissionDialog extends StatelessWidget {
     );
   }
 }
-
