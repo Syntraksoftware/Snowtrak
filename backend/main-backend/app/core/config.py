@@ -48,6 +48,10 @@ class Settings(BaseSettings):
     supabase_url: str | None = Field(default=None, alias="SUPABASE_URL")
     supabase_service_role_key: str | None = Field(default=None, alias="SUPABASE_SERVICE_ROLE_KEY")
 
+    # Open-Meteo (free, no API key required)
+    open_meteo_base_url: str = Field(default="https://api.open-meteo.com/v1", alias="OPENMETEO_BASE_URL")
+    open_meteo_timeout_seconds: float = Field(default=10.0, alias="OPENMETEO_TIMEOUT_SECONDS")
+
     # Redis-backed rate limiter
     rate_limit_enabled: bool = Field(default=True, alias="RATE_LIMIT_ENABLED")
     rate_limit_redis_url: str = Field(default="redis://localhost:6379/0", alias="RATE_LIMIT_REDIS_URL")
