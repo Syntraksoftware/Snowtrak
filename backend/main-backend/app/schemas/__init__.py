@@ -14,6 +14,16 @@ from app.schemas.activity import (
     LocationCreate as LocationCreate,
     LocationResponse as LocationResponse,
 )
+from app.schemas.weather import (
+    WeatherLocation as WeatherLocation,
+    WeatherSnapshot as WeatherSnapshot,
+    WeatherSnapshotAtmosphere as WeatherSnapshotAtmosphere,
+    WeatherSnapshotPrecipitation as WeatherSnapshotPrecipitation,
+    WeatherSnapshotRequest as WeatherSnapshotRequest,
+    WeatherSnapshotResponse as WeatherSnapshotResponse,
+    WeatherSnapshotTemperatures as WeatherSnapshotTemperatures,
+    WeatherSnapshotWind as WeatherSnapshotWind,
+)
 
 # User Schemas
 
