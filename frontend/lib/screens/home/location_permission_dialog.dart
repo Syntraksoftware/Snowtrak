@@ -22,6 +22,24 @@ class LocationPermissionDialog extends StatelessWidget {
     );
   }
 
+  void _handlePermissionRequest(BuildContext context, bool granted) {
+    Navigator.of(context).pop(granted);
+
+    if (!granted) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'We need your GPS service to record activities and show local weather. You can enable it later in Settings.',
+            ),
+            duration: Duration(seconds: 5),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -64,7 +82,7 @@ class LocationPermissionDialog extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'Syntrak uses your GPS to draw your route,\nmeasure distance, and calculate speed.',
+            'Syntrak uses your GPS to draw your route, measure distance, calculate speed, and show local weather conditions.',
             textAlign: TextAlign.center,
             style: SyntrakTypography.bodyMedium.copyWith(
               color: SyntrakColors.textSecondary,
@@ -76,7 +94,8 @@ class LocationPermissionDialog extends StatelessWidget {
             child: ElevatedButton(
               onPressed: () async {
                 final granted = await locationService.requestPermissions();
-                if (context.mounted) Navigator.of(context).pop(granted);
+                if (!context.mounted) return;
+                _handlePermissionRequest(context, granted);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: SyntrakColors.primary,
@@ -97,7 +116,7 @@ class LocationPermissionDialog extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
+              onPressed: () => _handlePermissionRequest(context, false),
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
