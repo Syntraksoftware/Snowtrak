@@ -1,6 +1,7 @@
 """Tests for the weather snapshot API."""
 
-import pytest
+from typing import Any
+
 from fastapi import status
 
 
@@ -95,7 +96,7 @@ class TestWeatherSnapshotEndpoint:
             },
         )
 
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == 422
 
 
 def test_weather_snapshot_integration_call_real_api():
@@ -118,3 +119,141 @@ def test_weather_snapshot_integration_call_real_api():
     assert resp.source == "Open-Meteo"
     assert resp.location.latitude == 52.4068
     assert isinstance(resp.weather_snapshot.condition, str) and resp.weather_snapshot.condition
+
+
+def _provider_payload() -> dict:
+    return {
+        "current_weather": {
+            "time": "2026-06-10T10:00",
+            "temperature": 16.3,
+            "weathercode": 2,
+            "windspeed": 12.0,
+            "winddirection": 210,
+        },
+        "hourly": {
+            "time": ["2026-06-10T10:00"],
+            "temperature_2m": [16.3],
+            "relative_humidity_2m": [68],
+            "apparent_temperature": [15.9],
+            "precipitation_probability": [12],
+            "precipitation": [0.0],
+            "rain": [0.0],
+            "showers": [0.0],
+            "snowfall": [0.0],
+            "snow_depth": [0.0],
+            "weather_code": [2],
+            "pressure_msl": [1014.0],
+            "visibility": [10000.0],
+            "wind_speed_10m": [12.0],
+            "wind_direction_10m": [210],
+            "wind_gusts_10m": [18.0],
+            "uv_index": [3.2],
+        },
+    }
+
+
+class FakeRedis:
+    def __init__(self) -> None:
+        self.values: dict[str, str] = {}
+        self.ttls: dict[str, int] = {}
+
+    def get(self, name: str) -> str | None:
+        return self.values.get(name)
+
+    def setex(self, name: str, time: int, value: str) -> Any:
+        self.values[name] = value
+        self.ttls[name] = time
+
+    def delete(self, *names: str) -> Any:
+        for name in names:
+            self.values.pop(name, None)
+            self.ttls.pop(name, None)
+
+    def close(self) -> Any:
+        return None
+
+
+def test_weather_service_uses_cache_for_same_athlete_nearby_location(monkeypatch):
+    from app.schemas.weather import WeatherLocation, WeatherSnapshotRequest
+    from app.services.weather_cache import RedisWeatherCache
+    from app.services.weather import WeatherService
+
+    fake_redis = FakeRedis()
+    weather_cache = RedisWeatherCache(
+        enabled=True,
+        redis_url="redis://localhost:6379/0",
+        namespace="main-backend",
+        ttl_seconds=600,
+        distance_threshold=0.02,
+        redis_client=fake_redis,
+    )
+    service = WeatherService(weather_cache=weather_cache)
+
+    call_count = {"fetch": 0}
+
+    def fake_fetch(_lat, _lon):
+        call_count["fetch"] += 1
+        return _provider_payload()
+
+    monkeypatch.setattr(service, "_fetch_provider_data", fake_fetch)
+
+    req1 = WeatherSnapshotRequest(
+        activity_id=101,
+        athlete_id=555,
+        location=WeatherLocation(latitude=52.4068, longitude=-1.5197),
+    )
+    req2 = WeatherSnapshotRequest(
+        activity_id=102,
+        athlete_id=555,
+        location=WeatherLocation(latitude=52.4070, longitude=-1.5195),
+    )
+
+    resp1 = service.build_snapshot(req1)
+    resp2 = service.build_snapshot(req2)
+
+    assert call_count["fetch"] == 1
+    assert resp1.weather_snapshot == resp2.weather_snapshot
+    assert resp2.activity_id == 102
+    assert resp2.athlete_id == 555
+    assert fake_redis.ttls[weather_cache.cache_key(555)] == 600
+
+
+def test_weather_service_refreshes_cache_for_far_location(monkeypatch):
+    from app.schemas.weather import WeatherLocation, WeatherSnapshotRequest
+    from app.services.weather_cache import RedisWeatherCache
+    from app.services.weather import WeatherService
+
+    fake_redis = FakeRedis()
+    weather_cache = RedisWeatherCache(
+        enabled=True,
+        redis_url="redis://localhost:6379/0",
+        namespace="main-backend",
+        ttl_seconds=600,
+        distance_threshold=0.02,
+        redis_client=fake_redis,
+    )
+    service = WeatherService(weather_cache=weather_cache)
+
+    call_count = {"fetch": 0}
+
+    def fake_fetch(_lat, _lon):
+        call_count["fetch"] += 1
+        return _provider_payload()
+
+    monkeypatch.setattr(service, "_fetch_provider_data", fake_fetch)
+
+    req1 = WeatherSnapshotRequest(
+        activity_id=201,
+        athlete_id=777,
+        location=WeatherLocation(latitude=52.4068, longitude=-1.5197),
+    )
+    req2 = WeatherSnapshotRequest(
+        activity_id=202,
+        athlete_id=777,
+        location=WeatherLocation(latitude=52.4500, longitude=-1.4500),
+    )
+
+    service.build_snapshot(req1)
+    service.build_snapshot(req2)
+
+    assert call_count["fetch"] == 2
