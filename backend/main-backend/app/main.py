@@ -20,6 +20,7 @@ from shared.rate_limiter import add_redis_rate_limiter
 from app.api.v1 import api_router
 from app.core.config import settings
 from app.core.supabase import supabase_client
+from app.services.weather import weather_service
 
 
 def _get_rate_limit_policies() -> list[dict]:
@@ -95,6 +96,7 @@ async def lifespan(app: FastAPI):
     yield
 
     # Shutdown
+    weather_service.close()
     print("👋 Shutting down Syntrak Auth API...")
 
 
