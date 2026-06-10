@@ -19,6 +19,7 @@ from app.schemas.weather import (
     WeatherSnapshotTemperatures,
     WeatherSnapshotWind,
 )
+from app.services.weather_cache import RedisWeatherCache, WeatherCache
 
 logger = logging.getLogger(__name__)
 
@@ -30,22 +31,32 @@ class WeatherServiceError(RuntimeError):
 class WeatherService:
     """Builds a normalized weather snapshot from Open-Meteo data."""
 
-    def __init__(self) -> None:
+    def __init__(self, weather_cache: WeatherCache | None = None) -> None:
         self._base_url = settings.open_meteo_base_url.rstrip("/")
         self._timeout_seconds = settings.open_meteo_timeout_seconds
+        self._weather_cache = weather_cache or RedisWeatherCache.from_settings()
 
     def build_snapshot(self, request: WeatherSnapshotRequest) -> WeatherSnapshotResponse:
+        cached_response = self._weather_cache.get(request)
+        if cached_response is not None:
+            return cached_response
+
         provider_data = self._fetch_provider_data(request.location.latitude, request.location.longitude)
         location = self._build_location(request.location, provider_data)
         snapshot = self._build_snapshot(request, provider_data)
 
-        return WeatherSnapshotResponse(
+        response = WeatherSnapshotResponse(
             activity_id=request.activity_id,
             athlete_id=request.athlete_id,
             source="Open-Meteo",
             location=location,
             weather_snapshot=snapshot,
         )
+        self._weather_cache.set(request, response)
+        return response
+
+    def close(self) -> None:
+        self._weather_cache.close()
 
     def _fetch_provider_data(self, latitude: float, longitude: float) -> dict[str, Any]:
         url = f"{self._base_url}/forecast"
