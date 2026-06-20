@@ -7,6 +7,8 @@ from typing import Literal
 from pydantic import computed_field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from shared.jwt_env import JWT_SECRET_FIELD
+
 # Load ``.env`` next to this file so ``uvicorn main:app`` works from ``backend/`` or ``map-backend/``.
 _MAP_BACKEND_ENV = Path(__file__).resolve().parent / ".env"
 
@@ -31,7 +33,7 @@ class Config(BaseSettings):
     # Supabase / shared Postgres for map_trail (asyncpg pool)
     SYNTRAK_DATABASE_URL: str | None = None
 
-    JWT_SECRET: str
+    JWT_SECRET: str = JWT_SECRET_FIELD
     JWT_ALGORITHM: str = "HS256"
     FASTAPI_ENV: str = "development"
     PORT: int = 5200

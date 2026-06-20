@@ -29,6 +29,7 @@ import 'package:syntrak/services/apis/notifications_api.dart';
 import 'package:syntrak/services/apis/users_api.dart';
 import 'package:syntrak/services/location_service.dart';
 import 'package:syntrak/services/service_registry.dart';
+import 'package:syntrak/services/weather_cache.dart';
 import 'package:syntrak/services/weather_service.dart';
 
 final sl = GetIt.instance;
@@ -140,11 +141,13 @@ Future<void> setupServiceLocatorWithEnvironment({
   );
 
   sl.registerLazySingleton<WeatherService>(() => WeatherService());
+  sl.registerLazySingleton<WeatherCache>(() => WeatherCache());
   sl.registerLazySingleton<LocationService>(() => LocationService());
   sl.registerLazySingleton<ActivitiesContextRepository>(
     () => ActivitiesContextRepository(
       weatherService: sl<WeatherService>(),
       locationService: sl<LocationService>(),
+      weatherCache: sl<WeatherCache>(),
     ),
   );
 

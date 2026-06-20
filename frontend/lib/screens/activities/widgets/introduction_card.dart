@@ -1,115 +1,92 @@
 import 'package:flutter/material.dart';
 import 'package:syntrak/core/theme.dart';
+import 'package:syntrak/screens/activities/widgets/home_action_row.dart';
+import 'package:syntrak/screens/activities/widgets/home_section_card.dart';
+import 'package:syntrak/screens/activities/widgets/home_section_spacing.dart';
+import 'package:syntrak/screens/activities/widgets/home_selectable_chip.dart';
+import 'package:syntrak/screens/home/home_tab_scope.dart';
+import 'package:syntrak/ui/liquid/snowtrak_auth_theme.dart';
 
-class IntroductionCard extends StatelessWidget {
+enum _IntroAction { record, community, stats }
+
+class IntroductionCard extends StatefulWidget {
   const IntroductionCard({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        SyntrakSpacing.md,
-        0,
-        SyntrakSpacing.md,
-        SyntrakSpacing.md,
-      ),
-      child: Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-          side: BorderSide(
-            color: SyntrakColors.divider,
-            width: 1,
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(SyntrakSpacing.md),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final isCompact = constraints.maxWidth < 300;
-              if (isCompact) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'New to Syntrak?',
-                      style: SyntrakTypography.headlineSmall.copyWith(
-                        color: SyntrakColors.textPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: SyntrakSpacing.sm),
-                    Text(
-                      'Get started and explore new features. Track your skiing activities, connect with friends, and discover amazing trails!',
-                      style: SyntrakTypography.bodyMedium.copyWith(
-                        color: SyntrakColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: SyntrakSpacing.md),
-                    Center(
-                      child: Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(SyntrakRadius.md),
-                          color: SyntrakColors.primary.withOpacity(0.1),
-                        ),
-                        child: Icon(
-                          Icons.downhill_skiing,
-                          size: 30,
-                          color: SyntrakColors.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              }
+  State<IntroductionCard> createState() => _IntroductionCardState();
+}
 
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'New to Syntrak?',
-                          style: SyntrakTypography.headlineSmall.copyWith(
-                            color: SyntrakColors.textPrimary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: SyntrakSpacing.sm),
-                        Text(
-                          'Get started and explore new features. Track your skiing activities, connect with friends, and discover amazing trails!',
-                          style: SyntrakTypography.bodyMedium.copyWith(
-                            color: SyntrakColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: SyntrakSpacing.md),
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(SyntrakRadius.md),
-                      color: SyntrakColors.primary.withOpacity(0.1),
-                    ),
-                    child: Icon(
-                      Icons.downhill_skiing,
-                      size: 40,
-                      color: SyntrakColors.primary,
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
+class _IntroductionCardState extends State<IntroductionCard> {
+  _IntroAction _selected = _IntroAction.record;
+
+  void _selectAction(_IntroAction action) {
+    setState(() => _selected = action);
+    HomeTabScope.selectTabOrNull(context, switch (action) {
+      _IntroAction.record => 0,
+      _IntroAction.community => 1,
+      _IntroAction.stats => 4,
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return HomeSectionSpacing(
+      child: HomeSectionCard(
+        icon: Icons.downhill_skiing,
+        title: 'New to Snowtrak?',
+        subtitle: 'Pick a starting point',
+        iconColor: SnowtrakAuthTheme.brand,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Wrap(
+              spacing: SyntrakSpacing.xs,
+              runSpacing: SyntrakSpacing.xs,
+              children: [
+                HomeSelectableChip(
+                  label: 'Record',
+                  icon: Icons.fiber_manual_record,
+                  dense: true,
+                  selected: _selected == _IntroAction.record,
+                  onTap: () => _selectAction(_IntroAction.record),
+                ),
+                HomeSelectableChip(
+                  label: 'Community',
+                  icon: Icons.people_outline,
+                  dense: true,
+                  selected: _selected == _IntroAction.community,
+                  onTap: () => _selectAction(_IntroAction.community),
+                ),
+                HomeSelectableChip(
+                  label: 'Stats',
+                  icon: Icons.insights_outlined,
+                  dense: true,
+                  selected: _selected == _IntroAction.stats,
+                  onTap: () => _selectAction(_IntroAction.stats),
+                ),
+              ],
+            ),
+            const SizedBox(height: SyntrakSpacing.sm),
+            HomeActionRow(
+              title: _actionTitle(_selected),
+              subtitle: _actionSubtitle(_selected),
+              onTap: () => _selectAction(_selected),
+            ),
+          ],
         ),
       ),
     );
   }
+
+  String _actionTitle(_IntroAction action) => switch (action) {
+        _IntroAction.record => 'Record your first run',
+        _IntroAction.community => 'Browse the community feed',
+        _IntroAction.stats => 'Open your athlete profile',
+      };
+
+  String _actionSubtitle(_IntroAction action) => switch (action) {
+        _IntroAction.record => 'Open Map and start tracking',
+        _IntroAction.community => 'See what others are skiing',
+        _IntroAction.stats => 'View performance and privacy settings',
+      };
 }

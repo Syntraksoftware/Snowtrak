@@ -38,6 +38,28 @@ class WeatherData {
     );
   }
 
+  factory WeatherData.fromCacheJson(Map<String, dynamic> json) {
+    final hourly = (json['hourly'] as List)
+        .map((entry) => HourlyWeather.fromJson(entry as Map<String, dynamic>))
+        .toList();
+
+    return WeatherData(
+      temperature: (json['temperature'] as num).toDouble(),
+      windSpeed: (json['windSpeed'] as num).toDouble(),
+      time: DateTime.parse(json['time'] as String),
+      hourly: hourly,
+    );
+  }
+
+  Map<String, dynamic> toCacheJson() {
+    return {
+      'temperature': temperature,
+      'windSpeed': windSpeed,
+      'time': time.toIso8601String(),
+      'hourly': hourly.map((entry) => entry.toJson()).toList(),
+    };
+  }
+
   // Get weather condition based on temperature and humidity
   WeatherCondition get condition {
     if (temperature < 0) {
@@ -97,6 +119,24 @@ class HourlyWeather {
     required this.humidity,
     required this.windSpeed,
   });
+
+  factory HourlyWeather.fromJson(Map<String, dynamic> json) {
+    return HourlyWeather(
+      time: DateTime.parse(json['time'] as String),
+      temperature: (json['temperature'] as num).toDouble(),
+      humidity: json['humidity'] as int,
+      windSpeed: (json['windSpeed'] as num).toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'time': time.toIso8601String(),
+      'temperature': temperature,
+      'humidity': humidity,
+      'windSpeed': windSpeed,
+    };
+  }
 }
 
 class DailyForecast {

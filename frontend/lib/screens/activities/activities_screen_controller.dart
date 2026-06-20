@@ -17,8 +17,11 @@ class ActivitiesScreenController {
       activityProvider.loadMockActivities();
     }
     authProvider.refreshUserData();
-    final weather = await _getLocalWeatherSafe(contextRepository);
-    await onWeatherLoaded(weather);
+    await _loadWeatherStaleWhileRevalidate(
+      contextRepository: contextRepository,
+      onWeatherLoaded: onWeatherLoaded,
+      forceRefresh: false,
+    );
   }
 
   Future<void> refreshData({
@@ -27,17 +30,34 @@ class ActivitiesScreenController {
     required Future<void> Function(WeatherData? weather) onWeatherLoaded,
   }) async {
     await activityProvider.loadActivities(refresh: true);
-    final weather = await _getLocalWeatherSafe(contextRepository);
-    await onWeatherLoaded(weather);
+    await _loadWeatherStaleWhileRevalidate(
+      contextRepository: contextRepository,
+      onWeatherLoaded: onWeatherLoaded,
+      forceRefresh: true,
+    );
   }
 
-  Future<WeatherData?> _getLocalWeatherSafe(
-    ActivitiesContextRepository contextRepository,
-  ) async {
+  Future<void> _loadWeatherStaleWhileRevalidate({
+    required ActivitiesContextRepository contextRepository,
+    required Future<void> Function(WeatherData? weather) onWeatherLoaded,
+    required bool forceRefresh,
+  }) async {
     try {
-      return await contextRepository.getLocalWeather();
+      if (!forceRefresh) {
+        final cached = await contextRepository.readCachedWeather();
+        if (cached != null) {
+          await onWeatherLoaded(cached);
+        }
+      }
+
+      final weather = await contextRepository.getLocalWeather(
+        forceRefresh: forceRefresh,
+      );
+      await onWeatherLoaded(weather);
     } catch (_) {
-      return null;
+      if (forceRefresh) {
+        await onWeatherLoaded(null);
+      }
     }
   }
 }
