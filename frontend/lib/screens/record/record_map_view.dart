@@ -10,6 +10,7 @@ class RecordMapView extends StatefulWidget {
     required this.onMapCreated,
     required this.myLocationTrackingMode,
     this.onTrackingDismissed,
+    this.onStyleLoaded,
   });
 
   final CameraPosition initialCameraPosition;
@@ -17,6 +18,7 @@ class RecordMapView extends StatefulWidget {
   final void Function(MapLibreMapController) onMapCreated;
   final MyLocationTrackingMode myLocationTrackingMode;
   final VoidCallback? onTrackingDismissed;
+  final VoidCallback? onStyleLoaded;
 
   @override
   State<RecordMapView> createState() => _RecordMapViewState();
@@ -82,6 +84,9 @@ class _RecordMapViewState extends State<RecordMapView> {
           onMapCreated: (controller) {
             _mapController = controller;
             widget.onMapCreated(controller);
+          },
+          onStyleLoadedCallback: () {
+            widget.onStyleLoaded?.call();
           },
         ),
         Positioned(

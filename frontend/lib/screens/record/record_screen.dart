@@ -1,10 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/di/service_locator.dart';
-import 'package:syntrak/core/logging/app_logger.dart';
 import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/models/activity.dart';
 import 'package:syntrak/providers/activity_provider.dart';
@@ -18,6 +16,9 @@ import 'package:syntrak/screens/record/record_map_view.dart';
 import 'package:syntrak/services/location_service.dart';
 import 'package:geolocator/geolocator.dart' hide ActivityType;
 
+const _liveRouteSourceId = 'live-route';
+const _liveRouteLayerId = 'live-route-layer';
+
 class RecordScreen extends StatefulWidget {
   const RecordScreen({super.key});
 
@@ -27,8 +28,8 @@ class RecordScreen extends StatefulWidget {
 
 class _RecordScreenState extends State<RecordScreen> {
   final LocationService _locationService = LocationService();
-  final Completer<GoogleMapController> _mapController = Completer();
-  bool _mapCompleterUsed = false;
+  MapLibreMapController? _mapController;
+  MyLocationTrackingMode _trackingMode = MyLocationTrackingMode.tracking;
   ActivityType? _selectedActivityType;
   bool _isRecording = false;
   bool _isPaused = false;
@@ -107,6 +108,42 @@ class _RecordScreenState extends State<RecordScreen> {
     super.dispose();
   }
 
+  Future<void> _onMapStyleLoaded() async {
+    final controller = _mapController;
+    if (controller == null) return;
+    await controller.addGeoJsonSource(_liveRouteSourceId, _buildRouteGeoJson());
+    await controller.addLineLayer(
+      _liveRouteSourceId,
+      _liveRouteLayerId,
+      const LineLayerProperties(
+        lineColor: '#FF5A1F',
+        lineWidth: 3.5,
+        lineJoin: 'round',
+        lineCap: 'round',
+      ),
+    );
+  }
+
+  Map<String, dynamic> _buildRouteGeoJson() {
+    if (_routePoints.length < 2) {
+      return {'type': 'FeatureCollection', 'features': []};
+    }
+    return {
+      'type': 'FeatureCollection',
+      'features': [
+        {
+          'type': 'Feature',
+          'geometry': {
+            'type': 'LineString',
+            'coordinates':
+                _routePoints.map((p) => [p.longitude, p.latitude]).toList(),
+          },
+          'properties': {},
+        }
+      ],
+    };
+  }
+
   Future<void> _selectActivityType() async {
     final type = await Navigator.push<ActivityType>(
       context,
@@ -166,6 +203,7 @@ class _RecordScreenState extends State<RecordScreen> {
       _startTime = DateTime.now();
       _elapsedTime = Duration.zero;
       _routePoints.clear();
+      _trackingMode = MyLocationTrackingMode.tracking;
     });
 
     _locationService.startTracking();
@@ -182,17 +220,10 @@ class _RecordScreenState extends State<RecordScreen> {
       (position) {
         if (!_isPaused) {
           _locationService.addLocation(position);
-          setState(() {
-            _routePoints.add(LatLng(position.latitude, position.longitude));
-          });
-
-          _mapController.future.then((controller) {
-            controller.animateCamera(
-              CameraUpdate.newLatLng(
-                LatLng(position.latitude, position.longitude),
-              ),
-            );
-          });
+          _routePoints.add(LatLng(position.latitude, position.longitude));
+          _mapController?.setGeoJsonSource(
+              _liveRouteSourceId, _buildRouteGeoJson());
+          setState(() {});
         }
       },
     );
@@ -365,12 +396,16 @@ class _RecordScreenState extends State<RecordScreen> {
             RecordMapView(
               initialCameraPosition: _initialCameraPosition!,
               routePoints: _routePoints,
-              onMapCreated: (controller) {
-                if (!_mapCompleterUsed) {
-                  _mapCompleterUsed = true;
-                  _mapController.complete(controller);
-                }
+              myLocationTrackingMode: _trackingMode,
+              onTrackingDismissed: () {
+                setState(() {
+                  _trackingMode = MyLocationTrackingMode.none;
+                });
               },
+              onMapCreated: (controller) {
+                _mapController = controller;
+              },
+              onStyleLoaded: _onMapStyleLoaded,
             ),
             SafeArea(
               child: Padding(
@@ -391,7 +426,7 @@ class _RecordScreenState extends State<RecordScreen> {
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: SyntrakColors.textPrimary.withOpacity(0.9),
+                          color: SyntrakColors.textPrimary.withValues(alpha: 0.9),
                           borderRadius:
                               BorderRadius.circular(SyntrakRadius.round),
                         ),
