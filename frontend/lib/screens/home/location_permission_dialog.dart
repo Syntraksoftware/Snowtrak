@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/services/location_service.dart';
 
 class LocationPermissionDialog extends StatelessWidget {
@@ -14,7 +15,7 @@ class LocationPermissionDialog extends StatelessWidget {
     return showModalBottomSheet<bool>(
       context: context,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black54,
+      barrierColor: Colors.black26,
       isDismissible: false,
       builder: (_) =>
           LocationPermissionDialog(locationService: locationService),
@@ -25,7 +26,7 @@ class LocationPermissionDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFF111827),
+        color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 40),
@@ -33,10 +34,10 @@ class LocationPermissionDialog extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 40,
+            width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.white24,
+              color: Colors.black12,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -45,33 +46,28 @@ class LocationPermissionDialog extends StatelessWidget {
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: const Color(0xFFFF5A1F).withValues(alpha: 0.15),
+              color: SyntrakColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.location_on,
-              color: Color(0xFFFF5A1F),
+              color: SyntrakColors.primary,
               size: 36,
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'Enable Location',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.3,
+            style: SyntrakTypography.headlineMedium.copyWith(
+              color: SyntrakColors.textPrimary,
             ),
           ),
           const SizedBox(height: 10),
-          const Text(
+          Text(
             'Syntrak uses your GPS to draw your route,\nmeasure distance, and calculate speed.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white60,
-              fontSize: 14,
-              height: 1.5,
+            style: SyntrakTypography.bodyMedium.copyWith(
+              color: SyntrakColors.textSecondary,
             ),
           ),
           const SizedBox(height: 32),
@@ -83,7 +79,7 @@ class LocationPermissionDialog extends StatelessWidget {
                 if (context.mounted) Navigator.of(context).pop(granted);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF5A1F),
+                backgroundColor: SyntrakColors.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
@@ -105,12 +101,10 @@ class LocationPermissionDialog extends StatelessWidget {
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
-              child: const Text(
+              child: Text(
                 'Not Now',
-                style: TextStyle(
-                  color: Colors.white38,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
+                style: SyntrakTypography.bodyMedium.copyWith(
+                  color: SyntrakColors.textTertiary,
                 ),
               ),
             ),

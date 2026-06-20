@@ -1,21 +1,159 @@
 import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:syntrak/core/activity_helpers.dart';
+import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/models/activity.dart';
 import 'package:syntrak/screens/record/record_helpers.dart';
 import 'package:syntrak/services/location_service.dart';
 
-// The Strava-style bottom panel: activity chip | stats row | 3-button row.
-// Same widget handles both idle (pre-recording) and active states.
-class RecordBottomSheet extends StatelessWidget {
-  const RecordBottomSheet({
+// ─── Stats card (floating, collapsible) ──────────────────────────────────────
+
+class RecordStatsCard extends StatefulWidget {
+  const RecordStatsCard({
     super.key,
     required this.isRecording,
-    required this.isPaused,
     required this.selectedActivityType,
     required this.locationService,
     required this.routePoints,
     required this.elapsedNotifier,
+    required this.onSelectType,
+  });
+
+  final bool isRecording;
+  final ActivityType? selectedActivityType;
+  final LocationService locationService;
+  final List<LatLng> routePoints;
+  final ValueNotifier<Duration> elapsedNotifier;
+  final VoidCallback onSelectType;
+
+  @override
+  State<RecordStatsCard> createState() => _RecordStatsCardState();
+}
+
+class _RecordStatsCardState extends State<RecordStatsCard>
+    with SingleTickerProviderStateMixin {
+  bool _isExpanded = true;
+  late final AnimationController _anim;
+  late final Animation<double> _fade;
+
+  @override
+  void initState() {
+    super.initState();
+    _anim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+      value: 1.0,
+    );
+    _fade = CurvedAnimation(parent: _anim, curve: Curves.easeInOut);
+  }
+
+  @override
+  void dispose() {
+    _anim.dispose();
+    super.dispose();
+  }
+
+  void _toggle() {
+    setState(() => _isExpanded = !_isExpanded);
+    _isExpanded ? _anim.forward() : _anim.reverse();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final type = widget.selectedActivityType;
+    final icon = type != null ? ActivityHelpers.getActivityIcon(type) : null;
+    final label = type?.displayName ?? 'Select Activity';
+
+    return GestureDetector(
+      onTap: _toggle,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeInOut,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: SyntrakColors.divider),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header: activity name + expand chevron
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 14, 14, 14),
+              child: Row(
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon,
+                        color: SyntrakColors.primary, size: 15),
+                    const SizedBox(width: 7),
+                  ],
+                  Text(
+                    label,
+                    style: SyntrakTypography.labelLarge.copyWith(
+                      color: SyntrakColors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    _isExpanded
+                        ? Icons.keyboard_arrow_down_rounded
+                        : Icons.keyboard_arrow_up_rounded,
+                    color: SyntrakColors.textTertiary,
+                    size: 22,
+                  ),
+                ],
+              ),
+            ),
+
+            // Stats — animate in/out
+            FadeTransition(
+              opacity: _fade,
+              child: SizeTransition(
+                sizeFactor: _fade,
+                axisAlignment: -1,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Divider(height: 1, color: SyntrakColors.divider),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 16, 8, 18),
+                      child: ValueListenableBuilder<Duration>(
+                        valueListenable: widget.elapsedNotifier,
+                        builder: (_, elapsed, __) => _StatsRow(
+                          elapsed: elapsed,
+                          locationService: widget.locationService,
+                          routePoints: widget.routePoints,
+                          isRecording: widget.isRecording,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Controls bar (pinned to bottom) ─────────────────────────────────────────
+
+class RecordControls extends StatelessWidget {
+  const RecordControls({
+    super.key,
+    required this.isRecording,
+    required this.isPaused,
+    required this.activityType,
     required this.onSelectType,
     required this.onStart,
     required this.onStop,
@@ -25,151 +163,91 @@ class RecordBottomSheet extends StatelessWidget {
 
   final bool isRecording;
   final bool isPaused;
-  final ActivityType? selectedActivityType;
-  final LocationService locationService;
-  final List<LatLng> routePoints;
-  final ValueNotifier<Duration> elapsedNotifier;
+  final ActivityType? activityType;
   final VoidCallback onSelectType;
   final VoidCallback onStart;
   final VoidCallback onStop;
   final VoidCallback onPause;
   final VoidCallback onResume;
 
-  static const _bg = Color(0xFF0F0F0F);
-
   @override
   Widget build(BuildContext context) {
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: _bg,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: SyntrakColors.surface,
+        border: Border(
+          top: BorderSide(color: SyntrakColors.divider),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black54,
-            blurRadius: 24,
-            offset: Offset(0, -6),
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, -3),
           ),
         ],
       ),
-      padding: EdgeInsets.fromLTRB(24, 10, 24, bottomPad + 20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Drag handle
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white24,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 14),
-
-          // Activity type label row
-          _ActivityRow(
-            type: selectedActivityType,
-            isRecording: isRecording,
-            onTap: isRecording ? null : onSelectType,
-          ),
-
-          const SizedBox(height: 14),
-
-          // Stats card — visually separated from activity chip and buttons
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF1C1C1E),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white10),
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
-            child: ValueListenableBuilder<Duration>(
-              valueListenable: elapsedNotifier,
-              builder: (_, elapsed, __) => _StatsRow(
-                elapsed: elapsed,
-                locationService: locationService,
-                routePoints: routePoints,
-                isRecording: isRecording,
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Control buttons
-          _ButtonRow(
-            isRecording: isRecording,
-            isPaused: isPaused,
-            activityType: selectedActivityType,
-            onSelectType: onSelectType,
-            onStart: onStart,
-            onStop: onStop,
-            onPause: onPause,
-            onResume: onResume,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Activity label row ───────────────────────────────────────────────────────
-
-class _ActivityRow extends StatelessWidget {
-  const _ActivityRow({
-    required this.type,
-    required this.isRecording,
-    this.onTap,
-  });
-
-  final ActivityType? type;
-  final bool isRecording;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final label = type?.displayName ?? 'Select Activity';
-    final icon = type != null ? ActivityHelpers.getActivityIcon(type!) : null;
-
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
+      padding: EdgeInsets.fromLTRB(32, 16, 32, bottomPad + 16),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, color: Colors.white70, size: 14),
-            const SizedBox(width: 6),
-          ],
-          Text(
-            label,
-            style: TextStyle(
-              color: type != null ? Colors.white : const Color(0xFFFF5A1F),
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.1,
-            ),
-          ),
-          if (!isRecording) ...[
-            const SizedBox(width: 4),
-            Icon(
-              Icons.keyboard_arrow_down,
-              color: Colors.white38,
-              size: 18,
-            ),
-          ],
-        ],
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: isRecording ? _recordingButtons() : _idleButtons(),
       ),
     );
   }
+
+  List<Widget> _idleButtons() {
+    return [
+      _ControlButton(
+        icon: activityType != null
+            ? ActivityHelpers.getActivityIcon(activityType!)
+            : Icons.add,
+        label: activityType?.displayName ?? 'Activity',
+        onTap: onSelectType,
+        badged: activityType != null,
+      ),
+      _BigFab(
+        icon: Icons.play_arrow_rounded,
+        color: SyntrakColors.primary,
+        label: 'Start',
+        labelColor: SyntrakColors.primary,
+        onTap: onStart,
+      ),
+      _ControlButton(
+        icon: Icons.route_outlined,
+        label: 'Add Route',
+        onTap: null,
+        disabled: true,
+      ),
+    ];
+  }
+
+  List<Widget> _recordingButtons() {
+    return [
+      _ControlButton(
+        icon: isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+        label: isPaused ? 'Resume' : 'Pause',
+        onTap: isPaused ? onResume : onPause,
+      ),
+      _BigFab(
+        icon: Icons.stop_rounded,
+        color: SyntrakColors.error,
+        label: 'Stop',
+        labelColor: SyntrakColors.textSecondary,
+        onTap: onStop,
+      ),
+      _ControlButton(
+        icon: Icons.more_horiz,
+        label: 'More',
+        onTap: null,
+        disabled: true,
+      ),
+    ];
+  }
 }
 
-// ─── Stats row ────────────────────────────────────────────────────────────────
+// ─── Internal widgets ─────────────────────────────────────────────────────────
 
 class _StatsRow extends StatelessWidget {
   const _StatsRow({
@@ -189,16 +267,15 @@ class _StatsRow extends StatelessWidget {
     final timeStr = formatRecordDuration(elapsed);
     final distKm =
         (locationService.calculateDistance() / 1000).toStringAsFixed(2);
-    final speed =
-        isRecording ? formatSpeedFromRouteTail(routePoints) : '--';
+    final speed = isRecording ? formatSpeedFromRouteTail(routePoints) : '--';
 
     return Row(
       children: [
-        _StatCell(value: timeStr, label: 'TIME', large: true),
-        _Divider(),
-        _StatCell(value: '$distKm km', label: 'DISTANCE'),
-        _Divider(),
-        _StatCell(value: speed, label: 'SPEED'),
+        _StatCell(value: timeStr, label: 'Time', large: true),
+        _VertDivider(),
+        _StatCell(value: speed, label: 'Avg. speed (km/h)'),
+        _VertDivider(),
+        _StatCell(value: '$distKm km', label: 'Distance (km)'),
       ],
     );
   }
@@ -224,22 +301,19 @@ class _StatCell extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              color: Colors.white,
-              fontSize: large ? 26 : 20,
+              color: SyntrakColors.textPrimary,
+              fontSize: large ? 28 : 22,
               fontWeight: FontWeight.w700,
-              letterSpacing: -0.8,
+              letterSpacing: -1,
               fontFeatures: const [FontFeature.tabularFigures()],
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 3),
+          const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white38,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1.2,
+            style: SyntrakTypography.labelSmall.copyWith(
+              color: SyntrakColors.textTertiary,
             ),
             textAlign: TextAlign.center,
           ),
@@ -249,168 +323,140 @@ class _StatCell extends StatelessWidget {
   }
 }
 
-class _Divider extends StatelessWidget {
+class _VertDivider extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 1,
-      height: 44,
-      color: Colors.white10,
-    );
-  }
-}
-
-// ─── Button row ───────────────────────────────────────────────────────────────
-
-class _ButtonRow extends StatelessWidget {
-  const _ButtonRow({
-    required this.isRecording,
-    required this.isPaused,
-    required this.activityType,
-    required this.onSelectType,
-    required this.onStart,
-    required this.onStop,
-    required this.onPause,
-    required this.onResume,
-  });
-
-  final bool isRecording;
-  final bool isPaused;
-  final ActivityType? activityType;
-  final VoidCallback onSelectType;
-  final VoidCallback onStart;
-  final VoidCallback onStop;
-  final VoidCallback onPause;
-  final VoidCallback onResume;
-
-  @override
-  Widget build(BuildContext context) {
-    if (!isRecording) {
-      // Idle: [activity type icon] [▶ START] [route placeholder]
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _SmallFab(
-            icon: activityType != null
-                ? ActivityHelpers.getActivityIcon(activityType!)
-                : Icons.add,
-            onTap: onSelectType,
-            tooltip: 'Change activity',
-          ),
-          _BigFab(
-            icon: Icons.play_arrow_rounded,
-            color: const Color(0xFFFF5A1F),
-            onTap: onStart,
-          ),
-          _SmallFab(
-            icon: Icons.route_outlined,
-            onTap: null,
-            tooltip: 'Add route',
-            disabled: true,
-          ),
-        ],
+  Widget build(BuildContext context) => Container(
+        width: 1,
+        height: 40,
+        color: SyntrakColors.divider,
       );
-    }
-
-    // Recording: [pause/resume] [■ STOP] [···]
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        _SmallFab(
-          icon: isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
-          onTap: isPaused ? onResume : onPause,
-          tooltip: isPaused ? 'Resume' : 'Pause',
-        ),
-        _BigFab(
-          icon: Icons.stop_rounded,
-          color: const Color(0xFFDC2626),
-          onTap: onStop,
-        ),
-        _SmallFab(
-          icon: Icons.more_horiz,
-          onTap: null,
-          disabled: true,
-        ),
-      ],
-    );
-  }
 }
 
 class _BigFab extends StatelessWidget {
   const _BigFab({
     required this.icon,
     required this.color,
+    required this.label,
+    required this.labelColor,
     required this.onTap,
   });
 
   final IconData icon;
   final Color color;
+  final String label;
+  final Color labelColor;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: 72,
-        height: 72,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.4),
-              blurRadius: 20,
-              offset: const Offset(0, 6),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 68,
+            height: 68,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.3),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Icon(icon, color: Colors.white, size: 34),
+            child: Icon(icon, color: Colors.white, size: 34),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: SyntrakTypography.labelMedium.copyWith(
+              color: labelColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _SmallFab extends StatelessWidget {
-  const _SmallFab({
+class _ControlButton extends StatelessWidget {
+  const _ControlButton({
     required this.icon,
+    required this.label,
     required this.onTap,
-    this.tooltip,
     this.disabled = false,
+    this.badged = false,
   });
 
   final IconData icon;
+  final String label;
   final VoidCallback? onTap;
-  final String? tooltip;
   final bool disabled;
+  final bool badged;
 
   @override
   Widget build(BuildContext context) {
-    final child = Container(
-      width: 52,
-      height: 52,
-      decoration: BoxDecoration(
-        color: const Color(0xFF1C1C1E),
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Icon(
-        icon,
-        color: disabled ? Colors.white24 : Colors.white,
-        size: 24,
-      ),
+    final iconColor = disabled ? SyntrakColors.textTertiary : SyntrakColors.textSecondary;
+    final labelColor = disabled ? SyntrakColors.textTertiary : SyntrakColors.textSecondary;
+
+    final circle = Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            color: SyntrakColors.surfaceVariant,
+            shape: BoxShape.circle,
+            border: Border.all(color: SyntrakColors.divider),
+          ),
+          child: Icon(icon, color: iconColor, size: 24),
+        ),
+        if (badged)
+          Positioned(
+            top: -2,
+            right: -2,
+            child: Container(
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(
+                color: SyntrakColors.primary,
+                shape: BoxShape.circle,
+                border: Border.all(
+                    color: SyntrakColors.surface, width: 1.5),
+              ),
+              child:
+                  const Icon(Icons.check, color: Colors.white, size: 9),
+            ),
+          ),
+      ],
     );
 
-    if (disabled || onTap == null) return child;
-
     return GestureDetector(
-      onTap: onTap,
-      child: child,
+      onTap: disabled ? null : onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          circle,
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: SyntrakTypography.labelSmall.copyWith(
+              color: labelColor,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-// ─── GPS denied sheet ─────────────────────────────────────────────────────────
+// ─── GPS denied bottom sheet ──────────────────────────────────────────────────
 
 Future<void> showGpsDeniedSheet(BuildContext context) {
   return showModalBottomSheet<void>(
@@ -427,7 +473,7 @@ class _GpsDeniedSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFF0F0F0F),
+        color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(
@@ -443,7 +489,7 @@ class _GpsDeniedSheet extends StatelessWidget {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.white24,
+              color: Colors.black12,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -452,27 +498,26 @@ class _GpsDeniedSheet extends StatelessWidget {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: const Color(0xFFDC2626).withValues(alpha: 0.15),
+              color: SyntrakColors.error.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.location_off,
-                color: Color(0xFFDC2626), size: 30),
+            child:
+                Icon(Icons.location_off, color: SyntrakColors.error, size: 30),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Location Access Required',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
+            style: SyntrakTypography.headlineSmall.copyWith(
+              color: SyntrakColors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Enable location in Settings to record your activity.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-                color: Colors.white54, fontSize: 14, height: 1.5),
+            style: SyntrakTypography.bodyMedium.copyWith(
+              color: SyntrakColors.textSecondary,
+            ),
           ),
           const SizedBox(height: 28),
           SizedBox(
@@ -480,7 +525,7 @@ class _GpsDeniedSheet extends StatelessWidget {
             child: ElevatedButton(
               onPressed: () => Navigator.pop(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF5A1F),
+                backgroundColor: SyntrakColors.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 shape: RoundedRectangleBorder(
@@ -495,8 +540,10 @@ class _GpsDeniedSheet extends StatelessWidget {
           const SizedBox(height: 10),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel',
-                style: TextStyle(color: Colors.white30, fontSize: 14)),
+            child: Text('Cancel',
+                style: SyntrakTypography.bodyMedium.copyWith(
+                  color: SyntrakColors.textTertiary,
+                )),
           ),
         ],
       ),

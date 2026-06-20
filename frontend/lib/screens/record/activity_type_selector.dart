@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:syntrak/core/activity_helpers.dart';
+import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/models/activity.dart';
 
-/// Shows a compact half-screen modal picker. Returns the chosen [ActivityType]
-/// or null if dismissed.
+/// Compact half-screen modal picker. Returns the chosen [ActivityType] or null.
 Future<ActivityType?> showActivityTypePicker(BuildContext context) {
   return showModalBottomSheet<ActivityType>(
     context: context,
@@ -29,7 +29,7 @@ class _ActivityTypePicker extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFF0F0F0F),
+        color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       padding: EdgeInsets.fromLTRB(
@@ -47,19 +47,16 @@ class _ActivityTypePicker extends StatelessWidget {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.white24,
+                color: Colors.black12,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'Select Activity',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.2,
+            style: SyntrakTypography.headlineSmall.copyWith(
+              color: SyntrakColors.textPrimary,
             ),
           ),
           const SizedBox(height: 16),
@@ -97,9 +94,9 @@ class _TypeTile extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
+          color: SyntrakColors.surfaceVariant,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white10),
+          border: Border.all(color: SyntrakColors.divider),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -108,7 +105,7 @@ class _TypeTile extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.15),
+                color: color.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 22),
@@ -116,10 +113,8 @@ class _TypeTile extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               type.displayName,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
+              style: SyntrakTypography.labelMedium.copyWith(
+                color: SyntrakColors.textPrimary,
               ),
               textAlign: TextAlign.center,
             ),

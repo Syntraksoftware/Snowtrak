@@ -247,7 +247,7 @@ class _RecordScreenState extends State<RecordScreen> {
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
         decoration: const BoxDecoration(
-          color: Color(0xFF111827),
+          color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: EdgeInsets.fromLTRB(
@@ -260,26 +260,27 @@ class _RecordScreenState extends State<RecordScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 40, height: 4,
+              width: 36,
+              height: 4,
               decoration: BoxDecoration(
-                color: Colors.white24,
+                color: Colors.black12,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'Save Activity?',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
+              style: SyntrakTypography.headlineMedium.copyWith(
+                color: SyntrakColors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Your route and stats will be saved to your profile.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white54, fontSize: 14, height: 1.5),
+              style: SyntrakTypography.bodyMedium.copyWith(
+                color: SyntrakColors.textSecondary,
+              ),
             ),
             const SizedBox(height: 28),
             SizedBox(
@@ -287,7 +288,7 @@ class _RecordScreenState extends State<RecordScreen> {
               child: ElevatedButton(
                 onPressed: () => Navigator.pop(context, true),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF5A1F),
+                  backgroundColor: SyntrakColors.primary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(
@@ -295,8 +296,8 @@ class _RecordScreenState extends State<RecordScreen> {
                   elevation: 0,
                 ),
                 child: const Text('Save',
-                    style: TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w600)),
+                    style:
+                        TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
               ),
             ),
             const SizedBox(height: 10),
@@ -307,8 +308,12 @@ class _RecordScreenState extends State<RecordScreen> {
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                child: const Text('Discard',
-                    style: TextStyle(color: Colors.white38, fontSize: 14)),
+                child: Text(
+                  'Discard',
+                  style: SyntrakTypography.bodyMedium.copyWith(
+                    color: SyntrakColors.textTertiary,
+                  ),
+                ),
               ),
             ),
           ],
@@ -386,6 +391,15 @@ class _RecordScreenState extends State<RecordScreen> {
 
   void _recentre() {
     setState(() => _trackingMode = MyLocationTrackingMode.tracking);
+    // Widget prop alone doesn't force a camera snap on an already-loaded map.
+    // Animate explicitly to the last known position.
+    final pos = _locationService.currentPosition;
+    if (pos != null) {
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(
+            LatLng(pos.latitude, pos.longitude), 15),
+      );
+    }
   }
 
   @override
@@ -410,20 +424,22 @@ class _RecordScreenState extends State<RecordScreen> {
         }
       });
 
-      return const Scaffold(
-        backgroundColor: Color(0xFF111827),
+      return Scaffold(
+        backgroundColor: SyntrakColors.background,
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               CircularProgressIndicator(
-                valueColor:
-                    AlwaysStoppedAnimation<Color>(Color(0xFFFF5A1F)),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                    SyntrakColors.primary),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Text(
                 'Acquiring GPS…',
-                style: TextStyle(color: Colors.white54, fontSize: 14),
+                style: SyntrakTypography.bodyMedium.copyWith(
+                  color: SyntrakColors.textSecondary,
+                ),
               ),
             ],
           ),
@@ -431,10 +447,19 @@ class _RecordScreenState extends State<RecordScreen> {
       );
     }
 
+    // Approximate heights so layers don't overlap:
+    //   controls bar  ≈ 120px
+    //   stats card gap ≈ 12px
+    //   stats card     ≈ 130px expanded / 56px collapsed
+    const _controlsHeight = 120.0;
+    const _statsCardBottom = _controlsHeight + 12.0;
+    const _recentreBottom = _statsCardBottom + 140.0; // always above stats card
+
     return Scaffold(
       backgroundColor: SyntrakColors.darkBackground,
       body: Stack(
         children: [
+          // 1 — Full-screen map
           RecordMapView(
             initialCameraPosition: _initialCameraPosition!,
             myLocationTrackingMode: _trackingMode,
@@ -442,19 +467,39 @@ class _RecordScreenState extends State<RecordScreen> {
                 setState(() => _trackingMode = MyLocationTrackingMode.none),
             onMapCreated: (c) => _mapController = c,
             onStyleLoaded: _onMapStyleLoaded,
-            onRecenter: _recentre,
           ),
+
+          // 2 — Re-centre button (right side, above stats card)
           Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: RecordBottomSheet(
+            right: 16,
+            bottom: _recentreBottom,
+            child: _RecentreButton(onTap: _recentre),
+          ),
+
+          // 3 — Stats card (floating, collapsible)
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: _statsCardBottom,
+            child: RecordStatsCard(
               isRecording: _isRecording,
-              isPaused: _isPaused,
               selectedActivityType: _selectedActivityType,
               locationService: _locationService,
               routePoints: _routePoints,
               elapsedNotifier: _elapsedNotifier,
+              onSelectType: _selectActivityType,
+            ),
+          ),
+
+          // 4 — Controls bar (pinned to very bottom)
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: RecordControls(
+              isRecording: _isRecording,
+              isPaused: _isPaused,
+              activityType: _selectedActivityType,
               onSelectType: _selectActivityType,
               onStart: _startRecording,
               onStop: _stopRecording,
@@ -463,6 +508,38 @@ class _RecordScreenState extends State<RecordScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Re-centre FAB ────────────────────────────────────────────────────────────
+
+class _RecentreButton extends StatelessWidget {
+  const _RecentreButton({this.onTap});
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          border: Border.all(color: SyntrakColors.divider),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Icon(Icons.my_location,
+            color: SyntrakColors.primary, size: 20),
       ),
     );
   }
