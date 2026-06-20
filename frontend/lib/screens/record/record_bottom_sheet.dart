@@ -77,20 +77,28 @@ class RecordBottomSheet extends StatelessWidget {
             onTap: isRecording ? null : onSelectType,
           ),
 
-          const SizedBox(height: 18),
+          const SizedBox(height: 14),
 
-          // Stats — always visible, zeroed before recording
-          ValueListenableBuilder<Duration>(
-            valueListenable: elapsedNotifier,
-            builder: (_, elapsed, __) => _StatsRow(
-              elapsed: elapsed,
-              locationService: locationService,
-              routePoints: routePoints,
-              isRecording: isRecording,
+          // Stats card — visually separated from activity chip and buttons
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF1C1C1E),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white10),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
+            child: ValueListenableBuilder<Duration>(
+              valueListenable: elapsedNotifier,
+              builder: (_, elapsed, __) => _StatsRow(
+                elapsed: elapsed,
+                locationService: locationService,
+                routePoints: routePoints,
+                isRecording: isRecording,
+              ),
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
           // Control buttons
           _ButtonRow(
@@ -246,9 +254,8 @@ class _Divider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 1,
-      height: 36,
-      color: Colors.white12,
-      margin: const EdgeInsets.symmetric(horizontal: 4),
+      height: 44,
+      color: Colors.white10,
     );
   }
 }
