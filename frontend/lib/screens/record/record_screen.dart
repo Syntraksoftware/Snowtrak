@@ -139,10 +139,7 @@ class _RecordScreenState extends State<RecordScreen> {
   }
 
   Future<void> _selectActivityType() async {
-    final type = await Navigator.push<ActivityType>(
-      context,
-      MaterialPageRoute(builder: (_) => const ActivityTypeSelector()),
-    );
+    final type = await showActivityTypePicker(context);
     if (!mounted || type == null) return;
     setState(() => _selectedActivityType = type);
   }
