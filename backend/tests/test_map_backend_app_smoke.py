@@ -108,8 +108,8 @@ async def test_map_app_get_routes_return_expected_shape(map_app_full) -> None:
         spec = r_openapi.json()
         assert spec["openapi"].startswith("3.")
         paths = spec["paths"]
-        assert "/trails/match" in paths
         assert "/trails/resort" in paths
+        assert "/trails/match" not in paths
         assert "/activities" in paths
         assert "/activities/{activity_id}" in paths
         assert "/elevation/correct" in paths
@@ -124,7 +124,6 @@ async def test_map_app_get_routes_return_expected_shape(map_app_full) -> None:
     ("method", "path", "kwargs", "expected"),
     [
         ("POST", "/elevation/correct", {"json": {"points": []}}, 422),
-        ("POST", "/trails/match", {"json": {}}, 422),
         ("GET", "/trails/resort", {}, 422),
     ],
 )

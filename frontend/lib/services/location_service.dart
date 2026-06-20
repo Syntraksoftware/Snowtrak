@@ -19,15 +19,18 @@ class LocationService {
   Future<bool> checkPermissions() async {
     // Check permission_handler status
     final permissionStatus = await Permission.location.status;
-    AppLogger.instance.debug('🔍 [LocationService] Permission status: $permissionStatus');
+    AppLogger.instance
+        .debug('🔍 [LocationService] Permission status: $permissionStatus');
 
     // Also check Geolocator permission status for better compatibility
     final geolocatorPermission = await Geolocator.checkPermission();
-    AppLogger.instance.debug('🔍 [LocationService] Geolocator permission: $geolocatorPermission');
+    AppLogger.instance.debug(
+        '🔍 [LocationService] Geolocator permission: $geolocatorPermission');
 
     // Check if location services are enabled
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    AppLogger.instance.debug('🔍 [LocationService] Location services enabled: $serviceEnabled');
+    AppLogger.instance.debug(
+        '🔍 [LocationService] Location services enabled: $serviceEnabled');
 
     // If permission is granted by either system, return true
     if (permissionStatus.isGranted ||
@@ -45,9 +48,11 @@ class LocationService {
     // If denied, try to request
     if (permissionStatus.isDenied ||
         geolocatorPermission == LocationPermission.denied) {
-      AppLogger.instance.debug('🔍 [LocationService] Permission denied, requesting...');
+      AppLogger.instance
+          .debug('🔍 [LocationService] Permission denied, requesting...');
       final result = await Permission.location.request();
-      AppLogger.instance.debug('🔍 [LocationService] Permission request result: $result');
+      AppLogger.instance
+          .debug('🔍 [LocationService] Permission request result: $result');
 
       // Also check Geolocator after request
       final newGeolocatorPermission = await Geolocator.checkPermission();
@@ -62,7 +67,8 @@ class LocationService {
     // If permanently denied, open settings
     if (permissionStatus.isPermanentlyDenied ||
         geolocatorPermission == LocationPermission.deniedForever) {
-      AppLogger.instance.debug('🔍 [LocationService] Permission permanently denied');
+      AppLogger.instance
+          .debug('🔍 [LocationService] Permission permanently denied');
       // Open app settings
       await openAppSettings();
       return false;
@@ -92,23 +98,28 @@ class LocationService {
     try {
       final hasPermission = await requestPermissions();
       if (!hasPermission) {
-        AppLogger.instance.debug('🔍 [LocationService] No permission for location');
+        AppLogger.instance
+            .debug('🔍 [LocationService] No permission for location');
         return null;
       }
 
-      AppLogger.instance.debug('🔍 [LocationService] Getting current position...');
+      AppLogger.instance
+          .debug('🔍 [LocationService] Getting current position...');
       try {
-      _currentPosition = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.best,
-          timeLimit: const Duration(seconds: 30), // Increased timeout for emulator/slow GPS
+        _currentPosition = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.best,
+          timeLimit: const Duration(
+              seconds: 30), // Increased timeout for emulator/slow GPS
         );
         AppLogger.instance.debug(
             '🔍 [LocationService] Position obtained: ${_currentPosition?.latitude}, ${_currentPosition?.longitude}');
         return _currentPosition;
       } on TimeoutException catch (e) {
-        AppLogger.instance.debug('🔍 [LocationService] Timeout getting position: $e');
+        AppLogger.instance
+            .debug('🔍 [LocationService] Timeout getting position: $e');
         // Try with lower accuracy as fallback
-        AppLogger.instance.debug('🔍 [LocationService] Retrying with lower accuracy...');
+        AppLogger.instance
+            .debug('🔍 [LocationService] Retrying with lower accuracy...');
         try {
           _currentPosition = await Geolocator.getCurrentPosition(
             desiredAccuracy: LocationAccuracy.medium,
@@ -116,18 +127,22 @@ class LocationService {
           );
           AppLogger.instance.debug(
               '🔍 [LocationService] Position obtained with medium accuracy: ${_currentPosition?.latitude}, ${_currentPosition?.longitude}');
-      return _currentPosition;
+          return _currentPosition;
         } catch (e2) {
-          AppLogger.instance.debug('🔍 [LocationService] Failed to get position even with lower accuracy: $e2');
+          AppLogger.instance.debug(
+              '🔍 [LocationService] Failed to get position even with lower accuracy: $e2');
           return null;
         }
       } catch (e, stackTrace) {
-      AppLogger.instance.debug('🔍 [LocationService] Error getting position: $e');
-        AppLogger.instance.debug('🔍 [LocationService] Stack trace: $stackTrace');
+        AppLogger.instance
+            .debug('🔍 [LocationService] Error getting position: $e');
+        AppLogger.instance
+            .debug('🔍 [LocationService] Stack trace: $stackTrace');
         return null;
       }
     } catch (e, stackTrace) {
-      AppLogger.instance.debug('🔍 [LocationService] Outer error getting position: $e');
+      AppLogger.instance
+          .debug('🔍 [LocationService] Outer error getting position: $e');
       AppLogger.instance.debug('🔍 [LocationService] Stack trace: $stackTrace');
       return null;
     }
@@ -156,7 +171,8 @@ class LocationService {
       locationSettings: LocationSettings(
         accuracy: LocationAccuracy.best,
         distanceFilter: distanceFilter.toInt(),
-        timeLimit: const Duration(seconds: 30), // Increased from interval to handle slow GPS
+        timeLimit: const Duration(
+            seconds: 30), // Increased from interval to handle slow GPS
       ),
     );
 

@@ -4,6 +4,7 @@ Persist and read ``map_trail`` activities (PostGIS): track points, segments, sta
 
 from __future__ import annotations
 
+import json
 import logging
 from datetime import datetime
 from typing import Any
@@ -182,7 +183,9 @@ async def _detail_response(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Activity not found")
 
     stats = row["stats"]
-    if stats is not None and not isinstance(stats, dict):
+    if isinstance(stats, str):
+        stats = json.loads(stats)
+    elif stats is not None and not isinstance(stats, dict):
         stats = dict(stats)
 
     pt_rows = await conn.fetch(_SELECT_POINTS, activity_id)
@@ -223,7 +226,7 @@ async def create_activity(
                 _INSERT_ACTIVITY,
                 body.user_id,
                 recorded_at,
-                stats_blob,
+                json.dumps(stats_blob),
             )
             assert aid is not None
 
@@ -283,6 +286,35 @@ async def get_activity(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to load activity",
         ) from None
+
+
+_DELETE_ACTIVITY = """
+DELETE FROM map_trail.activities
+WHERE id = $1::uuid
+RETURNING id
+"""
+
+
+@router.delete("/{activity_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_activity(
+    activity_id: UUID,
+    conn: asyncpg.Connection = Depends(get_activities_conn),
+) -> None:
+    """Delete activity header; ``track_points`` and ``segments`` cascade via FK."""
+    try:
+        deleted_id = await conn.fetchval(_DELETE_ACTIVITY, activity_id)
+    except asyncpg.PostgresError:
+        logger.exception("activity delete failed")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete activity",
+        ) from None
+
+    if deleted_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Activity not found",
+        )
 
 
 @router.get("", response_model=MapActivityListResponse)

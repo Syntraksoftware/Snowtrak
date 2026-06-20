@@ -16,6 +16,10 @@ CREATE TABLE IF NOT EXISTS activities (
   elevation_gain_meters FLOAT NOT NULL,
   visibility VARCHAR(20) DEFAULT 'private',
   description TEXT,
+  map_activity_id UUID,
+  storage_key TEXT,
+  processing_status TEXT NOT NULL DEFAULT 'ready'
+    CHECK (processing_status IN ('pending', 'uploading', 'processing', 'ready', 'failed')),
   created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()
 );
@@ -24,6 +28,10 @@ CREATE INDEX IF NOT EXISTS idx_activities_user_id ON activities(user_id);
 CREATE INDEX IF NOT EXISTS idx_activities_created_at ON activities(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_activities_visibility ON activities(visibility);
 CREATE INDEX IF NOT EXISTS idx_activities_activity_type ON activities(activity_type);
+CREATE INDEX IF NOT EXISTS idx_activities_map_activity_id ON activities(map_activity_id)
+  WHERE map_activity_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_activities_processing_status ON activities(processing_status);
+CREATE INDEX IF NOT EXISTS idx_activities_user_processing ON activities(user_id, processing_status, created_at DESC);
 
 -- 2. Activity Comments table
 CREATE TABLE IF NOT EXISTS activity_comments (

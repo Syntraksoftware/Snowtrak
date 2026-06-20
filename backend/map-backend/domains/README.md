@@ -1,51 +1,51 @@
-# Step A Service Boundaries
+# Map-backend domain packages
 
-This folder defines the target package boundaries for splitting map-backend into focused services.
+Modular boundaries for the map geospatial service (`map-backend`, port 5200).
 
-## Target packages
+## Service split (map-backend vs theta)
 
-- activities_service: owns activity persistence and retrieval APIs.
-- trails_service: owns trail matching and resort GeoJSON APIs.
-- elevation_dem_service: owns DEM correction and DEM tile cache logic.
-- sync_worker_service: owns OpenSkiMap ingestion jobs.
+| Responsibility | Owner |
+|----------------|-------|
+| DEM elevation correction | `elevation_dem_service` |
+| Resort ski-run GeoJSON (MapLibre overlay) | `trails_service` |
+| Map activity persistence (`map_trail.*`) | `activities_service` |
+| OpenSkiMap ingest | `sync_worker_service` |
+| **Track pipeline math + trail matching** | **theta trail server** (separate repo) |
 
-## Import rules
+The mobile app calls **Nivus** for post-processing:
 
-- Domain packages must not import each other directly.
-- Shared contracts must come from backend/shared.
-- Database/external access should go through each domain's own infra module.
-- Do not add sys.path mutation in domain modules.
+```
+POST http://<theta-host>:5201/api/v1/pipeline/process
+```
 
-## Migration map (current -> target)
+## Domain packages
 
-- backend/routers/activities.py -> domains/activities_service/api.py
-- backend/routers/trails.py -> domains/trails_service/api.py
-- backend/routers/elevation.py -> domains/elevation_dem_service/api.py
-- backend/map-backend/services/dem_service.py -> domains/elevation_dem_service/dem_provider.py
-- backend/map-backend/services/openskimap_sync.py -> domains/sync_worker_service/sync_job.py
+| Package | HTTP routes | Infra |
+|---------|-------------|-------|
+| `elevation_dem_service` | `POST /elevation/correct` | Copernicus DEM provider |
+| `trails_service` | `GET /trails/resort` | PostGIS read (`queries.py`, `geojson.py`) |
+| `activities_service` | `POST/GET/DELETE /activities` | `map_trail` persistence |
+| `sync_worker_service` | (scheduled job) | OpenSkiMap GeoJSON upsert |
 
-## Step A scope
+## Layering rules
 
-Step A is scaffolding only.
-No runtime behavior changes should be introduced in this step.
+```
+api.py       → HTTP handlers, validation, response mapping
+ports.py     → contracts injected at startup (`application.py`)
+infra.py     → default DB/external implementations
+queries.py   → raw SQL (trails_service)
+```
 
-## Current status
+- Domain packages must **not** import each other.
+- Shared API types: `backend/shared/track_pipeline_schemas.py`
+- Composition root: `application.py` wires port providers → infra
 
-- Step B completed: API modules now live under these domain packages.
-- Legacy `backend/routers` and `backend/map-backend/routes` are removed.
-- Step C completed: each domain API now uses a local adapter/job boundary for external infra.
+## Extending a domain
 
-## Step D boundaries
+1. Add SQL or provider logic in `infra.py` (or a focused module like `queries.py`).
+2. Expose a contract in `ports.py` if tests need to swap implementations.
+3. Keep `api.py` thin — no direct `services.*` imports (enforced by `test_architecture_rules.py`).
 
-- Each domain now has `ports.py` for dependency contracts and `infra.py` for default implementations.
-- API modules call `infra.py` instead of importing shared infra directly.
+## Removed from map-backend
 
-## Step E boundaries
-
-- Deprecated `adapters.py` compatibility files are removed.
-- Consumers should import providers/implementations from `infra.py` and contracts from `ports.py`.
-
-## Step F boundaries
-
-- `application.py` is the composition root and wires port providers to infra implementations at startup.
-- Domain APIs now look up behavior through ports modules, so tests and runtime wiring can swap implementations cleanly.
+`POST /trails/match` and `services/trail_matcher.py` were removed. Trail matching now lives only in the **theta** trail server to keep a single pipeline endpoint for clients.

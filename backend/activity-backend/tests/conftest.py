@@ -1,7 +1,23 @@
+import importlib.util
+import sys
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
-import main as activity_main
+_ACTIVITY_BACKEND_ROOT = Path(__file__).resolve().parents[1]
+_BACKEND_ROOT = _ACTIVITY_BACKEND_ROOT.parent
+for path_entry in (str(_ACTIVITY_BACKEND_ROOT), str(_BACKEND_ROOT)):
+    if path_entry not in sys.path:
+        sys.path.insert(0, path_entry)
+
+_main_spec = importlib.util.spec_from_file_location(
+    "activity_backend_main",
+    _ACTIVITY_BACKEND_ROOT / "main.py",
+)
+assert _main_spec and _main_spec.loader
+activity_main = importlib.util.module_from_spec(_main_spec)
+_main_spec.loader.exec_module(activity_main)
 from middleware.auth import get_current_user, get_optional_user
 from routes import activities_list_routes, activities_management_routes, activities_social_routes
 
@@ -18,6 +34,9 @@ class StubActivityClient:
             "duration_seconds": 600,
             "elevation_gain_meters": 100.0,
             "visibility": "public",
+            "processing_status": "ready",
+            "map_activity_id": None,
+            "storage_key": None,
             "created_at": "2026-01-01T00:00:00Z",
             "start_time": "2026-01-01T00:00:00Z",
             "end_time": "2026-01-01T00:10:00Z",
@@ -50,9 +69,34 @@ class StubActivityClient:
                 "description": kwargs.get("description"),
                 "user_id": kwargs.get("user_id", "user-1"),
                 "visibility": kwargs.get("visibility", "public"),
+                "map_activity_id": kwargs.get("map_activity_id"),
+                "processing_status": kwargs.get("processing_status", "ready"),
+                "storage_key": kwargs.get("storage_key"),
             }
         )
+        if kwargs.get("activity_id"):
+            activity["id"] = kwargs["activity_id"]
+        self._activity = activity
         return activity
+
+    def update_activity_pipeline_fields(self, activity_id, user_id, **kwargs):
+        if activity_id != self._activity.get("id"):
+            return None
+        updated = dict(self._activity)
+        for key, value in kwargs.items():
+            if value is not None:
+                updated[key] = value
+        self._activity = updated
+        return updated
+
+    def create_signed_upload_url(self, bucket, storage_key, expires_in):
+        return {
+            "signed_url": f"https://storage.example/{bucket}/{storage_key}",
+            "token": "upload-token",
+        }
+
+    def download_storage_object(self, bucket, storage_key):
+        return b"<gpx></gpx>"
 
     def list_activities(self, limit=20, offset=0):
         return {"items": [self._activity], "total": 1}
@@ -80,7 +124,10 @@ class StubActivityClient:
         return updated
 
     def delete_activity(self, activity_id, user_id):
-        return activity_id == "activity-1" and user_id == "user-1"
+        if activity_id == "activity-1" and user_id == "user-1":
+            self._activity = dict(self._activity)
+            return True
+        return False
 
     def toggle_kudos(self, activity_id, user_id):
         return {"liked": True}
@@ -128,6 +175,10 @@ def app(monkeypatch, stub_client):
     monkeypatch.setattr(activities_management_routes, "get_activity_client", lambda: stub_client)
     monkeypatch.setattr(activities_list_routes, "get_activity_client", lambda: stub_client)
     monkeypatch.setattr(activities_social_routes, "get_activity_client", lambda: stub_client)
+
+    import routes.activities_upload_routes as upload_routes
+
+    monkeypatch.setattr(upload_routes, "get_activity_client", lambda: stub_client)
 
     activity_main.app.dependency_overrides[get_current_user] = lambda: "user-1"
     activity_main.app.dependency_overrides[get_optional_user] = lambda: "user-1"

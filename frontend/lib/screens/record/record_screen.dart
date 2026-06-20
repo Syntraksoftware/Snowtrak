@@ -1,11 +1,16 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
+import 'package:syntrak/core/config/app_config.dart';
+import 'package:syntrak/core/di/service_locator.dart';
+import 'package:syntrak/core/logging/app_logger.dart';
 import 'package:syntrak/core/theme.dart';
+import 'package:syntrak/features/track_pipeline/application/track_pipeline_coordinator.dart';
 import 'package:syntrak/models/activity.dart';
 import 'package:syntrak/providers/activity_provider.dart';
+import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/screens/activities/activity_detail_screen.dart';
 import 'package:syntrak/screens/record/activity_type_selector.dart';
 import 'package:syntrak/screens/record/record_bottom_sheet.dart';
@@ -24,8 +29,7 @@ class RecordScreen extends StatefulWidget {
 
 class _RecordScreenState extends State<RecordScreen> {
   final LocationService _locationService = LocationService();
-  final Completer<MapLibreMapController> _mapController = Completer();
-  MapLibreMapController? _mapControllerRef;
+  final Completer<GoogleMapController> _mapController = Completer();
   bool _mapCompleterUsed = false;
   ActivityType? _selectedActivityType;
   bool _isRecording = false;
@@ -38,7 +42,6 @@ class _RecordScreenState extends State<RecordScreen> {
   CameraPosition? _initialCameraPosition;
   bool _hasError = false;
   String? _errorMessage;
-  MyLocationTrackingMode _locationTrackingMode = MyLocationTrackingMode.tracking;
 
   @override
   void initState() {
@@ -181,61 +184,20 @@ class _RecordScreenState extends State<RecordScreen> {
       (position) {
         if (!_isPaused) {
           _locationService.addLocation(position);
-          _routePoints.add(LatLng(position.latitude, position.longitude));
+          setState(() {
+            _routePoints.add(LatLng(position.latitude, position.longitude));
+          });
+
+          _mapController.future.then((controller) {
+            controller.animateCamera(
+              CameraUpdate.newLatLng(
+                LatLng(position.latitude, position.longitude),
+              ),
+            );
+          });
         }
       },
     );
-  }
-
-  Future<void> _enableFollowAndCenter() async {
-    setState(() {
-      _locationTrackingMode = MyLocationTrackingMode.tracking;
-    });
-
-    final controller = _mapControllerRef;
-    if (controller == null) {
-      return;
-    }
-
-    final currentPosition = await _locationService.getCurrentPosition();
-    if (currentPosition != null) {
-      await controller.animateCamera(
-        CameraUpdate.newLatLng(
-          LatLng(currentPosition.latitude, currentPosition.longitude),
-        ),
-      );
-      return;
-    }
-
-    if (_routePoints.isNotEmpty) {
-      final last = _routePoints.last;
-      await controller.animateCamera(CameraUpdate.newLatLng(last));
-      return;
-    }
-
-    final target = _initialCameraPosition?.target;
-    if (target == null) {
-      return;
-    }
-
-    await controller.animateCamera(CameraUpdate.newLatLng(target));
-  }
-
-  String _followButtonTooltip() {
-    if (_locationTrackingMode != MyLocationTrackingMode.none) {
-      return _isRecording ? 'Following your location' : 'Follow mode enabled';
-    }
-    return _isRecording ? 'Re-center and follow' : 'Center map';
-  }
-
-  void _handleTrackingDismissed() {
-    if (_locationTrackingMode == MyLocationTrackingMode.none) {
-      return;
-    }
-
-    setState(() {
-      _locationTrackingMode = MyLocationTrackingMode.none;
-    });
   }
 
   void _pauseRecording() {
@@ -255,7 +217,7 @@ class _RecordScreenState extends State<RecordScreen> {
 
   Future<void> _stopRecording() async {
     _timer?.cancel();
-    await _positionSubscription?.cancel();
+    _positionSubscription?.cancel();
     _locationService.stopTracking();
 
     if (_locationService.locations.isEmpty) {
@@ -265,10 +227,6 @@ class _RecordScreenState extends State<RecordScreen> {
         _startTime = null;
         _elapsedTime = Duration.zero;
       });
-      return;
-    }
-
-    if (!mounted) {
       return;
     }
 
@@ -311,28 +269,103 @@ class _RecordScreenState extends State<RecordScreen> {
     final startTime = locations.first.timestamp;
     final endTime = locations.last.timestamp;
 
-    final activity = Activity(
-      id: '',
-      userId: '',
-      type: _selectedActivityType!,
-      distance: _locationService.calculateDistance(),
-      duration: _elapsedTime.inSeconds,
-      elevationGain: _locationService.calculateElevationGain(),
-      startTime: startTime,
-      endTime: endTime,
-      averagePace: 0,
-      maxPace: 0,
-      isPublic: true,
-      createdAt: DateTime.now(),
-      locations: locations,
-    );
-
     final activityProvider =
         Provider.of<ActivityProvider>(context, listen: false);
+
+    Activity activity;
+    final appConfig = sl<AppConfig>();
+
+    if (appConfig.useNivusPipeline) {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final userId = auth.user?.id;
+      if (userId == null || userId.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Sign in required to save with server pipeline'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      try {
+        final pipeline =
+            await sl<TrackPipelineCoordinator>().processLiveLocations(
+          userId: userId,
+          locations: locations,
+        );
+        final stats = pipeline.stats;
+        final distanceMeters = stats != null
+            ? stats.totalDistanceKm * 1000
+            : _locationService.calculateDistance();
+        final elevationGain = stats?.totalVerticalDropM ??
+            _locationService.calculateElevationGain();
+        final durationSeconds =
+            stats?.movingTime.inSeconds ?? _elapsedTime.inSeconds;
+        final avgPace = stats != null && stats.avgSpeedKmh > 0
+            ? 3600 / stats.avgSpeedKmh
+            : 0.0;
+        final maxPace = stats != null && stats.topSpeedKmh > 0
+            ? 3600 / stats.topSpeedKmh
+            : 0.0;
+
+        activity = Activity(
+          id: '',
+          userId: userId,
+          type: _selectedActivityType!,
+          distance: distanceMeters,
+          duration: durationSeconds,
+          elevationGain: elevationGain,
+          startTime: startTime,
+          endTime: endTime,
+          averagePace: avgPace,
+          maxPace: maxPace,
+          isPublic: true,
+          createdAt: DateTime.now(),
+          locations: locations,
+          mapActivityId: pipeline.mapActivityId,
+          processingStatus: ProcessingStatus.ready,
+        );
+      } catch (error, stackTrace) {
+        AppLogger.instance.error(
+          '[RecordScreen] Nivus pipeline save failed',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Pipeline processing failed. Try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+    } else {
+      activity = Activity(
+        id: '',
+        userId: '',
+        type: _selectedActivityType!,
+        distance: _locationService.calculateDistance(),
+        duration: _elapsedTime.inSeconds,
+        elevationGain: _locationService.calculateElevationGain(),
+        startTime: startTime,
+        endTime: endTime,
+        averagePace: 0,
+        maxPace: 0,
+        isPublic: true,
+        createdAt: DateTime.now(),
+        locations: locations,
+      );
+    }
+
     final savedActivity = await activityProvider.createActivity(activity);
 
     if (savedActivity != null && mounted) {
-      await Navigator.pushReplacement(
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (_) => ActivityDetailScreen(activityId: savedActivity.id),
@@ -363,7 +396,7 @@ class _RecordScreenState extends State<RecordScreen> {
       _initialCameraPosition = null;
       _errorMessage = null;
     });
-    unawaited(_initializeLocation());
+    _initializeLocation();
   }
 
   @override
@@ -407,10 +440,7 @@ class _RecordScreenState extends State<RecordScreen> {
             RecordMapView(
               initialCameraPosition: _initialCameraPosition!,
               routePoints: _routePoints,
-              myLocationTrackingMode: _locationTrackingMode,
-              onTrackingDismissed: _handleTrackingDismissed,
               onMapCreated: (controller) {
-                _mapControllerRef = controller;
                 if (!_mapCompleterUsed) {
                   _mapCompleterUsed = true;
                   _mapController.complete(controller);
@@ -436,7 +466,7 @@ class _RecordScreenState extends State<RecordScreen> {
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: SyntrakColors.textPrimary.withValues(alpha: 0.9),
+                          color: SyntrakColors.textPrimary.withOpacity(0.9),
                           borderRadius:
                               BorderRadius.circular(SyntrakRadius.round),
                         ),
@@ -478,22 +508,6 @@ class _RecordScreenState extends State<RecordScreen> {
                 onStop: _stopRecording,
               ),
             ),
-            Positioned(
-              right: 16,
-              bottom: 164,
-              child: FloatingActionButton.small(
-                heroTag: 'record-follow-location',
-                backgroundColor: const Color(0xFF1A73E8),
-                foregroundColor: Colors.white,
-                onPressed: _enableFollowAndCenter,
-                tooltip: _followButtonTooltip(),
-                child: Icon(
-                  _locationTrackingMode != MyLocationTrackingMode.none
-                      ? Icons.gps_fixed
-                      : Icons.my_location,
-                ),
-              ),
-            ),
           ],
         ),
       );
@@ -505,5 +519,4 @@ class _RecordScreenState extends State<RecordScreen> {
       );
     }
   }
-
 }
