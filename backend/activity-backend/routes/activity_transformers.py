@@ -175,6 +175,9 @@ def map_activity_to_frontend_payload(
         "is_public": activity_record.get("visibility") == "public",
         "created_at": created_at_value,
         "locations": convert_to_frontend_locations(activity_record.get("id"), gps_path_records),
+        "map_activity_id": activity_record.get("map_activity_id"),
+        "processing_status": activity_record.get("processing_status") or "ready",
+        "storage_key": activity_record.get("storage_key"),
     }
 
 

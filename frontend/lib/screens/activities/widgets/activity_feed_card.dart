@@ -64,7 +64,8 @@ class ActivityFeedCard extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
               child: ActivityFeedCardStatsRow(activity: activity),
             ),
             const SizedBox(height: SyntrakSpacing.md),

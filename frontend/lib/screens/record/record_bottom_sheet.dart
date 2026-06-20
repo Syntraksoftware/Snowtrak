@@ -50,7 +50,8 @@ class RecordBottomSheet extends StatelessWidget {
                     selectedActivityType == null ? onSelectType : onStart,
                 icon: selectedActivityType == null
                     ? const Icon(Icons.add)
-                    : Icon(ActivityHelpers.getActivityIcon(selectedActivityType!)),
+                    : Icon(
+                        ActivityHelpers.getActivityIcon(selectedActivityType!)),
                 label: Text(
                   selectedActivityType == null
                       ? 'Select Activity Type'

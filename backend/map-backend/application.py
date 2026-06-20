@@ -34,14 +34,8 @@ from domains.sync_worker_service.job import run_openskimap_sync
 from domains.sync_worker_service.infra import run_sync as sync_runner_impl
 from domains.sync_worker_service.ports import set_sync_runner_provider
 from domains.trails_service.api import router as trails_router
-from domains.trails_service.infra import (
-    get_trails_conn as trails_conn_impl,
-    match_descents as descent_matcher_impl,
-)
-from domains.trails_service.ports import (
-    set_descent_matcher_provider,
-    set_trails_conn_provider,
-)
+from domains.trails_service.infra import get_trails_conn as trails_conn_impl
+from domains.trails_service.ports import set_trails_conn_provider
 from services.storage_backend import get_storage_health, initialize_storage_backend
 from zoneinfo import ZoneInfo
 
@@ -50,7 +44,6 @@ logger = logging.getLogger(__name__)
 
 set_activities_conn_provider(activities_conn_impl)
 set_trails_conn_provider(trails_conn_impl)
-set_descent_matcher_provider(descent_matcher_impl)
 set_batch_correct_provider(correct_dem_batch)
 set_sync_runner_provider(sync_runner_impl)
 
@@ -87,7 +80,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         logger.error("Failed to initialize storage backend: %s", e)
         raise
 
-    dsn = os.environ.get("SYNTRAK_DATABASE_URL")
+    dsn = cfg.SYNTRAK_DATABASE_URL or os.environ.get("SYNTRAK_DATABASE_URL")
     if dsn:
         await create_pool(dsn=dsn)
     elif cfg.MAP_STORAGE_BACKEND == "postgis":
@@ -127,7 +120,7 @@ def create_app() -> FastAPI:
     cfg = get_config()
     app = FastAPI(
         title="Map Backend API",
-        description="Service for elevation, trail matching, and map activity persistence",
+        description="Map geospatial service: DEM elevation, resort GeoJSON, map activity persistence",
         version="1.0.0",
         lifespan=lifespan,
     )

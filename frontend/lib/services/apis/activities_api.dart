@@ -17,7 +17,16 @@ class ActivitiesApi {
       'limit': limit,
       'offset': offset,
     });
-    return (response.data as List)
+    final data = response.data;
+    final List<dynamic> rows;
+    if (data is List) {
+      rows = data;
+    } else if (data is Map<String, dynamic>) {
+      rows = data['items'] as List<dynamic>? ?? const [];
+    } else {
+      rows = const [];
+    }
+    return rows
         .map((json) => Activity.fromJson(json as Map<String, dynamic>))
         .toList();
   }

@@ -3,9 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
+import 'package:syntrak/core/config/app_config.dart';
+import 'package:syntrak/core/di/service_locator.dart';
+import 'package:syntrak/core/logging/app_logger.dart';
 import 'package:syntrak/core/theme.dart';
+import 'package:syntrak/features/track_pipeline/application/track_pipeline_coordinator.dart';
 import 'package:syntrak/models/activity.dart';
 import 'package:syntrak/providers/activity_provider.dart';
+import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/screens/activities/activity_detail_screen.dart';
 import 'package:syntrak/screens/record/activity_type_selector.dart';
 import 'package:syntrak/screens/record/record_bottom_sheet.dart';
@@ -264,24 +269,99 @@ class _RecordScreenState extends State<RecordScreen> {
     final startTime = locations.first.timestamp;
     final endTime = locations.last.timestamp;
 
-    final activity = Activity(
-      id: '',
-      userId: '',
-      type: _selectedActivityType!,
-      distance: _locationService.calculateDistance(),
-      duration: _elapsedTime.inSeconds,
-      elevationGain: _locationService.calculateElevationGain(),
-      startTime: startTime,
-      endTime: endTime,
-      averagePace: 0,
-      maxPace: 0,
-      isPublic: true,
-      createdAt: DateTime.now(),
-      locations: locations,
-    );
-
     final activityProvider =
         Provider.of<ActivityProvider>(context, listen: false);
+
+    Activity activity;
+    final appConfig = sl<AppConfig>();
+
+    if (appConfig.useNivusPipeline) {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final userId = auth.user?.id;
+      if (userId == null || userId.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Sign in required to save with server pipeline'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      try {
+        final pipeline =
+            await sl<TrackPipelineCoordinator>().processLiveLocations(
+          userId: userId,
+          locations: locations,
+        );
+        final stats = pipeline.stats;
+        final distanceMeters = stats != null
+            ? stats.totalDistanceKm * 1000
+            : _locationService.calculateDistance();
+        final elevationGain = stats?.totalVerticalDropM ??
+            _locationService.calculateElevationGain();
+        final durationSeconds =
+            stats?.movingTime.inSeconds ?? _elapsedTime.inSeconds;
+        final avgPace = stats != null && stats.avgSpeedKmh > 0
+            ? 3600 / stats.avgSpeedKmh
+            : 0.0;
+        final maxPace = stats != null && stats.topSpeedKmh > 0
+            ? 3600 / stats.topSpeedKmh
+            : 0.0;
+
+        activity = Activity(
+          id: '',
+          userId: userId,
+          type: _selectedActivityType!,
+          distance: distanceMeters,
+          duration: durationSeconds,
+          elevationGain: elevationGain,
+          startTime: startTime,
+          endTime: endTime,
+          averagePace: avgPace,
+          maxPace: maxPace,
+          isPublic: true,
+          createdAt: DateTime.now(),
+          locations: locations,
+          mapActivityId: pipeline.mapActivityId,
+          processingStatus: ProcessingStatus.ready,
+        );
+      } catch (error, stackTrace) {
+        AppLogger.instance.error(
+          '[RecordScreen] Nivus pipeline save failed',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Pipeline processing failed. Try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+    } else {
+      activity = Activity(
+        id: '',
+        userId: '',
+        type: _selectedActivityType!,
+        distance: _locationService.calculateDistance(),
+        duration: _elapsedTime.inSeconds,
+        elevationGain: _locationService.calculateElevationGain(),
+        startTime: startTime,
+        endTime: endTime,
+        averagePace: 0,
+        maxPace: 0,
+        isPublic: true,
+        createdAt: DateTime.now(),
+        locations: locations,
+      );
+    }
+
     final savedActivity = await activityProvider.createActivity(activity);
 
     if (savedActivity != null && mounted) {
@@ -439,5 +519,4 @@ class _RecordScreenState extends State<RecordScreen> {
       );
     }
   }
-
 }

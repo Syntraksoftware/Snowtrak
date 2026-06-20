@@ -9,6 +9,7 @@ Activity Backend - FastAPI Application
 Minimal service for skiing activity records.
 """
 
+import asyncio
 import logging
 import os
 import sys
@@ -24,6 +25,7 @@ from shared import add_request_id_middleware, setup_exception_handlers
 
 from config import get_config
 from routes.activities import router as activities_router
+from services.pipeline_worker import PipelineWorker
 from services.supabase_client import initialize_activity_client
 
 # Configure logging
@@ -53,8 +55,17 @@ async def lifespan(app: FastAPI):
     initialize_activity_client()
     _log_owned_domains_banner()
 
+    worker = PipelineWorker()
+    worker_task = asyncio.create_task(worker.run_forever())
+
     yield
 
+    worker.stop()
+    worker_task.cancel()
+    try:
+        await worker_task
+    except asyncio.CancelledError:
+        pass
     logger.info("Shutting down Activity Backend")
 
 

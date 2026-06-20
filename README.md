@@ -121,6 +121,28 @@ If you previously used older compose files with fixed container names, run this 
 docker rm -f syntrak-postgis syntrak-map-backend syntrak-main-backend syntrak-community-backend syntrak-activity-backend 2>/dev/null || true
 ```
 
+## Roadmap — Social & Community Map Features
+
+The following features are planned post single-user visualization. They are **not in scope for the current `math` branch** but should inform architectural decisions (e.g. don't couple activity data to a single user in ways that make sharing hard later).
+
+### Social Map Layer
+- **Friend heatmap** — overlay friends' historical track density on the resort map (aggregated, not individual runs)
+- **Live friend tracking** — opt-in real-time position sharing during a ski day (Supabase Realtime broadcast)
+- **Activity feed with map thumbnails** — static map preview image per activity (Google Static Maps or MapLibre server-side render)
+
+### Segment Leaderboards (Strava KOM equivalent)
+- Named descent segments (tied to `map_trail.ski_runs` rows) with leaderboard for fastest descent, most vertical, etc.
+- Requires: authenticated segment effort writes to a `segment_efforts` table keyed on `trail_source_id`
+
+### Group Ski Day
+- Shared session: one user creates a session, others join via link
+- Server broadcasts GPS updates via Supabase Realtime channel; all members see each other on the map live
+
+### Implementation dependency
+All features above depend on the single-user pipeline (`math` branch) being stable and the `map_trail.activities` + `track_points` schema being finalized first. Design the activity schema with `user_id` indexed and privacy flags (`is_public`, `share_with_friends`) from day one so social queries are cheap later.
+
+---
+
 ## Documentation
 - **[Backend README](backend/README.md)** - Backend services, startup, configuration
 - **[Frontend README](frontend/README.md)** - Frontend setup, development
