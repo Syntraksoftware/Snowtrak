@@ -27,6 +27,10 @@ class Config(BaseSettings):
     POSTGIS_DB: str = "syntrak"
     POSTGIS_USER: str = "syntrak"
     POSTGIS_PASSWORD: str = "syntrak_local_dev"
+
+    # Supabase / shared Postgres for map_trail (asyncpg pool)
+    SYNTRAK_DATABASE_URL: str | None = None
+
     JWT_SECRET: str
     JWT_ALGORITHM: str = "HS256"
     FASTAPI_ENV: str = "development"

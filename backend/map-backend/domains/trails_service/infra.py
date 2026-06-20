@@ -1,14 +1,11 @@
 """Infrastructure implementations for trails_service ports."""
 
-from collections.abc import AsyncGenerator, Sequence
+from collections.abc import AsyncGenerator
 
 import asyncpg
 from fastapi import HTTPException, status
 
 from db.connection import get_pool
-from services.trail_matcher import match_all_descents
-
-from domains.trails_service.ports import DescentSegmentInput
 
 
 async def get_trails_conn() -> AsyncGenerator[asyncpg.Connection, None]:
@@ -21,12 +18,3 @@ async def get_trails_conn() -> AsyncGenerator[asyncpg.Connection, None]:
         )
     async with pool.acquire() as conn:
         yield conn
-
-
-async def match_descents(
-    conn: asyncpg.Connection,
-    segments: Sequence[DescentSegmentInput],
-    radius_m: float,
-):
-    """Run trail matching through the default matcher implementation."""
-    return await match_all_descents(conn, segments, radius_m)

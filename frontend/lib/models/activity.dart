@@ -1,5 +1,30 @@
 import 'package:syntrak/models/location.dart';
 
+enum ProcessingStatus {
+  pending,
+  uploading,
+  processing,
+  ready,
+  failed;
+
+  static ProcessingStatus fromString(String? value) {
+    switch (value) {
+      case 'pending':
+        return ProcessingStatus.pending;
+      case 'uploading':
+        return ProcessingStatus.uploading;
+      case 'processing':
+        return ProcessingStatus.processing;
+      case 'failed':
+        return ProcessingStatus.failed;
+      default:
+        return ProcessingStatus.ready;
+    }
+  }
+
+  String get value => name;
+}
+
 enum ActivityType {
   alpine,        // Alpine/Downhill skiing
   crossCountry,  // Cross-country skiing
@@ -79,7 +104,9 @@ class Activity {
   final bool isPublic;
   final DateTime createdAt;
   final List<Location> locations;
-  final String? thumbnailUrl; // optional server-rendered thumbnail image URL
+  final String? mapActivityId;
+  final ProcessingStatus processingStatus;
+  final String? storageKey;
 
   Activity({
     required this.id,
@@ -98,8 +125,15 @@ class Activity {
     required this.isPublic,
     required this.createdAt,
     this.locations = const [],
-    this.thumbnailUrl,
+    this.mapActivityId,
+    this.processingStatus = ProcessingStatus.ready,
+    this.storageKey,
   });
+
+  bool get isPipelinePending =>
+      processingStatus == ProcessingStatus.pending ||
+      processingStatus == ProcessingStatus.uploading ||
+      processingStatus == ProcessingStatus.processing;
 
   String get formattedDistance {
     if (distance >= 1000) {
@@ -163,7 +197,9 @@ class Activity {
               ?.map((loc) => Location.fromJson(loc))
               .toList() ??
           [],
-      thumbnailUrl: json['thumbnail_url'] as String?,
+      mapActivityId: json['map_activity_id'] as String?,
+      processingStatus: ProcessingStatus.fromString(json['processing_status'] as String?),
+      storageKey: json['storage_key'] as String?,
     );
   }
 
@@ -175,8 +211,9 @@ class Activity {
       'start_time': startTime.toIso8601String(),
       'end_time': endTime.toIso8601String(),
       'locations': locations.map((loc) => loc.toJson()).toList(),
-      if (thumbnailUrl != null) 'thumbnail_url': thumbnailUrl,
       'is_public': isPublic,
+      if (mapActivityId != null) 'map_activity_id': mapActivityId,
+      'processing_status': processingStatus.value,
     };
   }
 }

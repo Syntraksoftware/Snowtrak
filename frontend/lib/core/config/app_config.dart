@@ -9,20 +9,29 @@ class AppConfig {
     required this.activityApiBaseUrl,
     required this.communityApiBaseUrl,
     required this.mapApiBaseUrl,
-    required this.enableMapFeatures,
+    required this.nivusApiBaseUrl,
+    required this.useNivusPipeline,
   });
 
   final AppEnvironment environment;
   final String mainApiBaseUrl;
   final String activityApiBaseUrl;
   final String communityApiBaseUrl;
+
+  /// map-backend — DEM elevation, map_trail persistence, resort GeoJSON.
   final String mapApiBaseUrl;
-  final bool enableMapFeatures;
+
+  /// Nivus — track math + PostGIS trail matching (compute plane).
+  final String nivusApiBaseUrl;
+
+  /// When true, live saves run through Nivus + map-backend instead of local engines.
+  final bool useNivusPipeline;
 
   static const _mainOverrideKey = 'override_main_api_base_url';
   static const _activityOverrideKey = 'override_activity_api_base_url';
   static const _communityOverrideKey = 'override_community_api_base_url';
   static const _mapOverrideKey = 'override_map_api_base_url';
+  static const _nivusOverrideKey = 'override_nivus_api_base_url';
 
   static Future<AppConfig> bootstrap() async {
     return bootstrapWithOverride();
@@ -32,7 +41,6 @@ class AppConfig {
     AppEnvironment? environmentOverride,
   }) async {
     final env = environmentOverride ??
-    // obtain config from env 
         AppEnvironmentX.fromString(
           const String.fromEnvironment('APP_ENV', defaultValue: 'dev'),
         );
@@ -44,19 +52,18 @@ class AppConfig {
     final runtimeActivity = prefs.getString(_activityOverrideKey);
     final runtimeCommunity = prefs.getString(_communityOverrideKey);
     final runtimeMap = prefs.getString(_mapOverrideKey);
+    final runtimeNivus = prefs.getString(_nivusOverrideKey);
 
     const defineMain = String.fromEnvironment('MAIN_API_BASE_URL');
     const defineActivity = String.fromEnvironment('ACTIVITY_API_BASE_URL');
     const defineCommunity = String.fromEnvironment('COMMUNITY_API_BASE_URL');
     const defineMap = String.fromEnvironment('MAP_API_BASE_URL');
-    const defineMapFeatures = String.fromEnvironment('ENABLE_MAP_FEATURES');
+    const defineNivus = String.fromEnvironment('NIVUS_API_BASE_URL');
+    const defineUseNivusPipeline = String.fromEnvironment('USE_NIVUS_PIPELINE');
 
     return AppConfig(
       environment: env,
-      mainApiBaseUrl:
-      //first non empty value from runtime override, compile time define, then default, 
-      // flexible configuration for different environments and testing scenarios, with the ability to easily switch between different API endpoints without changing the codebase, simply by setting environment variables or using shared preferences for runtime overrides.
-          _firstNonEmpty(runtimeMain, defineMain, defaults.mainApiBaseUrl),
+      mainApiBaseUrl: _firstNonEmpty(runtimeMain, defineMain, defaults.mainApiBaseUrl),
       activityApiBaseUrl: _firstNonEmpty(
         runtimeActivity,
         defineActivity,
@@ -68,10 +75,8 @@ class AppConfig {
         defaults.communityApiBaseUrl,
       ),
       mapApiBaseUrl: _firstNonEmpty(runtimeMap, defineMap, defaults.mapApiBaseUrl),
-      enableMapFeatures: _firstNonEmptyBool(
-        defineMapFeatures,
-        defaults.enableMapFeatures,
-      ),
+      nivusApiBaseUrl: _firstNonEmpty(runtimeNivus, defineNivus, defaults.nivusApiBaseUrl),
+      useNivusPipeline: _resolveUseNivusPipeline(defineUseNivusPipeline, env),
     );
   }
 
@@ -80,6 +85,7 @@ class AppConfig {
     String? activityApiBaseUrl,
     String? communityApiBaseUrl,
     String? mapApiBaseUrl,
+    String? nivusApiBaseUrl,
   }) async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -95,6 +101,9 @@ class AppConfig {
     if (mapApiBaseUrl != null) {
       await prefs.setString(_mapOverrideKey, mapApiBaseUrl);
     }
+    if (nivusApiBaseUrl != null) {
+      await prefs.setString(_nivusOverrideKey, nivusApiBaseUrl);
+    }
   }
 
   static Future<void> clearRuntimeOverrides() async {
@@ -103,6 +112,7 @@ class AppConfig {
     await prefs.remove(_activityOverrideKey);
     await prefs.remove(_communityOverrideKey);
     await prefs.remove(_mapOverrideKey);
+    await prefs.remove(_nivusOverrideKey);
   }
 
   static AppConfig _defaultsFor(AppEnvironment environment) {
@@ -114,7 +124,8 @@ class AppConfig {
           activityApiBaseUrl: 'http://localhost:5100/api/v1',
           communityApiBaseUrl: 'http://localhost:5001/api/v1',
           mapApiBaseUrl: 'http://localhost:5200',
-          enableMapFeatures: true,
+          nivusApiBaseUrl: 'http://localhost:5201',
+          useNivusPipeline: true,
         );
       case AppEnvironment.staging:
         return AppConfig(
@@ -123,7 +134,8 @@ class AppConfig {
           activityApiBaseUrl: 'https://staging-activity.syntrak.app/api/v1',
           communityApiBaseUrl: 'https://staging-community.syntrak.app/api/v1',
           mapApiBaseUrl: 'https://staging-map.syntrak.app',
-          enableMapFeatures: false,
+          nivusApiBaseUrl: 'https://staging-nivus.syntrak.app',
+          useNivusPipeline: false,
         );
       case AppEnvironment.prod:
         return AppConfig(
@@ -132,9 +144,17 @@ class AppConfig {
           activityApiBaseUrl: 'https://activity.syntrak.app/api/v1',
           communityApiBaseUrl: 'https://community.syntrak.app/api/v1',
           mapApiBaseUrl: 'https://map.syntrak.app',
-          enableMapFeatures: true,
+          nivusApiBaseUrl: 'https://nivus.syntrak.app',
+          useNivusPipeline: false,
         );
     }
+  }
+
+  static bool _resolveUseNivusPipeline(String defineValue, AppEnvironment env) {
+    final normalized = defineValue.trim().toLowerCase();
+    if (normalized == 'true' || normalized == '1') return true;
+    if (normalized == 'false' || normalized == '0') return false;
+    return env == AppEnvironment.dev;
   }
 
   static String _firstNonEmpty(String? v1, String? v2, String fallback) {
@@ -142,26 +162,4 @@ class AppConfig {
     if (v2 != null && v2.trim().isNotEmpty) return v2.trim();
     return fallback;
   }
-
-  static bool _firstNonEmptyBool(String? raw, bool fallback) {
-    if (raw == null || raw.trim().isEmpty) {
-      return fallback;
-    }
-
-    switch (raw.trim().toLowerCase()) {
-      case 'true':
-      case '1':
-      case 'yes':
-      case 'on':
-        return true;
-      case 'false':
-      case '0':
-      case 'no':
-      case 'off':
-        return false;
-      default:
-        return fallback;
-    }
-  }
 }
-

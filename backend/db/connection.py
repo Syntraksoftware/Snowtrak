@@ -56,6 +56,8 @@ async def create_pool(
         min_size=min_size,
         max_size=max_size,
         command_timeout=command_timeout,
+        # Required for Supabase Supavisor transaction pooler (port 6543).
+        statement_cache_size=0,
     )
     logger.info("asyncpg pool ready (min_size=%s max_size=%s)", min_size, max_size)
 

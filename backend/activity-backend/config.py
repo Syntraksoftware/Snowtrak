@@ -24,6 +24,21 @@ class Config(BaseSettings):
         "http://localhost:5173",
     ]
 
+    # Internal microservice URLs (S2S; not exposed to mobile clients)
+    MAP_BACKEND_BASE_URL: str = "http://127.0.0.1:5200"
+    NIVUS_BASE_URL: str = "http://127.0.0.1:5201"
+    MAP_BACKEND_TIMEOUT_S: float = 30.0
+    NIVUS_TIMEOUT_S: float = 120.0
+
+    # Async pipeline (Phase 3) — optional; inline processing when unset
+    REDIS_URL: str | None = None
+    PIPELINE_STREAM_KEY: str = "syntrak:activity-pipeline"
+    PIPELINE_CONSUMER_GROUP: str = "activity-backend-workers"
+
+    # Supabase Storage bucket for raw GPX/FIT uploads
+    ACTIVITY_UPLOAD_BUCKET: str = "activity-uploads"
+    UPLOAD_URL_EXPIRES_S: int = 3600
+
     @computed_field
     @property
     def DEBUG(self) -> bool:

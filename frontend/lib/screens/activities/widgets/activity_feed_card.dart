@@ -64,14 +64,14 @@ class ActivityFeedCard extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
               child: ActivityFeedCardStatsRow(activity: activity),
             ),
             const SizedBox(height: SyntrakSpacing.md),
             ActivityFeedCardMapThumbnail(
               locations: activity.locations,
               routeColor: activityColor,
-              imageUrl: activity.thumbnailUrl,
             ),
             ActivityFeedCardBadges(activity: activity),
           ],

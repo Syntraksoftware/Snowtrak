@@ -17,7 +17,9 @@ from routes.activity_transformers import (
     map_activity_to_frontend_payload,
     parse_iso_timestamp,
 )
+from services.activity_deletion_service import ActivityDeletionService
 from services.supabase_client import get_activity_client
+from shared.pipeline_enums import ProcessingStatus
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -58,6 +60,8 @@ async def create_activity(
             elevation_gain_meters=computed_metrics["elevation_gain_meters"],
             visibility=visibility_value,
             description=data.description,
+            map_activity_id=data.map_activity_id,
+            processing_status=data.processing_status or ProcessingStatus.ready,
         )
 
         if not created_activity:
@@ -167,8 +171,9 @@ async def delete_activity(
 ):
     """Delete an activity owned by the authenticated user."""
     activity_client = get_activity_client()
+    deletion_service = ActivityDeletionService(activity_client)
     try:
-        is_deleted = activity_client.delete_activity(activity_id, user_id)
+        is_deleted = await deletion_service.delete_activity(activity_id, user_id)
         if not is_deleted:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

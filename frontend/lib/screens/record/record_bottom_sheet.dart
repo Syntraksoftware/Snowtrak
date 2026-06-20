@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:syntrak/core/activity_helpers.dart';
 import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/models/activity.dart';
@@ -50,7 +50,8 @@ class RecordBottomSheet extends StatelessWidget {
                     selectedActivityType == null ? onSelectType : onStart,
                 icon: selectedActivityType == null
                     ? const Icon(Icons.add)
-                    : Icon(ActivityHelpers.getActivityIcon(selectedActivityType!)),
+                    : Icon(
+                        ActivityHelpers.getActivityIcon(selectedActivityType!)),
                 label: Text(
                   selectedActivityType == null
                       ? 'Select Activity Type'
