@@ -5,56 +5,109 @@ Allows triggering test notifications from terminal/scripts for testing purposes.
 
 import uuid
 from datetime import datetime
-from enum import StrEnum
 
-from fastapi import APIRouter
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, status
+
+from app.api.dependencies import get_current_user
+from app.core.storage import User
+from app.core.supabase import supabase_client
+from app.schemas.notifications import (
+    DeviceTokenRegisterRequest,
+    DeviceTokenResponse,
+    DeviceTokenUnregisterRequest,
+    NotificationPayload,
+    NotificationResponse,
+    NotificationType,
+    SendNotificationRequest,
+    TestNotificationRequest,
+)
+from app.services.notification_sender import NotificationConfigurationError, notification_sender
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 
-class NotificationType(StrEnum):
-    kudos = "kudos"
-    comment = "comment"
-    follow = "follow"
-    friend_activity = "friendActivity"
-    challenge = "challenge"
-    group = "group"
-    weather = "weather"
-    powder_day = "powderDay"
-    achievement = "achievement"
-    system = "system"
-
-
-class TestNotificationRequest(BaseModel):
-    """Request body for triggering a test notification"""
-
-    type: NotificationType = NotificationType.system
-    title: str
-    message: str
-    sender_name: str | None = None
-    avatar_url: str | None = None
-    action_route: str | None = None
-
-
-class NotificationResponse(BaseModel):
-    """Response model for a notification"""
-
-    id: str
-    type: str
-    title: str
-    message: str
-    created_at: str
-    is_read: bool = False
-    sender_name: str | None = None
-    avatar_url: str | None = None
-    action_route: str | None = None
-
-
-# In-memory storage for test notifications (for demo purposes)
-# In production, use a database or message queue
 _pending_notifications: list[dict] = []
 _notification_history: list[dict] = []
+
+
+@router.post(
+    "/device-tokens",
+    response_model=DeviceTokenResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def register_device_token(
+    request: DeviceTokenRegisterRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """Register or refresh the current user's Firebase Cloud Messaging token."""
+    row = supabase_client.upsert_device_token(
+        user_id=current_user.id,
+        token=request.token,
+        platform=request.platform.value,
+        device_id=request.device_id,
+        app_version=request.app_version,
+        locale=request.locale,
+        timezone=request.timezone,
+    )
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Device token storage is not configured",
+        )
+
+    return DeviceTokenResponse(**row)
+
+
+@router.delete("/device-tokens", status_code=status.HTTP_204_NO_CONTENT)
+async def unregister_device_token(
+    request: DeviceTokenUnregisterRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """Deactivate the current user's Firebase Cloud Messaging token."""
+    removed = supabase_client.deactivate_device_token(user_id=current_user.id, token=request.token)
+    if not removed:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Device token storage is not configured",
+        )
+    return None
+
+
+@router.post("/send")
+async def send_notification(
+    request: SendNotificationRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Send a push notification to a user's active devices.
+
+    This route is useful for authenticated self-tests. Event handlers should call
+    notification_sender.send_to_user() directly for cross-user notifications.
+    """
+    if request.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot send notifications for another user",
+        )
+
+    try:
+        result = notification_sender.send_to_user(
+            request.user_id,
+            NotificationPayload(
+                title=request.title,
+                body=request.body,
+                data=request.data,
+                image_url=request.image_url,
+                badge=request.badge,
+            ),
+        )
+    except NotificationConfigurationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+
+    return result
 
 
 @router.post("/test", response_model=NotificationResponse)
