@@ -3,7 +3,7 @@ Core configuration module using Pydantic Settings.
 Loads environment variables and provides type-safe config access.
 """
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,6 +14,7 @@ class Settings(BaseSettings):
         env_file=".env",
         case_sensitive=False,
         env_file_encoding="utf-8",
+        extra="ignore",
     )
 
     # App Info
@@ -44,6 +45,22 @@ class Settings(BaseSettings):
     # Supabase
     supabase_url: str | None = Field(default=None, alias="SUPABASE_URL")
     supabase_service_role_key: str | None = Field(default=None, alias="SUPABASE_SERVICE_ROLE_KEY")
+
+    # Firebase Cloud Messaging
+    firebase_project_id: str | None = Field(default=None, alias="FIREBASE_PROJECT_ID")
+    firebase_credentials_path: str | None = Field(default=None, alias="FIREBASE_CREDENTIALS_PATH")
+
+    @field_validator("debug", mode="before")
+    @classmethod
+    def parse_debug_flag(cls, value):
+        """Accept common environment labels in DEBUG while preserving bool parsing."""
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"release", "production", "prod"}:
+                return False
+            if normalized in {"debug", "development", "dev"}:
+                return True
+        return value
 
     def get_allowed_origins(self) -> list[str]:
         """Get allowed origins as a list."""
