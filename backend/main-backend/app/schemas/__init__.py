@@ -14,6 +14,18 @@ from app.schemas.activity import (
     LocationCreate as LocationCreate,
     LocationResponse as LocationResponse,
 )
+from app.schemas.notifications import (
+    DevicePlatform as DevicePlatform,
+    DeviceTokenRegisterRequest as DeviceTokenRegisterRequest,
+    DeviceTokenResponse as DeviceTokenResponse,
+    DeviceTokenUnregisterRequest as DeviceTokenUnregisterRequest,
+    NotificationPayload as NotificationPayload,
+    NotificationResponse as NotificationResponse,
+    NotificationSendResult as NotificationSendResult,
+    NotificationType as NotificationType,
+    SendNotificationRequest as SendNotificationRequest,
+    TestNotificationRequest as TestNotificationRequest,
+)
 
 # User Schemas
 
