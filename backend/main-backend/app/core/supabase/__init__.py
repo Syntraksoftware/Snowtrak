@@ -12,6 +12,7 @@ Database Tables:
 - comments: Comments on posts (supports nesting)
 - activities: User activities (skiing, etc.)
 - activity_locations: GPS points for activities
+- device_tokens: Firebase Cloud Messaging registration tokens per user/device
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ from __future__ import annotations
 from .activities import ActivityOperations
 from .base import SupabaseBase
 from .comments import CommentOperations
+from .device_tokens import DeviceTokenOperations
 from .posts import PostOperations
 from .profiles import ProfileOperations
 from .subthreads import SubthreadOperations
@@ -32,6 +34,7 @@ class SupabaseClient(
     PostOperations,
     CommentOperations,
     ActivityOperations,
+    DeviceTokenOperations,
 ):
     """
     Unified Supabase client combining all operations.
@@ -43,6 +46,7 @@ class SupabaseClient(
     - PostOperations: posts table CRUD
     - CommentOperations: comments table CRUD
     - ActivityOperations: activities table CRUD
+    - DeviceTokenOperations: device_tokens table CRUD
 
     All classes inherit from SupabaseBase which handles connection management.
     """
@@ -64,5 +68,6 @@ __all__ = [
     "PostOperations",
     "CommentOperations",
     "ActivityOperations",
+    "DeviceTokenOperations",
     "supabase_client",
 ]
