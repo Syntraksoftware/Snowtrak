@@ -3,6 +3,7 @@ import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/models/user.dart';
 import 'package:syntrak/providers/activity_provider.dart';
 import 'package:syntrak/screens/activities/widgets/activity_feed_card.dart';
+import 'package:syntrak/ui/liquid/snowtrak_auth_theme.dart';
 
 class ActivitiesFeedSliver extends StatelessWidget {
   const ActivitiesFeedSliver({
@@ -75,15 +76,33 @@ class ActivitiesFeedSliver extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
               SyntrakSpacing.md,
-              SyntrakSpacing.lg,
+              SyntrakSpacing.xs,
               SyntrakSpacing.md,
-              SyntrakSpacing.md,
+              SyntrakSpacing.xs,
             ),
-            child: Text(
-              'Your Activities',
-              style: SyntrakTypography.headlineMedium.copyWith(
-                color: SyntrakColors.textPrimary,
-              ),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: SnowtrakAuthTheme.brand.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(SyntrakRadius.md),
+                  ),
+                  child: const Icon(
+                    Icons.history,
+                    size: 20,
+                    color: SnowtrakAuthTheme.brand,
+                  ),
+                ),
+                const SizedBox(width: SyntrakSpacing.sm),
+                Text(
+                  'Your activities',
+                  style: SyntrakTypography.headlineSmall.copyWith(
+                    color: SyntrakColors.textPrimary,
+                  ),
+                ),
+              ],
             ),
           ),
         ),

@@ -1,13 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart' hide ActivityType;
+import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/config/app_config.dart';
-import 'package:syntrak/core/di/service_locator.dart';
-import 'package:syntrak/core/logging/app_logger.dart';
 import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/features/track_pipeline/application/track_pipeline_coordinator.dart';
 import 'package:syntrak/models/activity.dart';
 import 'package:syntrak/providers/activity_provider.dart';
 import 'package:syntrak/providers/auth_provider.dart';
@@ -15,10 +12,14 @@ import 'package:syntrak/screens/activities/activity_detail_screen.dart';
 import 'package:syntrak/screens/record/activity_type_selector.dart';
 import 'package:syntrak/screens/record/record_bottom_sheet.dart';
 import 'package:syntrak/screens/record/record_error_view.dart';
-import 'package:syntrak/screens/record/record_helpers.dart';
 import 'package:syntrak/screens/record/record_map_view.dart';
 import 'package:syntrak/services/location_service.dart';
-import 'package:geolocator/geolocator.dart' hide ActivityType;
+
+const _liveRouteSourceId = 'live-route';
+const _liveRouteLayerId = 'live-route-layer';
+
+// Only push a GeoJSON update when the user has moved this far (meters).
+const _geoJsonUpdateThresholdM = 5.0;
 
 class RecordScreen extends StatefulWidget {
   const RecordScreen({super.key});
@@ -29,19 +30,24 @@ class RecordScreen extends StatefulWidget {
 
 class _RecordScreenState extends State<RecordScreen> {
   final LocationService _locationService = LocationService();
-  final Completer<GoogleMapController> _mapController = Completer();
-  bool _mapCompleterUsed = false;
+  MapLibreMapController? _mapController;
+  MyLocationTrackingMode _trackingMode = MyLocationTrackingMode.tracking;
   ActivityType? _selectedActivityType;
   bool _isRecording = false;
   bool _isPaused = false;
   DateTime? _startTime;
-  Duration _elapsedTime = Duration.zero;
   Timer? _timer;
   StreamSubscription<Position>? _positionSubscription;
   final List<LatLng> _routePoints = [];
   CameraPosition? _initialCameraPosition;
   bool _hasError = false;
   String? _errorMessage;
+
+  // ValueNotifier so the timer ticks don't rebuild the map widget.
+  final _elapsedNotifier = ValueNotifier<Duration>(Duration.zero);
+
+  // Track last point where GeoJSON was pushed to avoid redundant redraws.
+  LatLng? _lastGeoJsonUpdatePoint;
 
   @override
   void initState() {
@@ -57,70 +63,85 @@ class _RecordScreenState extends State<RecordScreen> {
     });
   }
 
-  Future<void> _initializeLocation() async {
-    try {
-      final hasPermission = await _locationService.checkPermissions();
-
-      if (!hasPermission && mounted) {
-        setState(() {
-          _initialCameraPosition = const CameraPosition(
-            target: LatLng(37.7749, -122.4194),
-            zoom: 15,
-          );
-          _hasError = false;
-        });
-        return;
-      }
-
-      final position = await _locationService.getCurrentPosition();
-
-      if (position != null && mounted) {
-        setState(() {
-          _initialCameraPosition = CameraPosition(
-            target: LatLng(position.latitude, position.longitude),
-            zoom: 15,
-          );
-          _hasError = false;
-        });
-      } else if (mounted) {
-        setState(() {
-          _initialCameraPosition = const CameraPosition(
-            target: LatLng(37.7749, -122.4194),
-            zoom: 15,
-          );
-          _hasError = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _hasError = true;
-          _errorMessage = 'The page is not ready!';
-        });
-      }
-    }
-  }
-
   @override
   void dispose() {
     _timer?.cancel();
     _positionSubscription?.cancel();
     _locationService.stopTracking();
+    _elapsedNotifier.dispose();
     super.dispose();
   }
 
-  Future<void> _selectActivityType() async {
-    final type = await Navigator.push<ActivityType>(
-      context,
-      MaterialPageRoute(builder: (_) => const ActivityTypeSelector()),
-    );
+  Future<void> _initializeLocation() async {
+    try {
+      final hasPermission = await _locationService.checkPermissions();
+      final position = hasPermission
+          ? await _locationService.getCurrentPosition()
+          : null;
 
-    if (!mounted) return;
-    if (type != null) {
+      if (!mounted) return;
       setState(() {
-        _selectedActivityType = type;
+        _initialCameraPosition = CameraPosition(
+          target: position != null
+              ? LatLng(position.latitude, position.longitude)
+              : const LatLng(37.7749, -122.4194),
+          zoom: 15,
+        );
+        _hasError = false;
       });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _hasError = true;
+          _errorMessage = 'Failed to initialize map.';
+        });
+      }
     }
+  }
+
+  Future<void> _onMapStyleLoaded() async {
+    final controller = _mapController;
+    if (controller == null) return;
+    // Add the source/layer with empty data — path only appears after Start.
+    await controller.addGeoJsonSource(
+        _liveRouteSourceId, _emptyGeoJson());
+    await controller.addLineLayer(
+      _liveRouteSourceId,
+      _liveRouteLayerId,
+      const LineLayerProperties(
+        lineColor: '#FF5A1F',
+        lineWidth: 4.0,
+        lineJoin: 'round',
+        lineCap: 'round',
+      ),
+    );
+  }
+
+  Map<String, dynamic> _emptyGeoJson() =>
+      {'type': 'FeatureCollection', 'features': []};
+
+  Map<String, dynamic> _buildRouteGeoJson() {
+    if (_routePoints.length < 2) return _emptyGeoJson();
+    return {
+      'type': 'FeatureCollection',
+      'features': [
+        {
+          'type': 'Feature',
+          'geometry': {
+            'type': 'LineString',
+            'coordinates':
+                _routePoints.map((p) => [p.longitude, p.latitude]).toList(),
+          },
+          'properties': {},
+        }
+      ],
+    };
+  }
+
+  Future<void> _selectActivityType() async {
+    final type = await showActivityTypePicker(context);
+    if (!mounted || type == null) return;
+    setState(() => _selectedActivityType = type);
   }
 
   Future<void> _startRecording() async {
@@ -132,32 +153,8 @@ class _RecordScreenState extends State<RecordScreen> {
     final hasPermission = await _locationService.checkPermissions();
     if (!hasPermission) {
       if (mounted) {
-        await showDialog<void>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('GPS Required'),
-            content: const Text(
-              'We need your GPS service to record your activities trajectory. Please enable location access in Settings.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  await openAppSettings();
-                  if (context.mounted) Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF4500),
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Open Settings'),
-              ),
-            ],
-          ),
-        );
+        await showGpsDeniedSheet(context);
+        await openAppSettings();
       }
       return;
     }
@@ -166,51 +163,56 @@ class _RecordScreenState extends State<RecordScreen> {
       _isRecording = true;
       _isPaused = false;
       _startTime = DateTime.now();
-      _elapsedTime = Duration.zero;
+      _elapsedNotifier.value = Duration.zero;
       _routePoints.clear();
+      _lastGeoJsonUpdatePoint = null;
+      _trackingMode = MyLocationTrackingMode.tracking;
     });
 
     _locationService.startTracking();
 
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!_isPaused) {
-        setState(() {
-          _elapsedTime = DateTime.now().difference(_startTime!);
-        });
+        // Update notifier only — does NOT rebuild the map.
+        _elapsedNotifier.value = DateTime.now().difference(_startTime!);
       }
     });
 
     _positionSubscription = _locationService.getPositionStream().listen(
       (position) {
-        if (!_isPaused) {
-          _locationService.addLocation(position);
-          setState(() {
-            _routePoints.add(LatLng(position.latitude, position.longitude));
-          });
+        if (_isPaused) return;
 
-          _mapController.future.then((controller) {
-            controller.animateCamera(
-              CameraUpdate.newLatLng(
-                LatLng(position.latitude, position.longitude),
-              ),
-            );
-          });
+        _locationService.addLocation(position);
+        final newPoint = LatLng(position.latitude, position.longitude);
+        _routePoints.add(newPoint);
+
+        // Only push GeoJSON when moved enough to matter.
+        final last = _lastGeoJsonUpdatePoint;
+        final distMoved = last == null
+            ? double.infinity
+            : Geolocator.distanceBetween(
+                last.latitude, last.longitude,
+                newPoint.latitude, newPoint.longitude,
+              );
+
+        if (distMoved >= _geoJsonUpdateThresholdM) {
+          _lastGeoJsonUpdatePoint = newPoint;
+          _mapController?.setGeoJsonSource(
+              _liveRouteSourceId, _buildRouteGeoJson());
         }
       },
     );
   }
 
   void _pauseRecording() {
-    setState(() {
-      _isPaused = true;
-    });
+    setState(() => _isPaused = true);
     _positionSubscription?.pause();
   }
 
   void _resumeRecording() {
     setState(() {
       _isPaused = false;
-      _startTime = DateTime.now().subtract(_elapsedTime);
+      _startTime = DateTime.now().subtract(_elapsedNotifier.value);
     });
     _positionSubscription?.resume();
   }
@@ -225,169 +227,157 @@ class _RecordScreenState extends State<RecordScreen> {
         _isRecording = false;
         _isPaused = false;
         _startTime = null;
-        _elapsedTime = Duration.zero;
+        _elapsedNotifier.value = Duration.zero;
       });
       return;
     }
 
-    final shouldSave = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Save Activity?'),
-        content: const Text('Do you want to save this activity?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Discard'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
+    final shouldSave = await _showSaveDialog();
 
     if (shouldSave == true && mounted) {
       await _saveActivity();
     } else {
-      setState(() {
-        _isRecording = false;
-        _isPaused = false;
-        _startTime = null;
-        _elapsedTime = Duration.zero;
-        _routePoints.clear();
-      });
-      _locationService.clearLocations();
+      _resetState();
     }
+  }
+
+  Future<bool?> _showSaveDialog() {
+    return showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: EdgeInsets.fromLTRB(
+          24,
+          12,
+          24,
+          MediaQuery.of(context).padding.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.black12,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Save Activity?',
+              style: SyntrakTypography.headlineMedium.copyWith(
+                color: SyntrakColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Your route and stats will be saved to your profile.',
+              textAlign: TextAlign.center,
+              style: SyntrakTypography.bodyMedium.copyWith(
+                color: SyntrakColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 28),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: SyntrakColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
+                child: const Text('Save',
+                    style:
+                        TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: Text(
+                  'Discard',
+                  style: SyntrakTypography.bodyMedium.copyWith(
+                    color: SyntrakColors.textTertiary,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _saveActivity() async {
     final locations = _locationService.locations;
     if (locations.isEmpty) return;
 
-    final startTime = locations.first.timestamp;
-    final endTime = locations.last.timestamp;
-
     final activityProvider =
         Provider.of<ActivityProvider>(context, listen: false);
+    final auth = Provider.of<AuthProvider>(context, listen: false);
 
-    Activity activity;
-    final appConfig = sl<AppConfig>();
+    final activity = Activity(
+      id: '',
+      userId: auth.user?.id ?? '',
+      type: _selectedActivityType!,
+      distance: _locationService.calculateDistance(),
+      duration: _elapsedNotifier.value.inSeconds,
+      elevationGain: _locationService.calculateElevationGain(),
+      startTime: locations.first.timestamp,
+      endTime: locations.last.timestamp,
+      averagePace: 0,
+      maxPace: 0,
+      isPublic: true,
+      createdAt: DateTime.now(),
+      locations: locations,
+    );
 
-    if (appConfig.useNivusPipeline) {
-      final auth = Provider.of<AuthProvider>(context, listen: false);
-      final userId = auth.user?.id;
-      if (userId == null || userId.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Sign in required to save with server pipeline'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
+    final saved = await activityProvider.createActivity(activity);
 
-      try {
-        final pipeline =
-            await sl<TrackPipelineCoordinator>().processLiveLocations(
-          userId: userId,
-          locations: locations,
-        );
-        final stats = pipeline.stats;
-        final distanceMeters = stats != null
-            ? stats.totalDistanceKm * 1000
-            : _locationService.calculateDistance();
-        final elevationGain = stats?.totalVerticalDropM ??
-            _locationService.calculateElevationGain();
-        final durationSeconds =
-            stats?.movingTime.inSeconds ?? _elapsedTime.inSeconds;
-        final avgPace = stats != null && stats.avgSpeedKmh > 0
-            ? 3600 / stats.avgSpeedKmh
-            : 0.0;
-        final maxPace = stats != null && stats.topSpeedKmh > 0
-            ? 3600 / stats.topSpeedKmh
-            : 0.0;
-
-        activity = Activity(
-          id: '',
-          userId: userId,
-          type: _selectedActivityType!,
-          distance: distanceMeters,
-          duration: durationSeconds,
-          elevationGain: elevationGain,
-          startTime: startTime,
-          endTime: endTime,
-          averagePace: avgPace,
-          maxPace: maxPace,
-          isPublic: true,
-          createdAt: DateTime.now(),
-          locations: locations,
-          mapActivityId: pipeline.mapActivityId,
-          processingStatus: ProcessingStatus.ready,
-        );
-      } catch (error, stackTrace) {
-        AppLogger.instance.error(
-          '[RecordScreen] Nivus pipeline save failed',
-          error: error,
-          stackTrace: stackTrace,
-        );
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Pipeline processing failed. Try again.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
-    } else {
-      activity = Activity(
-        id: '',
-        userId: '',
-        type: _selectedActivityType!,
-        distance: _locationService.calculateDistance(),
-        duration: _elapsedTime.inSeconds,
-        elevationGain: _locationService.calculateElevationGain(),
-        startTime: startTime,
-        endTime: endTime,
-        averagePace: 0,
-        maxPace: 0,
-        isPublic: true,
-        createdAt: DateTime.now(),
-        locations: locations,
-      );
-    }
-
-    final savedActivity = await activityProvider.createActivity(activity);
-
-    if (savedActivity != null && mounted) {
+    if (saved != null && mounted) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => ActivityDetailScreen(activityId: savedActivity.id),
+          builder: (_) => ActivityDetailScreen(activityId: saved.id),
         ),
       );
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Failed to save activity'),
-          backgroundColor: Colors.red,
+          backgroundColor: Color(0xFFDC2626),
         ),
       );
     }
 
+    _resetState();
+  }
+
+  void _resetState() {
     setState(() {
       _isRecording = false;
       _isPaused = false;
       _startTime = null;
-      _elapsedTime = Duration.zero;
+      _elapsedNotifier.value = Duration.zero;
       _routePoints.clear();
     });
     _locationService.clearLocations();
+    // Clear the live route from the map.
+    _mapController?.setGeoJsonSource(_liveRouteSourceId, _emptyGeoJson());
   }
 
   void _retryAfterError() {
@@ -399,6 +389,19 @@ class _RecordScreenState extends State<RecordScreen> {
     _initializeLocation();
   }
 
+  void _recentre() {
+    setState(() => _trackingMode = MyLocationTrackingMode.tracking);
+    // Widget prop alone doesn't force a camera snap on an already-loaded map.
+    // Animate explicitly to the last known position.
+    final pos = _locationService.currentPosition;
+    if (pos != null) {
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(
+            LatLng(pos.latitude, pos.longitude), 15),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_hasError) {
@@ -408,115 +411,136 @@ class _RecordScreenState extends State<RecordScreen> {
       );
     }
 
-    try {
-      if (_initialCameraPosition == null) {
-        Future.delayed(const Duration(seconds: 3), () {
-          if (mounted && _initialCameraPosition == null) {
-            setState(() {
-              _initialCameraPosition = const CameraPosition(
-                target: LatLng(37.7749, -122.4194),
-                zoom: 15,
-              );
-            });
-          }
-        });
-        return const Scaffold(
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Loading map...'),
-              ],
-            ),
-          ),
-        );
-      }
+    if (_initialCameraPosition == null) {
+      // Fallback timeout after 3 s.
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted && _initialCameraPosition == null) {
+          setState(() {
+            _initialCameraPosition = const CameraPosition(
+              target: LatLng(37.7749, -122.4194),
+              zoom: 15,
+            );
+          });
+        }
+      });
 
       return Scaffold(
-        body: Stack(
-          children: [
-            RecordMapView(
-              initialCameraPosition: _initialCameraPosition!,
-              routePoints: _routePoints,
-              onMapCreated: (controller) {
-                if (!_mapCompleterUsed) {
-                  _mapCompleterUsed = true;
-                  _mapController.complete(controller);
-                }
-              },
-            ),
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      color: SyntrakColors.textPrimary,
-                      onPressed:
-                          _isRecording ? null : () => Navigator.pop(context),
-                    ),
-                    if (_isRecording)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: SyntrakColors.textPrimary.withOpacity(0.9),
-                          borderRadius:
-                              BorderRadius.circular(SyntrakRadius.round),
-                        ),
-                        child: Text(
-                          formatRecordDuration(_elapsedTime),
-                          style: SyntrakTypography.metricLarge.copyWith(
-                            color: SyntrakColors.textOnPrimary,
-                          ),
-                        ),
-                      )
-                    else
-                      const SizedBox(width: 48),
-                    if (_isRecording)
-                      IconButton(
-                        icon: Icon(
-                          _isPaused ? Icons.play_arrow : Icons.pause,
-                          color: SyntrakColors.textPrimary,
-                        ),
-                        onPressed:
-                            _isPaused ? _resumeRecording : _pauseRecording,
-                      )
-                    else
-                      const SizedBox(width: 48),
-                  ],
+        backgroundColor: SyntrakColors.background,
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(
+                    SyntrakColors.primary),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Acquiring GPS…',
+                style: SyntrakTypography.bodyMedium.copyWith(
+                  color: SyntrakColors.textSecondary,
                 ),
               ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Approximate heights so layers don't overlap:
+    //   controls bar  ≈ 120px
+    //   stats card gap ≈ 12px
+    //   stats card     ≈ 130px expanded / 56px collapsed
+    const _controlsHeight = 120.0;
+    const _statsCardBottom = _controlsHeight + 12.0;
+    const _recentreBottom = _statsCardBottom + 140.0; // always above stats card
+
+    return Scaffold(
+      backgroundColor: SyntrakColors.darkBackground,
+      body: Stack(
+        children: [
+          // 1 — Full-screen map
+          RecordMapView(
+            initialCameraPosition: _initialCameraPosition!,
+            myLocationTrackingMode: _trackingMode,
+            onTrackingDismissed: () =>
+                setState(() => _trackingMode = MyLocationTrackingMode.none),
+            onMapCreated: (c) => _mapController = c,
+            onStyleLoaded: _onMapStyleLoaded,
+          ),
+
+          // 2 — Re-centre button (right side, above stats card)
+          Positioned(
+            right: 16,
+            bottom: _recentreBottom,
+            child: _RecentreButton(onTap: _recentre),
+          ),
+
+          // 3 — Stats card (floating, collapsible)
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: _statsCardBottom,
+            child: RecordStatsCard(
+              isRecording: _isRecording,
+              selectedActivityType: _selectedActivityType,
+              locationService: _locationService,
+              routePoints: _routePoints,
+              elapsedNotifier: _elapsedNotifier,
+              onSelectType: _selectActivityType,
             ),
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: RecordBottomSheet(
-                isRecording: _isRecording,
-                selectedActivityType: _selectedActivityType,
-                locationService: _locationService,
-                routePoints: _routePoints,
-                onSelectType: _selectActivityType,
-                onStart: _startRecording,
-                onStop: _stopRecording,
-              ),
+          ),
+
+          // 4 — Controls bar (pinned to very bottom)
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: RecordControls(
+              isRecording: _isRecording,
+              isPaused: _isPaused,
+              activityType: _selectedActivityType,
+              onSelectType: _selectActivityType,
+              onStart: _startRecording,
+              onStop: _stopRecording,
+              onPause: _pauseRecording,
+              onResume: _resumeRecording,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Re-centre FAB ────────────────────────────────────────────────────────────
+
+class _RecentreButton extends StatelessWidget {
+  const _RecentreButton({this.onTap});
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          border: Border.all(color: SyntrakColors.divider),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
-      );
-    } catch (e, stackTrace) {
-      debugPrint('RecordScreen build: $e\n$stackTrace');
-      return RecordErrorView(
-        message: _errorMessage ?? 'The page is not ready!',
-        onRetry: _retryAfterError,
-      );
-    }
+        child: Icon(Icons.my_location,
+            color: SyntrakColors.primary, size: 20),
+      ),
+    );
   }
 }

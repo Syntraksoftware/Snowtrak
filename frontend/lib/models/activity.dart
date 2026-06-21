@@ -107,6 +107,7 @@ class Activity {
   final String? mapActivityId;
   final ProcessingStatus processingStatus;
   final String? storageKey;
+  final String? thumbnailUrl;
 
   Activity({
     required this.id,
@@ -128,6 +129,7 @@ class Activity {
     this.mapActivityId,
     this.processingStatus = ProcessingStatus.ready,
     this.storageKey,
+    this.thumbnailUrl,
   });
 
   bool get isPipelinePending =>
@@ -200,6 +202,7 @@ class Activity {
       mapActivityId: json['map_activity_id'] as String?,
       processingStatus: ProcessingStatus.fromString(json['processing_status'] as String?),
       storageKey: json['storage_key'] as String?,
+      thumbnailUrl: json['thumbnail_url'] as String?,
     );
   }
 

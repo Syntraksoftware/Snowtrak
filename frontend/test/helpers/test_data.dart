@@ -56,7 +56,6 @@ class TestData {
     DateTime? startTime,
     double? distance,
     int? duration,
-    String? thumbnailUrl,
   }) {
     final now = DateTime.now();
     final start = startTime ?? now;
@@ -74,7 +73,6 @@ class TestData {
       maxPace: 300.0,
       isPublic: true,
       createdAt: now,
-      thumbnailUrl: thumbnailUrl,
     );
   }
 

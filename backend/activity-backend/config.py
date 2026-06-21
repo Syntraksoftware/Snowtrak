@@ -5,6 +5,8 @@ from functools import lru_cache
 from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from shared.jwt_env import JWT_SECRET_FIELD
+
 
 class Config(BaseSettings):
     """Typed settings loaded from environment variables."""
@@ -13,7 +15,7 @@ class Config(BaseSettings):
 
     SUPABASE_URL: str
     SUPABASE_SERVICE_ROLE_KEY: str
-    JWT_SECRET: str
+    JWT_SECRET: str = JWT_SECRET_FIELD
     JWT_ALGORITHM: str = "HS256"
     FASTAPI_ENV: str = "development"
     PORT: int = 5100

@@ -19,14 +19,6 @@ class DioFactory {
         receiveTimeout: const Duration(seconds: 45),
       );
 
-  /// Nivus compute service — pipeline can take tens of seconds on long tracks.
-  Dio buildNivusClient() => _build(
-        config.nivusApiBaseUrl,
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 120),
-        attachAuth: false,
-      );
-
   Dio _build(
     String baseUrl, {
     Duration connectTimeout = const Duration(seconds: 8),

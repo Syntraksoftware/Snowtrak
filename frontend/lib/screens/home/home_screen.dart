@@ -6,6 +6,7 @@ import 'package:syntrak/screens/record/record_screen.dart';
 import 'package:syntrak/screens/profile/profile_screen.dart';
 import 'package:syntrak/screens/groups/groups_screen.dart';
 import 'package:syntrak/screens/community/community_screen.dart';
+import 'package:syntrak/screens/home/home_tab_scope.dart';
 import 'package:syntrak/screens/home/location_permission_dialog.dart';
 import 'package:syntrak/services/location_service.dart';
 import 'package:syntrak/services/storage_service.dart';
@@ -91,17 +92,19 @@ class _HomeScreenState extends State<HomeScreen> {
     // Ensure currentIndex is within bounds
     final safeIndex = _currentIndex.clamp(0, _screens.length - 1);
 
-    return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(), // Disable swipe gestures
-        onPageChanged: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        children: _screens,
-      ),
+    return HomeTabScope(
+      selectTab: _onTabTapped,
+      child: Scaffold(
+        body: PageView(
+          controller: _pageController,
+          physics: const NeverScrollableScrollPhysics(),
+          onPageChanged: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          children: _screens,
+        ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: SyntrakElevation.md,
@@ -143,6 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 }

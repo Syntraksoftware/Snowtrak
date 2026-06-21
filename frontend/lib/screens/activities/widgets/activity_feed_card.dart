@@ -23,58 +23,62 @@ class ActivityFeedCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final activityColor = ActivityHelpers.getActivityColor(activity.type);
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-        side: BorderSide(color: SyntrakColors.divider, width: 1),
-      ),
-      margin: const EdgeInsets.only(bottom: SyntrakSpacing.md),
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ActivityDetailScreen(activityId: activity.id),
-            ),
-          );
-        },
-        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ActivityFeedCardHeader(
-              activity: activity,
-              athleteName: athleteName,
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                SyntrakSpacing.md,
-                0,
-                SyntrakSpacing.md,
-                SyntrakSpacing.sm,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: SyntrakSpacing.md),
+      child: Material(
+        color: SyntrakColors.surface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+          side: const BorderSide(color: SyntrakColors.divider),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ActivityDetailScreen(activityId: activity.id),
               ),
-              child: Text(
-                activity.name?.isNotEmpty == true
-                    ? activity.name!
-                    : '${activity.type.displayName} Activity',
-                style: SyntrakTypography.headlineSmall.copyWith(
-                  color: SyntrakColors.textPrimary,
+            );
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ActivityFeedCardHeader(
+                activity: activity,
+                athleteName: athleteName,
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  SyntrakSpacing.md,
+                  0,
+                  SyntrakSpacing.md,
+                  SyntrakSpacing.sm,
+                ),
+                child: Text(
+                  activity.name?.isNotEmpty == true
+                      ? activity.name!
+                      : '${activity.type.displayName} Activity',
+                  style: SyntrakTypography.headlineSmall.copyWith(
+                    color: SyntrakColors.textPrimary,
+                  ),
                 ),
               ),
-            ),
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
-              child: ActivityFeedCardStatsRow(activity: activity),
-            ),
-            const SizedBox(height: SyntrakSpacing.md),
-            ActivityFeedCardMapThumbnail(
-              locations: activity.locations,
-              routeColor: activityColor,
-            ),
-            ActivityFeedCardBadges(activity: activity),
-          ],
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+                child: ActivityFeedCardStatsRow(activity: activity),
+              ),
+              const SizedBox(height: SyntrakSpacing.md),
+              ActivityFeedCardMapThumbnail(
+                locations: activity.locations,
+                routeColor: activityColor,
+                imageUrl: activity.thumbnailUrl,
+              ),
+              ActivityFeedCardBadges(activity: activity),
+            ],
+          ),
         ),
       ),
     );

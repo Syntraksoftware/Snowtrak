@@ -6,7 +6,11 @@ frontend/build/
 frontend/.dart_tool/
 frontend/.idea/
 frontend/ios/Pods/
+frontend/ios/Flutter/Generated.xcconfig
+frontend/ios/Flutter/flutter_export_environment.sh
 backend/.venv/
 backend/data/*.geojson
 .env
+*.env
 *.p8
+.cursor/

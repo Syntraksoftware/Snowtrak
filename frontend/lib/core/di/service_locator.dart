@@ -20,21 +20,16 @@ import 'package:syntrak/services/auth_service.dart';
 import 'package:syntrak/services/community_service.dart';
 import 'package:syntrak/services/profile_service.dart';
 import 'package:syntrak/features/track_pipeline/application/activity_upload_coordinator.dart';
-import 'package:syntrak/features/track_pipeline/application/track_pipeline_coordinator.dart';
-import 'package:syntrak/features/track_pipeline/data/repositories/map_elevation_repository.dart';
-import 'package:syntrak/features/track_pipeline/data/repositories/map_track_persistence_repository.dart';
-import 'package:syntrak/features/track_pipeline/data/repositories/nivus_pipeline_repository.dart';
 import 'package:syntrak/services/apis/activities_api.dart';
 import 'package:syntrak/services/apis/activity_upload_api.dart';
 import 'package:syntrak/services/apis/auth_api.dart';
 import 'package:syntrak/services/apis/community_api.dart';
 import 'package:syntrak/services/apis/map_activities_api.dart';
-import 'package:syntrak/services/apis/map_elevation_api.dart';
-import 'package:syntrak/services/apis/nivus_pipeline_api.dart';
 import 'package:syntrak/services/apis/notifications_api.dart';
 import 'package:syntrak/services/apis/users_api.dart';
 import 'package:syntrak/services/location_service.dart';
 import 'package:syntrak/services/service_registry.dart';
+import 'package:syntrak/services/weather_cache.dart';
 import 'package:syntrak/services/weather_service.dart';
 
 final sl = GetIt.instance;
@@ -65,9 +60,7 @@ Future<void> setupServiceLocatorWithEnvironment({
     'main=${appConfig.mainApiBaseUrl} '
     'activity=${appConfig.activityApiBaseUrl} '
     'community=${appConfig.communityApiBaseUrl} '
-    'map=${appConfig.mapApiBaseUrl} '
-    'nivus=${appConfig.nivusApiBaseUrl} '
-    'useNivusPipeline=${appConfig.useNivusPipeline}',
+    'map=${appConfig.mapApiBaseUrl}',
   );
 
   final tokenStore = AuthTokenStore();
@@ -88,11 +81,6 @@ Future<void> setupServiceLocatorWithEnvironment({
     dioFactory.buildMapClient(),
     instanceName: 'map',
   );
-  sl.registerSingleton<Dio>(
-    dioFactory.buildNivusClient(),
-    instanceName: 'nivus',
-  );
-
   sl.registerLazySingleton<AuthApi>(
     () => AuthApi(dio: sl<Dio>(instanceName: 'main')),
   );
@@ -111,32 +99,10 @@ Future<void> setupServiceLocatorWithEnvironment({
   sl.registerLazySingleton<NotificationsApi>(
     () => NotificationsApi(dio: sl<Dio>(instanceName: 'main')),
   );
-  sl.registerLazySingleton<NivusPipelineApi>(
-    () => NivusPipelineApi(dio: sl<Dio>(instanceName: 'nivus')),
-  );
-  sl.registerLazySingleton<MapElevationApi>(
-    () => MapElevationApi(dio: sl<Dio>(instanceName: 'map')),
-  );
   sl.registerLazySingleton<MapActivitiesApi>(
     () => MapActivitiesApi(dio: sl<Dio>(instanceName: 'map')),
   );
 
-  sl.registerLazySingleton<NivusPipelineRepository>(
-    () => NivusPipelineRepositoryImpl(api: sl<NivusPipelineApi>()),
-  );
-  sl.registerLazySingleton<MapElevationRepository>(
-    () => MapElevationRepositoryImpl(api: sl<MapElevationApi>()),
-  );
-  sl.registerLazySingleton<MapTrackPersistenceRepository>(
-    () => MapTrackPersistenceRepositoryImpl(api: sl<MapActivitiesApi>()),
-  );
-  sl.registerLazySingleton<TrackPipelineCoordinator>(
-    () => TrackPipelineCoordinator(
-      elevationRepository: sl<MapElevationRepository>(),
-      nivusRepository: sl<NivusPipelineRepository>(),
-      mapPersistenceRepository: sl<MapTrackPersistenceRepository>(),
-    ),
-  );
   sl.registerLazySingleton<ActivityUploadCoordinator>(
     () => ActivityUploadCoordinator(uploadApi: sl<ActivityUploadApi>()),
   );
@@ -175,11 +141,13 @@ Future<void> setupServiceLocatorWithEnvironment({
   );
 
   sl.registerLazySingleton<WeatherService>(() => WeatherService());
+  sl.registerLazySingleton<WeatherCache>(() => WeatherCache());
   sl.registerLazySingleton<LocationService>(() => LocationService());
   sl.registerLazySingleton<ActivitiesContextRepository>(
     () => ActivitiesContextRepository(
       weatherService: sl<WeatherService>(),
       locationService: sl<LocationService>(),
+      weatherCache: sl<WeatherCache>(),
     ),
   );
 
