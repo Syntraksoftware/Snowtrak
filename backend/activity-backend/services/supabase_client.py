@@ -105,6 +105,7 @@ class ActivitySupabaseClient:
         duration_seconds: int | None = None,
         elevation_gain_meters: float | None = None,
         gps_path: list[dict[str, Any]] | None = None,
+        thumbnail_url: str | None = None,
         name: str | None = None,
     ) -> dict[str, Any] | None:
         update_fields: dict[str, Any] = {
@@ -124,6 +125,8 @@ class ActivitySupabaseClient:
             update_fields["elevation_gain_meters"] = elevation_gain_meters
         if gps_path is not None:
             update_fields["gps_path"] = gps_path
+        if thumbnail_url is not None:
+            update_fields["thumbnail_url"] = thumbnail_url
         if name is not None:
             update_fields["name"] = name
 

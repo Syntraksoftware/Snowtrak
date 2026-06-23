@@ -51,6 +51,20 @@ class MapBackendClient:
         response.raise_for_status()
         return response.json()
 
+    async def generate_thumbnail(self, activity_id: str, gps_path: list[dict]) -> str | None:
+        """Request a thumbnail for a live-recorded activity (lat/lng points)."""
+        # gps_path uses 'lng'; map-backend /thumbnail expects 'lon'
+        points = [{"lat": p["lat"], "lon": p["lng"]} for p in gps_path if "lat" in p and "lng" in p]
+        if not points:
+            return None
+        url = f"{self._base_url}/activities/thumbnail"
+        async with httpx.AsyncClient(timeout=self._timeout) as client:
+            response = await client.post(url, json={"activity_id": activity_id, "points": points})
+        if not response.is_success:
+            logger.warning("thumbnail request failed for %s: %s", activity_id, response.status_code)
+            return None
+        return response.json().get("thumbnail_url")
+
 
 _map_backend_client: MapBackendClient | None = None
 

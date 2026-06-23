@@ -178,6 +178,7 @@ def map_activity_to_frontend_payload(
         "map_activity_id": activity_record.get("map_activity_id"),
         "processing_status": activity_record.get("processing_status") or "ready",
         "storage_key": activity_record.get("storage_key"),
+        "thumbnail_url": activity_record.get("thumbnail_url"),
     }
 
 
