@@ -53,5 +53,4 @@ class ActivitiesRepository {
       offset: offset,
     );
   }
-  }
 }
