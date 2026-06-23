@@ -22,7 +22,6 @@ import 'package:syntrak/services/map_config.dart';
 
 class ActivityDetailScreen extends StatefulWidget {
   final String activityId;
-
   const ActivityDetailScreen({super.key, required this.activityId});
 
   @override
@@ -96,14 +95,14 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
     final points = <TrackPoint>[];
     for (var i = 0; i < sorted.length; i++) {
-      final current = sorted[i];
-      final previous = i > 0 ? sorted[i - 1] : null;
+      final cur = sorted[i];
+      final prev = i > 0 ? sorted[i - 1] : null;
       points.add(TrackPoint(
-        lat: current.latitude,
-        lon: current.longitude,
-        elevationM: current.altitude ?? 0,
-        timestamp: current.timestamp.toUtc(),
-        speedKmh: _speedKmh(current, previous),
+        lat: cur.latitude,
+        lon: cur.longitude,
+        elevationM: cur.altitude ?? 0,
+        timestamp: cur.timestamp.toUtc(),
+        speedKmh: _speedKmh(cur, prev),
       ));
     }
     return ProcessedTrack(
@@ -114,66 +113,53 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     );
   }
 
-  Segment _fallbackSegment(List<TrackPoint> points) => Segment(
+  List<Segment> _localFallbackSegments(List<TrackPoint> points) {
+    if (points.length < 2) return const <Segment>[];
+    return <Segment>[
+      Segment(
         type: SegmentType.descent,
         points: points,
         startIndex: 0,
         endIndex: points.length - 1,
         trailName: 'Detected run',
         difficulty: null,
-      );
-
-  List<Segment> _localFallbackSegments(List<TrackPoint> points) {
-    if (points.length < 2) return const <Segment>[];
-    return <Segment>[_fallbackSegment(points)];
+      )
+    ];
   }
 
   String _normalizeMapBaseUrl(String value) {
-    var trimmed = value.trim();
-    while (trimmed.endsWith('/')) {
-      trimmed = trimmed.substring(0, trimmed.length - 1);
-    }
-    if (trimmed.toLowerCase().endsWith('/api')) {
-      return trimmed.substring(0, trimmed.length - 4);
-    }
-    return trimmed;
+    var v = value.trim();
+    while (v.endsWith('/')) v = v.substring(0, v.length - 1);
+    if (v.toLowerCase().endsWith('/api')) v = v.substring(0, v.length - 4);
+    return v;
   }
 
-  double _speedKmh(Location current, Location? previous) {
-    final rawSpeedMps = current.speed;
-    if (previous == null) return rawSpeedMps == null ? 0 : rawSpeedMps * 3.6;
-    final deltaSeconds =
-        current.timestamp.difference(previous.timestamp).inMilliseconds / 1000.0;
-    if (deltaSeconds <= 0) return rawSpeedMps == null ? 0 : rawSpeedMps * 3.6;
-    final distanceMeters = _haversineMeters(
-      previous.latitude, previous.longitude,
-      current.latitude, current.longitude,
-    );
-    return (distanceMeters / deltaSeconds) * 3.6;
+  double _speedKmh(Location cur, Location? prev) {
+    final raw = cur.speed;
+    if (prev == null) return raw == null ? 0 : raw * 3.6;
+    final dt = cur.timestamp.difference(prev.timestamp).inMilliseconds / 1000.0;
+    if (dt <= 0) return raw == null ? 0 : raw * 3.6;
+    return (_haversineMeters(prev.latitude, prev.longitude, cur.latitude, cur.longitude) / dt) * 3.6;
   }
 
   double _haversineMeters(double lat1, double lon1, double lat2, double lon2) {
-    const earthRadiusM = 6371000.0;
-    final dLat = _degToRad(lat2 - lat1);
-    final dLon = _degToRad(lon2 - lon1);
-    final a = (sin(dLat / 2) * sin(dLat / 2)) +
-        cos(_degToRad(lat1)) * cos(_degToRad(lat2)) * (sin(dLon / 2) * sin(dLon / 2));
-    return earthRadiusM * 2 * atan2(sqrt(a), sqrt(1 - a));
+    const r = 6371000.0;
+    final dLat = _rad(lat2 - lat1);
+    final dLon = _rad(lon2 - lon1);
+    final a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(_rad(lat1)) * cos(_rad(lat2)) * sin(dLon / 2) * sin(dLon / 2);
+    return r * 2 * atan2(sqrt(a), sqrt(1 - a));
   }
 
-  double _degToRad(double value) => value * (pi / 180);
+  double _rad(double v) => v * (pi / 180);
 
   Future<void> _initialiseMapIfReady() async {
-    final controller = _mapController;
-    final track = _track;
-    if (!_mapReady || controller == null || track == null || _segments.isEmpty) return;
-    await _mapRenderingEngine!.initialise(
-      controller,
-      track: track,
-      segments: _segments,
-      initialColorMode: _selectedColorMode,
-    );
-    await _mapRenderingEngine!.fitToTrack(track);
+    final c = _mapController;
+    final t = _track;
+    if (!_mapReady || c == null || t == null || _segments.isEmpty) return;
+    await _mapRenderingEngine!.initialise(c,
+        track: t, segments: _segments, initialColorMode: _selectedColorMode);
+    await _mapRenderingEngine!.fitToTrack(t);
   }
 
   Future<void> _onColorModeSelected(MapColorMode mode) async {
@@ -184,7 +170,6 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
   Future<void> _zoomIn() async =>
       _mapController?.animateCamera(CameraUpdate.zoomIn());
-
   Future<void> _zoomOut() async =>
       _mapController?.animateCamera(CameraUpdate.zoomOut());
 
@@ -202,9 +187,9 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: SyntrakColors.darkSurface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: EdgeInsets.fromLTRB(
             24, 12, 24, MediaQuery.of(context).padding.bottom + 24),
@@ -215,15 +200,16 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                  color: Colors.black12,
-                  borderRadius: BorderRadius.circular(2)),
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
             const SizedBox(height: 24),
             Container(
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: SyntrakColors.error.withValues(alpha: 0.1),
+                color: SyntrakColors.error.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.delete_outline_rounded,
@@ -232,11 +218,11 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
             const SizedBox(height: 16),
             Text('Delete Activity?',
                 style: SyntrakTypography.headlineMedium
-                    .copyWith(color: SyntrakColors.textPrimary)),
+                    .copyWith(color: SyntrakColors.darkTextPrimary)),
             const SizedBox(height: 8),
             Text('This cannot be undone.',
                 style: SyntrakTypography.bodyMedium
-                    .copyWith(color: SyntrakColors.textSecondary)),
+                    .copyWith(color: SyntrakColors.darkTextSecondary)),
             const SizedBox(height: 28),
             SizedBox(
               width: double.infinity,
@@ -260,7 +246,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
               onPressed: () => Navigator.pop(context, false),
               child: Text('Cancel',
                   style: SyntrakTypography.bodyMedium
-                      .copyWith(color: SyntrakColors.textTertiary)),
+                      .copyWith(color: SyntrakColors.darkTextSecondary)),
             ),
           ],
         ),
@@ -278,12 +264,11 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: SyntrakColors.background,
-        appBar: AppBar(backgroundColor: SyntrakColors.surface),
+        backgroundColor: SyntrakColors.darkBackground,
+        appBar: _buildAppBar(null),
         body: Center(
           child: CircularProgressIndicator(
-            valueColor:
-                AlwaysStoppedAnimation<Color>(SyntrakColors.primary),
+            valueColor: AlwaysStoppedAnimation<Color>(SyntrakColors.primary),
           ),
         ),
       );
@@ -291,15 +276,12 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
     if (_activity == null) {
       return Scaffold(
-        backgroundColor: SyntrakColors.background,
-        appBar: AppBar(
-          backgroundColor: SyntrakColors.surface,
-          title: const Text('Activity'),
-        ),
+        backgroundColor: SyntrakColors.darkBackground,
+        appBar: _buildAppBar(null),
         body: Center(
           child: Text('Activity not found',
               style: SyntrakTypography.bodyLarge
-                  .copyWith(color: SyntrakColors.textSecondary)),
+                  .copyWith(color: SyntrakColors.darkTextSecondary)),
         ),
       );
     }
@@ -314,51 +296,44 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
             : const LatLng(46.8, 8.2));
     final hasRenderableTrack = track != null && track.points.length > 1;
 
-    final title = activity.name?.isNotEmpty == true
-        ? activity.name!
-        : activity.type.displayName;
-    final dateStr =
-        DateFormat('MMM d, y · h:mm a').format(activity.startTime);
-
     return Scaffold(
-      backgroundColor: SyntrakColors.background,
-      appBar: AppBar(
-        backgroundColor: SyntrakColors.surface,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-          color: SyntrakColors.textPrimary,
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(title,
-                style: SyntrakTypography.headlineSmall
-                    .copyWith(color: SyntrakColors.textPrimary)),
-            Text(dateStr,
-                style: SyntrakTypography.bodySmall
-                    .copyWith(color: SyntrakColors.textSecondary)),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_outline_rounded, size: 22),
-            color: SyntrakColors.textTertiary,
-            onPressed: () => _confirmDelete(activity),
-            tooltip: 'Delete activity',
-          ),
-        ],
-      ),
+      backgroundColor: SyntrakColors.darkBackground,
+      appBar: _buildAppBar(activity),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Map ──────────────────────────────────────────────────
+            // ── Activity name + date ────────────────────────────────
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    activity.name?.isNotEmpty == true
+                        ? activity.name!
+                        : activity.type.displayName,
+                    style: SyntrakTypography.displaySmall.copyWith(
+                      color: SyntrakColors.darkTextPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    DateFormat('EEEE, MMM d, y · h:mm a')
+                        .format(activity.startTime),
+                    style: SyntrakTypography.bodySmall.copyWith(
+                      color: SyntrakColors.darkTextSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Map ─────────────────────────────────────────────────
             SizedBox(
-              height: 260,
+              height: 240,
               child: Stack(
                 children: [
                   MapLibreMap(
@@ -397,71 +372,79 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
             if (hasRenderableTrack)
               Padding(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 child: _ColorModeBar(
                   selected: _selectedColorMode,
                   onSelected: _onColorModeSelected,
                 ),
               )
             else
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
 
-            // ── Stats card ───────────────────────────────────────────
+            // ── Stats grid ───────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
                 decoration: BoxDecoration(
-                  color: SyntrakColors.surface,
+                  color: SyntrakColors.darkSurface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: SyntrakColors.divider),
                 ),
-                child: IntrinsicHeight(
-                  child: Row(
-                    children: [
-                      Expanded(
-                          child: _StatCell(
-                              value: activity.formattedDistance,
-                              label: 'Distance')),
-                      VerticalDivider(
-                          width: 1,
-                          thickness: 1,
-                          color: SyntrakColors.divider),
-                      Expanded(
-                          child: _StatCell(
-                              value: activity.formattedDuration,
-                              label: 'Time')),
-                      VerticalDivider(
-                          width: 1,
-                          thickness: 1,
-                          color: SyntrakColors.divider),
-                      Expanded(
-                          child: _StatCell(
-                              value:
-                                  '+${activity.elevationGain.toStringAsFixed(0)} m',
-                              label: 'Elevation')),
-                      VerticalDivider(
-                          width: 1,
-                          thickness: 1,
-                          color: SyntrakColors.divider),
-                      Expanded(
-                          child: _StatCell(
-                              value: activity.formattedSpeed,
-                              label: 'Avg Speed')),
-                    ],
-                  ),
+                child: Column(
+                  children: [
+                    IntrinsicHeight(
+                      child: Row(
+                        children: [
+                          Expanded(
+                              child: _StatCell(
+                                  label: 'Distance',
+                                  value: activity.formattedDistance)),
+                          VerticalDivider(
+                              width: 1,
+                              thickness: 1,
+                              color: SyntrakColors.darkSurfaceVariant),
+                          Expanded(
+                              child: _StatCell(
+                                  label: 'Avg Speed',
+                                  value: activity.formattedSpeed)),
+                        ],
+                      ),
+                    ),
+                    Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: SyntrakColors.darkSurfaceVariant),
+                    IntrinsicHeight(
+                      child: Row(
+                        children: [
+                          Expanded(
+                              child: _StatCell(
+                                  label: 'Moving Time',
+                                  value: activity.formattedDuration)),
+                          VerticalDivider(
+                              width: 1,
+                              thickness: 1,
+                              color: SyntrakColors.darkSurfaceVariant),
+                          Expanded(
+                              child: _StatCell(
+                                  label: 'Elevation Gain',
+                                  value:
+                                      '+${activity.elevationGain.toStringAsFixed(0)} m')),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
 
             // ── Details ──────────────────────────────────────────────
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
                 decoration: BoxDecoration(
-                  color: SyntrakColors.surface,
+                  color: SyntrakColors.darkSurface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: SyntrakColors.divider),
                 ),
                 child: Column(
                   children: [
@@ -470,26 +453,15 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                         label: 'Start',
                         value: DateFormat('MMM d, y · h:mm a')
                             .format(activity.startTime)),
-                    Divider(height: 1, color: SyntrakColors.divider),
+                    Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: SyntrakColors.darkSurfaceVariant),
                     _DetailTile(
                         icon: Icons.flag_outlined,
                         label: 'End',
                         value: DateFormat('MMM d, y · h:mm a')
                             .format(activity.endTime)),
-                    if (activity.name?.isNotEmpty == true) ...[
-                      Divider(height: 1, color: SyntrakColors.divider),
-                      _DetailTile(
-                          icon: Icons.label_outline_rounded,
-                          label: 'Name',
-                          value: activity.name!),
-                    ],
-                    if (activity.description?.isNotEmpty == true) ...[
-                      Divider(height: 1, color: SyntrakColors.divider),
-                      _DetailTile(
-                          icon: Icons.notes_rounded,
-                          label: 'Note',
-                          value: activity.description!),
-                    ],
                   ],
                 ),
               ),
@@ -501,6 +473,34 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       ),
     );
   }
+
+  AppBar _buildAppBar(Activity? activity) {
+    return AppBar(
+      backgroundColor: SyntrakColors.darkBackground,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+        color: SyntrakColors.darkTextPrimary,
+        onPressed: () => Navigator.of(context).pop(),
+      ),
+      title: Text(
+        activity?.type.displayName ?? '',
+        style: SyntrakTypography.headlineSmall.copyWith(
+          color: SyntrakColors.darkTextPrimary,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      actions: [
+        if (activity != null)
+          IconButton(
+            icon: const Icon(Icons.more_vert_rounded, size: 22),
+            color: SyntrakColors.darkTextPrimary,
+            onPressed: () => _confirmDelete(activity),
+          ),
+      ],
+    );
+  }
 }
 
 // ─── Map controls ─────────────────────────────────────────────────────────────
@@ -508,7 +508,6 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 class _MapStyleToggle extends StatelessWidget {
   const _MapStyleToggle(
       {required this.selectedStyle, required this.onSelected});
-
   final MapVisualStyle selectedStyle;
   final void Function(MapVisualStyle) onSelected;
 
@@ -516,12 +515,12 @@ class _MapStyleToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: SyntrakColors.darkSurface,
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
-              blurRadius: 10,
+              color: Colors.black.withValues(alpha: 0.4),
+              blurRadius: 8,
               offset: const Offset(0, 2))
         ],
       ),
@@ -545,7 +544,6 @@ class _MapStyleToggle extends StatelessWidget {
 class _StyleBtn extends StatelessWidget {
   const _StyleBtn(
       {required this.label, required this.selected, required this.onTap});
-
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -553,8 +551,7 @@ class _StyleBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color:
-          selected ? SyntrakColors.primary : Colors.transparent,
+      color: selected ? SyntrakColors.primary : Colors.transparent,
       borderRadius: BorderRadius.circular(10),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
@@ -564,7 +561,9 @@ class _StyleBtn extends StatelessWidget {
           child: Text(
             label,
             style: TextStyle(
-              color: selected ? Colors.white : SyntrakColors.textSecondary,
+              color: selected
+                  ? Colors.white
+                  : SyntrakColors.darkTextSecondary,
               fontWeight: FontWeight.w600,
               fontSize: 13,
             ),
@@ -578,7 +577,6 @@ class _StyleBtn extends StatelessWidget {
 class _MapZoomControls extends StatelessWidget {
   const _MapZoomControls(
       {required this.onZoomIn, required this.onZoomOut});
-
   final Future<void> Function() onZoomIn;
   final Future<void> Function() onZoomOut;
 
@@ -586,12 +584,12 @@ class _MapZoomControls extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: SyntrakColors.darkSurface,
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
-              blurRadius: 10,
+              color: Colors.black.withValues(alpha: 0.4),
+              blurRadius: 8,
               offset: const Offset(0, 2))
         ],
       ),
@@ -600,14 +598,18 @@ class _MapZoomControls extends StatelessWidget {
         children: [
           IconButton(
             visualDensity: VisualDensity.compact,
-            icon: Icon(Icons.add, color: SyntrakColors.textPrimary, size: 20),
+            icon: Icon(Icons.add,
+                color: SyntrakColors.darkTextPrimary, size: 20),
             onPressed: () => onZoomIn(),
           ),
-          Container(width: 24, height: 1, color: SyntrakColors.divider),
+          Container(
+              width: 24,
+              height: 1,
+              color: SyntrakColors.darkSurfaceVariant),
           IconButton(
             visualDensity: VisualDensity.compact,
             icon: Icon(Icons.remove,
-                color: SyntrakColors.textPrimary, size: 20),
+                color: SyntrakColors.darkTextPrimary, size: 20),
             onPressed: () => onZoomOut(),
           ),
         ],
@@ -620,7 +622,6 @@ class _MapZoomControls extends StatelessWidget {
 
 class _ColorModeBar extends StatelessWidget {
   const _ColorModeBar({required this.selected, required this.onSelected});
-
   final MapColorMode selected;
   final Future<void> Function(MapColorMode) onSelected;
 
@@ -631,19 +632,16 @@ class _ColorModeBar extends StatelessWidget {
       child: Row(
         children: [
           _ModeChip(
-              mode: MapColorMode.segment,
               label: 'Segment',
               selected: selected == MapColorMode.segment,
               onTap: () => onSelected(MapColorMode.segment)),
           const SizedBox(width: 8),
           _ModeChip(
-              mode: MapColorMode.speed,
               label: 'Speed',
               selected: selected == MapColorMode.speed,
               onTap: () => onSelected(MapColorMode.speed)),
           const SizedBox(width: 8),
           _ModeChip(
-              mode: MapColorMode.elevation,
               label: 'Elevation',
               selected: selected == MapColorMode.elevation,
               onTap: () => onSelected(MapColorMode.elevation)),
@@ -655,12 +653,9 @@ class _ColorModeBar extends StatelessWidget {
 
 class _ModeChip extends StatelessWidget {
   const _ModeChip(
-      {required this.mode,
-      required this.label,
+      {required this.label,
       required this.selected,
       required this.onTap});
-
-  final MapColorMode mode;
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -671,22 +666,20 @@ class _ModeChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: selected
-              ? SyntrakColors.primary
-              : SyntrakColors.surface,
+          color: selected ? SyntrakColors.primary : SyntrakColors.darkSurface,
           borderRadius: BorderRadius.circular(999),
           border: Border.all(
               color: selected
                   ? SyntrakColors.primary
-                  : SyntrakColors.divider),
+                  : SyntrakColors.darkSurfaceVariant),
         ),
         child: Text(
           label,
           style: SyntrakTypography.labelMedium.copyWith(
-            color: selected ? Colors.white : SyntrakColors.textSecondary,
+            color:
+                selected ? Colors.white : SyntrakColors.darkTextSecondary,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -698,32 +691,31 @@ class _ModeChip extends StatelessWidget {
 // ─── Stats ────────────────────────────────────────────────────────────────────
 
 class _StatCell extends StatelessWidget {
-  const _StatCell({required this.value, required this.label});
-
-  final String value;
+  const _StatCell({required this.label, required this.value});
   final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            value,
-            textAlign: TextAlign.center,
-            style: SyntrakTypography.headlineSmall.copyWith(
-              color: SyntrakColors.textPrimary,
-              fontWeight: FontWeight.bold,
+            label,
+            style: SyntrakTypography.labelSmall.copyWith(
+              color: SyntrakColors.darkTextSecondary,
+              letterSpacing: 0.3,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
-            label,
-            textAlign: TextAlign.center,
-            style: SyntrakTypography.labelSmall.copyWith(
-              color: SyntrakColors.textTertiary,
+            value,
+            style: SyntrakTypography.headlineMedium.copyWith(
+              color: SyntrakColors.darkTextPrimary,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],
@@ -737,7 +729,6 @@ class _StatCell extends StatelessWidget {
 class _DetailTile extends StatelessWidget {
   const _DetailTile(
       {required this.icon, required this.label, required this.value});
-
   final IconData icon;
   final String label;
   final String value;
@@ -748,20 +739,18 @@ class _DetailTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: SyntrakColors.textTertiary),
+          Icon(icon, size: 18, color: SyntrakColors.darkTextSecondary),
           const SizedBox(width: 12),
           SizedBox(
-            width: 52,
+            width: 48,
             child: Text(label,
                 style: SyntrakTypography.bodySmall
-                    .copyWith(color: SyntrakColors.textTertiary)),
+                    .copyWith(color: SyntrakColors.darkTextSecondary)),
           ),
           Expanded(
-            child: Text(
-              value,
-              style: SyntrakTypography.bodyMedium
-                  .copyWith(color: SyntrakColors.textPrimary),
-            ),
+            child: Text(value,
+                style: SyntrakTypography.bodyMedium
+                    .copyWith(color: SyntrakColors.darkTextPrimary)),
           ),
         ],
       ),
