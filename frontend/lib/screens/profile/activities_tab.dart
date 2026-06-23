@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:syntrak/core/di/service_locator.dart';
 import 'package:syntrak/core/theme.dart';
+import 'package:syntrak/features/activities/data/activities_repository.dart';
 import 'package:syntrak/models/activity.dart';
 import 'package:syntrak/providers/auth_provider.dart';
 import 'package:syntrak/screens/profile/widgets/profile_activity_list_card.dart';
 import 'package:syntrak/screens/profile/widgets/profile_activities_search_bar.dart';
-import 'package:syntrak/services/profile_activities_service.dart';
 
 class ActivitiesTab extends StatefulWidget {
   const ActivitiesTab({
@@ -20,7 +21,7 @@ class ActivitiesTab extends StatefulWidget {
 }
 
 class _ActivitiesTabState extends State<ActivitiesTab> {
-  final ProfileActivitiesService _activityService = ProfileActivitiesService();
+  final ActivitiesRepository _repo = sl<ActivitiesRepository>();
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   List<Activity> _activities = [];
@@ -51,7 +52,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
 
     final activities = widget.activities.isNotEmpty
         ? List<Activity>.from(widget.activities)
-        : await _activityService.getUserActivities();
+        : await _repo.getMyActivities();
     activities.sort((a, b) => b.startTime.compareTo(a.startTime));
 
     setState(() {
@@ -243,14 +244,10 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
       _kudosCountMap[activityId] =
           currentValue ? currentCount - 1 : currentCount + 1;
     });
-    _activityService.toggleKudos(activityId);
+    // ponytail: kudos backend not wired yet
   }
 
-  void _shareActivity(String activityId) {
-    _activityService.shareActivity(activityId);
-  }
+  void _shareActivity(String activityId) {}
 
-  void _commentActivity(String activityId) {
-    _activityService.addComment(activityId, '');
-  }
+  void _commentActivity(String activityId) {}
 }

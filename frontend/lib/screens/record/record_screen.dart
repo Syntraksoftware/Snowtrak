@@ -49,6 +49,12 @@ class _RecordScreenState extends State<RecordScreen> {
   // Track last point where GeoJSON was pushed to avoid redundant redraws.
   LatLng? _lastGeoJsonUpdatePoint;
 
+  // Processing overlay state — shown after save while pipeline runs.
+  bool _isProcessing = false;
+  double _rawDistance = 0;
+  double _rawElevationGain = 0;
+  Duration _rawDuration = Duration.zero;
+
   @override
   void initState() {
     super.initState();
@@ -326,6 +332,11 @@ class _RecordScreenState extends State<RecordScreen> {
     final locations = _locationService.locations;
     if (locations.isEmpty) return;
 
+    // Capture raw stats before the API call — used for the processing overlay.
+    final rawDistance = _locationService.calculateDistance();
+    final rawElevationGain = _locationService.calculateElevationGain();
+    final rawDuration = _elapsedNotifier.value;
+
     final activityProvider =
         Provider.of<ActivityProvider>(context, listen: false);
     final auth = Provider.of<AuthProvider>(context, listen: false);
@@ -334,9 +345,9 @@ class _RecordScreenState extends State<RecordScreen> {
       id: '',
       userId: auth.user?.id ?? '',
       type: _selectedActivityType!,
-      distance: _locationService.calculateDistance(),
-      duration: _elapsedNotifier.value.inSeconds,
-      elevationGain: _locationService.calculateElevationGain(),
+      distance: rawDistance,
+      duration: rawDuration.inSeconds,
+      elevationGain: rawElevationGain,
       startTime: locations.first.timestamp,
       endTime: locations.last.timestamp,
       averagePace: 0,
@@ -348,23 +359,60 @@ class _RecordScreenState extends State<RecordScreen> {
 
     final saved = await activityProvider.createActivity(activity);
 
-    if (saved != null && mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ActivityDetailScreen(activityId: saved.id),
-        ),
-      );
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to save activity'),
-          backgroundColor: Color(0xFFDC2626),
-        ),
-      );
+    if (saved == null || !mounted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to save activity'),
+            backgroundColor: Color(0xFFDC2626),
+          ),
+        );
+      }
+      _resetState();
+      return;
     }
 
+    // If the backend already processed it inline, skip the wait.
+    if (!saved.isPipelinePending) {
+      _resetState();
+      _navigateToDetail(saved.id);
+      return;
+    }
+
+    // Show processing overlay while pipeline runs.
     _resetState();
+    setState(() {
+      _isProcessing = true;
+      _rawDistance = rawDistance;
+      _rawElevationGain = rawElevationGain;
+      _rawDuration = rawDuration;
+    });
+    _pollPipelineStatus(saved.id);
+  }
+
+  Future<void> _pollPipelineStatus(String activityId) async {
+    final activityProvider =
+        Provider.of<ActivityProvider>(context, listen: false);
+    while (mounted) {
+      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
+      final activity = await activityProvider.getActivity(activityId);
+      if (activity != null && !activity.isPipelinePending) {
+        if (!mounted) return;
+        setState(() => _isProcessing = false);
+        _navigateToDetail(activityId);
+        return;
+      }
+    }
+  }
+
+  void _navigateToDetail(String activityId) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ActivityDetailScreen(activityId: activityId),
+      ),
+    );
   }
 
   void _resetState() {
@@ -507,8 +555,125 @@ class _RecordScreenState extends State<RecordScreen> {
               onResume: _resumeRecording,
             ),
           ),
+
+          // 5 — Pipeline processing overlay (blocks all input until ready)
+          if (_isProcessing)
+            Positioned.fill(
+              child: _ProcessingOverlay(
+                distance: _rawDistance,
+                elevationGain: _rawElevationGain,
+                duration: _rawDuration,
+              ),
+            ),
         ],
       ),
+    );
+  }
+}
+
+// ─── Processing overlay ───────────────────────────────────────────────────────
+
+class _ProcessingOverlay extends StatelessWidget {
+  const _ProcessingOverlay({
+    required this.distance,
+    required this.elevationGain,
+    required this.duration,
+  });
+
+  final double distance;
+  final double elevationGain;
+  final Duration duration;
+
+  String get _formattedDistance => distance >= 1000
+      ? '${(distance / 1000).toStringAsFixed(2)} km'
+      : '${distance.toStringAsFixed(0)} m';
+
+  String get _formattedDuration {
+    final h = duration.inHours;
+    final m = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return h > 0 ? '$h:$m:$s' : '$m:$s';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AbsorbPointer(
+      child: Container(
+        color: Colors.white,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(SyntrakColors.primary),
+                  strokeWidth: 3,
+                ),
+                const SizedBox(height: 32),
+                Text(
+                  'Processing your run…',
+                  style: SyntrakTypography.headlineMedium.copyWith(
+                    color: SyntrakColors.textPrimary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Matching trails and correcting elevation',
+                  style: SyntrakTypography.bodyMedium.copyWith(
+                    color: SyntrakColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 48),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _StatItem(label: 'Distance', value: _formattedDistance),
+                    _StatItem(
+                      label: 'Elevation',
+                      value: '${elevationGain.toStringAsFixed(0)} m',
+                    ),
+                    _StatItem(label: 'Time', value: _formattedDuration),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatItem extends StatelessWidget {
+  const _StatItem({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          value,
+          style: SyntrakTypography.headlineMedium.copyWith(
+            color: SyntrakColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: SyntrakTypography.bodyMedium.copyWith(
+            color: SyntrakColors.textSecondary,
+          ),
+        ),
+      ],
     );
   }
 }

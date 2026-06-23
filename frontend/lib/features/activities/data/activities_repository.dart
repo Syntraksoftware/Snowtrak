@@ -35,4 +35,18 @@ class ActivitiesRepository {
   Future<void> deleteActivity(String id) {
     return _api.deleteActivity(id);
   }
+
+  Future<List<Activity>> getMyActivities({
+    String? search,
+    String? activityType,
+    String? startDate,
+    String? endDate,
+  }) {
+    return _api.getMyActivities(
+      search: search,
+      activityType: activityType,
+      startDate: startDate,
+      endDate: endDate,
+    );
+  }
 }
