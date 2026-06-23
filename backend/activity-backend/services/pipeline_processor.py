@@ -72,6 +72,7 @@ class PipelineProcessor:
             }
             map_activity = await self._map_client.persist_pipeline_activity(map_body)
             map_activity_id = map_activity.get("id")
+            thumbnail_url = map_activity.get("thumbnail_url")
 
             stats = pipeline.get("stats") or {}
             distance_m = float(stats.get("total_distance_km") or 0) * 1000.0
@@ -97,6 +98,7 @@ class PipelineProcessor:
                 duration_seconds=int(moving_time_s),
                 elevation_gain_meters=elevation_gain,
                 gps_path=gps_path,
+                thumbnail_url=thumbnail_url,
                 name=None,
             )
             logger.info(

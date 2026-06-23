@@ -362,6 +362,7 @@ class MapActivityDetailResponse(BaseModel):
     stats: dict[str, Any] | None = None
     processed_track: ProcessedTrackOut
     segments: list[SegmentOut]
+    thumbnail_url: str | None = None
 
 
 class MapActivityListItem(BaseModel):

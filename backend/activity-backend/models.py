@@ -113,6 +113,7 @@ class FrontendActivityResponse(BaseModel):
     map_activity_id: str | None = None
     processing_status: ProcessingStatus = ProcessingStatus.ready
     storage_key: str | None = None
+    thumbnail_url: str | None = None
 
 
 class UploadUrlRequest(BaseModel):

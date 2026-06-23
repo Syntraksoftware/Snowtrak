@@ -159,8 +159,9 @@ class Activity {
 
   String get formattedPace {
     if (averagePace == 0) return '--';
-    final minutes = (averagePace ~/ 60).toString().padLeft(2, '0');
-    final seconds = (averagePace % 60).toString().padLeft(2, '0');
+    final total = averagePace.round();
+    final minutes = (total ~/ 60).toString().padLeft(2, '0');
+    final seconds = (total % 60).toString().padLeft(2, '0');
     return '$minutes:$seconds /km';
   }
   

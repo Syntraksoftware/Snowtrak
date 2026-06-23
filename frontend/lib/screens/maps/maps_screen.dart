@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:provider/provider.dart';
 import 'package:syntrak/core/activity_helpers.dart';
+import 'package:syntrak/core/di/service_locator.dart';
 import 'package:syntrak/models/activity.dart';
 import 'package:syntrak/providers/activity_provider.dart';
+import 'package:syntrak/screens/activities/activity_detail_screen.dart';
+import 'package:syntrak/services/apis/map_activities_api.dart';
 import 'package:syntrak/services/location_service.dart';
 import 'package:syntrak/services/map_config.dart';
-import 'package:syntrak/screens/activities/activity_detail_screen.dart';
 
 class MapsScreen extends StatefulWidget {
   const MapsScreen({super.key});
@@ -14,6 +16,9 @@ class MapsScreen extends StatefulWidget {
   @override
   State<MapsScreen> createState() => _MapsScreenState();
 }
+
+const _trailSourceId = 'ski-trails';
+const _trailLayerId = 'ski-trails-layer';
 
 class _MapsScreenState extends State<MapsScreen> {
   final LocationService _locationService = LocationService();
@@ -24,6 +29,7 @@ class _MapsScreenState extends State<MapsScreen> {
   bool _hasError = false;
   String? _errorMessage;
   List<Activity> _activities = [];
+  bool _trailsLoaded = false;
 
   @override
   void initState() {
@@ -99,6 +105,50 @@ class _MapsScreenState extends State<MapsScreen> {
     }
   }
 
+  Future<void> _onStyleLoaded() async {
+    final controller = _mapController;
+    if (controller == null) return;
+    await controller.addGeoJsonSource(
+      _trailSourceId,
+      const {'type': 'FeatureCollection', 'features': []},
+    );
+    await controller.addLineLayer(
+      _trailSourceId,
+      _trailLayerId,
+      const LineLayerProperties(
+        lineColor: [
+          'match', ['get', 'difficulty'],
+          'easy',         '#4CAF50',
+          'novice',       '#4CAF50',
+          'intermediate', '#2196F3',
+          'advanced',     '#212121',
+          'expert',       '#212121',
+          'freeride',     '#FF5A1F',
+          '#9E9E9E', // fallback (null / unknown)
+        ],
+        lineWidth: 2.5,
+        lineOpacity: 0.85,
+      ),
+    );
+    _trailsLoaded = true;
+    await _refreshTrails();
+  }
+
+  // ponytail: fires on every camera idle — add client-side bbox debounce if this gets chatty
+  Future<void> _refreshTrails() async {
+    final controller = _mapController;
+    if (controller == null || !_trailsLoaded) return;
+    final zoom = controller.cameraPosition?.zoom ?? 0;
+    if (zoom < 11) return; // too zoomed out for trail detail
+    try {
+      final bounds = await controller.getVisibleRegion();
+      final geojson = await sl<MapActivitiesApi>().getResortTrails(bounds);
+      await controller.setGeoJsonSource(_trailSourceId, geojson);
+    } catch (e) {
+      debugPrint('[MapsScreen] Failed to refresh trails: $e');
+    }
+  }
+
   void _showActivityDetails(Activity activity) {
     Navigator.push(
       context,
@@ -142,6 +192,7 @@ class _MapsScreenState extends State<MapsScreen> {
     setState(() {
       _selectedStyle = style;
       _mapController = null;
+      _trailsLoaded = false;
     });
 
     final source = MapConfig.resolvedSourceLabel(style);
@@ -247,11 +298,9 @@ class _MapsScreenState extends State<MapsScreen> {
             styleString: MapConfig.styleForMode(_selectedStyle),
             initialCameraPosition: _initialCameraPosition!,
             myLocationEnabled: false,
-            onMapCreated: (controller) {
-              setState(() {
-                _mapController = controller;
-              });
-            },
+            onMapCreated: (controller) => setState(() => _mapController = controller),
+            onStyleLoadedCallback: _onStyleLoaded,
+            onCameraIdle: _refreshTrails,
           ),
           // Activity list overlay
           if (_activities.isNotEmpty)
