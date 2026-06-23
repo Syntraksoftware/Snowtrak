@@ -483,16 +483,27 @@ class _RecordScreenState extends State<RecordScreen> {
   Future<void> _pollPipelineStatus(String activityId) async {
     final activityProvider =
         Provider.of<ActivityProvider>(context, listen: false);
-    while (mounted) {
+    final deadline = DateTime.now().add(const Duration(minutes: 2));
+    while (mounted && DateTime.now().isBefore(deadline)) {
       await Future.delayed(const Duration(seconds: 2));
       if (!mounted) return;
-      final activity = await activityProvider.getActivity(activityId);
-      if (activity != null && !activity.isPipelinePending) {
-        if (!mounted) return;
-        setState(() => _isProcessing = false);
-        _navigateToDetail(activityId);
-        return;
+      try {
+        final activity = await activityProvider.getActivity(activityId);
+        if (activity != null && !activity.isPipelinePending) {
+          if (!mounted) return;
+          setState(() => _isProcessing = false);
+          _navigateToDetail(activityId);
+          return;
+        }
+      } catch (_) {
+        // swallow transient errors and keep polling until the deadline
       }
+    }
+    // Timed out: drop the overlay and navigate anyway (detail screen can
+    // continue to reflect status) or surface a retry.
+    if (mounted) {
+      setState(() => _isProcessing = false);
+      _navigateToDetail(activityId);
     }
   }
 
