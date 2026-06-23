@@ -39,7 +39,6 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   MapRenderingEngine? _mapRenderingEngine;
   MapLibreMapController? _mapController;
   bool _mapReady = false;
-  MapColorMode _selectedColorMode = MapColorMode.segment;
   MapVisualStyle _selectedMapStyle = MapVisualStyle.terrain;
 
   @override
@@ -158,14 +157,8 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     final t = _track;
     if (!_mapReady || c == null || t == null || _segments.isEmpty) return;
     await _mapRenderingEngine!.initialise(c,
-        track: t, segments: _segments, initialColorMode: _selectedColorMode);
+        track: t, segments: _segments, initialColorMode: MapColorMode.segment);
     await _mapRenderingEngine!.fitToTrack(t);
-  }
-
-  Future<void> _onColorModeSelected(MapColorMode mode) async {
-    if (_selectedColorMode == mode) return;
-    setState(() => _selectedColorMode = mode);
-    unawaited(_mapRenderingEngine!.setColorMode(mode));
   }
 
   Future<void> _zoomIn() async =>
@@ -368,18 +361,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
               ),
             ),
 
-            // ── Color mode chips ─────────────────────────────────────
-            if (hasRenderableTrack)
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                child: _ColorModeBar(
-                  selected: _selectedColorMode,
-                  onSelected: _onColorModeSelected,
-                ),
-              )
-            else
-              const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
             // ── Stats grid ───────────────────────────────────────────
             Padding(
@@ -613,76 +595,6 @@ class _MapZoomControls extends StatelessWidget {
             onPressed: () => onZoomOut(),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ─── Color mode chips ─────────────────────────────────────────────────────────
-
-class _ColorModeBar extends StatelessWidget {
-  const _ColorModeBar({required this.selected, required this.onSelected});
-  final MapColorMode selected;
-  final Future<void> Function(MapColorMode) onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          _ModeChip(
-              label: 'Segment',
-              selected: selected == MapColorMode.segment,
-              onTap: () => onSelected(MapColorMode.segment)),
-          const SizedBox(width: 8),
-          _ModeChip(
-              label: 'Speed',
-              selected: selected == MapColorMode.speed,
-              onTap: () => onSelected(MapColorMode.speed)),
-          const SizedBox(width: 8),
-          _ModeChip(
-              label: 'Elevation',
-              selected: selected == MapColorMode.elevation,
-              onTap: () => onSelected(MapColorMode.elevation)),
-        ],
-      ),
-    );
-  }
-}
-
-class _ModeChip extends StatelessWidget {
-  const _ModeChip(
-      {required this.label,
-      required this.selected,
-      required this.onTap});
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? SyntrakColors.primary : SyntrakColors.surface,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-              color: selected
-                  ? SyntrakColors.primary
-                  : SyntrakColors.surfaceVariant),
-        ),
-        child: Text(
-          label,
-          style: SyntrakTypography.labelMedium.copyWith(
-            color:
-                selected ? Colors.white : SyntrakColors.textSecondary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
       ),
     );
   }
