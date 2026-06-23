@@ -238,82 +238,175 @@ class _RecordScreenState extends State<RecordScreen> {
       return;
     }
 
-    final shouldSave = await _showSaveDialog();
+    // Compute once — shared by the dialog display and the save call.
+    final rawDistance = _locationService.calculateDistance();
+    final rawElevationGain = _locationService.calculateElevationGain();
+    final rawDuration = _elapsedNotifier.value;
 
-    if (shouldSave == true && mounted) {
-      await _saveActivity();
+    final activityName =
+        await _showSaveDialog(rawDistance, rawElevationGain, rawDuration);
+
+    if (activityName != null && mounted) {
+      await _saveActivity(activityName, rawDistance, rawElevationGain, rawDuration);
     } else {
       _resetState();
     }
   }
 
-  Future<bool?> _showSaveDialog() {
-    return showModalBottomSheet<bool>(
+  Future<String?> _showSaveDialog(
+      double distance, double elevation, Duration duration) {
+    final hour = DateTime.now().hour;
+    final timeOfDay =
+        hour < 12 ? 'Morning' : (hour < 17 ? 'Afternoon' : 'Evening');
+    final defaultName =
+        '$timeOfDay ${_selectedActivityType?.displayName ?? 'Activity'}';
+    final nameController = TextEditingController(text: defaultName);
+
+    String fmtDist(double d) => d >= 1000
+        ? '${(d / 1000).toStringAsFixed(2)} km'
+        : '${d.toStringAsFixed(0)} m';
+    String fmtDur(Duration d) {
+      final h = d.inHours;
+      final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+      final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+      return h > 0 ? '$h:$m:$s' : '$m:$s';
+    }
+
+    return showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: EdgeInsets.fromLTRB(
-          24,
-          12,
-          24,
-          MediaQuery.of(context).padding.bottom + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.black12,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Save Activity?',
-              style: SyntrakTypography.headlineMedium.copyWith(
-                color: SyntrakColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Your route and stats will be saved to your profile.',
-              textAlign: TextAlign.center,
-              style: SyntrakTypography.bodyMedium.copyWith(
-                color: SyntrakColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 28),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: SyntrakColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                  elevation: 0,
+      isScrollControlled: true,
+      builder: (_) => Padding(
+        padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: EdgeInsets.fromLTRB(
+              24, 12, 24, MediaQuery.of(context).padding.bottom + 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drag handle
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.black12,
+                  borderRadius: BorderRadius.circular(2),
                 ),
-                child: const Text('Save',
-                    style:
-                        TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
               ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+              const SizedBox(height: 24),
+              // Success badge
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: SyntrakColors.primary.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
                 ),
+                child: Icon(Icons.check_rounded,
+                    color: SyntrakColors.primary, size: 34),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'Activity Complete',
+                style: SyntrakTypography.headlineMedium.copyWith(
+                  color: SyntrakColors.textPrimary,
+                ),
+              ),
+              if (_selectedActivityType != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    _selectedActivityType!.displayName,
+                    style: SyntrakTypography.bodyMedium.copyWith(
+                      color: SyntrakColors.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 20),
+              // Editable activity name
+              TextField(
+                controller: nameController,
+                style: SyntrakTypography.bodyLarge.copyWith(
+                  color: SyntrakColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+                textCapitalization: TextCapitalization.words,
+                decoration: InputDecoration(
+                  hintText: 'Activity name',
+                  filled: true,
+                  fillColor: SyntrakColors.surfaceVariant,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Stats row
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                decoration: BoxDecoration(
+                  color: SyntrakColors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: IntrinsicHeight(
+                  child: Row(
+                    children: [
+                      Expanded(
+                          child: _SaveStatCell(
+                              value: fmtDist(distance), label: 'Distance')),
+                      VerticalDivider(
+                          width: 1,
+                          thickness: 1,
+                          color: SyntrakColors.divider),
+                      Expanded(
+                          child: _SaveStatCell(
+                              value: fmtDur(duration), label: 'Time')),
+                      VerticalDivider(
+                          width: 1,
+                          thickness: 1,
+                          color: SyntrakColors.divider),
+                      Expanded(
+                          child: _SaveStatCell(
+                              value: '+${elevation.toStringAsFixed(0)} m',
+                              label: 'Elevation')),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Save button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    final name = nameController.text.trim();
+                    Navigator.pop(context, name.isEmpty ? defaultName : name);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: SyntrakColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                    elevation: 0,
+                  ),
+                  child: const Text('Save Activity',
+                      style: TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w600)),
+                ),
+              ),
+              const SizedBox(height: 4),
+              TextButton(
+                onPressed: () => Navigator.pop(context, null),
                 child: Text(
                   'Discard',
                   style: SyntrakTypography.bodyMedium.copyWith(
@@ -321,21 +414,17 @@ class _RecordScreenState extends State<RecordScreen> {
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Future<void> _saveActivity() async {
+  Future<void> _saveActivity(String name, double rawDistance,
+      double rawElevationGain, Duration rawDuration) async {
     final locations = _locationService.locations;
     if (locations.isEmpty) return;
-
-    // Capture raw stats before the API call — used for the processing overlay.
-    final rawDistance = _locationService.calculateDistance();
-    final rawElevationGain = _locationService.calculateElevationGain();
-    final rawDuration = _elapsedNotifier.value;
 
     final activityProvider =
         Provider.of<ActivityProvider>(context, listen: false);
@@ -344,6 +433,7 @@ class _RecordScreenState extends State<RecordScreen> {
     final activity = Activity(
       id: '',
       userId: auth.user?.id ?? '',
+      name: name,
       type: _selectedActivityType!,
       distance: rawDistance,
       duration: rawDuration.inSeconds,
@@ -407,7 +497,7 @@ class _RecordScreenState extends State<RecordScreen> {
   }
 
   void _navigateToDetail(String activityId) {
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => ActivityDetailScreen(activityId: activityId),
@@ -563,6 +653,7 @@ class _RecordScreenState extends State<RecordScreen> {
                 distance: _rawDistance,
                 elevationGain: _rawElevationGain,
                 duration: _rawDuration,
+                activityType: _selectedActivityType,
               ),
             ),
         ],
@@ -578,11 +669,13 @@ class _ProcessingOverlay extends StatelessWidget {
     required this.distance,
     required this.elevationGain,
     required this.duration,
+    this.activityType,
   });
 
   final double distance;
   final double elevationGain;
   final Duration duration;
+  final ActivityType? activityType;
 
   String get _formattedDistance => distance >= 1000
       ? '${(distance / 1000).toStringAsFixed(2)} km'
@@ -599,45 +692,74 @@ class _ProcessingOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return AbsorbPointer(
       child: Container(
-        color: Colors.white,
+        color: SyntrakColors.background,
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircularProgressIndicator(
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(SyntrakColors.primary),
-                  strokeWidth: 3,
+                SizedBox(
+                  width: 56,
+                  height: 56,
+                  child: CircularProgressIndicator(
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(SyntrakColors.primary),
+                    strokeWidth: 3,
+                  ),
                 ),
                 const SizedBox(height: 32),
                 Text(
-                  'Processing your run…',
+                  'Saving Activity',
                   style: SyntrakTypography.headlineMedium.copyWith(
                     color: SyntrakColors.textPrimary,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
-                  'Matching trails and correcting elevation',
+                  activityType != null
+                      ? 'Matching trails for your ${activityType!.displayName.toLowerCase()}…'
+                      : 'Matching trails and correcting elevation…',
                   style: SyntrakTypography.bodyMedium.copyWith(
                     color: SyntrakColors.textSecondary,
                   ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 48),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _StatItem(label: 'Distance', value: _formattedDistance),
-                    _StatItem(
-                      label: 'Elevation',
-                      value: '${elevationGain.toStringAsFixed(0)} m',
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  decoration: BoxDecoration(
+                    color: SyntrakColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: SyntrakColors.divider),
+                  ),
+                  child: IntrinsicHeight(
+                    child: Row(
+                      children: [
+                        Expanded(
+                            child: _StatItem(
+                                label: 'Distance',
+                                value: _formattedDistance)),
+                        VerticalDivider(
+                            width: 1,
+                            thickness: 1,
+                            color: SyntrakColors.divider),
+                        Expanded(
+                            child: _StatItem(
+                                label: 'Elevation',
+                                value:
+                                    '+${elevationGain.toStringAsFixed(0)} m')),
+                        VerticalDivider(
+                            width: 1,
+                            thickness: 1,
+                            color: SyntrakColors.divider),
+                        Expanded(
+                            child: _StatItem(
+                                label: 'Time', value: _formattedDuration)),
+                      ],
                     ),
-                    _StatItem(label: 'Time', value: _formattedDuration),
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -658,10 +780,12 @@ class _StatItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           value,
-          style: SyntrakTypography.headlineMedium.copyWith(
+          textAlign: TextAlign.center,
+          style: SyntrakTypography.headlineSmall.copyWith(
             color: SyntrakColors.textPrimary,
             fontWeight: FontWeight.bold,
           ),
@@ -669,8 +793,44 @@ class _StatItem extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           label,
-          style: SyntrakTypography.bodyMedium.copyWith(
-            color: SyntrakColors.textSecondary,
+          textAlign: TextAlign.center,
+          style: SyntrakTypography.labelSmall.copyWith(
+            color: SyntrakColors.textTertiary,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SaveStatCell extends StatelessWidget {
+  const _SaveStatCell({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          value,
+          textAlign: TextAlign.center,
+          style: SyntrakTypography.headlineSmall.copyWith(
+            color: SyntrakColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: SyntrakTypography.labelSmall.copyWith(
+            color: SyntrakColors.textTertiary,
+            letterSpacing: 0.5,
           ),
         ),
       ],
