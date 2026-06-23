@@ -28,6 +28,7 @@ import 'package:syntrak/services/apis/map_activities_api.dart';
 import 'package:syntrak/services/apis/notifications_api.dart';
 import 'package:syntrak/services/apis/users_api.dart';
 import 'package:syntrak/services/location_service.dart';
+import 'package:syntrak/services/map_config.dart';
 import 'package:syntrak/services/service_registry.dart';
 import 'package:syntrak/services/weather_cache.dart';
 import 'package:syntrak/services/weather_service.dart';
@@ -44,6 +45,8 @@ Future<void> setupServiceLocatorWithEnvironment({
   if (sl.isRegistered<AppConfig>()) {
     return;
   }
+
+  await MapConfig.init();
 
   final appConfig =
       await AppConfig.bootstrapWithOverride(environmentOverride: environment);
