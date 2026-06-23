@@ -44,7 +44,7 @@ async def _render_and_upload(activity_id: str, latlon: list[tuple[float, float]]
         png = await asyncio.to_thread(
             render_route_png, latlon, cfg.STATIC_MAP_WIDTH, cfg.STATIC_MAP_HEIGHT
         )
-        return upload_thumbnail(activity_id, png)
+        return await asyncio.to_thread(upload_thumbnail, activity_id, png)
     except Exception:
         logger.warning("thumbnail generation failed for %s", activity_id, exc_info=True)
         return None
