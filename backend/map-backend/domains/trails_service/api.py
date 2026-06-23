@@ -19,10 +19,10 @@ from .queries import RESORT_BBOX_SQL
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(tags=["trails"])
+router = APIRouter(prefix="/trails", tags=["trails"])
 
 
-@router.get("/trails/resort")
+@router.get("/resort")
 async def resort_trails_geojson(
     bbox: str = Query(
         ...,
