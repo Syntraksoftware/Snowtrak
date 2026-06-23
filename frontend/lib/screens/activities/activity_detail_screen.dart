@@ -188,7 +188,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
         decoration: BoxDecoration(
-          color: SyntrakColors.darkSurface,
+          color: SyntrakColors.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: EdgeInsets.fromLTRB(
@@ -200,7 +200,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.white24,
+                color: Colors.black12,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -218,11 +218,11 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
             const SizedBox(height: 16),
             Text('Delete Activity?',
                 style: SyntrakTypography.headlineMedium
-                    .copyWith(color: SyntrakColors.darkTextPrimary)),
+                    .copyWith(color: SyntrakColors.textPrimary)),
             const SizedBox(height: 8),
             Text('This cannot be undone.',
                 style: SyntrakTypography.bodyMedium
-                    .copyWith(color: SyntrakColors.darkTextSecondary)),
+                    .copyWith(color: SyntrakColors.textSecondary)),
             const SizedBox(height: 28),
             SizedBox(
               width: double.infinity,
@@ -246,7 +246,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
               onPressed: () => Navigator.pop(context, false),
               child: Text('Cancel',
                   style: SyntrakTypography.bodyMedium
-                      .copyWith(color: SyntrakColors.darkTextSecondary)),
+                      .copyWith(color: SyntrakColors.textSecondary)),
             ),
           ],
         ),
@@ -264,7 +264,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: SyntrakColors.darkBackground,
+        backgroundColor: SyntrakColors.background,
         appBar: _buildAppBar(null),
         body: Center(
           child: CircularProgressIndicator(
@@ -276,12 +276,12 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
     if (_activity == null) {
       return Scaffold(
-        backgroundColor: SyntrakColors.darkBackground,
+        backgroundColor: SyntrakColors.background,
         appBar: _buildAppBar(null),
         body: Center(
           child: Text('Activity not found',
               style: SyntrakTypography.bodyLarge
-                  .copyWith(color: SyntrakColors.darkTextSecondary)),
+                  .copyWith(color: SyntrakColors.textSecondary)),
         ),
       );
     }
@@ -297,7 +297,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     final hasRenderableTrack = track != null && track.points.length > 1;
 
     return Scaffold(
-      backgroundColor: SyntrakColors.darkBackground,
+      backgroundColor: SyntrakColors.background,
       appBar: _buildAppBar(activity),
       body: SingleChildScrollView(
         child: Column(
@@ -315,7 +315,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                         ? activity.name!
                         : activity.type.displayName,
                     style: SyntrakTypography.displaySmall.copyWith(
-                      color: SyntrakColors.darkTextPrimary,
+                      color: SyntrakColors.textPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -324,7 +324,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                     DateFormat('EEEE, MMM d, y · h:mm a')
                         .format(activity.startTime),
                     style: SyntrakTypography.bodySmall.copyWith(
-                      color: SyntrakColors.darkTextSecondary,
+                      color: SyntrakColors.textSecondary,
                     ),
                   ),
                 ],
@@ -386,7 +386,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
                 decoration: BoxDecoration(
-                  color: SyntrakColors.darkSurface,
+                  color: SyntrakColors.surface,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
@@ -401,7 +401,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                           VerticalDivider(
                               width: 1,
                               thickness: 1,
-                              color: SyntrakColors.darkSurfaceVariant),
+                              color: SyntrakColors.surfaceVariant),
                           Expanded(
                               child: _StatCell(
                                   label: 'Avg Speed',
@@ -412,7 +412,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                     Divider(
                         height: 1,
                         thickness: 1,
-                        color: SyntrakColors.darkSurfaceVariant),
+                        color: SyntrakColors.surfaceVariant),
                     IntrinsicHeight(
                       child: Row(
                         children: [
@@ -423,7 +423,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                           VerticalDivider(
                               width: 1,
                               thickness: 1,
-                              color: SyntrakColors.darkSurfaceVariant),
+                              color: SyntrakColors.surfaceVariant),
                           Expanded(
                               child: _StatCell(
                                   label: 'Elevation Gain',
@@ -443,7 +443,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
                 decoration: BoxDecoration(
-                  color: SyntrakColors.darkSurface,
+                  color: SyntrakColors.surface,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
@@ -456,7 +456,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                     Divider(
                         height: 1,
                         thickness: 1,
-                        color: SyntrakColors.darkSurfaceVariant),
+                        color: SyntrakColors.surfaceVariant),
                     _DetailTile(
                         icon: Icons.flag_outlined,
                         label: 'End',
@@ -476,18 +476,18 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
   AppBar _buildAppBar(Activity? activity) {
     return AppBar(
-      backgroundColor: SyntrakColors.darkBackground,
+      backgroundColor: SyntrakColors.background,
       elevation: 0,
       scrolledUnderElevation: 0,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-        color: SyntrakColors.darkTextPrimary,
+        color: SyntrakColors.textPrimary,
         onPressed: () => Navigator.of(context).pop(),
       ),
       title: Text(
         activity?.type.displayName ?? '',
         style: SyntrakTypography.headlineSmall.copyWith(
-          color: SyntrakColors.darkTextPrimary,
+          color: SyntrakColors.textPrimary,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -495,7 +495,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
         if (activity != null)
           IconButton(
             icon: const Icon(Icons.more_vert_rounded, size: 22),
-            color: SyntrakColors.darkTextPrimary,
+            color: SyntrakColors.textPrimary,
             onPressed: () => _confirmDelete(activity),
           ),
       ],
@@ -515,11 +515,11 @@ class _MapStyleToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: SyntrakColors.darkSurface,
+        color: SyntrakColors.surface,
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.4),
+              color: Colors.black.withValues(alpha: 0.12),
               blurRadius: 8,
               offset: const Offset(0, 2))
         ],
@@ -563,7 +563,7 @@ class _StyleBtn extends StatelessWidget {
             style: TextStyle(
               color: selected
                   ? Colors.white
-                  : SyntrakColors.darkTextSecondary,
+                  : SyntrakColors.textSecondary,
               fontWeight: FontWeight.w600,
               fontSize: 13,
             ),
@@ -584,11 +584,11 @@ class _MapZoomControls extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: SyntrakColors.darkSurface,
+        color: SyntrakColors.surface,
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.4),
+              color: Colors.black.withValues(alpha: 0.12),
               blurRadius: 8,
               offset: const Offset(0, 2))
         ],
@@ -599,17 +599,17 @@ class _MapZoomControls extends StatelessWidget {
           IconButton(
             visualDensity: VisualDensity.compact,
             icon: Icon(Icons.add,
-                color: SyntrakColors.darkTextPrimary, size: 20),
+                color: SyntrakColors.textPrimary, size: 20),
             onPressed: () => onZoomIn(),
           ),
           Container(
               width: 24,
               height: 1,
-              color: SyntrakColors.darkSurfaceVariant),
+              color: SyntrakColors.surfaceVariant),
           IconButton(
             visualDensity: VisualDensity.compact,
             icon: Icon(Icons.remove,
-                color: SyntrakColors.darkTextPrimary, size: 20),
+                color: SyntrakColors.textPrimary, size: 20),
             onPressed: () => onZoomOut(),
           ),
         ],
@@ -668,18 +668,18 @@ class _ModeChip extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? SyntrakColors.primary : SyntrakColors.darkSurface,
+          color: selected ? SyntrakColors.primary : SyntrakColors.surface,
           borderRadius: BorderRadius.circular(999),
           border: Border.all(
               color: selected
                   ? SyntrakColors.primary
-                  : SyntrakColors.darkSurfaceVariant),
+                  : SyntrakColors.surfaceVariant),
         ),
         child: Text(
           label,
           style: SyntrakTypography.labelMedium.copyWith(
             color:
-                selected ? Colors.white : SyntrakColors.darkTextSecondary,
+                selected ? Colors.white : SyntrakColors.textSecondary,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -706,7 +706,7 @@ class _StatCell extends StatelessWidget {
           Text(
             label,
             style: SyntrakTypography.labelSmall.copyWith(
-              color: SyntrakColors.darkTextSecondary,
+              color: SyntrakColors.textSecondary,
               letterSpacing: 0.3,
             ),
           ),
@@ -714,7 +714,7 @@ class _StatCell extends StatelessWidget {
           Text(
             value,
             style: SyntrakTypography.headlineMedium.copyWith(
-              color: SyntrakColors.darkTextPrimary,
+              color: SyntrakColors.textPrimary,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -739,18 +739,18 @@ class _DetailTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: SyntrakColors.darkTextSecondary),
+          Icon(icon, size: 18, color: SyntrakColors.textSecondary),
           const SizedBox(width: 12),
           SizedBox(
             width: 48,
             child: Text(label,
                 style: SyntrakTypography.bodySmall
-                    .copyWith(color: SyntrakColors.darkTextSecondary)),
+                    .copyWith(color: SyntrakColors.textSecondary)),
           ),
           Expanded(
             child: Text(value,
                 style: SyntrakTypography.bodyMedium
-                    .copyWith(color: SyntrakColors.darkTextPrimary)),
+                    .copyWith(color: SyntrakColors.textPrimary)),
           ),
         ],
       ),
