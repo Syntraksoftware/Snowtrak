@@ -361,21 +361,21 @@ class _RecordScreenState extends State<RecordScreen> {
                   child: Row(
                     children: [
                       Expanded(
-                          child: _SaveStatCell(
+                          child: _StatItem(
                               value: fmtDist(distance), label: 'Distance')),
                       VerticalDivider(
                           width: 1,
                           thickness: 1,
                           color: SyntrakColors.divider),
                       Expanded(
-                          child: _SaveStatCell(
+                          child: _StatItem(
                               value: fmtDur(duration), label: 'Time')),
                       VerticalDivider(
                           width: 1,
                           thickness: 1,
                           color: SyntrakColors.divider),
                       Expanded(
-                          child: _SaveStatCell(
+                          child: _StatItem(
                               value: '+${elevation.toStringAsFixed(0)} m',
                               label: 'Elevation')),
                     ],
@@ -804,39 +804,6 @@ class _StatItem extends StatelessWidget {
   }
 }
 
-class _SaveStatCell extends StatelessWidget {
-  const _SaveStatCell({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          value,
-          textAlign: TextAlign.center,
-          style: SyntrakTypography.headlineSmall.copyWith(
-            color: SyntrakColors.textPrimary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: SyntrakTypography.labelSmall.copyWith(
-            color: SyntrakColors.textTertiary,
-            letterSpacing: 0.5,
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 // ─── Re-centre FAB ────────────────────────────────────────────────────────────
 

@@ -495,6 +495,27 @@ class _MapStyleToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Widget btn(String label, MapVisualStyle style) {
+      final active = selectedStyle == style;
+      return Material(
+        color: active ? SyntrakColors.primary : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: () => onSelected(style),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Text(label,
+                style: TextStyle(
+                  color: active ? Colors.white : SyntrakColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                )),
+          ),
+        ),
+      );
+    }
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: SyntrakColors.surface,
@@ -509,48 +530,9 @@ class _MapStyleToggle extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _StyleBtn(
-              label: '2D',
-              selected: selectedStyle == MapVisualStyle.clean2d,
-              onTap: () => onSelected(MapVisualStyle.clean2d)),
-          _StyleBtn(
-              label: 'Terrain',
-              selected: selectedStyle == MapVisualStyle.terrain,
-              onTap: () => onSelected(MapVisualStyle.terrain)),
+          btn('2D', MapVisualStyle.clean2d),
+          btn('Terrain', MapVisualStyle.terrain),
         ],
-      ),
-    );
-  }
-}
-
-class _StyleBtn extends StatelessWidget {
-  const _StyleBtn(
-      {required this.label, required this.selected, required this.onTap});
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: selected ? SyntrakColors.primary : Colors.transparent,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: selected
-                  ? Colors.white
-                  : SyntrakColors.textSecondary,
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-            ),
-          ),
-        ),
       ),
     );
   }
