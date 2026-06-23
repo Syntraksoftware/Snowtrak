@@ -1,4 +1,4 @@
-"""Supabase client initialization for Map Backend."""
+"""Supabase client initialization and storage helpers for Map Backend."""
 
 from supabase import Client, create_client
 
@@ -22,3 +22,12 @@ def get_map_client() -> Client:
     if _map_client is None:
         raise RuntimeError("Supabase client not initialized. Call initialize_map_client() first.")
     return _map_client
+
+
+def upload_thumbnail(activity_id: str, png_bytes: bytes) -> str:
+    """Upload a route thumbnail PNG and return its public URL."""
+    cfg = get_config()
+    path = f"thumbnails/{activity_id}.png"
+    bucket = get_map_client().storage.from_(cfg.THUMBNAIL_BUCKET)
+    bucket.upload(path, png_bytes, {"content-type": "image/png", "upsert": "true"})
+    return bucket.get_public_url(path)
