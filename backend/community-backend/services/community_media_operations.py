@@ -8,6 +8,7 @@ import uuid
 from dataclasses import dataclass
 from typing import Literal
 
+from config import get_config
 from services.constants.media_constants import MEDIA_BUCKET, MEDIA_MAX_BYTES
 
 logger = logging.getLogger(__name__)
@@ -143,6 +144,7 @@ class CommunityMediaOperations:
             ext = "jpeg"
         safe_user = "".join(c for c in user_id if c.isalnum() or c in "-_")[:128] or "anon"
         object_name = f"{safe_user}/{int(time.time() * 1000)}-{uuid.uuid4().hex[:10]}.{ext}"
+        cache_control_seconds = max(0, int(get_config().MEDIA_CACHE_CONTROL_SECONDS))
 
         try:
             self._client.storage.from_(_BUCKET).upload(
@@ -150,6 +152,7 @@ class CommunityMediaOperations:
                 file=file_bytes,
                 file_options={
                     "content-type": ct,
+                    "cache-control": str(cache_control_seconds),
                     "upsert": "true",
                 },
             )
