@@ -5,6 +5,34 @@ from middleware.auth import get_current_user
 # Must match StubCommunityClient post_id (UUID path params avoid /posts/feed collision).
 STUB_POST_ID = "11111111-1111-1111-1111-111111111111"
 STUB_POST_MISSING = "00000000-0000-0000-0000-000000000099"
+STUB_MEDIA_URL = "https://stub.supabase.co/storage/v1/object/public/community-media/user-1/x.png"
+
+
+class _FakeMediaConfig:
+    SUPABASE_URL = "https://stub.supabase.co"
+    MEDIA_INLINE_CACHE_TTL_SECONDS = 86400
+    MEDIA_INLINE_MAX_BYTES = 5 * 1024 * 1024
+
+
+class _FakeImageResponse:
+    status_code = 200
+    headers = {"content-type": "image/png"}
+    content = b"\x89PNG\r\n\x1a\n\x00"
+
+
+class _FakeAsyncClient:
+    def __init__(self, *args, **kwargs):
+        pass
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        return False
+
+    async def get(self, url):
+        assert url == STUB_MEDIA_URL
+        return _FakeImageResponse()
 
 
 class TestSubthreadEndpoints:
@@ -67,6 +95,109 @@ class TestPostEndpoints:
         body = response.json()
         assert "url" in body
         assert "community-media" in body["url"]
+
+    def test_list_feed_posts_includes_cached_inline_media_asset(
+        self,
+        client,
+        monkeypatch,
+        stub_client,
+    ):
+        from routes import posts_read_routes
+        from services import community_media_assets
+
+        async def fake_get_cached_image(url):
+            assert url == STUB_MEDIA_URL
+            return b"cached-image", "image/png"
+
+        async def fake_get_cached_json(key):
+            return None
+
+        async def fake_set_cached_json(key, value, ttl_seconds):
+            return None
+
+        stub_client.post["media_urls"] = [STUB_MEDIA_URL]
+        monkeypatch.setattr(posts_read_routes, "get_cached_json", fake_get_cached_json)
+        monkeypatch.setattr(posts_read_routes, "set_cached_json", fake_set_cached_json)
+        monkeypatch.setattr(
+            community_media_assets,
+            "get_config",
+            lambda: _FakeMediaConfig(),
+        )
+        monkeypatch.setattr(
+            community_media_assets,
+            "get_cached_image",
+            fake_get_cached_image,
+        )
+
+        response = client.get("/api/v1/feed?limit=10")
+
+        assert response.status_code == status.HTTP_200_OK
+        item = response.json()["items"][0]
+        assert item["media_urls"] == [STUB_MEDIA_URL]
+        assert item["media_assets"] == [
+            {
+                "url": STUB_MEDIA_URL,
+                "content_type": "image/png",
+                "encoding": "base64",
+                "data": "Y2FjaGVkLWltYWdl",
+                "size_bytes": 12,
+                "cache_status": "HIT",
+            }
+        ]
+
+    def test_get_post_fetches_and_caches_inline_media_asset(
+        self,
+        client,
+        monkeypatch,
+        stub_client,
+    ):
+        from services import community_media_assets
+
+        stored = {}
+
+        async def fake_get_cached_image(url):
+            return None
+
+        async def fake_set_cached_image(url, body, content_type, ttl_seconds):
+            stored["url"] = url
+            stored["body"] = body
+            stored["content_type"] = content_type
+            stored["ttl_seconds"] = ttl_seconds
+
+        stub_client.post["media_urls"] = [STUB_MEDIA_URL]
+        monkeypatch.setattr(
+            community_media_assets,
+            "get_config",
+            lambda: _FakeMediaConfig(),
+        )
+        monkeypatch.setattr(
+            community_media_assets,
+            "get_cached_image",
+            fake_get_cached_image,
+        )
+        monkeypatch.setattr(
+            community_media_assets,
+            "set_cached_image",
+            fake_set_cached_image,
+        )
+        monkeypatch.setattr(
+            community_media_assets.httpx,
+            "AsyncClient",
+            _FakeAsyncClient,
+        )
+
+        response = client.get(f"/api/v1/posts/{STUB_POST_ID}")
+
+        assert response.status_code == status.HTTP_200_OK
+        body = response.json()
+        assert body["media_assets"][0]["cache_status"] == "MISS"
+        assert body["media_assets"][0]["data"] == "iVBORw0KGgoA"
+        assert stored == {
+            "url": STUB_MEDIA_URL,
+            "body": _FakeImageResponse.content,
+            "content_type": "image/png",
+            "ttl_seconds": 86400,
+        }
 
     def test_upload_media_octet_stream_heic_filename(self, client):
         response = client.post(
