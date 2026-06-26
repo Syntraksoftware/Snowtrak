@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+from hashlib import sha256
 from typing import Any
 
 import redis.asyncio as redis
@@ -13,12 +14,13 @@ from config import get_config
 logger = logging.getLogger(__name__)
 
 _cache_client: redis.Redis | None = None
+_media_cache_client: redis.Redis | None = None
 _cache_initialized: bool = False
 
 
 def initialize_community_cache() -> None:
     """Initialize the community Redis cache client once at startup."""
-    global _cache_client, _cache_initialized
+    global _cache_client, _media_cache_client, _cache_initialized
 
     if _cache_initialized:
         return
@@ -33,6 +35,7 @@ def initialize_community_cache() -> None:
 
     try:
         _cache_client = redis.from_url(config.CACHE_REDIS_URL, decode_responses=True)
+        _media_cache_client = redis.from_url(config.CACHE_REDIS_URL, decode_responses=False)
         logger.info(
             "Community response cache initialized (namespace=%s, redis=%s)",
             config.CACHE_NAMESPACE,
@@ -40,21 +43,26 @@ def initialize_community_cache() -> None:
         )
     except Exception as exception:
         _cache_client = None
+        _media_cache_client = None
         logger.warning("Failed to initialize community response cache: %s", exception)
 
 
 async def close_community_cache() -> None:
     """Close the community Redis cache client if it was initialized."""
-    global _cache_client, _cache_initialized
+    global _cache_client, _media_cache_client, _cache_initialized
 
-    if _cache_client is None:
+    if _cache_client is None and _media_cache_client is None:
         _cache_initialized = False
         return
 
     try:
-        await _cache_client.aclose()
+        if _cache_client is not None:
+            await _cache_client.aclose()
+        if _media_cache_client is not None:
+            await _media_cache_client.aclose()
     finally:
         _cache_client = None
+        _media_cache_client = None
         _cache_initialized = False
 
 
@@ -88,6 +96,12 @@ async def _get_client() -> redis.Redis | None:
     if not _cache_initialized:
         initialize_community_cache()
     return _cache_client
+
+
+async def _get_media_client() -> redis.Redis | None:
+    if not _cache_initialized:
+        initialize_community_cache()
+    return _media_cache_client
 
 
 async def get_cached_json(key: str) -> Any | None:
@@ -148,3 +162,50 @@ async def invalidate_feed_cache() -> None:
 
 async def invalidate_post_comments_cache(post_id: str) -> None:
     await bump_cache_version(f"post-comments:{post_id}")
+
+
+def image_cache_key(url: str) -> str:
+    digest = sha256(url.encode("utf-8")).hexdigest()
+    return f"{_namespace()}:image:{digest}"
+
+
+async def get_cached_image(url: str) -> tuple[bytes, str] | None:
+    client = await _get_media_client()
+    if client is None:
+        return None
+
+    base_key = image_cache_key(url)
+    try:
+        body, content_type = await client.mget(
+            f"{base_key}:body",
+            f"{base_key}:content-type",
+        )
+        if not body or not content_type:
+            return None
+        if isinstance(content_type, bytes):
+            content_type = content_type.decode("utf-8")
+        return body, str(content_type)
+    except Exception as exception:
+        logger.warning("Failed to read image cache key %s: %s", base_key, exception)
+        return None
+
+
+async def set_cached_image(
+    url: str,
+    body: bytes,
+    content_type: str,
+    ttl_seconds: int,
+) -> None:
+    client = await _get_media_client()
+    if client is None:
+        return
+
+    base_key = image_cache_key(url)
+    ttl = max(1, int(ttl_seconds))
+    try:
+        async with client.pipeline(transaction=True) as pipe:
+            pipe.set(f"{base_key}:body", body, ex=ttl)
+            pipe.set(f"{base_key}:content-type", content_type, ex=ttl)
+            await pipe.execute()
+    except Exception as exception:
+        logger.warning("Failed to write image cache key %s: %s", base_key, exception)
