@@ -29,6 +29,10 @@ from services.community_cache import (
     post_comments_cache_key,
     set_cached_json,
 )
+from services.community_media_assets import (
+    attach_inline_media_assets_to_post,
+    attach_inline_media_assets_to_posts,
+)
 from config import get_config
 
 logger = logging.getLogger(__name__)
@@ -147,7 +151,10 @@ async def list_feed_posts(
                 config.CACHE_FEED_TTL_SECONDS,
             )
 
-        post_items = [CommunityPostResponse(**post_record) for post_record in post_records]
+        hydrated_post_records = await attach_inline_media_assets_to_posts(post_records)
+        post_items = [
+            CommunityPostResponse(**post_record) for post_record in hydrated_post_records
+        ]
 
         return build_paginated_list_response(
             request=request,
@@ -178,7 +185,8 @@ async def get_post(post_id: UUID):
                 detail="Post not found",
             ) from None
 
-        return post_record
+        hydrated_post_record = await attach_inline_media_assets_to_post(post_record)
+        return hydrated_post_record
     except HTTPException:
         raise
     except Exception as exception:
@@ -207,7 +215,10 @@ async def list_posts_by_user(
             current_user_id=current_user,
         )
         total_records = len(post_records)
-        post_items = [CommunityPostResponse(**post_record) for post_record in post_records]
+        hydrated_post_records = await attach_inline_media_assets_to_posts(post_records)
+        post_items = [
+            CommunityPostResponse(**post_record) for post_record in hydrated_post_records
+        ]
 
         return build_paginated_list_response(
             request=request,
