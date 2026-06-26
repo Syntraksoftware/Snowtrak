@@ -44,6 +44,17 @@ class CommunityQuotedCommentPreview(BaseModel):
     author_last_name: str | None = None
 
 
+class CommunityMediaAsset(BaseModel):
+    """Inline media bytes attached to a post response."""
+
+    url: str
+    content_type: str
+    encoding: str = "base64"
+    data: str
+    size_bytes: int
+    cache_status: str
+
+
 class PostUpdate(BaseModel):
     """Schema for updating a post."""
 
@@ -99,6 +110,7 @@ class CommunityPostResponse(BaseModel):
     quoted_comment: CommunityQuotedCommentPreview | None = None
     repost_of_comment_id: str | None = None
     media_urls: list[str] = Field(default_factory=list)
+    media_assets: list[CommunityMediaAsset] = Field(default_factory=list)
 
 
 class CommunityCommentResponse(BaseModel):
