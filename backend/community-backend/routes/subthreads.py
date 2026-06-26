@@ -19,6 +19,7 @@ from routes.community_models import (
     SubthreadCreate,
 )
 from routes.list_response_builder import build_paginated_list_response
+from services.community_media_assets import attach_inline_media_assets_to_posts
 from services.supabase_client import get_community_client
 
 logger = logging.getLogger(__name__)
@@ -128,7 +129,10 @@ async def list_subthread_posts(
             offset=offset,
         )
         total_records = community_client.count_posts_by_subthread(subthread_id)
-        post_items = [CommunityPostResponse(**post_record) for post_record in post_records]
+        hydrated_post_records = await attach_inline_media_assets_to_posts(post_records)
+        post_items = [
+            CommunityPostResponse(**post_record) for post_record in hydrated_post_records
+        ]
 
         return build_paginated_list_response(
             request=request,
