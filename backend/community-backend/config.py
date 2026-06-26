@@ -42,6 +42,9 @@ class Config(BaseSettings):
     CACHE_NAMESPACE: str = "community-backend-cache"
     CACHE_FEED_TTL_SECONDS: int = 15
     CACHE_POST_COMMENTS_TTL_SECONDS: int = 20
+    MEDIA_CACHE_CONTROL_SECONDS: int = 31536000
+    MEDIA_INLINE_CACHE_TTL_SECONDS: int = 86400
+    MEDIA_INLINE_MAX_BYTES: int = 5 * 1024 * 1024
 
     @field_validator("RATE_LIMIT_POLICIES", mode="before")
     @classmethod
