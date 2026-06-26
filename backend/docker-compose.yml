@@ -37,6 +37,9 @@ services:
       - PORT=5001
       - RATE_LIMIT_REDIS_URL=redis://redis:6379/0
       - CACHE_REDIS_URL=redis://redis:6379/0
+      - MEDIA_CACHE_CONTROL_SECONDS=31536000
+      - MEDIA_INLINE_CACHE_TTL_SECONDS=86400
+      - MEDIA_INLINE_MAX_BYTES=5242880
     ports:
       - "5001:5001"
     depends_on:
