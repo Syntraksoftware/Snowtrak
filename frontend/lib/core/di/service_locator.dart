@@ -29,7 +29,6 @@ import 'package:syntrak/services/apis/notifications_api.dart';
 import 'package:syntrak/services/apis/users_api.dart';
 import 'package:syntrak/services/location_service.dart';
 import 'package:syntrak/services/map_config.dart';
-import 'package:syntrak/services/service_registry.dart';
 import 'package:syntrak/services/feed/activities_feed_cache.dart';
 import 'package:syntrak/services/feed/community_feed_cache.dart';
 import 'package:syntrak/services/weather_cache.dart';
@@ -70,8 +69,6 @@ Future<void> setupServiceLocatorWithEnvironment({
 
   final tokenStore = AuthTokenStore();
   sl.registerSingleton<AuthTokenStore>(tokenStore);
-  ServiceRegistry.initialize(config: appConfig, tokenStore: tokenStore);
-
   final dioFactory = DioFactory(config: appConfig, tokenStore: tokenStore);
   sl.registerSingleton<Dio>(dioFactory.buildMainClient(), instanceName: 'main');
   sl.registerSingleton<Dio>(

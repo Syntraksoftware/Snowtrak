@@ -28,8 +28,8 @@ from shared.rate_limiter import add_redis_rate_limiter
 from config import get_config
 from routes.comments import router as comments_router
 from routes.media_routes import router as media_router
-from routes.posts import router as posts_router
-from routes.posts_read_routes import list_feed_posts
+from routes.posts_read_routes import list_feed_posts, router as posts_read_router
+from routes.posts_write_routes import router as posts_write_router
 from routes.subthreads import router as subthreads_router
 from services.community_cache import close_community_cache, initialize_community_cache
 from services.supabase_client import initialize_community_client
@@ -182,7 +182,8 @@ app.add_api_route(
 
 # Mount routers at /api/v1 (new version - standard)
 app.include_router(subthreads_router, prefix="/api/v1/subthreads", tags=["subthreads"])
-app.include_router(posts_router, prefix="/api/v1/posts", tags=["posts"])
+app.include_router(posts_read_router, prefix="/api/v1/posts", tags=["posts"])
+app.include_router(posts_write_router, prefix="/api/v1/posts", tags=["posts"])
 app.include_router(comments_router, prefix="/api/v1/comments", tags=["comments"])
 app.include_router(media_router, prefix="/api/v1/media", tags=["media"])
 

@@ -154,10 +154,6 @@ class ListResponse(BaseModel):
     meta: ListMeta = Field(description="Pagination and metadata")
 
 
-# Backward compatibility aliases (for phased migration)
-PaginatedResponse = ListResponse
-DataResponse = SuccessResponse
-
 
 # Error code constants (canonical error codes across all services)
 ERROR_CODES = {

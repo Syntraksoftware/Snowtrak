@@ -3,8 +3,10 @@ import uuid
 
 import pytest
 
-from services.community_comment_operations import CommunityCommentOperations
-from services.community_post_operations import CommunityPostOperations
+from services.community_comment_read_operations import CommunityCommentReadOperations
+from services.community_comment_write_operations import CommunityCommentWriteOperations
+from services.community_post_read_operations import CommunityPostReadOperations
+from services.community_post_write_operations import CommunityPostWriteOperations
 from services.community_subthread_operations import CommunitySubthreadOperations
 
 
@@ -202,8 +204,10 @@ class FakeSupabaseClient:
 
 class OperationHarness(
     CommunitySubthreadOperations,
-    CommunityPostOperations,
-    CommunityCommentOperations,
+    CommunityPostReadOperations,
+    CommunityPostWriteOperations,
+    CommunityCommentReadOperations,
+    CommunityCommentWriteOperations,
 ):
     def __init__(self):
         self._client = FakeSupabaseClient()
