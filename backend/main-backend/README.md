@@ -126,7 +126,12 @@ cp .env.example .env
 - `ALLOWED_ORIGINS` - CORS origins (comma-separated, default: localhost:3000)
 - `BCRYPT_ROUNDS` - Password hashing rounds (default: 12)
 - `OPENMETEO_BASE_URL` - Open-Meteo base URL (default: `https://api.open-meteo.com/v1`)
-- `OPENMETEO_TIMEOUT_SECONDS` - Open-Meteo request timeout (default: 10)
+- `OPENMETEO_TIMEOUT_SECONDS` - Open-Meteo request timeout in seconds (default: 10, must be > 0)
+- `WEATHER_CACHE_ENABLED` - Enable Redis weather cache (default: true)
+- `WEATHER_CACHE_REDIS_URL` - Redis URL for weather cache (default: `redis://localhost:6379/0`)
+- `WEATHER_CACHE_NAMESPACE` - Key namespace for weather cache (default: `main-backend`)
+- `WEATHER_CACHE_TTL_SECONDS` - Cache entry TTL in seconds (default: 900, must be > 0)
+- `WEATHER_CACHE_DISTANCE_THRESHOLD` - Max coordinate delta for cache hit (default: 0.02, must be > 0)
 
 ## 💾 Storage
 

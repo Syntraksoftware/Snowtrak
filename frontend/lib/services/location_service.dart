@@ -17,20 +17,17 @@ class LocationService {
   List<app_location.Location> get locations => List.unmodifiable(_locations);
 
   Future<bool> hasLocationAccess() async {
+    final permissionStatus = await Permission.location.status;
     final geolocatorPermission = await Geolocator.checkPermission();
-    if (geolocatorPermission != LocationPermission.always &&
-        geolocatorPermission != LocationPermission.whileInUse) {
-      AppLogger.instance.debug(
-        '?? [LocationService] Location access unavailable: $geolocatorPermission',
-      );
+    final hasPermission = permissionStatus.isGranted ||
+        geolocatorPermission == LocationPermission.always ||
+        geolocatorPermission == LocationPermission.whileInUse;
+    if (!hasPermission) {
       return false;
     }
 
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      AppLogger.instance.debug(
-        '?? [LocationService] Location access unavailable: services disabled',
-      );
       return false;
     }
 

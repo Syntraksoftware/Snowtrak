@@ -1,7 +1,9 @@
 """Tests for the weather snapshot API."""
 
+import os
 from typing import Any
 
+import pytest
 from fastapi import status
 
 
@@ -99,12 +101,12 @@ class TestWeatherSnapshotEndpoint:
         assert response.status_code == 422
 
 
+@pytest.mark.skipif(
+    not os.getenv("RUN_INTEGRATION_TESTS"),
+    reason="set RUN_INTEGRATION_TESTS=1 to run live provider tests",
+)
 def test_weather_snapshot_integration_call_real_api():
-    """Integration test: call Open-Meteo real API (no API key required).
-
-    This will run during CI but relies on network access; it exercises the
-    live provider since Open-Meteo is free to use.
-    """
+    """Integration test: call Open-Meteo real API (no API key required)."""
     from app.services.weather import weather_service
     from app.schemas.weather import WeatherLocation, WeatherSnapshotRequest
 

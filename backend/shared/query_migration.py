@@ -4,7 +4,7 @@ from typing import Any
 
 FILTER_MAPPING = {
     "q": "search", "query": "search", "text": "search", "term": "search",
-    "activity_type": "type", "entity_type": "type", "kind": "type",
+    "entity_type": "type", "kind": "type",
     "from": "start_date", "from_date": "start_date", "start": "start_date",
     "to": "end_date", "to_date": "end_date", "end": "end_date", "until": "end_date",
 }

@@ -97,6 +97,9 @@ class WeatherService:
         except httpx.HTTPError as exc:
             logger.exception("Open-Meteo request failed")
             raise WeatherServiceError("Weather provider is unavailable") from exc
+        except ValueError as exc:
+            logger.exception("Open-Meteo returned malformed JSON")
+            raise WeatherServiceError("Weather provider returned an unparseable response") from exc
 
         if not isinstance(payload, dict):
             raise WeatherServiceError("Unexpected weather provider response")
@@ -278,6 +281,8 @@ class WeatherService:
             if value.isdigit():
                 return datetime.fromtimestamp(int(value), tz=UTC).isoformat().replace("+00:00", "Z")
             dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=UTC)
             return dt.astimezone(UTC).isoformat().replace("+00:00", "Z")
         except Exception:
             return datetime.now(tz=UTC).isoformat().replace("+00:00", "Z")

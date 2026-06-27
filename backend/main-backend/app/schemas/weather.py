@@ -8,8 +8,8 @@ class WeatherLocation(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    latitude: float
-    longitude: float
+    latitude: float = Field(..., ge=-90, le=90)
+    longitude: float = Field(..., ge=-180, le=180)
     city_hint: str | None = None
 
 
