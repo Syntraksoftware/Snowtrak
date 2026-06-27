@@ -24,7 +24,6 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _hasCheckedPermission = false;
   final PageController _pageController = PageController(initialPage: 2);
 
-  // Restructured navigation order: Map, Community, Home, Groups/Activities, You
   final List<Widget> _screens = [
     const RecordScreen(),      // 0: Map (Record Activities)
     const CommunityScreen(),   // 1: Community
@@ -36,9 +35,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Ensure currentIndex is within bounds on initialization
-    _currentIndex = _currentIndex.clamp(0, _screens.length - 1);
-    // Check and ask for location permission after a short delay
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkLocationPermission();
     });
@@ -76,13 +72,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onTabTapped(int index) {
     if (index >= 0 && index < _screens.length && index != _currentIndex) {
-      setState(() {
-        _currentIndex = index;
-      });
       _pageController.animateToPage(
         index,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOutCubic,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
       );
     }
   }
@@ -97,12 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Scaffold(
         body: PageView(
           controller: _pageController,
-          physics: const NeverScrollableScrollPhysics(),
-          onPageChanged: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
+          onPageChanged: (index) => setState(() => _currentIndex = index),
           children: _screens,
         ),
       bottomNavigationBar: Container(

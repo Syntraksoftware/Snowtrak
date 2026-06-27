@@ -28,7 +28,10 @@ class RecordScreen extends StatefulWidget {
   State<RecordScreen> createState() => _RecordScreenState();
 }
 
-class _RecordScreenState extends State<RecordScreen> {
+class _RecordScreenState extends State<RecordScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   final LocationService _locationService = LocationService();
   MapLibreMapController? _mapController;
   MyLocationTrackingMode _trackingMode = MyLocationTrackingMode.tracking;
@@ -553,6 +556,7 @@ class _RecordScreenState extends State<RecordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // required by AutomaticKeepAliveClientMixin
     if (_hasError) {
       return RecordErrorView(
         message: _errorMessage ?? 'The page is not ready!',
