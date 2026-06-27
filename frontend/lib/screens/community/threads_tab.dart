@@ -27,6 +27,7 @@ import 'package:syntrak/screens/community/widgets/threads_tab_sections.dart';
 import 'package:syntrak/services/feed/community_feed_cache.dart';
 import 'package:syntrak/services/feed/feed_post_sort.dart';
 import 'package:syntrak/services/feed/feed_rebase.dart';
+import 'package:syntrak/widgets/skeleton.dart';
 
 class ThreadsTab extends StatefulWidget {
   const ThreadsTab({super.key});
@@ -777,11 +778,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading && _posts.isEmpty && _feedError == null) {
-      return const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(SyntrakColors.primary),
-        ),
-      );
+      return const SkeletonFeedList();
     }
 
     if (!_isLoading && _posts.isEmpty && _feedError != null) {
