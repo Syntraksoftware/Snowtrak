@@ -111,12 +111,19 @@ class RedisWeatherCache:
         if distance > self._distance_threshold:
             return None
 
+        cached_snapshot = cached.response.weather_snapshot
         return WeatherSnapshotResponse(
             activity_id=request.activity_id,
             athlete_id=request.athlete_id,
             source=cached.response.source,
             location=request.location,
-            weather_snapshot=cached.response.weather_snapshot,
+            weather_snapshot=cached_snapshot.model_copy(
+                update={
+                    "temperatures": cached_snapshot.temperatures.model_copy(
+                        update={"strava_reported_celsius": request.strava_reported_celsius}
+                    )
+                }
+            ),
         )
 
     def set(self, request: WeatherSnapshotRequest, response: WeatherSnapshotResponse) -> None:

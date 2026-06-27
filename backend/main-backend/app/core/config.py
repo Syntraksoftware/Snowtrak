@@ -50,13 +50,14 @@ class Settings(BaseSettings):
 
     # Open-Meteo (free, no API key required)
     open_meteo_base_url: str = Field(default="https://api.open-meteo.com/v1", alias="OPENMETEO_BASE_URL")
-    open_meteo_timeout_seconds: float = Field(default=10.0, alias="OPENMETEO_TIMEOUT_SECONDS")
+    open_meteo_timeout_seconds: float = Field(default=10.0, gt=0, alias="OPENMETEO_TIMEOUT_SECONDS")
     weather_cache_enabled: bool = Field(default=True, alias="WEATHER_CACHE_ENABLED")
     weather_cache_redis_url: str = Field(default="redis://localhost:6379/0", alias="WEATHER_CACHE_REDIS_URL")
     weather_cache_namespace: str = Field(default="main-backend", alias="WEATHER_CACHE_NAMESPACE")
-    weather_cache_ttl_seconds: int = Field(default=900, alias="WEATHER_CACHE_TTL_SECONDS")
+    weather_cache_ttl_seconds: int = Field(default=900, gt=0, alias="WEATHER_CACHE_TTL_SECONDS")
     weather_cache_distance_threshold: float = Field(
         default=0.02,
+        gt=0,
         alias="WEATHER_CACHE_DISTANCE_THRESHOLD",
     )
 
