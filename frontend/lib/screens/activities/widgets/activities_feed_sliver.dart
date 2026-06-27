@@ -3,6 +3,7 @@ import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/models/user.dart';
 import 'package:syntrak/providers/activity_provider.dart';
 import 'package:syntrak/screens/activities/widgets/activity_feed_card.dart';
+import 'package:syntrak/widgets/skeleton.dart';
 import 'package:syntrak/ui/liquid/snowtrak_auth_theme.dart';
 
 class ActivitiesFeedSliver extends StatelessWidget {
@@ -19,7 +20,7 @@ class ActivitiesFeedSliver extends StatelessWidget {
   Widget build(BuildContext context) {
     if (activityProvider.isLoading && activityProvider.activities.isEmpty) {
       return const SliverFillRemaining(
-        child: Center(child: CircularProgressIndicator()),
+        child: SkeletonFeedList(),
       );
     }
 
