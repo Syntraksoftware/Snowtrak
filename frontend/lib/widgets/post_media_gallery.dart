@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
@@ -52,34 +53,21 @@ class PostMediaGallery extends StatelessWidget {
       return PostInlineVideo(url: url);
     }
 
-    final image = Image.network(
-      url,
+    final image = CachedNetworkImage(
+      imageUrl: url,
       fit: BoxFit.cover,
       width: double.infinity,
       height: height,
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) {
-          return child;
-        }
-        return AspectRatio(
-          aspectRatio: 4 / 3,
-          child: Container(
-            color: Colors.grey.shade200,
-            child: const Center(
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          ),
-        );
-      },
-      errorBuilder: (_, __, ___) => AspectRatio(
+      placeholder: (_, __) => AspectRatio(
+        aspectRatio: 4 / 3,
+        child: Container(color: Colors.grey.shade200),
+      ),
+      errorWidget: (_, __, ___) => AspectRatio(
         aspectRatio: 4 / 3,
         child: Container(
           color: Colors.grey.shade200,
-          child: Icon(
-            Icons.broken_image_outlined,
-            size: 40,
-            color: Colors.grey.shade500,
-          ),
+          child: Icon(Icons.broken_image_outlined,
+              size: 40, color: Colors.grey.shade500),
         ),
       ),
     );
@@ -103,12 +91,7 @@ class PostInlineVideo extends StatefulWidget {
 class _PostInlineVideoState extends State<PostInlineVideo> {
   VideoPlayerController? _controller;
   bool _failed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _init();
-  }
+  bool _tapped = false; // ponytail: lazy init — don't load video until tap
 
   Future<void> _init() async {
     final c = VideoPlayerController.networkUrl(Uri.parse(widget.url));
@@ -151,19 +134,28 @@ class _PostInlineVideoState extends State<PostInlineVideo> {
       );
     }
     final c = _controller;
-    if (c == null || !c.value.isInitialized) {
-      return AspectRatio(
-        aspectRatio: 16 / 9,
-        child: Container(
-          color: Colors.black87,
-          child: const Center(
-            child: SizedBox(
-              width: 28,
-              height: 28,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white70,
-              ),
+    if (!_tapped || (c == null || !c.value.isInitialized)) {
+      return GestureDetector(
+        onTap: () {
+          if (!_tapped) {
+            setState(() => _tapped = true);
+            _init();
+          }
+        },
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: Container(
+            color: Colors.black87,
+            child: Center(
+              child: _tapped
+                  ? const SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white70),
+                    )
+                  : const Icon(Icons.play_circle_outline,
+                      color: Colors.white70, size: 48),
             ),
           ),
         ),
