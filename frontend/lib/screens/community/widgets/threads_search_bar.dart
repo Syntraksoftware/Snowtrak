@@ -21,33 +21,17 @@ class ThreadsSearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: SyntrakColors.surface,
+      color: SyntrakColors.background,
       padding: const EdgeInsets.fromLTRB(
         SyntrakSpacing.md,
         SyntrakSpacing.md,
         SyntrakSpacing.md,
         SyntrakSpacing.sm,
       ),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+      child: Container(
         decoration: BoxDecoration(
-          color: isSearchFocused
-              ? SyntrakColors.surface
-              : SyntrakColors.surfaceVariant,
+          color: SyntrakColors.surfaceVariant,
           borderRadius: BorderRadius.circular(SyntrakRadius.round),
-          border: Border.all(
-            color: isSearchFocused ? SyntrakColors.primary : Colors.transparent,
-            width: 2,
-          ),
-          boxShadow: isSearchFocused
-              ? [
-                  BoxShadow(
-                    color: SyntrakColors.primary.withAlpha(30),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
         ),
         child: TextField(
           controller: controller,
@@ -63,9 +47,7 @@ class ThreadsSearchBar extends StatelessWidget {
             ),
             prefixIcon: Icon(
               Icons.search,
-              color: isSearchFocused
-                  ? SyntrakColors.primary
-                  : SyntrakColors.textTertiary,
+              color: SyntrakColors.textTertiary,
             ),
             suffixIcon: controller.text.isNotEmpty
                 ? IconButton(
@@ -78,6 +60,8 @@ class ThreadsSearchBar extends StatelessWidget {
                   )
                 : null,
             border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: SyntrakSpacing.md,
               vertical: 14,
