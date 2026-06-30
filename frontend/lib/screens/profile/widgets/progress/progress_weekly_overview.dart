@@ -69,7 +69,7 @@ class ProgressWeeklyOverview extends StatelessWidget {
           const SizedBox(height: SyntrakSpacing.sm),
           SizedBox(
             height: 140,
-            child: _TwelveWeekGraph(activities: activities),
+            child: TwelveWeekSparkline(activities: activities),
           ),
         ],
       ),
@@ -104,8 +104,8 @@ class ProgressWeeklyOverview extends StatelessWidget {
   }
 }
 
-class _TwelveWeekGraph extends StatelessWidget {
-  const _TwelveWeekGraph({required this.activities});
+class TwelveWeekSparkline extends StatelessWidget {
+  const TwelveWeekSparkline({super.key, required this.activities});
 
   final List<Activity> activities;
 
@@ -117,18 +117,18 @@ class _TwelveWeekGraph extends StatelessWidget {
           now.subtract(Duration(days: (11 - index) * 7 + now.weekday - 1));
       final weekEnd = weekStart.add(const Duration(days: 6));
 
-      double weekDistance = 0.0;
+      int weekCount = 0;
       for (final activity in activities) {
         if (activity.startTime
                 .isAfter(weekStart.subtract(const Duration(days: 1))) &&
             activity.startTime.isBefore(weekEnd.add(const Duration(days: 1)))) {
-          weekDistance += activity.distance / 1000;
+          weekCount++;
         }
       }
 
       return {
         'date': weekStart,
-        'distance': weekDistance,
+        'count': weekCount.toDouble(),
       };
     });
 
@@ -137,9 +137,9 @@ class _TwelveWeekGraph extends StatelessWidget {
       children: [
         SizedBox(
           height: 100,
+          width: double.infinity,
           child: CustomPaint(
             painter: ProgressWeeklyGraphPainter(weeks),
-            child: Container(),
           ),
         ),
         const SizedBox(height: SyntrakSpacing.xs),

@@ -2,10 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:syntrak/core/theme.dart';
 
 class ProgressStreaksBanner extends StatelessWidget {
-  const ProgressStreaksBanner({super.key});
+  const ProgressStreaksBanner({
+    super.key,
+    required this.currentStreak,
+    required this.longestStreak,
+  });
+
+  final int currentStreak;
+  final int longestStreak;
 
   @override
   Widget build(BuildContext context) {
+    final hasStreak = currentStreak > 0;
     return Container(
       margin: const EdgeInsets.all(SyntrakSpacing.md),
       padding: const EdgeInsets.all(SyntrakSpacing.md),
@@ -17,7 +25,7 @@ class ProgressStreaksBanner extends StatelessWidget {
         children: [
           Icon(
             Icons.local_fire_department,
-            color: SyntrakColors.accent,
+            color: hasStreak ? SyntrakColors.accent : SyntrakColors.textTertiary,
             size: 24,
           ),
           const SizedBox(width: SyntrakSpacing.md),
@@ -26,7 +34,9 @@ class ProgressStreaksBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Scroll down for streaks',
+                  hasStreak
+                      ? '$currentStreak-week streak'
+                      : 'No active streak',
                   style: SyntrakTypography.labelLarge.copyWith(
                     color: SyntrakColors.textPrimary,
                     fontWeight: FontWeight.w600,
@@ -34,7 +44,9 @@ class ProgressStreaksBanner extends StatelessWidget {
                 ),
                 const SizedBox(height: SyntrakSpacing.xs),
                 Text(
-                  'Build habits with streaks - log one activity a week to keep it alive',
+                  longestStreak > 0
+                      ? 'Best: $longestStreak ${longestStreak == 1 ? 'week' : 'weeks'} — log one activity a week to keep it alive'
+                      : 'Log one activity a week to build your streak',
                   style: SyntrakTypography.bodySmall.copyWith(
                     color: SyntrakColors.textSecondary,
                   ),

@@ -10,15 +10,15 @@ class ProgressWeeklyGraphPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = SyntrakColors.accent
+      ..color = SyntrakColors.primary
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
     final pointPaint = Paint()
-      ..color = SyntrakColors.accent
+      ..color = SyntrakColors.primary
       ..style = PaintingStyle.fill;
 
-    final distances = weeks.map((w) => w['distance'] as double).toList();
+    final distances = weeks.map((w) => w['count'] as double).toList();
     final maxDistance =
         distances.isEmpty ? 1.0 : distances.reduce((a, b) => a > b ? a : b);
 
@@ -26,7 +26,7 @@ class ProgressWeeklyGraphPainter extends CustomPainter {
     final points = <Offset>[];
 
     for (int i = 0; i < weeks.length; i++) {
-      final distance = weeks[i]['distance'] as double;
+      final distance = weeks[i]['count'] as double;
       final normalizedDistance =
           maxDistance > 0 ? (distance / maxDistance) : 0.0;
       final y = size.height - (normalizedDistance * size.height);
@@ -56,7 +56,7 @@ class ProgressWeeklyGraphPainter extends CustomPainter {
       final lastPoint = points.last;
       if (lastPoint.dx.isFinite && lastPoint.dy.isFinite) {
         final highlightPaint = Paint()
-          ..color = SyntrakColors.accent
+          ..color = SyntrakColors.primary
           ..style = PaintingStyle.fill;
         canvas.drawCircle(lastPoint, 6, highlightPaint);
 
@@ -73,5 +73,6 @@ class ProgressWeeklyGraphPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant ProgressWeeklyGraphPainter oldDelegate) =>
+      oldDelegate.weeks != weeks;
 }

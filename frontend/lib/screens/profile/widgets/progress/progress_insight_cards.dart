@@ -190,7 +190,7 @@ class _GoalsCard extends StatelessWidget {
                     strokeWidth: 4,
                     backgroundColor: SyntrakColors.surfaceVariant,
                     valueColor: const AlwaysStoppedAnimation<Color>(
-                      SyntrakColors.success,
+                      SyntrakColors.primary,
                     ),
                   ),
                 ),
@@ -251,8 +251,8 @@ class _RelativeEffortCard extends StatelessWidget {
           children: [
             _RelativeEffortRow(
               relativeEffort['current'] as int,
-              'Jan 6 - Jan 12, 2026',
-              SyntrakColors.error,
+              relativeEffort['currentRange'] as String? ?? '',
+              SyntrakColors.primary,
             ),
             Divider(
               height: 1,
@@ -260,8 +260,8 @@ class _RelativeEffortCard extends StatelessWidget {
             ),
             _RelativeEffortRow(
               relativeEffort['previous'] as int,
-              'Dec 30 - Jan 5, 2026',
-              SyntrakColors.snowboard,
+              relativeEffort['lastRange'] as String? ?? '',
+              SyntrakColors.textTertiary,
             ),
           ],
         ),
@@ -358,22 +358,35 @@ class _TrainingLogCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: SyntrakSpacing.md),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day) {
-                return SizedBox(
-                  width: 30,
-                  child: Center(
-                    child: Text(
-                      day,
-                      style: SyntrakTypography.labelSmall.copyWith(
-                        color: SyntrakColors.textTertiary,
+            Builder(builder: (context) {
+              final activeDays = (trainingLog['activeDays'] as Set<int>?) ?? <int>{};
+              const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: List.generate(7, (i) {
+                  final isActive = activeDays.contains(i + 1);
+                  return Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? SyntrakColors.primary.withValues(alpha: 0.15)
+                          : Colors.transparent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        labels[i],
+                        style: SyntrakTypography.labelSmall.copyWith(
+                          color: isActive ? SyntrakColors.primary : SyntrakColors.textTertiary,
+                          fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                        ),
                       ),
                     ),
-                  ),
-                );
-              }).toList(),
-            ),
+                  );
+                }),
+              );
+            }),
           ],
         ),
       ),

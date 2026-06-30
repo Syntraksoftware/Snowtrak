@@ -49,8 +49,6 @@ class Config(BaseSettings):
     STATIC_MAP_ZOOM: int = 12
     THUMBNAIL_BUCKET: str = "activity-thumbnails"
 
-    # OpenSkiMap-style GeoJSON bulk sync (requires asyncpg pool + migration 002 ``source_id``).
-    # Scheduler runs only when BOTH are set (see ``openskimap_sync_armed``).
     OPENSKIMAP_SYNC_ENABLED: bool = False
     OPENSKIMAP_RUNS_GEOJSON_URL: str | None = None
 
