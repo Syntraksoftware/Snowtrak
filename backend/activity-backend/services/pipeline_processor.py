@@ -12,6 +12,7 @@ from services.gpx_parser import parse_gpx_bytes
 from services.map_backend_client import MapBackendClient, get_map_backend_client
 from services.nivus_client import NivusClient, get_nivus_client
 from services.supabase_client import ActivitySupabaseClient
+from services.user_stats_service import get_stats_service
 from shared.pipeline_enums import ProcessingStatus
 
 logger = logging.getLogger(__name__)
@@ -101,6 +102,7 @@ class PipelineProcessor:
                 thumbnail_url=thumbnail_url,
                 name=None,
             )
+            get_stats_service().recompute_and_upsert(user_id)
             logger.info(
                 "pipeline complete activity_id=%s map_activity_id=%s points=%d",
                 activity_id,
