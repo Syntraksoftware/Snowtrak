@@ -494,6 +494,9 @@ class _RecordScreenState extends State<RecordScreen>
         final activity = await activityProvider.getActivity(activityId);
         if (activity != null && !activity.isPipelinePending) {
           if (!mounted) return;
+          // Refresh the full list so processed metrics (GPS distance, elevation)
+          // replace the raw values and stats recompute with accurate data.
+          unawaited(activityProvider.loadActivities(refresh: true, forceNetwork: true));
           setState(() => _isProcessing = false);
           _navigateToDetail(activityId);
           return;

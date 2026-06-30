@@ -1,27 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:syntrak/core/theme.dart';
+import 'package:syntrak/models/activity.dart';
+import 'package:syntrak/models/user_stats.dart';
+import 'package:syntrak/providers/activity_provider.dart';
 import 'package:syntrak/screens/profile/widgets/profile_layout_primitives.dart';
+import 'package:syntrak/screens/profile/widgets/progress/progress_weekly_overview.dart';
 import 'package:syntrak/screens/profile/widgets/profile_privacy_controls.dart';
 import 'package:syntrak/ui/liquid/liquid_section_card.dart';
 import 'package:syntrak/ui/liquid/snowtrak_auth_theme.dart';
 
-/// Scrollable profile sections — layout placeholders until features ship.
-class ProfileHomeContent extends StatelessWidget {
+class ProfileHomeContent extends StatefulWidget {
   const ProfileHomeContent({super.key});
 
+  @override
+  State<ProfileHomeContent> createState() => _ProfileHomeContentState();
+}
+
+class _ProfileHomeContentState extends State<ProfileHomeContent> {
+  int _periodIndex = 0; // 0 = Week, 1 = Year, 2 = All-time
   static const _accent = SnowtrakAuthTheme.brand;
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<ActivityProvider>();
+    final stats = provider.stats;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: SyntrakSpacing.md),
         _identitySection(),
         const SizedBox(height: SyntrakSpacing.md),
-        _performanceSection(),
+        _performanceSection(stats),
         const SizedBox(height: SyntrakSpacing.md),
-        _trainingSection(),
+        _trainingSection(provider.activities),
         const SizedBox(height: SyntrakSpacing.md),
         _socialSection(),
         const SizedBox(height: SyntrakSpacing.md),
@@ -82,7 +95,37 @@ class ProfileHomeContent extends StatelessWidget {
     );
   }
 
-  Widget _performanceSection() {
+  Widget _performanceSection(UserStats? stats) {
+    final periods = ['Week', 'Year', 'All-time'];
+    final dist = stats == null ? '—' : [
+      stats.weeklyDistanceKm,
+      stats.yearlyDistanceKm,
+      stats.allTimeDistanceKm,
+    ][_periodIndex].toStringAsFixed(1);
+
+    final timeMin = stats == null ? null : [
+      stats.weeklyTimeMin,
+      stats.yearlyTimeMin,
+      stats.allTimeTimeMin,
+    ][_periodIndex];
+    final timeStr = timeMin == null
+        ? '—'
+        : timeMin < 60
+            ? '${timeMin}m'
+            : '${(timeMin / 60).toStringAsFixed(1)}';
+
+    final elev = stats == null ? '—' : [
+      stats.weeklyElevGain,
+      stats.yearlyElevGain,
+      stats.allTimeElevGain,
+    ][_periodIndex].toStringAsFixed(0);
+
+    final sessions = stats == null ? '—' : [
+      stats.weeklySessionCount,
+      stats.yearlySessionCount,
+      stats.allTimeSessionCount,
+    ][_periodIndex].toString();
+
     return LiquidSectionCard(
       icon: Icons.insights_outlined,
       title: 'Performance summaries',
@@ -93,40 +136,43 @@ class ProfileHomeContent extends StatelessWidget {
         children: [
           Wrap(
             spacing: SyntrakSpacing.sm,
-            children: const [
-              ProfileChip(label: 'Week', selected: true),
-              ProfileChip(label: 'Year'),
-              ProfileChip(label: 'All-time'),
-            ],
+            children: List.generate(periods.length, (i) => GestureDetector(
+              onTap: () => setState(() => _periodIndex = i),
+              child: ProfileChip(label: periods[i], selected: _periodIndex == i),
+            )),
           ),
           const SizedBox(height: SyntrakSpacing.md),
-          const ProfileMetricRow(
+          ProfileMetricRow(
             left: ProfileMetricTile(
               icon: Icons.straighten,
               label: 'Distance',
-              value: '—',
+              value: dist,
               unit: 'km',
+              accentColor: SyntrakColors.primary,
             ),
             right: ProfileMetricTile(
               icon: Icons.timer_outlined,
               label: 'Time',
-              value: '—',
-              unit: 'hr',
+              value: timeStr,
+              unit: timeMin != null && timeMin >= 60 ? 'hr' : '',
+              accentColor: SyntrakColors.primary,
             ),
           ),
           const SizedBox(height: SyntrakSpacing.sm),
-          const ProfileMetricRow(
+          ProfileMetricRow(
             left: ProfileMetricTile(
               icon: Icons.terrain,
               label: 'Elevation',
-              value: '—',
+              value: elev,
               unit: 'm',
+              accentColor: SyntrakColors.primary,
             ),
             right: ProfileMetricTile(
-              icon: Icons.emoji_events_outlined,
-              label: 'PRs',
-              value: '—',
+              icon: Icons.directions_run_outlined,
+              label: 'Sessions',
+              value: sessions,
               unit: '',
+              accentColor: SyntrakColors.primary,
             ),
           ),
           const SizedBox(height: SyntrakSpacing.md),
@@ -146,26 +192,26 @@ class ProfileHomeContent extends StatelessWidget {
     );
   }
 
-  Widget _trainingSection() {
+  Widget _trainingSection(List<Activity> activities) {
+    final recent = activities.take(3).toList();
     return LiquidSectionCard(
       icon: Icons.history,
       title: 'Training history',
       subtitle: 'Recent workouts and consistency',
       iconColor: _accent,
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ProfilePlaceholderBlock(
-            icon: Icons.map_outlined,
-            label: 'Recent activity feed with routes and metrics',
-            height: 88,
-          ),
-          SizedBox(height: SyntrakSpacing.sm),
-          ProfilePlaceholderBlock(
-            icon: Icons.calendar_month_outlined,
-            label: 'Training calendar — weekly volume at a glance',
-            height: 88,
-          ),
+          if (recent.isEmpty)
+            const ProfilePlaceholderBlock(
+              icon: Icons.map_outlined,
+              label: 'No activities yet — record your first run!',
+              height: 72,
+            )
+          else
+            ...recent.map((a) => _RecentActivityRow(activity: a)),
+          const SizedBox(height: SyntrakSpacing.sm),
+          TwelveWeekSparkline(activities: activities),
         ],
       ),
     );
@@ -231,6 +277,53 @@ class ProfileHomeContent extends StatelessWidget {
       subtitle: 'Location data and visibility',
       iconColor: _accent,
       child: const ProfilePrivacyControls(),
+    );
+  }
+}
+
+class _RecentActivityRow extends StatelessWidget {
+  const _RecentActivityRow({required this.activity});
+  final Activity activity;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: SyntrakSpacing.sm),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: SyntrakColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(SyntrakRadius.md),
+            ),
+            child: const Icon(Icons.downhill_skiing, size: 18, color: SyntrakColors.primary),
+          ),
+          const SizedBox(width: SyntrakSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  activity.name ?? 'Activity',
+                  style: SyntrakTypography.labelMedium.copyWith(color: SyntrakColors.textPrimary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  DateFormat('MMM d, yyyy').format(activity.startTime),
+                  style: SyntrakTypography.bodySmall.copyWith(color: SyntrakColors.textTertiary),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            activity.formattedDistance,
+            style: SyntrakTypography.labelMedium.copyWith(color: SyntrakColors.textPrimary),
+          ),
+        ],
+      ),
     );
   }
 }
