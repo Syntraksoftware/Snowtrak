@@ -190,3 +190,41 @@ class DeleteResponse(BaseModel):
 
     message: str
     deleted_activity_id: str | None = None
+
+
+class BestEffort(BaseModel):
+    """A single best-effort entry (longest, most elevation, fastest pace)."""
+
+    type: str
+    value: str
+    date: str
+    is_pr: bool = False
+
+
+class UserStatsResponse(BaseModel):
+    """Cached user stats returned by GET /me/stats."""
+
+    user_id: str
+    week_start: str                     # ISO date string (Monday)
+
+    weekly_distance_km: float
+    weekly_time_min: int
+    weekly_elev_gain_m: float
+    weekly_session_count: int
+    last_week_session_count: int
+
+    yearly_distance_km: float
+    yearly_time_min: int
+    yearly_elev_gain_m: float
+    yearly_session_count: int
+
+    all_time_distance_km: float
+    all_time_time_min: int
+    all_time_elev_gain_m: float
+    all_time_session_count: int
+
+    current_streak_weeks: int
+    longest_streak_weeks: int
+
+    activity_days: list[str]            # Sorted ISO date strings
+    best_efforts: list[BestEffort]

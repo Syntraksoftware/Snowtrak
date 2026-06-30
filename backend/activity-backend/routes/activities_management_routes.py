@@ -20,6 +20,7 @@ from routes.activity_transformers import (
 from services.activity_deletion_service import ActivityDeletionService
 from services.map_backend_client import get_map_backend_client
 from services.supabase_client import get_activity_client
+from services.user_stats_service import get_stats_service
 from shared.pipeline_enums import ProcessingStatus
 
 logger = logging.getLogger(__name__)
@@ -92,6 +93,7 @@ async def create_activity(
         background_tasks.add_task(
             _background_thumbnail, created_activity["id"], user_id, gps_path_records
         )
+        background_tasks.add_task(get_stats_service().recompute_and_upsert, user_id)
         return FrontendActivityResponse(**frontend_payload)
     except HTTPException:
         raise
@@ -184,6 +186,7 @@ async def update_activity(
 @router.delete("/{activity_id}", response_model=DeleteResponse)
 async def delete_activity(
     activity_id: str,
+    background_tasks: BackgroundTasks,
     user_id: str = Depends(get_current_user),
 ):
     """Delete an activity owned by the authenticated user."""
@@ -197,6 +200,7 @@ async def delete_activity(
                 detail="Activity not found or not authorized",
             ) from None
 
+        background_tasks.add_task(get_stats_service().recompute_and_upsert, user_id)
         return DeleteResponse(
             message="Activity deleted",
             deleted_activity_id=activity_id,

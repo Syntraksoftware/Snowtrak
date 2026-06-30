@@ -29,6 +29,7 @@ from config import get_config
 from routes.activities import router as activities_router
 from services.pipeline_worker import PipelineWorker
 from services.supabase_client import initialize_activity_client
+from services.user_stats_service import initialize_stats_service
 
 # Configure logging
 logging.basicConfig(
@@ -74,8 +75,8 @@ async def lifespan(app: FastAPI):
     logger.info(f"Starting Activity Backend on {config.HOST}:{config.PORT}")
     logger.info(f"Environment: {config.FASTAPI_ENV} | Debug: {config.DEBUG}")
 
-    # Initialize Supabase client once at startup
     initialize_activity_client()
+    initialize_stats_service()
     _log_owned_domains_banner()
 
     worker = PipelineWorker()
