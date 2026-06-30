@@ -1,5 +1,15 @@
 import 'package:intl/intl.dart';
 
+/// Formats an elevation value in metres with a thousands separator.
+/// e.g. 12345.6 → '12,346 m'
+String formatElevation(double metres) {
+  return '${NumberFormat('#,###').format(metres.round())} m';
+}
+
+/// Formats a duration in minutes as a human-readable string.
+/// e.g. 150 → '2h 30m', 45 → '45m'
+String formatDurationMinutes(int minutes) => formatMovingTimeSeconds(minutes * 60);
+
 String formatRelativeActivityTime(DateTime date) {
   final now = DateTime.now();
   final difference = now.difference(date);

@@ -30,8 +30,6 @@ class ProgressInsightCards extends StatelessWidget {
         _RelativeEffortCard(relativeEffort: relativeEffort),
         const SizedBox(height: SyntrakSpacing.md),
         _TrainingLogCard(trainingLog: trainingLog),
-        const SizedBox(height: SyntrakSpacing.lg),
-        _FreeTrialButton(),
         const SizedBox(height: SyntrakSpacing.xl),
       ],
     );
@@ -65,10 +63,12 @@ class _BestEffortsCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: efforts.map((effort) {
                 return _BestEffortRow(
-                  isPR: effort['isPR'] ?? false,
+                  isPR: effort['is_pr'] ?? effort['isPR'] ?? false,
                   type: effort['type'] ?? '',
-                  time: effort['time'] ?? '',
-                  date: effort['date'] as DateTime? ?? DateTime.now(),
+                  value: effort['value'] ?? effort['time'] ?? '',
+                  date: effort['date'] is DateTime
+                      ? effort['date'] as DateTime
+                      : DateTime.tryParse(effort['date'] as String? ?? '') ?? DateTime.now(),
                 );
               }).toList(),
             ),
@@ -80,13 +80,13 @@ class _BestEffortRow extends StatelessWidget {
   const _BestEffortRow({
     required this.isPR,
     required this.type,
-    required this.time,
+    required this.value,
     required this.date,
   });
 
   final bool isPR;
   final String type;
-  final String time;
+  final String value;
   final DateTime date;
 
   @override
@@ -150,7 +150,7 @@ class _BestEffortRow extends StatelessWidget {
             ),
           ),
           Text(
-            time,
+            value,
             style: SyntrakTypography.bodyLarge.copyWith(
               color: SyntrakColors.textPrimary,
               fontWeight: FontWeight.w600,

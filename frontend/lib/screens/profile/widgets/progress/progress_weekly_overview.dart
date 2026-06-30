@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/models/activity.dart';
+import 'package:syntrak/screens/activities/widgets/activity_feed_formatters.dart';
 import 'package:syntrak/screens/profile/widgets/progress/progress_weekly_graph_painter.dart';
 
 /// This week stats + 12-week distance sparkline.
@@ -48,13 +49,13 @@ class ProgressWeeklyOverview extends StatelessWidget {
               Expanded(
                 child: _statItem(
                   'Time',
-                  '${weeklyStats['time']}m',
+                  formatDurationMinutes(weeklyStats['time'] as int),
                 ),
               ),
               Expanded(
                 child: _statItem(
                   'Elev Gain',
-                  '${(weeklyStats['elevGain'] as num).toStringAsFixed(0)} m',
+                  formatElevation((weeklyStats['elevGain'] as num).toDouble()),
                 ),
               ),
             ],

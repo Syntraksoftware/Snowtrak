@@ -5,6 +5,7 @@ import 'package:syntrak/core/theme.dart';
 import 'package:syntrak/models/activity.dart';
 import 'package:syntrak/models/user_stats.dart';
 import 'package:syntrak/providers/activity_provider.dart';
+import 'package:syntrak/screens/activities/widgets/activity_feed_formatters.dart';
 import 'package:syntrak/screens/profile/widgets/profile_layout_primitives.dart';
 import 'package:syntrak/screens/profile/widgets/progress/progress_weekly_overview.dart';
 import 'package:syntrak/screens/profile/widgets/profile_privacy_controls.dart';
@@ -108,17 +109,13 @@ class _ProfileHomeContentState extends State<ProfileHomeContent> {
       stats.yearlyTimeMin,
       stats.allTimeTimeMin,
     ][_periodIndex];
-    final timeStr = timeMin == null
-        ? '—'
-        : timeMin < 60
-            ? '${timeMin}m'
-            : '${(timeMin / 60).toStringAsFixed(1)}';
+    final timeStr = timeMin == null ? '—' : formatDurationMinutes(timeMin);
 
-    final elev = stats == null ? '—' : [
+    final elev = stats == null ? '—' : formatElevation([
       stats.weeklyElevGain,
       stats.yearlyElevGain,
       stats.allTimeElevGain,
-    ][_periodIndex].toStringAsFixed(0);
+    ][_periodIndex]);
 
     final sessions = stats == null ? '—' : [
       stats.weeklySessionCount,
@@ -154,7 +151,7 @@ class _ProfileHomeContentState extends State<ProfileHomeContent> {
               icon: Icons.timer_outlined,
               label: 'Time',
               value: timeStr,
-              unit: timeMin != null && timeMin >= 60 ? 'hr' : '',
+              unit: '',
               accentColor: SyntrakColors.primary,
             ),
           ),
@@ -164,7 +161,7 @@ class _ProfileHomeContentState extends State<ProfileHomeContent> {
               icon: Icons.terrain,
               label: 'Elevation',
               value: elev,
-              unit: 'm',
+              unit: '',
               accentColor: SyntrakColors.primary,
             ),
             right: ProfileMetricTile(

@@ -22,9 +22,11 @@ class ProgressTab extends StatelessWidget {
       color: SyntrakColors.primary,
       child: ColoredBox(
         color: SyntrakColors.surface,
-        child: stats == null
+        child: provider.isLoading && stats == null
           ? const SkeletonFeedList()
-          : SingleChildScrollView(
+          : stats == null
+            ? const _EmptyProgressState()
+            : SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,5 +82,40 @@ class ProgressTab extends StatelessWidget {
     final sunday = monday.add(const Duration(days: 6));
     final fmt = DateFormat('MMM d');
     return '${fmt.format(monday)} – ${fmt.format(sunday)}';
+  }
+}
+
+class _EmptyProgressState extends StatelessWidget {
+  const _EmptyProgressState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.downhill_skiing,
+            size: 56,
+            color: SyntrakColors.textTertiary,
+          ),
+          const SizedBox(height: SyntrakSpacing.md),
+          Text(
+            'No activities yet',
+            style: SyntrakTypography.headlineSmall.copyWith(
+              color: SyntrakColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: SyntrakSpacing.xs),
+          Text(
+            'Record your first run to see your progress here.',
+            style: SyntrakTypography.bodyMedium.copyWith(
+              color: SyntrakColors.textSecondary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
   }
 }
