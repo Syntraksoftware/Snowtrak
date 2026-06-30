@@ -1,4 +1,5 @@
 import 'package:syntrak/models/activity.dart';
+import 'package:syntrak/models/user_stats.dart';
 import 'package:syntrak/services/apis/activities_api.dart';
 
 class ActivitiesRepository {
@@ -35,6 +36,8 @@ class ActivitiesRepository {
   Future<void> deleteActivity(String id) {
     return _api.deleteActivity(id);
   }
+
+  Future<UserStats> getMyStats() => _api.getMyStats();
 
   Future<List<Activity>> getMyActivities({
     String? search,

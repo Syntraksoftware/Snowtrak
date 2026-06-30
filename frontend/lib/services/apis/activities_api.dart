@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:syntrak/models/activity.dart';
+import 'package:syntrak/models/user_stats.dart';
 
 class ActivitiesApi {
   ActivitiesApi({required Dio dio}) : _dio = dio;
@@ -52,6 +53,11 @@ class ActivitiesApi {
 
   Future<void> deleteActivity(String id) async {
     await _dio.delete('/activities/$id');
+  }
+
+  Future<UserStats> getMyStats() async {
+    final response = await _dio.get('/activities/me/stats');
+    return UserStats.fromJson(response.data as Map<String, dynamic>);
   }
 
   Future<List<Activity>> getMyActivities({

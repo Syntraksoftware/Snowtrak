@@ -4,6 +4,7 @@ import 'package:syntrak/core/errors/app_error.dart';
 import 'package:syntrak/core/errors/app_result.dart';
 import 'package:syntrak/features/activities/data/activities_repository.dart';
 import 'package:syntrak/models/activity.dart';
+import 'package:syntrak/models/user_stats.dart';
 
 class ActivitiesService {
   ActivitiesService({
@@ -64,6 +65,15 @@ class ActivitiesService {
         isPublic: isPublic,
       );
       return AppSuccess(updated);
+    } catch (e, st) {
+      return AppFailure(AppError.from(e, st));
+    }
+  }
+
+  Future<AppResult<UserStats>> getMyStats() async {
+    try {
+      final stats = await _activitiesRepository.getMyStats();
+      return AppSuccess(stats);
     } catch (e, st) {
       return AppFailure(AppError.from(e, st));
     }

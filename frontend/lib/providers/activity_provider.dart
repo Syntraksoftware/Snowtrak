@@ -87,9 +87,9 @@ class ActivityProvider extends ChangeNotifier {
         _hasMore = value.length == _pageSize;
         _currentPage = 2;
         _isLoading = false;
-        _computeStats();
         notifyListeners();
         await _feedCache.writePage(1, merged);
+        unawaited(_fetchStats());
         unawaited(_prefetchPage(_currentPage));
 
       case AppFailure(:final error):
@@ -102,8 +102,7 @@ class ActivityProvider extends ChangeNotifier {
             error: error.cause ?? error,
             stackTrace: error.stackTrace,
             notifyUser: true,
-            userMessage:
-                'Activity service unavailable. Showing demo data.',
+            userMessage: 'Activity service unavailable. Showing demo data.',
           );
           _error = 'Activity service unavailable. Showing demo data.';
           loadMockActivities();
@@ -148,7 +147,6 @@ class ActivityProvider extends ChangeNotifier {
         _hasMore = value.length == _pageSize;
         _currentPage++;
         _isLoadingMore = false;
-        _computeStats();
         notifyListeners();
         await _feedCache.writePage(targetPage, value);
         unawaited(_prefetchPage(_currentPage));
@@ -193,13 +191,12 @@ class ActivityProvider extends ChangeNotifier {
 
     switch (result) {
       case AppSuccess(:final value):
-        final created = value;
-        _activities.insert(0, created);
+        _activities.insert(0, value);
         _isLoading = false;
-        _computeStats();
         notifyListeners();
         await _feedCache.writePage(1, _activities.take(_pageSize).toList());
-        return created;
+        unawaited(_fetchStats());
+        return value;
 
       case AppFailure(:final error):
         _error = error.userMessage;
@@ -227,11 +224,11 @@ class ActivityProvider extends ChangeNotifier {
       case AppSuccess():
         _activities.removeWhere((a) => a.id == id);
         _isLoading = false;
-        _computeStats();
         notifyListeners();
         if (_activities.isNotEmpty) {
           await _feedCache.writePage(1, _activities.take(_pageSize).toList());
         }
+        unawaited(_fetchStats());
 
       case AppFailure(:final error):
         _error = error.userMessage;
@@ -270,12 +267,29 @@ class ActivityProvider extends ChangeNotifier {
     _activities = MockActivities.generateMockActivities();
     _hasMore = false;
     _isLoading = false;
-    _computeStats();
+    // ponytail: offline/mock path — no network, fall back to client-side compute
+    _computeStatsFromActivities();
     notifyListeners();
   }
 
-  // ponytail: O(n) over loaded activities — runs only when _activities changes, never on tab switch.
-  void _computeStats() {
+  // Fetches server-computed stats (covers all activities, not just page 1).
+  Future<void> _fetchStats() async {
+    final result = await _activitiesService.getMyStats();
+    switch (result) {
+      case AppSuccess(:final value):
+        _stats = value;
+        notifyListeners();
+      case AppFailure(:final error):
+        AppLogger.instance.warning(
+          '[ActivityProvider] Failed to fetch stats — UI may show stale data',
+          error: error.cause ?? error,
+          stackTrace: error.stackTrace,
+        );
+    }
+  }
+
+  // ponytail: fallback for offline/mock mode only — server stats are authoritative
+  void _computeStatsFromActivities() {
     if (_activities.isEmpty) {
       _stats = null;
       return;
@@ -321,7 +335,6 @@ class ActivityProvider extends ChangeNotifier {
       }
     }
 
-    // Best efforts: longest, most elevation, best pace
     final bestEfforts = <Map<String, dynamic>>[];
     final sorted = List.of(_activities);
 
@@ -329,19 +342,19 @@ class ActivityProvider extends ChangeNotifier {
     if (sorted.isNotEmpty) {
       bestEfforts.add({
         'type': 'Longest Activity',
-        'time': '${(sorted.first.distance / 1000).toStringAsFixed(1)} km',
-        'date': sorted.first.startTime,
-        'isPR': true,
+        'value': '${(sorted.first.distance / 1000).toStringAsFixed(1)} km',
+        'date': sorted.first.startTime.toIso8601String(),
+        'is_pr': true,
       });
     }
 
     sorted.sort((a, b) => b.elevationGain.compareTo(a.elevationGain));
-    if (sorted.first.elevationGain > 0) {
+    if (sorted.isNotEmpty && sorted.first.elevationGain > 0) {
       bestEfforts.add({
         'type': 'Most Elevation',
-        'time': '${sorted.first.elevationGain.toStringAsFixed(0)} m',
-        'date': sorted.first.startTime,
-        'isPR': false,
+        'value': '${sorted.first.elevationGain.toStringAsFixed(0)} m',
+        'date': sorted.first.startTime.toIso8601String(),
+        'is_pr': false,
       });
     }
 
@@ -351,13 +364,12 @@ class ActivityProvider extends ChangeNotifier {
       final p = withPace.first.averagePace.round();
       bestEfforts.add({
         'type': 'Best Pace',
-        'time': '${p ~/ 60}:${(p % 60).toString().padLeft(2, '0')} /km',
-        'date': withPace.first.startTime,
-        'isPR': false,
+        'value': '${p ~/ 60}:${(p % 60).toString().padLeft(2, '0')} /km',
+        'date': withPace.first.startTime.toIso8601String(),
+        'is_pr': false,
       });
     }
 
-    // Streak: consecutive weeks (Mon–Sun) with ≥1 activity
     final activeMondays = activityDays
         .map((d) => d.subtract(Duration(days: d.weekday - 1)))
         .toSet()
