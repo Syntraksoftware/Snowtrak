@@ -20,6 +20,13 @@ COPY map-backend/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir --upgrade "pip>=26.1.2" "wheel>=0.46.2" "setuptools>=80.9.0" "jaraco.context>=6.1.0"
 
+# Remove pip from the runtime image. Trivy reads pip/_vendor/vendor.txt and
+# reports pip's own vendored msgpack and setuptools as installed packages, and
+# upgrading setuptools does not touch them -- the real one in site-packages is
+# already current. Nothing in this image runs pip after the build, so deleting
+# it removes the code rather than suppressing the finding.
+RUN python -m pip uninstall -y pip
+
 # Copy application code, shared package, and repo-level db helpers (asyncpg pool + Alembic tree)
 COPY map-backend/ ./
 COPY shared/ ./shared/

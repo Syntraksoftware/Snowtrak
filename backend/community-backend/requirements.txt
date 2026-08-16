@@ -1,6 +1,6 @@
 fastapi==0.141.1
 uvicorn[standard]==0.37.0
-python-multipart==0.0.22
+python-multipart==0.0.30
 supabase==2.28.3
 httpx<0.28
 PyJWT==2.13.0

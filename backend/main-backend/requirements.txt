@@ -5,7 +5,7 @@ uvicorn[standard]==0.37.0
 # Authentication & Security
 python-jose[cryptography]==3.5.0
 bcrypt==4.2.1
-python-multipart==0.0.22
+python-multipart==0.0.30
 
 # Environment & Config
 python-dotenv==1.2.2
