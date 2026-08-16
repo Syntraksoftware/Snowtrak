@@ -4,16 +4,16 @@ import 'package:geolocator/geolocator.dart' hide ActivityType;
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/models/activity.dart';
-import 'package:syntrak/providers/activity_provider.dart';
-import 'package:syntrak/providers/auth_provider.dart';
-import 'package:syntrak/screens/activities/activity_detail_screen.dart';
-import 'package:syntrak/screens/record/activity_type_selector.dart';
-import 'package:syntrak/screens/record/record_bottom_sheet.dart';
-import 'package:syntrak/screens/record/record_error_view.dart';
-import 'package:syntrak/screens/record/record_map_view.dart';
-import 'package:syntrak/services/location_service.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/models/activity.dart';
+import 'package:snowtrak/providers/activity_provider.dart';
+import 'package:snowtrak/providers/auth_provider.dart';
+import 'package:snowtrak/screens/activities/activity_detail_screen.dart';
+import 'package:snowtrak/screens/record/activity_type_selector.dart';
+import 'package:snowtrak/screens/record/record_bottom_sheet.dart';
+import 'package:snowtrak/screens/record/record_error_view.dart';
+import 'package:snowtrak/screens/record/record_map_view.dart';
+import 'package:snowtrak/services/location_service.dart';
 
 const _liveRouteSourceId = 'live-route';
 const _liveRouteLayerId = 'live-route-layer';
@@ -307,17 +307,17 @@ class _RecordScreenState extends State<RecordScreen>
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: SyntrakColors.primary.withValues(alpha: 0.1),
+                  color: SnowtrakColors.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(Icons.check_rounded,
-                    color: SyntrakColors.primary, size: 34),
+                    color: SnowtrakColors.primary, size: 34),
               ),
               const SizedBox(height: 14),
               Text(
                 'Activity Complete',
-                style: SyntrakTypography.headlineMedium.copyWith(
-                  color: SyntrakColors.textPrimary,
+                style: SnowtrakTypography.headlineMedium.copyWith(
+                  color: SnowtrakColors.textPrimary,
                 ),
               ),
               if (_selectedActivityType != null)
@@ -325,8 +325,8 @@ class _RecordScreenState extends State<RecordScreen>
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
                     _selectedActivityType!.displayName,
-                    style: SyntrakTypography.bodyMedium.copyWith(
-                      color: SyntrakColors.primary,
+                    style: SnowtrakTypography.bodyMedium.copyWith(
+                      color: SnowtrakColors.primary,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -335,15 +335,15 @@ class _RecordScreenState extends State<RecordScreen>
               // Editable activity name
               TextField(
                 controller: nameController,
-                style: SyntrakTypography.bodyLarge.copyWith(
-                  color: SyntrakColors.textPrimary,
+                style: SnowtrakTypography.bodyLarge.copyWith(
+                  color: SnowtrakColors.textPrimary,
                   fontWeight: FontWeight.w600,
                 ),
                 textCapitalization: TextCapitalization.words,
                 decoration: InputDecoration(
                   hintText: 'Activity name',
                   filled: true,
-                  fillColor: SyntrakColors.surfaceVariant,
+                  fillColor: SnowtrakColors.surfaceVariant,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -357,7 +357,7 @@ class _RecordScreenState extends State<RecordScreen>
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 18),
                 decoration: BoxDecoration(
-                  color: SyntrakColors.surfaceVariant,
+                  color: SnowtrakColors.surfaceVariant,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: IntrinsicHeight(
@@ -369,14 +369,14 @@ class _RecordScreenState extends State<RecordScreen>
                       VerticalDivider(
                           width: 1,
                           thickness: 1,
-                          color: SyntrakColors.divider),
+                          color: SnowtrakColors.divider),
                       Expanded(
                           child: _StatItem(
                               value: fmtDur(duration), label: 'Time')),
                       VerticalDivider(
                           width: 1,
                           thickness: 1,
-                          color: SyntrakColors.divider),
+                          color: SnowtrakColors.divider),
                       Expanded(
                           child: _StatItem(
                               value: '+${elevation.toStringAsFixed(0)} m',
@@ -395,7 +395,7 @@ class _RecordScreenState extends State<RecordScreen>
                     Navigator.pop(context, name.isEmpty ? defaultName : name);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: SyntrakColors.primary,
+                    backgroundColor: SnowtrakColors.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -412,8 +412,8 @@ class _RecordScreenState extends State<RecordScreen>
                 onPressed: () => Navigator.pop(context, null),
                 child: Text(
                   'Discard',
-                  style: SyntrakTypography.bodyMedium.copyWith(
-                    color: SyntrakColors.textTertiary,
+                  style: SnowtrakTypography.bodyMedium.copyWith(
+                    color: SnowtrakColors.textTertiary,
                   ),
                 ),
               ),
@@ -581,20 +581,20 @@ class _RecordScreenState extends State<RecordScreen>
       });
 
       return Scaffold(
-        backgroundColor: SyntrakColors.background,
+        backgroundColor: SnowtrakColors.background,
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(
-                    SyntrakColors.primary),
+                    SnowtrakColors.primary),
               ),
               const SizedBox(height: 16),
               Text(
                 'Acquiring GPS…',
-                style: SyntrakTypography.bodyMedium.copyWith(
-                  color: SyntrakColors.textSecondary,
+                style: SnowtrakTypography.bodyMedium.copyWith(
+                  color: SnowtrakColors.textSecondary,
                 ),
               ),
             ],
@@ -612,7 +612,7 @@ class _RecordScreenState extends State<RecordScreen>
     const _recentreBottom = _statsCardBottom + 140.0; // always above stats card
 
     return Scaffold(
-      backgroundColor: SyntrakColors.darkBackground,
+      backgroundColor: SnowtrakColors.darkBackground,
       body: Stack(
         children: [
           // 1 — Full-screen map
@@ -710,7 +710,7 @@ class _ProcessingOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return AbsorbPointer(
       child: Container(
-        color: SyntrakColors.background,
+        color: SnowtrakColors.background,
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -722,15 +722,15 @@ class _ProcessingOverlay extends StatelessWidget {
                   height: 56,
                   child: CircularProgressIndicator(
                     valueColor:
-                        AlwaysStoppedAnimation<Color>(SyntrakColors.primary),
+                        AlwaysStoppedAnimation<Color>(SnowtrakColors.primary),
                     strokeWidth: 3,
                   ),
                 ),
                 const SizedBox(height: 32),
                 Text(
                   'Saving Activity',
-                  style: SyntrakTypography.headlineMedium.copyWith(
-                    color: SyntrakColors.textPrimary,
+                  style: SnowtrakTypography.headlineMedium.copyWith(
+                    color: SnowtrakColors.textPrimary,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -739,8 +739,8 @@ class _ProcessingOverlay extends StatelessWidget {
                   activityType != null
                       ? 'Matching trails for your ${activityType!.displayName.toLowerCase()}…'
                       : 'Matching trails and correcting elevation…',
-                  style: SyntrakTypography.bodyMedium.copyWith(
-                    color: SyntrakColors.textSecondary,
+                  style: SnowtrakTypography.bodyMedium.copyWith(
+                    color: SnowtrakColors.textSecondary,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -748,9 +748,9 @@ class _ProcessingOverlay extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 18),
                   decoration: BoxDecoration(
-                    color: SyntrakColors.surface,
+                    color: SnowtrakColors.surface,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: SyntrakColors.divider),
+                    border: Border.all(color: SnowtrakColors.divider),
                   ),
                   child: IntrinsicHeight(
                     child: Row(
@@ -762,7 +762,7 @@ class _ProcessingOverlay extends StatelessWidget {
                         VerticalDivider(
                             width: 1,
                             thickness: 1,
-                            color: SyntrakColors.divider),
+                            color: SnowtrakColors.divider),
                         Expanded(
                             child: _StatItem(
                                 label: 'Elevation',
@@ -771,7 +771,7 @@ class _ProcessingOverlay extends StatelessWidget {
                         VerticalDivider(
                             width: 1,
                             thickness: 1,
-                            color: SyntrakColors.divider),
+                            color: SnowtrakColors.divider),
                         Expanded(
                             child: _StatItem(
                                 label: 'Time', value: _formattedDuration)),
@@ -803,8 +803,8 @@ class _StatItem extends StatelessWidget {
         Text(
           value,
           textAlign: TextAlign.center,
-          style: SyntrakTypography.headlineSmall.copyWith(
-            color: SyntrakColors.textPrimary,
+          style: SnowtrakTypography.headlineSmall.copyWith(
+            color: SnowtrakColors.textPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -812,8 +812,8 @@ class _StatItem extends StatelessWidget {
         Text(
           label,
           textAlign: TextAlign.center,
-          style: SyntrakTypography.labelSmall.copyWith(
-            color: SyntrakColors.textTertiary,
+          style: SnowtrakTypography.labelSmall.copyWith(
+            color: SnowtrakColors.textTertiary,
             letterSpacing: 0.5,
           ),
         ),
@@ -839,7 +839,7 @@ class _RecentreButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           shape: BoxShape.circle,
-          border: Border.all(color: SyntrakColors.divider),
+          border: Border.all(color: SnowtrakColors.divider),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.12),
@@ -849,7 +849,7 @@ class _RecentreButton extends StatelessWidget {
           ],
         ),
         child: Icon(Icons.my_location,
-            color: SyntrakColors.primary, size: 20),
+            color: SnowtrakColors.primary, size: 20),
       ),
     );
   }

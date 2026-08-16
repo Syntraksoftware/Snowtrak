@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/providers/activity_provider.dart';
-import 'package:syntrak/providers/auth_provider.dart';
-import 'package:syntrak/screens/profile/edit_profile_screen.dart';
-import 'package:syntrak/screens/profile/progress_tab.dart';
-import 'package:syntrak/screens/profile/widgets/profile_home_content.dart';
-import 'package:syntrak/screens/settings/settings_screen.dart';
-import 'package:syntrak/widgets/notification_bell_icon.dart';
-import 'package:syntrak/widgets/profile_header.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/providers/activity_provider.dart';
+import 'package:snowtrak/providers/auth_provider.dart';
+import 'package:snowtrak/screens/profile/edit_profile_screen.dart';
+import 'package:snowtrak/screens/profile/progress_tab.dart';
+import 'package:snowtrak/screens/profile/widgets/profile_home_content.dart';
+import 'package:snowtrak/screens/settings/settings_screen.dart';
+import 'package:snowtrak/widgets/notification_bell_icon.dart';
+import 'package:snowtrak/widgets/profile_header.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -28,7 +28,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: SyntrakColors.background,
+        backgroundColor: SnowtrakColors.background,
         appBar: AppBar(
           title: const Text('Profile'),
           actions: [
@@ -55,9 +55,9 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
           ],
           bottom: const TabBar(
-            indicatorColor: SyntrakColors.primary,
-            labelColor: SyntrakColors.primary,
-            unselectedLabelColor: SyntrakColors.textTertiary,
+            indicatorColor: SnowtrakColors.primary,
+            labelColor: SnowtrakColors.primary,
+            unselectedLabelColor: SnowtrakColors.textTertiary,
             dividerColor: Colors.transparent,
             tabs: [
               Tab(text: 'Overview'),
@@ -71,8 +71,8 @@ class _ProfileScreenState extends State<ProfileScreen>
               return Center(
                 child: Text(
                   'Not logged in',
-                  style: SyntrakTypography.bodyLarge.copyWith(
-                    color: SyntrakColors.textSecondary,
+                  style: SnowtrakTypography.bodyLarge.copyWith(
+                    color: SnowtrakColors.textSecondary,
                   ),
                 ),
               );
@@ -82,7 +82,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             return TabBarView(
               children: [
                 RefreshIndicator(
-                  color: SyntrakColors.primary,
+                  color: SnowtrakColors.primary,
                   onRefresh: () => activityProvider.loadActivities(
                     refresh: true,
                     forceNetwork: true,

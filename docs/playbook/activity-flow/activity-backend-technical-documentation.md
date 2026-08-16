@@ -7,7 +7,7 @@
 - Repository path: `backend/activity-backend/`
 
 ### Business and Technical Purpose
-This folder contains the Activity domain service for Syntrak. It owns activity lifecycle APIs and related social interactions for activities.
+This folder contains the Activity domain service for Snowtrak. It owns activity lifecycle APIs and related social interactions for activities.
 
 Core responsibilities:
 - Create, read, update, and delete activities

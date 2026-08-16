@@ -1,20 +1,20 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/config/app_environment.dart';
-import 'package:syntrak/core/di/service_locator.dart';
-import 'package:syntrak/core/logging/app_logger.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/features/activities/data/activities_context_repository.dart';
-import 'package:syntrak/features/auth/data/auth_session_store.dart';
-import 'package:syntrak/models/notification.dart'; // notification model
-import 'package:syntrak/providers/auth_provider.dart';
-import 'package:syntrak/providers/activity_provider.dart';
-import 'package:syntrak/providers/notification_provider.dart';
-import 'package:syntrak/screens/auth/login_screen.dart';
-import 'package:syntrak/screens/home/home_screen.dart';
-import 'package:syntrak/services/notification_service.dart';
-import 'package:syntrak/services/storage_service.dart';
+import 'package:snowtrak/core/config/app_environment.dart';
+import 'package:snowtrak/core/di/service_locator.dart';
+import 'package:snowtrak/core/logging/app_logger.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/features/activities/data/activities_context_repository.dart';
+import 'package:snowtrak/features/auth/data/auth_session_store.dart';
+import 'package:snowtrak/models/notification.dart'; // notification model
+import 'package:snowtrak/providers/auth_provider.dart';
+import 'package:snowtrak/providers/activity_provider.dart';
+import 'package:snowtrak/providers/notification_provider.dart';
+import 'package:snowtrak/screens/auth/login_screen.dart';
+import 'package:snowtrak/screens/home/home_screen.dart';
+import 'package:snowtrak/services/notification_service.dart';
+import 'package:snowtrak/services/storage_service.dart';
 
 Future<void> main() async {
   await bootstrapAndRun();
@@ -26,17 +26,17 @@ Future<void> bootstrapAndRun({AppEnvironment? environment}) async {
     environment: environment,
   );
 
-  runApp(const SyntrakApp());
+  runApp(const SnowtrakApp());
 }
 
-class SyntrakApp extends StatefulWidget {
-  const SyntrakApp({super.key});
+class SnowtrakApp extends StatefulWidget {
+  const SnowtrakApp({super.key});
 
   @override
-  State<SyntrakApp> createState() => _SyntrakAppState();
+  State<SnowtrakApp> createState() => _SnowtrakAppState();
 }
 
-class _SyntrakAppState extends State<SyntrakApp> {
+class _SnowtrakAppState extends State<SnowtrakApp> {
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
       GlobalKey<ScaffoldMessengerState>();
@@ -91,10 +91,10 @@ class _SyntrakAppState extends State<SyntrakApp> {
       child: MaterialApp(
         navigatorKey: _navigatorKey,
         scaffoldMessengerKey: _scaffoldMessengerKey,
-        title: 'Syntrak',
+        title: 'Snowtrak',
         debugShowCheckedModeBanner: false,
-        theme: SyntrakTheme.lightTheme,
-        darkTheme: SyntrakTheme.darkTheme,
+        theme: SnowtrakTheme.lightTheme,
+        darkTheme: SnowtrakTheme.darkTheme,
         themeMode: ThemeMode.light,
         home: const _AppWrapper(),
       ),

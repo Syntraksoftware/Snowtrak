@@ -1,6 +1,6 @@
 # Flutter Tests
 
-Comprehensive test suite for the Syntrak Flutter frontend.
+Comprehensive test suite for the Snowtrak Flutter frontend.
 
 ## Test Structure
 

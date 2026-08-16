@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:syntrak/core/errors/app_result.dart';
-import 'package:syntrak/models/post.dart';
-import 'package:syntrak/screens/community/community_post_mapper.dart';
-import 'package:syntrak/screens/community/thread_media_upload.dart';
-import 'package:syntrak/screens/community/widgets/thread_media_attachments_bar.dart';
-import 'package:syntrak/screens/community/widgets/thread_expanded_reply_sheet.dart';
-import 'package:syntrak/screens/community/widgets/thread_reply_composer_bar.dart';
-import 'package:syntrak/services/community_service.dart';
-import 'package:syntrak/screens/community/widgets/quoted_post_embed.dart';
-import 'package:syntrak/widgets/message_actions.dart';
-import 'package:syntrak/widgets/post_media_gallery.dart';
+import 'package:snowtrak/core/errors/app_result.dart';
+import 'package:snowtrak/models/post.dart';
+import 'package:snowtrak/screens/community/community_post_mapper.dart';
+import 'package:snowtrak/screens/community/thread_media_upload.dart';
+import 'package:snowtrak/screens/community/widgets/thread_media_attachments_bar.dart';
+import 'package:snowtrak/screens/community/widgets/thread_expanded_reply_sheet.dart';
+import 'package:snowtrak/screens/community/widgets/thread_reply_composer_bar.dart';
+import 'package:snowtrak/services/community_service.dart';
+import 'package:snowtrak/screens/community/widgets/quoted_post_embed.dart';
+import 'package:snowtrak/widgets/message_actions.dart';
+import 'package:snowtrak/widgets/post_media_gallery.dart';
 
 class ThreadDetailScreen extends StatefulWidget {
   const ThreadDetailScreen({

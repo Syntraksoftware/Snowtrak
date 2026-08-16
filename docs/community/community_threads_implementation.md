@@ -31,7 +31,7 @@ The Flutter **Threads** tab now **auto-creates** a default subthread named `**Ma
 
 ### Ownership
 
-Maintain this document and the listed paths with the team that owns **Syntrak community + mobile**. Update the table below when ownership changes.
+Maintain this document and the listed paths with the team that owns **Snowtrak community + mobile**. Update the table below when ownership changes.
 
 
 | Role                        | Owner (fill in) |
@@ -565,4 +565,4 @@ This section summarizes **how** the Threads-like features were built (for onboar
 
 ## Appendix: Why Supabase instead of GraphQL
 
-Meta’s consumer Threads clients use internal GraphQL (Relay-style). Syntrak uses **Supabase + REST** for simpler ops and RLS-friendly access patterns. The **batch comments** endpoint reproduces the main benefit of a batched GraphQL query—**one server round trip for many children**—without introducing a GraphQL gateway.
+Meta’s consumer Threads clients use internal GraphQL (Relay-style). Snowtrak uses **Supabase + REST** for simpler ops and RLS-friendly access patterns. The **batch comments** endpoint reproduces the main benefit of a batched GraphQL query—**one server round trip for many children**—without introducing a GraphQL gateway.

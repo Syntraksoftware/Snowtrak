@@ -1,6 +1,6 @@
-import 'package:syntrak/models/activity.dart';
-import 'package:syntrak/models/post.dart';
-import 'package:syntrak/services/feed/feed_post_sort.dart';
+import 'package:snowtrak/models/activity.dart';
+import 'package:snowtrak/models/post.dart';
+import 'package:snowtrak/services/feed/feed_post_sort.dart';
 
 /// Rebases server feed payloads with recent on-device optimistic state.
 abstract final class FeedRebase {

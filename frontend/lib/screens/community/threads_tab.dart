@@ -2,32 +2,32 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/di/service_locator.dart';
-import 'package:syntrak/core/errors/app_error.dart';
-import 'package:syntrak/core/errors/app_result.dart';
-import 'package:syntrak/core/logging/app_logger.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/features/community/data/community_outbox_service.dart';
-import 'package:syntrak/services/community_service.dart';
-import 'package:syntrak/providers/auth_provider.dart';
-import 'package:syntrak/models/post.dart';
-import 'package:syntrak/screens/community/community_post_mapper.dart';
-import 'package:syntrak/screens/community/community_repost_sheet.dart';
-import 'package:syntrak/screens/community/new_thread_draft_screen.dart';
-import 'package:syntrak/screens/community/threads_tab_action_builders.dart';
-import 'package:syntrak/screens/community/threads_tab_action_coordinator.dart';
-import 'package:syntrak/screens/community/thread_draft_builders.dart';
-import 'package:syntrak/screens/community/thread_detail_screen.dart';
-import 'package:syntrak/screens/community/threads_feed_loader.dart';
-import 'package:syntrak/screens/community/threads_tab_feedback.dart';
-import 'package:syntrak/screens/community/threads_tab_post_state.dart';
-import 'package:syntrak/screens/community/threads_tab_sync_coordinator.dart';
-import 'package:syntrak/screens/community/widgets/threads_search_bar.dart';
-import 'package:syntrak/screens/community/widgets/threads_tab_sections.dart';
-import 'package:syntrak/services/feed/community_feed_cache.dart';
-import 'package:syntrak/services/feed/feed_post_sort.dart';
-import 'package:syntrak/services/feed/feed_rebase.dart';
-import 'package:syntrak/widgets/skeleton.dart';
+import 'package:snowtrak/core/di/service_locator.dart';
+import 'package:snowtrak/core/errors/app_error.dart';
+import 'package:snowtrak/core/errors/app_result.dart';
+import 'package:snowtrak/core/logging/app_logger.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/features/community/data/community_outbox_service.dart';
+import 'package:snowtrak/services/community_service.dart';
+import 'package:snowtrak/providers/auth_provider.dart';
+import 'package:snowtrak/models/post.dart';
+import 'package:snowtrak/screens/community/community_post_mapper.dart';
+import 'package:snowtrak/screens/community/community_repost_sheet.dart';
+import 'package:snowtrak/screens/community/new_thread_draft_screen.dart';
+import 'package:snowtrak/screens/community/threads_tab_action_builders.dart';
+import 'package:snowtrak/screens/community/threads_tab_action_coordinator.dart';
+import 'package:snowtrak/screens/community/thread_draft_builders.dart';
+import 'package:snowtrak/screens/community/thread_detail_screen.dart';
+import 'package:snowtrak/screens/community/threads_feed_loader.dart';
+import 'package:snowtrak/screens/community/threads_tab_feedback.dart';
+import 'package:snowtrak/screens/community/threads_tab_post_state.dart';
+import 'package:snowtrak/screens/community/threads_tab_sync_coordinator.dart';
+import 'package:snowtrak/screens/community/widgets/threads_search_bar.dart';
+import 'package:snowtrak/screens/community/widgets/threads_tab_sections.dart';
+import 'package:snowtrak/services/feed/community_feed_cache.dart';
+import 'package:snowtrak/services/feed/feed_post_sort.dart';
+import 'package:snowtrak/services/feed/feed_rebase.dart';
+import 'package:snowtrak/widgets/skeleton.dart';
 
 class ThreadsTab extends StatefulWidget {
   const ThreadsTab({super.key});
@@ -801,7 +801,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
                 pinned: true,
                 floating: false,
                 automaticallyImplyLeading: false,
-                backgroundColor: SyntrakColors.surface,
+                backgroundColor: SnowtrakColors.surface,
                 surfaceTintColor: Colors.transparent,
                 elevation: innerBoxIsScrolled ? 2 : 0,
                 shadowColor: Colors.black26,
@@ -845,7 +845,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
             child: LinearProgressIndicator(
               minHeight: 2.5,
               backgroundColor: Colors.transparent,
-              valueColor: AlwaysStoppedAnimation<Color>(SyntrakColors.primary),
+              valueColor: AlwaysStoppedAnimation<Color>(SnowtrakColors.primary),
             ),
           ),
       ],

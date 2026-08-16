@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/services/location_service.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/services/location_service.dart';
 
 class LocationPermissionDialog extends StatelessWidget {
   final LocationService locationService;
@@ -64,28 +64,28 @@ class LocationPermissionDialog extends StatelessWidget {
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: SyntrakColors.primary.withValues(alpha: 0.1),
+              color: SnowtrakColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.location_on,
-              color: SyntrakColors.primary,
+              color: SnowtrakColors.primary,
               size: 36,
             ),
           ),
           const SizedBox(height: 20),
           Text(
             'Enable Location',
-            style: SyntrakTypography.headlineMedium.copyWith(
-              color: SyntrakColors.textPrimary,
+            style: SnowtrakTypography.headlineMedium.copyWith(
+              color: SnowtrakColors.textPrimary,
             ),
           ),
           const SizedBox(height: 10),
           Text(
-            'Syntrak uses your GPS to draw your route, measure distance, calculate speed, and show local weather conditions.',
+            'Snowtrak uses your GPS to draw your route, measure distance, calculate speed, and show local weather conditions.',
             textAlign: TextAlign.center,
-            style: SyntrakTypography.bodyMedium.copyWith(
-              color: SyntrakColors.textSecondary,
+            style: SnowtrakTypography.bodyMedium.copyWith(
+              color: SnowtrakColors.textSecondary,
             ),
           ),
           const SizedBox(height: 32),
@@ -98,7 +98,7 @@ class LocationPermissionDialog extends StatelessWidget {
                 _handlePermissionRequest(context, granted);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: SyntrakColors.primary,
+                backgroundColor: SnowtrakColors.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
@@ -122,8 +122,8 @@ class LocationPermissionDialog extends StatelessWidget {
               ),
               child: Text(
                 'Not Now',
-                style: SyntrakTypography.bodyMedium.copyWith(
-                  color: SyntrakColors.textTertiary,
+                style: SnowtrakTypography.bodyMedium.copyWith(
+                  color: SnowtrakColors.textTertiary,
                 ),
               ),
             ),

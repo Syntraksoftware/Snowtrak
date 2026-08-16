@@ -1,4 +1,4 @@
-import 'package:syntrak/models/location.dart';
+import 'package:snowtrak/models/location.dart';
 
 enum ProcessingStatus {
   pending,

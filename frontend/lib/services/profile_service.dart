@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:syntrak/core/errors/app_error.dart';
-import 'package:syntrak/core/errors/app_result.dart';
-import 'package:syntrak/features/profile/data/profile_repository.dart';
-import 'package:syntrak/models/profile.dart';
-import 'package:syntrak/models/user.dart';
+import 'package:snowtrak/core/errors/app_error.dart';
+import 'package:snowtrak/core/errors/app_result.dart';
+import 'package:snowtrak/features/profile/data/profile_repository.dart';
+import 'package:snowtrak/models/profile.dart';
+import 'package:snowtrak/models/user.dart';
 
 class ProfileService {
   ProfileService({required ProfileRepository profileRepository})

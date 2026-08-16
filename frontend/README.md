@@ -1,6 +1,6 @@
-# Syntrak Flutter App
+# Snowtrak Flutter App
 
-Flutter frontend for the Syntrak fitness tracking application.
+Flutter frontend for the Snowtrak fitness tracking application.
 
 ## Technical Documentation
 

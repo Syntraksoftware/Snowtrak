@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:syntrak/core/logging/app_logger.dart';
-import 'package:syntrak/models/location.dart' as app_location;
-import 'package:syntrak/services/gps_filter_service.dart';
+import 'package:snowtrak/core/logging/app_logger.dart';
+import 'package:snowtrak/models/location.dart' as app_location;
+import 'package:snowtrak/services/gps_filter_service.dart';
 
 class LocationService {
   bool _isTracking = false;

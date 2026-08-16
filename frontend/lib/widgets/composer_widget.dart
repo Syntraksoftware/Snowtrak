@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/providers/auth_provider.dart';
+import 'package:snowtrak/providers/auth_provider.dart';
 
 class ComposerWidget extends StatefulWidget {
   final Function(String text) onPost;

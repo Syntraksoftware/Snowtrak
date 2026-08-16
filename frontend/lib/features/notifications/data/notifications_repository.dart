@@ -1,5 +1,5 @@
-import 'package:syntrak/models/notification.dart';
-import 'package:syntrak/services/apis/notifications_api.dart';
+import 'package:snowtrak/models/notification.dart';
+import 'package:snowtrak/services/apis/notifications_api.dart';
 
 class NotificationsRepository {
   NotificationsRepository(this._api);

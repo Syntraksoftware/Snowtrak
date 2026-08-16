@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
+import 'package:snowtrak/core/theme.dart';
 
 /// Unified like / comment / repost / share row — left-aligned (Threads-style).
 class FeedActionBar extends StatefulWidget {
@@ -149,8 +149,8 @@ class _ActionSlot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const activeColor = SyntrakColors.primary;
-    const idleColor = SyntrakColors.textSecondary;
+    const activeColor = SnowtrakColors.primary;
+    const idleColor = SnowtrakColors.textSecondary;
 
     Widget iconWidget = Icon(
       icon,
@@ -171,7 +171,7 @@ class _ActionSlot extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(SyntrakRadius.md),
+        borderRadius: BorderRadius.circular(SnowtrakRadius.md),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
           child: Row(
@@ -182,7 +182,7 @@ class _ActionSlot extends StatelessWidget {
                 const SizedBox(width: 4),
                 Text(
                   _formatCount(count),
-                  style: SyntrakTypography.labelMedium.copyWith(
+                  style: SnowtrakTypography.labelMedium.copyWith(
                     color: isActive ? activeColor : idleColor,
                     fontWeight: FontWeight.w500,
                   ),

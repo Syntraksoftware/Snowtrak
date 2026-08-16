@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:syntrak/models/post.dart';
-import 'package:syntrak/services/feed/post_cache_codec.dart';
+import 'package:snowtrak/models/post.dart';
+import 'package:snowtrak/services/feed/post_cache_codec.dart';
 
 class CachedCommunityFeed {
   const CachedCommunityFeed({

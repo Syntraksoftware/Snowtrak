@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# Syntrak Notification Demo
+# Snowtrak Notification Demo
 # =============================================================================
 # Sends a sequence of different notification types to demonstrate the system.
 # Run this while the Flutter app is running to see all notification types.
@@ -16,7 +16,7 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${YELLOW}🎿 Syntrak Notification Demo${NC}"
+echo -e "${YELLOW}🎿 Snowtrak Notification Demo${NC}"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 echo -e "${BLUE}This will send 6 different notifications with 3-second delays.${NC}"

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
+import 'package:snowtrak/core/theme.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 class ProgressActivityCalendar extends StatefulWidget {
@@ -31,13 +31,13 @@ class _ProgressActivityCalendarState extends State<ProgressActivityCalendar> {
     final lastDay = today.add(const Duration(days: 60));
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
-      padding: const EdgeInsets.all(SyntrakSpacing.lg),
+      margin: const EdgeInsets.symmetric(horizontal: SnowtrakSpacing.md),
+      padding: const EdgeInsets.all(SnowtrakSpacing.lg),
       decoration: BoxDecoration(
-        color: SyntrakColors.surface,
-        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-        border: Border.all(color: SyntrakColors.divider),
-        boxShadow: SyntrakElevation.sm,
+        color: SnowtrakColors.surface,
+        borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
+        border: Border.all(color: SnowtrakColors.divider),
+        boxShadow: SnowtrakElevation.sm,
       ),
       child: TableCalendar(
         firstDay: firstDay,
@@ -49,35 +49,35 @@ class _ProgressActivityCalendarState extends State<ProgressActivityCalendar> {
         headerStyle: HeaderStyle(
           formatButtonVisible: false,
           titleCentered: true,
-          titleTextStyle: SyntrakTypography.headlineSmall.copyWith(
-            color: SyntrakColors.textPrimary,
+          titleTextStyle: SnowtrakTypography.headlineSmall.copyWith(
+            color: SnowtrakColors.textPrimary,
           ),
           leftChevronIcon: const Icon(
             Icons.chevron_left,
-            color: SyntrakColors.primary,
+            color: SnowtrakColors.primary,
           ),
           rightChevronIcon: const Icon(
             Icons.chevron_right,
-            color: SyntrakColors.primary,
+            color: SnowtrakColors.primary,
           ),
         ),
         daysOfWeekVisible: true,
         onPageChanged: (focusedDay) => setState(() => _focusedDay = focusedDay),
         calendarStyle: CalendarStyle(
           outsideDaysVisible: false,
-          defaultTextStyle: SyntrakTypography.labelSmall.copyWith(
-            color: SyntrakColors.textSecondary,
+          defaultTextStyle: SnowtrakTypography.labelSmall.copyWith(
+            color: SnowtrakColors.textSecondary,
           ),
-          weekendTextStyle: SyntrakTypography.labelSmall.copyWith(
-            color: SyntrakColors.textSecondary,
+          weekendTextStyle: SnowtrakTypography.labelSmall.copyWith(
+            color: SnowtrakColors.textSecondary,
           ),
         ),
         daysOfWeekStyle: DaysOfWeekStyle(
-          weekdayStyle: SyntrakTypography.labelSmall.copyWith(
-            color: SyntrakColors.textTertiary,
+          weekdayStyle: SnowtrakTypography.labelSmall.copyWith(
+            color: SnowtrakColors.textTertiary,
           ),
-          weekendStyle: SyntrakTypography.labelSmall.copyWith(
-            color: SyntrakColors.textTertiary,
+          weekendStyle: SnowtrakTypography.labelSmall.copyWith(
+            color: SnowtrakColors.textTertiary,
           ),
         ),
         selectedDayPredicate: (_) => false,
@@ -112,11 +112,11 @@ class _DayCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color bg = hasActivity
-        ? SyntrakColors.primary
+        ? SnowtrakColors.primary
         : Colors.transparent;
     final Color textColor = hasActivity
-        ? SyntrakColors.textOnPrimary
-        : (isToday ? SyntrakColors.primary : SyntrakColors.textSecondary);
+        ? SnowtrakColors.textOnPrimary
+        : (isToday ? SnowtrakColors.primary : SnowtrakColors.textSecondary);
 
     return Container(
       margin: const EdgeInsets.all(4),
@@ -124,12 +124,12 @@ class _DayCell extends StatelessWidget {
         color: bg,
         shape: BoxShape.circle,
         border:
-            isToday && !hasActivity ? Border.all(color: SyntrakColors.primary, width: 2) : null,
+            isToday && !hasActivity ? Border.all(color: SnowtrakColors.primary, width: 2) : null,
       ),
       child: Center(
         child: Text(
           date.day.toString(),
-          style: SyntrakTypography.labelSmall.copyWith(
+          style: SnowtrakTypography.labelSmall.copyWith(
             color: textColor,
             fontWeight: (isToday || hasActivity) ? FontWeight.w600 : FontWeight.normal,
           ),

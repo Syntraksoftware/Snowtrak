@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:syntrak/models/profile.dart';
-import 'package:syntrak/models/user.dart';
-import 'package:syntrak/services/apis/users_api.dart';
+import 'package:snowtrak/models/profile.dart';
+import 'package:snowtrak/models/user.dart';
+import 'package:snowtrak/services/apis/users_api.dart';
 
 class ProfileRepository {
   ProfileRepository(this._api);

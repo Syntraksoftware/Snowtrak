@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/models/activity.dart';
-import 'package:syntrak/screens/activities/widgets/activity_feed_formatters.dart';
-import 'package:syntrak/screens/profile/widgets/progress/progress_weekly_graph_painter.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/models/activity.dart';
+import 'package:snowtrak/screens/activities/widgets/activity_feed_formatters.dart';
+import 'package:snowtrak/screens/profile/widgets/progress/progress_weekly_graph_painter.dart';
 
 /// This week stats + 12-week distance sparkline.
 class ProgressWeeklyOverview extends StatelessWidget {
@@ -19,24 +19,24 @@ class ProgressWeeklyOverview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
-      padding: const EdgeInsets.all(SyntrakSpacing.md),
+      margin: const EdgeInsets.symmetric(horizontal: SnowtrakSpacing.md),
+      padding: const EdgeInsets.all(SnowtrakSpacing.md),
       decoration: BoxDecoration(
-        color: SyntrakColors.surface,
-        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-        border: Border.all(color: SyntrakColors.divider),
-        boxShadow: SyntrakElevation.sm,
+        color: SnowtrakColors.surface,
+        borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
+        border: Border.all(color: SnowtrakColors.divider),
+        boxShadow: SnowtrakElevation.sm,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'This week',
-            style: SyntrakTypography.headlineMedium.copyWith(
-              color: SyntrakColors.textPrimary,
+            style: SnowtrakTypography.headlineMedium.copyWith(
+              color: SnowtrakColors.textPrimary,
             ),
           ),
-          const SizedBox(height: SyntrakSpacing.md),
+          const SizedBox(height: SnowtrakSpacing.md),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -60,14 +60,14 @@ class ProgressWeeklyOverview extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: SnowtrakSpacing.lg),
           Text(
             'Past 12 weeks',
-            style: SyntrakTypography.bodyLarge.copyWith(
-              color: SyntrakColors.textPrimary,
+            style: SnowtrakTypography.bodyLarge.copyWith(
+              color: SnowtrakColors.textPrimary,
             ),
           ),
-          const SizedBox(height: SyntrakSpacing.sm),
+          const SizedBox(height: SnowtrakSpacing.sm),
           SizedBox(
             height: 140,
             child: TwelveWeekSparkline(activities: activities),
@@ -83,18 +83,18 @@ class ProgressWeeklyOverview extends StatelessWidget {
       children: [
         Text(
           value,
-          style: SyntrakTypography.headlineSmall.copyWith(
-            color: SyntrakColors.textPrimary,
+          style: SnowtrakTypography.headlineSmall.copyWith(
+            color: SnowtrakColors.textPrimary,
           ),
           textAlign: TextAlign.center,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        const SizedBox(height: SyntrakSpacing.xs),
+        const SizedBox(height: SnowtrakSpacing.xs),
         Text(
           label,
-          style: SyntrakTypography.labelSmall.copyWith(
-            color: SyntrakColors.textTertiary,
+          style: SnowtrakTypography.labelSmall.copyWith(
+            color: SnowtrakColors.textTertiary,
           ),
           textAlign: TextAlign.center,
           maxLines: 1,
@@ -143,31 +143,31 @@ class TwelveWeekSparkline extends StatelessWidget {
             painter: ProgressWeeklyGraphPainter(weeks),
           ),
         ),
-        const SizedBox(height: SyntrakSpacing.xs),
+        const SizedBox(height: SnowtrakSpacing.xs),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.xs),
+          padding: const EdgeInsets.symmetric(horizontal: SnowtrakSpacing.xs),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               if (weeks.isNotEmpty)
                 Text(
                   DateFormat('MMM').format(weeks[0]['date'] as DateTime),
-                  style: SyntrakTypography.labelSmall.copyWith(
-                    color: SyntrakColors.textTertiary,
+                  style: SnowtrakTypography.labelSmall.copyWith(
+                    color: SnowtrakColors.textTertiary,
                   ),
                 ),
               if (weeks.length > 6)
                 Text(
                   DateFormat('MMM').format(weeks[6]['date'] as DateTime),
-                  style: SyntrakTypography.labelSmall.copyWith(
-                    color: SyntrakColors.textTertiary,
+                  style: SnowtrakTypography.labelSmall.copyWith(
+                    color: SnowtrakColors.textTertiary,
                   ),
                 ),
               if (weeks.length > 11)
                 Text(
                   DateFormat('MMM').format(weeks[11]['date'] as DateTime),
-                  style: SyntrakTypography.labelSmall.copyWith(
-                    color: SyntrakColors.textTertiary,
+                  style: SnowtrakTypography.labelSmall.copyWith(
+                    color: SnowtrakColors.textTertiary,
                   ),
                 ),
             ],

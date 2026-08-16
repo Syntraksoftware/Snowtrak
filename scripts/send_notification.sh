@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# Syntrak Notification Testing Script
+# Snowtrak Notification Testing Script
 # =============================================================================
 # Send test notifications to the Flutter app from the command line.
 #
@@ -33,7 +33,7 @@ NC='\033[0m' # No Color
 # Show usage
 show_usage() {
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${YELLOW}🔔 Syntrak Notification Tester${NC}"
+    echo -e "${YELLOW}🔔 Snowtrak Notification Tester${NC}"
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
     echo -e "${GREEN}Quick Tests (no arguments):${NC}"

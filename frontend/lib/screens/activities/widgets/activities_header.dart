@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/providers/auth_provider.dart';
-import 'package:syntrak/ui/liquid/snowtrak_auth_theme.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/providers/auth_provider.dart';
+import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 class ActivitiesHeader extends StatelessWidget {
   const ActivitiesHeader({
@@ -18,10 +18,10 @@ class ActivitiesHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        SyntrakSpacing.md,
-        SyntrakSpacing.sm,
-        SyntrakSpacing.md,
-        SyntrakSpacing.sm,
+        SnowtrakSpacing.md,
+        SnowtrakSpacing.sm,
+        SnowtrakSpacing.md,
+        SnowtrakSpacing.sm,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -33,8 +33,8 @@ class ActivitiesHeader extends StatelessWidget {
                 children: [
                   TextSpan(
                     text: 'Welcome back, ',
-                    style: SyntrakTypography.bodyLarge.copyWith(
-                      color: SyntrakColors.textSecondary,
+                    style: SnowtrakTypography.bodyLarge.copyWith(
+                      color: SnowtrakColors.textSecondary,
                       fontWeight: FontWeight.w500,
                       fontSize: 22,
                       height: 1.2,
@@ -53,7 +53,7 @@ class ActivitiesHeader extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(width: SyntrakSpacing.sm),
+          const SizedBox(width: SnowtrakSpacing.sm),
           Consumer<AuthProvider>(
             builder: (context, authProvider, _) {
               final user = authProvider.user;
@@ -71,14 +71,14 @@ class ActivitiesHeader extends StatelessWidget {
                       child: user?.firstName != null
                           ? Text(
                               user!.firstName![0].toUpperCase(),
-                              style: SyntrakTypography.headlineSmall.copyWith(
-                                color: SyntrakColors.textOnPrimary,
+                              style: SnowtrakTypography.headlineSmall.copyWith(
+                                color: SnowtrakColors.textOnPrimary,
                                 fontWeight: FontWeight.w700,
                               ),
                             )
                           : const Icon(
                               Icons.person,
-                              color: SyntrakColors.textOnPrimary,
+                              color: SnowtrakColors.textOnPrimary,
                               size: 22,
                             ),
                     ),

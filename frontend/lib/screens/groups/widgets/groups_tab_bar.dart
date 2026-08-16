@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
+import 'package:snowtrak/core/theme.dart';
 
 /// Fixed, full-width underline tabs — Threads / Instagram style.
 class GroupsTabBar extends StatelessWidget implements PreferredSizeWidget {
@@ -20,18 +20,18 @@ class GroupsTabBar extends StatelessWidget implements PreferredSizeWidget {
       tabAlignment: TabAlignment.fill,
       padding: EdgeInsets.zero,
       labelPadding: const EdgeInsets.symmetric(horizontal: 2),
-      indicatorColor: SyntrakColors.textPrimary,
+      indicatorColor: SnowtrakColors.textPrimary,
       indicatorWeight: 2,
       indicatorSize: TabBarIndicatorSize.label,
-      dividerColor: SyntrakColors.divider,
+      dividerColor: SnowtrakColors.divider,
       dividerHeight: 0.5,
-      labelColor: SyntrakColors.textPrimary,
-      unselectedLabelColor: SyntrakColors.textTertiary,
-      labelStyle: SyntrakTypography.labelMedium.copyWith(
+      labelColor: SnowtrakColors.textPrimary,
+      unselectedLabelColor: SnowtrakColors.textTertiary,
+      labelStyle: SnowtrakTypography.labelMedium.copyWith(
         fontWeight: FontWeight.w600,
         fontSize: 12,
       ),
-      unselectedLabelStyle: SyntrakTypography.labelMedium.copyWith(
+      unselectedLabelStyle: SnowtrakTypography.labelMedium.copyWith(
         fontWeight: FontWeight.w500,
         fontSize: 12,
       ),

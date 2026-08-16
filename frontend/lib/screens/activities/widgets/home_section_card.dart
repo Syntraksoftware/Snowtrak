@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
+import 'package:snowtrak/core/theme.dart';
 
 /// Compact section shell for the home feed — same DNA as profile cards, tighter rhythm.
 class HomeSectionCard extends StatelessWidget {
@@ -22,16 +22,16 @@ class HomeSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = iconColor ?? SyntrakColors.primary;
+    final accent = iconColor ?? SnowtrakColors.primary;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+      padding: const EdgeInsets.symmetric(horizontal: SnowtrakSpacing.md),
       child: Material(
-        color: SyntrakColors.surface,
+        color: SnowtrakColors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-          side: const BorderSide(color: SyntrakColors.divider),
+          borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
+          side: const BorderSide(color: SnowtrakColors.divider),
         ),
         clipBehavior: Clip.antiAlias,
         child: Padding(
@@ -46,19 +46,19 @@ class HomeSectionCard extends StatelessWidget {
                     height: 32,
                     decoration: BoxDecoration(
                       color: accent.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(SyntrakRadius.md),
+                      borderRadius: BorderRadius.circular(SnowtrakRadius.md),
                     ),
                     child: Icon(icon, size: 18, color: accent),
                   ),
-                  const SizedBox(width: SyntrakSpacing.sm),
+                  const SizedBox(width: SnowtrakSpacing.sm),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           title,
-                          style: SyntrakTypography.labelLarge.copyWith(
-                            color: SyntrakColors.textPrimary,
+                          style: SnowtrakTypography.labelLarge.copyWith(
+                            color: SnowtrakColors.textPrimary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -66,8 +66,8 @@ class HomeSectionCard extends StatelessWidget {
                           const SizedBox(height: 1),
                           Text(
                             subtitle!,
-                            style: SyntrakTypography.bodySmall.copyWith(
-                              color: SyntrakColors.textSecondary,
+                            style: SnowtrakTypography.bodySmall.copyWith(
+                              color: SnowtrakColors.textSecondary,
                             ),
                           ),
                         ],

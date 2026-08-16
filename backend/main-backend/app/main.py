@@ -79,7 +79,7 @@ def _print_owned_domains_banner() -> None:
 async def lifespan(app: FastAPI):
     """Application lifespan manager."""
     # Startup
-    print("🚀 Starting Syntrak Auth API...")
+    print("🚀 Starting Snowtrak Auth API...")
     print(f"📦 Environment: {settings.environment}")
 
     # Display storage backend information
@@ -97,7 +97,7 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     weather_service.close()
-    print("👋 Shutting down Syntrak Auth API...")
+    print("👋 Shutting down Snowtrak Auth API...")
 
 
 def create_application() -> FastAPI:

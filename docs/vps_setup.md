@@ -1,6 +1,6 @@
 # VPS Setup Guide
 
-This guide walks through the recommended lean VPS deployment for Syntrak backend services.
+This guide walks through the recommended lean VPS deployment for Snowtrak backend services.
 
 The target architecture is:
 

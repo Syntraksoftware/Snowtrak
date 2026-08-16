@@ -1,6 +1,6 @@
 # Map Backend
 
-FastAPI microservice for static map image generation and elevation data lookup for the Syntrak skiing application.
+FastAPI microservice for static map image generation and elevation data lookup for the Snowtrak skiing application.
 
 ## 1. Purpose and scope
 
@@ -263,11 +263,11 @@ pytest tests/ -v --tb=short  # Verbose output
 
 ```bash
 # Local Docker build
-docker build -t syntrak-map-backend:latest .
+docker build -t snowtrak-map-backend:latest .
 
 # Via docker-compose from backend root
 cd backend
-docker-compose up -d syntrak-map-backend
+docker-compose up -d snowtrak-map-backend
 
 # Run map-backend with local PostGIS storage ownership
 MAP_STORAGE_BACKEND=postgis docker-compose up -d postgis map-backend

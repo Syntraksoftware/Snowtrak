@@ -1,6 +1,6 @@
-import 'package:syntrak/models/post.dart';
-import 'package:syntrak/models/user.dart';
-import 'package:syntrak/screens/community/thread_draft_builders.dart';
+import 'package:snowtrak/models/post.dart';
+import 'package:snowtrak/models/user.dart';
+import 'package:snowtrak/screens/community/thread_draft_builders.dart';
 
 class ThreadsTabActionBuilders {
   ThreadsTabActionBuilders._();

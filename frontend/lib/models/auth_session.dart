@@ -1,4 +1,4 @@
-import 'package:syntrak/models/user.dart';
+import 'package:snowtrak/models/user.dart';
 
 class AuthSession {
   final String accessToken;

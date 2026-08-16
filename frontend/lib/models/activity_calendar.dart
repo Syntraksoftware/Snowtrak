@@ -1,4 +1,4 @@
-import 'package:syntrak/models/activity_calendar_entry.dart';
+import 'package:snowtrak/models/activity_calendar_entry.dart';
 
 class ActivityCalendar { // container class for ActivityCalendarEntry
   final String userId;

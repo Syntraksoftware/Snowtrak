@@ -1,6 +1,6 @@
 # Backend Services
 
-Syntrak backend consists of 4 microservices, all using a unified Python environment and standardized entry points.
+Snowtrak backend consists of 4 microservices, all using a unified Python environment and standardized entry points.
 
 ## Service Overview
 

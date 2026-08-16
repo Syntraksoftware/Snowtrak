@@ -1,6 +1,6 @@
 # Backend Tests
 
-Comprehensive test suite for the Syntrak backend API.
+Comprehensive test suite for the Snowtrak backend API.
 
 ## Test Structure
 

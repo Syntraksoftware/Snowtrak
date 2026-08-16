@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
-import 'package:syntrak/core/config/app_config.dart';
-import 'package:syntrak/core/config/app_environment.dart';
-import 'package:syntrak/core/errors/app_error.dart';
-import 'package:syntrak/core/errors/app_result.dart';
-import 'package:syntrak/core/network/auth_token_store.dart';
-import 'package:syntrak/features/auth/data/auth_repository.dart';
+import 'package:snowtrak/core/config/app_config.dart';
+import 'package:snowtrak/core/config/app_environment.dart';
+import 'package:snowtrak/core/errors/app_error.dart';
+import 'package:snowtrak/core/errors/app_result.dart';
+import 'package:snowtrak/core/network/auth_token_store.dart';
+import 'package:snowtrak/features/auth/data/auth_repository.dart';
 
 class AuthService {
   AuthService({

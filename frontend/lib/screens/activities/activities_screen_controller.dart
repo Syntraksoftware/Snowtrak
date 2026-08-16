@@ -1,7 +1,7 @@
-import 'package:syntrak/features/activities/data/activities_context_repository.dart';
-import 'package:syntrak/models/weather.dart';
-import 'package:syntrak/providers/activity_provider.dart';
-import 'package:syntrak/providers/auth_provider.dart';
+import 'package:snowtrak/features/activities/data/activities_context_repository.dart';
+import 'package:snowtrak/models/weather.dart';
+import 'package:snowtrak/providers/activity_provider.dart';
+import 'package:snowtrak/providers/auth_provider.dart';
 
 class ActivitiesScreenController {
   const ActivitiesScreenController();

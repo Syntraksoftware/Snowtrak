@@ -1,8 +1,8 @@
-import 'package:syntrak/core/errors/app_result.dart';
-import 'package:syntrak/models/post.dart';
-import 'package:syntrak/screens/community/community_post_mapper.dart';
-import 'package:syntrak/services/community_service.dart';
-import 'package:syntrak/services/feed/feed_post_sort.dart';
+import 'package:snowtrak/core/errors/app_result.dart';
+import 'package:snowtrak/models/post.dart';
+import 'package:snowtrak/screens/community/community_post_mapper.dart';
+import 'package:snowtrak/services/community_service.dart';
+import 'package:snowtrak/services/feed/feed_post_sort.dart';
 
 class ThreadsFeedLoaderResult {
   const ThreadsFeedLoaderResult({

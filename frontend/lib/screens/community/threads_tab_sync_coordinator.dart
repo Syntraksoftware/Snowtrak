@@ -1,7 +1,7 @@
-import 'package:syntrak/core/errors/app_result.dart';
-import 'package:syntrak/features/community/data/community_outbox_service.dart';
-import 'package:syntrak/screens/community/thread_outbox_helpers.dart';
-import 'package:syntrak/services/community_service.dart';
+import 'package:snowtrak/core/errors/app_result.dart';
+import 'package:snowtrak/features/community/data/community_outbox_service.dart';
+import 'package:snowtrak/screens/community/thread_outbox_helpers.dart';
+import 'package:snowtrak/services/community_service.dart';
 
 // handles syncing outbox operations to the backend
 class ThreadsTabSyncCoordinator {

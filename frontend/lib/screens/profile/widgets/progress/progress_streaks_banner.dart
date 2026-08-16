@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
+import 'package:snowtrak/core/theme.dart';
 
 class ProgressStreaksBanner extends StatelessWidget {
   const ProgressStreaksBanner({
@@ -15,20 +15,20 @@ class ProgressStreaksBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasStreak = currentStreak > 0;
     return Container(
-      margin: const EdgeInsets.all(SyntrakSpacing.md),
-      padding: const EdgeInsets.all(SyntrakSpacing.md),
+      margin: const EdgeInsets.all(SnowtrakSpacing.md),
+      padding: const EdgeInsets.all(SnowtrakSpacing.md),
       decoration: BoxDecoration(
-        color: SyntrakColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+        color: SnowtrakColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
       ),
       child: Row(
         children: [
           Icon(
             Icons.local_fire_department,
-            color: hasStreak ? SyntrakColors.accent : SyntrakColors.textTertiary,
+            color: hasStreak ? SnowtrakColors.accent : SnowtrakColors.textTertiary,
             size: 24,
           ),
-          const SizedBox(width: SyntrakSpacing.md),
+          const SizedBox(width: SnowtrakSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,18 +37,18 @@ class ProgressStreaksBanner extends StatelessWidget {
                   hasStreak
                       ? '$currentStreak-week streak'
                       : 'No active streak',
-                  style: SyntrakTypography.labelLarge.copyWith(
-                    color: SyntrakColors.textPrimary,
+                  style: SnowtrakTypography.labelLarge.copyWith(
+                    color: SnowtrakColors.textPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: SyntrakSpacing.xs),
+                const SizedBox(height: SnowtrakSpacing.xs),
                 Text(
                   longestStreak > 0
                       ? 'Best: $longestStreak ${longestStreak == 1 ? 'week' : 'weeks'} — log one activity a week to keep it alive'
                       : 'Log one activity a week to build your streak',
-                  style: SyntrakTypography.bodySmall.copyWith(
-                    color: SyntrakColors.textSecondary,
+                  style: SnowtrakTypography.bodySmall.copyWith(
+                    color: SnowtrakColors.textSecondary,
                   ),
                 ),
               ],

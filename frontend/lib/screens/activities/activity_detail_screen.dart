@@ -6,19 +6,19 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/config/app_config.dart';
-import 'package:syntrak/core/di/service_locator.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/engines/map/color_mode_styler.dart';
-import 'package:syntrak/engines/map/map_rendering_engine.dart';
-import 'package:syntrak/engines/map/ski_map_layer_loader.dart';
-import 'package:syntrak/models/activity.dart';
-import 'package:syntrak/models/location.dart';
-import 'package:syntrak/models/processed_track.dart';
-import 'package:syntrak/models/segment.dart';
-import 'package:syntrak/models/track_point.dart';
-import 'package:syntrak/providers/activity_provider.dart';
-import 'package:syntrak/services/map_config.dart';
+import 'package:snowtrak/core/config/app_config.dart';
+import 'package:snowtrak/core/di/service_locator.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/engines/map/color_mode_styler.dart';
+import 'package:snowtrak/engines/map/map_rendering_engine.dart';
+import 'package:snowtrak/engines/map/ski_map_layer_loader.dart';
+import 'package:snowtrak/models/activity.dart';
+import 'package:snowtrak/models/location.dart';
+import 'package:snowtrak/models/processed_track.dart';
+import 'package:snowtrak/models/segment.dart';
+import 'package:snowtrak/models/track_point.dart';
+import 'package:snowtrak/providers/activity_provider.dart';
+import 'package:snowtrak/services/map_config.dart';
 
 class ActivityDetailScreen extends StatefulWidget {
   final String activityId;
@@ -181,7 +181,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
         decoration: BoxDecoration(
-          color: SyntrakColors.surface,
+          color: SnowtrakColors.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: EdgeInsets.fromLTRB(
@@ -202,27 +202,27 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: SyntrakColors.error.withValues(alpha: 0.15),
+                color: SnowtrakColors.error.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.delete_outline_rounded,
-                  color: SyntrakColors.error, size: 28),
+                  color: SnowtrakColors.error, size: 28),
             ),
             const SizedBox(height: 16),
             Text('Delete Activity?',
-                style: SyntrakTypography.headlineMedium
-                    .copyWith(color: SyntrakColors.textPrimary)),
+                style: SnowtrakTypography.headlineMedium
+                    .copyWith(color: SnowtrakColors.textPrimary)),
             const SizedBox(height: 8),
             Text('This cannot be undone.',
-                style: SyntrakTypography.bodyMedium
-                    .copyWith(color: SyntrakColors.textSecondary)),
+                style: SnowtrakTypography.bodyMedium
+                    .copyWith(color: SnowtrakColors.textSecondary)),
             const SizedBox(height: 28),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () => Navigator.pop(context, true),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: SyntrakColors.error,
+                  backgroundColor: SnowtrakColors.error,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
@@ -238,8 +238,8 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
             TextButton(
               onPressed: () => Navigator.pop(context, false),
               child: Text('Cancel',
-                  style: SyntrakTypography.bodyMedium
-                      .copyWith(color: SyntrakColors.textSecondary)),
+                  style: SnowtrakTypography.bodyMedium
+                      .copyWith(color: SnowtrakColors.textSecondary)),
             ),
           ],
         ),
@@ -257,11 +257,11 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: SyntrakColors.background,
+        backgroundColor: SnowtrakColors.background,
         appBar: _buildAppBar(null),
         body: Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(SyntrakColors.primary),
+            valueColor: AlwaysStoppedAnimation<Color>(SnowtrakColors.primary),
           ),
         ),
       );
@@ -269,12 +269,12 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
     if (_activity == null) {
       return Scaffold(
-        backgroundColor: SyntrakColors.background,
+        backgroundColor: SnowtrakColors.background,
         appBar: _buildAppBar(null),
         body: Center(
           child: Text('Activity not found',
-              style: SyntrakTypography.bodyLarge
-                  .copyWith(color: SyntrakColors.textSecondary)),
+              style: SnowtrakTypography.bodyLarge
+                  .copyWith(color: SnowtrakColors.textSecondary)),
         ),
       );
     }
@@ -290,7 +290,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     final hasRenderableTrack = track != null && track.points.length > 1;
 
     return Scaffold(
-      backgroundColor: SyntrakColors.background,
+      backgroundColor: SnowtrakColors.background,
       appBar: _buildAppBar(activity),
       body: SingleChildScrollView(
         child: Column(
@@ -307,8 +307,8 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                     activity.name?.isNotEmpty == true
                         ? activity.name!
                         : activity.type.displayName,
-                    style: SyntrakTypography.displaySmall.copyWith(
-                      color: SyntrakColors.textPrimary,
+                    style: SnowtrakTypography.displaySmall.copyWith(
+                      color: SnowtrakColors.textPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -316,8 +316,8 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                   Text(
                     DateFormat('EEEE, MMM d, y · h:mm a')
                         .format(activity.startTime),
-                    style: SyntrakTypography.bodySmall.copyWith(
-                      color: SyntrakColors.textSecondary,
+                    style: SnowtrakTypography.bodySmall.copyWith(
+                      color: SnowtrakColors.textSecondary,
                     ),
                   ),
                 ],
@@ -368,7 +368,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
                 decoration: BoxDecoration(
-                  color: SyntrakColors.surface,
+                  color: SnowtrakColors.surface,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
@@ -383,7 +383,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                           VerticalDivider(
                               width: 1,
                               thickness: 1,
-                              color: SyntrakColors.surfaceVariant),
+                              color: SnowtrakColors.surfaceVariant),
                           Expanded(
                               child: _StatCell(
                                   label: 'Avg Speed',
@@ -394,7 +394,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                     Divider(
                         height: 1,
                         thickness: 1,
-                        color: SyntrakColors.surfaceVariant),
+                        color: SnowtrakColors.surfaceVariant),
                     IntrinsicHeight(
                       child: Row(
                         children: [
@@ -405,7 +405,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                           VerticalDivider(
                               width: 1,
                               thickness: 1,
-                              color: SyntrakColors.surfaceVariant),
+                              color: SnowtrakColors.surfaceVariant),
                           Expanded(
                               child: _StatCell(
                                   label: 'Elevation Gain',
@@ -425,7 +425,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
                 decoration: BoxDecoration(
-                  color: SyntrakColors.surface,
+                  color: SnowtrakColors.surface,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
@@ -438,7 +438,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                     Divider(
                         height: 1,
                         thickness: 1,
-                        color: SyntrakColors.surfaceVariant),
+                        color: SnowtrakColors.surfaceVariant),
                     _DetailTile(
                         icon: Icons.flag_outlined,
                         label: 'End',
@@ -458,18 +458,18 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
   AppBar _buildAppBar(Activity? activity) {
     return AppBar(
-      backgroundColor: SyntrakColors.background,
+      backgroundColor: SnowtrakColors.background,
       elevation: 0,
       scrolledUnderElevation: 0,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-        color: SyntrakColors.textPrimary,
+        color: SnowtrakColors.textPrimary,
         onPressed: () => Navigator.of(context).pop(),
       ),
       title: Text(
         activity?.type.displayName ?? '',
-        style: SyntrakTypography.headlineSmall.copyWith(
-          color: SyntrakColors.textPrimary,
+        style: SnowtrakTypography.headlineSmall.copyWith(
+          color: SnowtrakColors.textPrimary,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -477,7 +477,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
         if (activity != null)
           IconButton(
             icon: const Icon(Icons.more_vert_rounded, size: 22),
-            color: SyntrakColors.textPrimary,
+            color: SnowtrakColors.textPrimary,
             onPressed: () => _confirmDelete(activity),
           ),
       ],
@@ -498,7 +498,7 @@ class _MapStyleToggle extends StatelessWidget {
     Widget btn(String label, MapVisualStyle style) {
       final active = selectedStyle == style;
       return Material(
-        color: active ? SyntrakColors.primary : Colors.transparent,
+        color: active ? SnowtrakColors.primary : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
         child: InkWell(
           borderRadius: BorderRadius.circular(10),
@@ -507,7 +507,7 @@ class _MapStyleToggle extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Text(label,
                 style: TextStyle(
-                  color: active ? Colors.white : SyntrakColors.textSecondary,
+                  color: active ? Colors.white : SnowtrakColors.textSecondary,
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
                 )),
@@ -518,7 +518,7 @@ class _MapStyleToggle extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: SyntrakColors.surface,
+        color: SnowtrakColors.surface,
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
@@ -548,7 +548,7 @@ class _MapZoomControls extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: SyntrakColors.surface,
+        color: SnowtrakColors.surface,
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
@@ -563,17 +563,17 @@ class _MapZoomControls extends StatelessWidget {
           IconButton(
             visualDensity: VisualDensity.compact,
             icon: Icon(Icons.add,
-                color: SyntrakColors.textPrimary, size: 20),
+                color: SnowtrakColors.textPrimary, size: 20),
             onPressed: () => onZoomIn(),
           ),
           Container(
               width: 24,
               height: 1,
-              color: SyntrakColors.surfaceVariant),
+              color: SnowtrakColors.surfaceVariant),
           IconButton(
             visualDensity: VisualDensity.compact,
             icon: Icon(Icons.remove,
-                color: SyntrakColors.textPrimary, size: 20),
+                color: SnowtrakColors.textPrimary, size: 20),
             onPressed: () => onZoomOut(),
           ),
         ],
@@ -599,16 +599,16 @@ class _StatCell extends StatelessWidget {
         children: [
           Text(
             label,
-            style: SyntrakTypography.labelSmall.copyWith(
-              color: SyntrakColors.textSecondary,
+            style: SnowtrakTypography.labelSmall.copyWith(
+              color: SnowtrakColors.textSecondary,
               letterSpacing: 0.3,
             ),
           ),
           const SizedBox(height: 6),
           Text(
             value,
-            style: SyntrakTypography.headlineMedium.copyWith(
-              color: SyntrakColors.textPrimary,
+            style: SnowtrakTypography.headlineMedium.copyWith(
+              color: SnowtrakColors.textPrimary,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -633,18 +633,18 @@ class _DetailTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: SyntrakColors.textSecondary),
+          Icon(icon, size: 18, color: SnowtrakColors.textSecondary),
           const SizedBox(width: 12),
           SizedBox(
             width: 48,
             child: Text(label,
-                style: SyntrakTypography.bodySmall
-                    .copyWith(color: SyntrakColors.textSecondary)),
+                style: SnowtrakTypography.bodySmall
+                    .copyWith(color: SnowtrakColors.textSecondary)),
           ),
           Expanded(
             child: Text(value,
-                style: SyntrakTypography.bodyMedium
-                    .copyWith(color: SyntrakColors.textPrimary)),
+                style: SnowtrakTypography.bodyMedium
+                    .copyWith(color: SnowtrakColors.textPrimary)),
           ),
         ],
       ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
+import 'package:snowtrak/core/theme.dart';
 
 /// Line chart for weekly distance buckets (12 weeks).
 class ProgressWeeklyGraphPainter extends CustomPainter {
@@ -10,12 +10,12 @@ class ProgressWeeklyGraphPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = SyntrakColors.primary
+      ..color = SnowtrakColors.primary
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
     final pointPaint = Paint()
-      ..color = SyntrakColors.primary
+      ..color = SnowtrakColors.primary
       ..style = PaintingStyle.fill;
 
     final distances = weeks.map((w) => w['count'] as double).toList();
@@ -56,12 +56,12 @@ class ProgressWeeklyGraphPainter extends CustomPainter {
       final lastPoint = points.last;
       if (lastPoint.dx.isFinite && lastPoint.dy.isFinite) {
         final highlightPaint = Paint()
-          ..color = SyntrakColors.primary
+          ..color = SnowtrakColors.primary
           ..style = PaintingStyle.fill;
         canvas.drawCircle(lastPoint, 6, highlightPaint);
 
         final linePaint = Paint()
-          ..color = SyntrakColors.textPrimary.withOpacity(0.3)
+          ..color = SnowtrakColors.textPrimary.withOpacity(0.3)
           ..strokeWidth = 1;
         canvas.drawLine(
           Offset(lastPoint.dx, 0),

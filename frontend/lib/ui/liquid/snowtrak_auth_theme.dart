@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
+import 'package:snowtrak/core/theme.dart';
 
 /// Snowtrak auth screens — dark blue accent on a clean white canvas.
 abstract final class SnowtrakAuthTheme {
@@ -11,20 +11,20 @@ abstract final class SnowtrakAuthTheme {
   static const fieldRadius = 14.0;
   static const buttonRadius = 999.0;
 
-  static TextStyle get pageTitle => SyntrakTypography.displaySmall.copyWith(
+  static TextStyle get pageTitle => SnowtrakTypography.displaySmall.copyWith(
         fontSize: 26,
         fontWeight: FontWeight.w700,
-        color: SyntrakColors.textPrimary,
+        color: SnowtrakColors.textPrimary,
         height: 1.2,
       );
 
-  static TextStyle get fieldLabel => SyntrakTypography.labelLarge.copyWith(
+  static TextStyle get fieldLabel => SnowtrakTypography.labelLarge.copyWith(
         fontWeight: FontWeight.w600,
-        color: SyntrakColors.textPrimary,
+        color: SnowtrakColors.textPrimary,
       );
 
-  static TextStyle get legalText => SyntrakTypography.bodySmall.copyWith(
-        color: SyntrakColors.textSecondary,
+  static TextStyle get legalText => SnowtrakTypography.bodySmall.copyWith(
+        color: SnowtrakColors.textSecondary,
         height: 1.45,
       );
 }

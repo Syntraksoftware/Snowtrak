@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/models/user.dart';
-import 'package:syntrak/providers/activity_provider.dart';
-import 'package:syntrak/screens/activities/widgets/activity_feed_card.dart';
-import 'package:syntrak/widgets/skeleton.dart';
-import 'package:syntrak/ui/liquid/snowtrak_auth_theme.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/models/user.dart';
+import 'package:snowtrak/providers/activity_provider.dart';
+import 'package:snowtrak/screens/activities/widgets/activity_feed_card.dart';
+import 'package:snowtrak/widgets/skeleton.dart';
+import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 class ActivitiesFeedSliver extends StatelessWidget {
   const ActivitiesFeedSliver({
@@ -37,7 +37,7 @@ class ActivitiesFeedSliver extends StatelessWidget {
             ),
             child: Center(
               child: Padding(
-                padding: const EdgeInsets.all(SyntrakSpacing.xl),
+                padding: const EdgeInsets.all(SnowtrakSpacing.xl),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
@@ -45,20 +45,20 @@ class ActivitiesFeedSliver extends StatelessWidget {
                     Icon(
                       Icons.downhill_skiing,
                       size: 80,
-                      color: SyntrakColors.textTertiary,
+                      color: SnowtrakColors.textTertiary,
                     ),
-                    const SizedBox(height: SyntrakSpacing.lg),
+                    const SizedBox(height: SnowtrakSpacing.lg),
                     Text(
                       'No activities yet',
-                      style: SyntrakTypography.headlineMedium.copyWith(
-                        color: SyntrakColors.textSecondary,
+                      style: SnowtrakTypography.headlineMedium.copyWith(
+                        color: SnowtrakColors.textSecondary,
                       ),
                     ),
-                    const SizedBox(height: SyntrakSpacing.sm),
+                    const SizedBox(height: SnowtrakSpacing.sm),
                     Text(
                       'Start recording your first skiing activity!',
-                      style: SyntrakTypography.bodyMedium.copyWith(
-                        color: SyntrakColors.textTertiary,
+                      style: SnowtrakTypography.bodyMedium.copyWith(
+                        color: SnowtrakColors.textTertiary,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -76,10 +76,10 @@ class ActivitiesFeedSliver extends StatelessWidget {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
-              SyntrakSpacing.md,
-              SyntrakSpacing.xs,
-              SyntrakSpacing.md,
-              SyntrakSpacing.xs,
+              SnowtrakSpacing.md,
+              SnowtrakSpacing.xs,
+              SnowtrakSpacing.md,
+              SnowtrakSpacing.xs,
             ),
             child: Row(
               children: [
@@ -88,7 +88,7 @@ class ActivitiesFeedSliver extends StatelessWidget {
                   height: 36,
                   decoration: BoxDecoration(
                     color: SnowtrakAuthTheme.brand.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(SyntrakRadius.md),
+                    borderRadius: BorderRadius.circular(SnowtrakRadius.md),
                   ),
                   child: const Icon(
                     Icons.history,
@@ -96,11 +96,11 @@ class ActivitiesFeedSliver extends StatelessWidget {
                     color: SnowtrakAuthTheme.brand,
                   ),
                 ),
-                const SizedBox(width: SyntrakSpacing.sm),
+                const SizedBox(width: SnowtrakSpacing.sm),
                 Text(
                   'Your activities',
-                  style: SyntrakTypography.headlineSmall.copyWith(
-                    color: SyntrakColors.textPrimary,
+                  style: SnowtrakTypography.headlineSmall.copyWith(
+                    color: SnowtrakColors.textPrimary,
                   ),
                 ),
               ],
@@ -108,7 +108,7 @@ class ActivitiesFeedSliver extends StatelessWidget {
           ),
         ),
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+          padding: const EdgeInsets.symmetric(horizontal: SnowtrakSpacing.md),
           sliver: SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
@@ -122,7 +122,7 @@ class ActivitiesFeedSliver extends StatelessWidget {
 
                 if (index >= activityProvider.activities.length) {
                   return const Padding(
-                    padding: EdgeInsets.all(SyntrakSpacing.lg),
+                    padding: EdgeInsets.all(SnowtrakSpacing.lg),
                     child: Center(child: CircularProgressIndicator()),
                   );
                 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/models/ski_trail.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/models/ski_trail.dart';
 
 Future<void> showTrailsDifficultyPicker(
   BuildContext context, {
@@ -9,30 +9,30 @@ Future<void> showTrailsDifficultyPicker(
 }) {
   return showModalBottomSheet(
     context: context,
-    backgroundColor: SyntrakColors.surface,
+    backgroundColor: SnowtrakColors.surface,
     shape: const RoundedRectangleBorder(
       borderRadius:
-          BorderRadius.vertical(top: Radius.circular(SyntrakRadius.xl)),
+          BorderRadius.vertical(top: Radius.circular(SnowtrakRadius.xl)),
     ),
     builder: (context) => SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(height: SyntrakSpacing.md),
+          const SizedBox(height: SnowtrakSpacing.md),
           Container(
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: SyntrakColors.divider,
+              color: SnowtrakColors.divider,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          const SizedBox(height: SyntrakSpacing.md),
+          const SizedBox(height: SnowtrakSpacing.md),
           Text(
             'Select Difficulty',
-            style: SyntrakTypography.headlineSmall,
+            style: SnowtrakTypography.headlineSmall,
           ),
-          const SizedBox(height: SyntrakSpacing.md),
+          const SizedBox(height: SnowtrakSpacing.md),
           ListTile(
             leading: const Icon(Icons.clear_all),
             title: const Text('All Difficulties'),
@@ -65,7 +65,7 @@ Future<void> showTrailsDifficultyPicker(
                   Navigator.pop(context);
                 },
               )),
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: SnowtrakSpacing.lg),
         ],
       ),
     ),
@@ -80,30 +80,30 @@ Future<void> showTrailsCountryPicker(
 }) {
   return showModalBottomSheet(
     context: context,
-    backgroundColor: SyntrakColors.surface,
+    backgroundColor: SnowtrakColors.surface,
     shape: const RoundedRectangleBorder(
       borderRadius:
-          BorderRadius.vertical(top: Radius.circular(SyntrakRadius.xl)),
+          BorderRadius.vertical(top: Radius.circular(SnowtrakRadius.xl)),
     ),
     builder: (context) => SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(height: SyntrakSpacing.md),
+          const SizedBox(height: SnowtrakSpacing.md),
           Container(
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: SyntrakColors.divider,
+              color: SnowtrakColors.divider,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          const SizedBox(height: SyntrakSpacing.md),
+          const SizedBox(height: SnowtrakSpacing.md),
           Text(
             'Select Country',
-            style: SyntrakTypography.headlineSmall,
+            style: SnowtrakTypography.headlineSmall,
           ),
-          const SizedBox(height: SyntrakSpacing.md),
+          const SizedBox(height: SnowtrakSpacing.md),
           ListTile(
             leading: const Icon(Icons.public),
             title: const Text('All Countries'),
@@ -122,7 +122,7 @@ Future<void> showTrailsCountryPicker(
                   Navigator.pop(context);
                 },
               )),
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: SnowtrakSpacing.lg),
         ],
       ),
     ),

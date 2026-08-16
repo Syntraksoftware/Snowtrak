@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/providers/auth_provider.dart';
-import 'package:syntrak/screens/auth/auth_feedback.dart';
-import 'package:syntrak/ui/liquid/liquid.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/providers/auth_provider.dart';
+import 'package:snowtrak/screens/auth/auth_feedback.dart';
+import 'package:snowtrak/ui/liquid/liquid.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -87,7 +87,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: SyntrakSpacing.lg),
+            const SizedBox(height: SnowtrakSpacing.lg),
             AuthLabeledField(
               label: 'Password',
               controller: _passwordController,
@@ -103,7 +103,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: SyntrakSpacing.lg),
+            const SizedBox(height: SnowtrakSpacing.lg),
             AuthLabeledField(
               label: 'Confirm password',
               controller: _confirmPasswordController,
@@ -120,25 +120,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: SyntrakSpacing.xl),
+            const SizedBox(height: SnowtrakSpacing.xl),
             AuthPrimaryButton(
               label: 'Sign Up',
               isLoading: _isLoading,
               onPressed: _handleRegister,
             ),
-            const SizedBox(height: SyntrakSpacing.xl),
+            const SizedBox(height: SnowtrakSpacing.xl),
             const AuthOrDivider(),
-            const SizedBox(height: SyntrakSpacing.xl),
+            const SizedBox(height: SnowtrakSpacing.xl),
             AuthSocialButton(
               provider: AuthSocialProvider.google,
               onPressed: () => _showComingSoon('Google'),
             ),
-            const SizedBox(height: SyntrakSpacing.md),
+            const SizedBox(height: SnowtrakSpacing.md),
             AuthSocialButton(
               provider: AuthSocialProvider.apple,
               onPressed: () => _showComingSoon('Apple'),
             ),
-            const SizedBox(height: SyntrakSpacing.xl),
+            const SizedBox(height: SnowtrakSpacing.xl),
             AuthAccountLink(
               prompt: 'Already have an account?',
               actionLabel: 'Log in',

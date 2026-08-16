@@ -1,6 +1,6 @@
 # Activity Backend
 
-FastAPI microservice for activity record management, GPS path storage, and activity metrics for the Syntrak skiing application.
+FastAPI microservice for activity record management, GPS path storage, and activity metrics for the Snowtrak skiing application.
 
 ## 1. Purpose and scope
 
@@ -162,11 +162,11 @@ pytest tests/ -v --tb=short  # Verbose output with short traceback
 
 ```bash
 # Local Docker build
-docker build -t syntrak-activity-backend:latest .
+docker build -t snowtrak-activity-backend:latest .
 
 # Via docker-compose from backend root
 cd backend
-docker-compose up -d syntrak-activity-backend
+docker-compose up -d snowtrak-activity-backend
 ```
 
 Service runs on port 5100 and connects to Supabase via SUPABASE_URL.

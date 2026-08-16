@@ -118,7 +118,7 @@ docker compose down
 
 If you previously used older compose files with fixed container names, run this once to clear legacy containers:
 ```bash
-docker rm -f syntrak-postgis syntrak-map-backend syntrak-main-backend syntrak-community-backend syntrak-activity-backend 2>/dev/null || true
+docker rm -f snowtrak-postgis snowtrak-map-backend snowtrak-main-backend snowtrak-community-backend snowtrak-activity-backend 2>/dev/null || true
 ```
 
 ## Roadmap — Social & Community Map Features

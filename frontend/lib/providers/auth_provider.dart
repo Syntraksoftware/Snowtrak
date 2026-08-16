@@ -1,13 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:syntrak/core/errors/app_result.dart';
-import 'package:syntrak/core/logging/app_logger.dart';
-import 'package:syntrak/features/auth/data/auth_session_store.dart';
-import 'package:syntrak/models/user.dart';
-import 'package:syntrak/models/auth_session.dart';
-import 'package:syntrak/services/auth_service.dart';
-import 'package:syntrak/services/profile_service.dart';
+import 'package:snowtrak/core/errors/app_result.dart';
+import 'package:snowtrak/core/logging/app_logger.dart';
+import 'package:snowtrak/features/auth/data/auth_session_store.dart';
+import 'package:snowtrak/models/user.dart';
+import 'package:snowtrak/models/auth_session.dart';
+import 'package:snowtrak/services/auth_service.dart';
+import 'package:snowtrak/services/profile_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService;

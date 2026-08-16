@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/activity_helpers.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/models/activity.dart';
-import 'package:syntrak/screens/activities/widgets/activity_feed_formatters.dart';
+import 'package:snowtrak/core/activity_helpers.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/models/activity.dart';
+import 'package:snowtrak/screens/activities/widgets/activity_feed_formatters.dart';
 
 class ActivityFeedCardHeader extends StatelessWidget {
   const ActivityFeedCardHeader({
@@ -20,20 +20,20 @@ class ActivityFeedCardHeader extends StatelessWidget {
     final activityIcon = ActivityHelpers.getActivityIcon(activity.type);
 
     return Padding(
-      padding: const EdgeInsets.all(SyntrakSpacing.md),
+      padding: const EdgeInsets.all(SnowtrakSpacing.md),
       child: Row(
         children: [
           CircleAvatar(
             radius: 20,
-            backgroundColor: SyntrakColors.primary,
+            backgroundColor: SnowtrakColors.primary,
             child: Text(
               (athleteName ?? 'U')[0].toUpperCase(),
-              style: SyntrakTypography.headlineSmall.copyWith(
-                color: SyntrakColors.textOnPrimary,
+              style: SnowtrakTypography.headlineSmall.copyWith(
+                color: SnowtrakColors.textOnPrimary,
               ),
             ),
           ),
-          const SizedBox(width: SyntrakSpacing.sm),
+          const SizedBox(width: SnowtrakSpacing.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -42,17 +42,17 @@ class ActivityFeedCardHeader extends StatelessWidget {
                   children: [
                     Text(
                       athleteName ?? 'You',
-                      style: SyntrakTypography.bodyMedium.copyWith(
-                        color: SyntrakColors.textPrimary,
+                      style: SnowtrakTypography.bodyMedium.copyWith(
+                        color: SnowtrakColors.textPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(width: SyntrakSpacing.xs),
+                    const SizedBox(width: SnowtrakSpacing.xs),
                     if (!activity.isPublic)
                       Icon(
                         Icons.lock_outline,
                         size: 14,
-                        color: SyntrakColors.textTertiary,
+                        color: SnowtrakColors.textTertiary,
                       ),
                   ],
                 ),
@@ -61,26 +61,26 @@ class ActivityFeedCardHeader extends StatelessWidget {
                   children: [
                     Text(
                       formatRelativeActivityTime(activity.startTime),
-                      style: SyntrakTypography.labelSmall.copyWith(
-                        color: SyntrakColors.textTertiary,
+                      style: SnowtrakTypography.labelSmall.copyWith(
+                        color: SnowtrakColors.textTertiary,
                       ),
                     ),
-                    const SizedBox(width: SyntrakSpacing.xs),
+                    const SizedBox(width: SnowtrakSpacing.xs),
                     Icon(activityIcon, size: 14, color: activityColor),
-                    const SizedBox(width: SyntrakSpacing.xs),
+                    const SizedBox(width: SnowtrakSpacing.xs),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: SyntrakSpacing.xs,
+                        horizontal: SnowtrakSpacing.xs,
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: SyntrakColors.surfaceVariant,
-                        borderRadius: BorderRadius.circular(SyntrakRadius.sm),
+                        color: SnowtrakColors.surfaceVariant,
+                        borderRadius: BorderRadius.circular(SnowtrakRadius.sm),
                       ),
                       child: Text(
                         'Phone',
-                        style: SyntrakTypography.labelSmall.copyWith(
-                          color: SyntrakColors.textTertiary,
+                        style: SnowtrakTypography.labelSmall.copyWith(
+                          color: SnowtrakColors.textTertiary,
                           fontSize: 10,
                         ),
                       ),

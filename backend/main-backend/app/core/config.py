@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     )
 
     # App Info
-    app_name: str = Field(default="Syntrak Auth API", alias="APP_NAME")
+    app_name: str = Field(default="Snowtrak Auth API", alias="APP_NAME")
     app_version: str = Field(default="1.0.0", alias="APP_VERSION")
     debug: bool = Field(default=True, alias="DEBUG")
     environment: str = Field(default="development", alias="ENVIRONMENT")

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:syntrak/screens/community/widgets/thread_media_attachments_bar.dart';
+import 'package:snowtrak/screens/community/widgets/thread_media_attachments_bar.dart';
 
 Future<void> showThreadExpandedReplySheet({
   required BuildContext context,

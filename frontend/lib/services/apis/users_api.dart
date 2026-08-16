@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:syntrak/models/profile.dart';
-import 'package:syntrak/models/user.dart';
+import 'package:snowtrak/models/profile.dart';
+import 'package:snowtrak/models/user.dart';
 
 class UsersApi {
   UsersApi({required Dio dio}) : _dio = dio;

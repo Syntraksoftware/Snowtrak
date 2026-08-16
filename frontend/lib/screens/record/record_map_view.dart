@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/services/map_config.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/services/map_config.dart';
 
 class RecordMapView extends StatefulWidget {
   const RecordMapView({
@@ -100,7 +100,7 @@ class _MapErrorOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: SyntrakColors.darkBackground.withValues(alpha: 0.85),
+      color: SnowtrakColors.darkBackground.withValues(alpha: 0.85),
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -111,7 +111,7 @@ class _MapErrorOverlay extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 message,
-                style: SyntrakTypography.bodyMedium
+                style: SnowtrakTypography.bodyMedium
                     .copyWith(color: Colors.white70),
                 textAlign: TextAlign.center,
               ),
@@ -119,7 +119,7 @@ class _MapErrorOverlay extends StatelessWidget {
               ElevatedButton(
                 onPressed: onRetry,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: SyntrakColors.primary,
+                  backgroundColor: SnowtrakColors.primary,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),

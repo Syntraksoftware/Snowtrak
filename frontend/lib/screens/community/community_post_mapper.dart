@@ -1,8 +1,8 @@
-import 'package:syntrak/models/post.dart';
-import 'package:syntrak/screens/community/mappers/community_author_mapper.dart';
-import 'package:syntrak/screens/community/mappers/community_comment_tree_mapper.dart';
-import 'package:syntrak/screens/community/mappers/community_post_field_parsers.dart';
-import 'package:syntrak/screens/community/mappers/community_quote_mapper.dart';
+import 'package:snowtrak/models/post.dart';
+import 'package:snowtrak/screens/community/mappers/community_author_mapper.dart';
+import 'package:snowtrak/screens/community/mappers/community_comment_tree_mapper.dart';
+import 'package:snowtrak/screens/community/mappers/community_post_field_parsers.dart';
+import 'package:snowtrak/screens/community/mappers/community_quote_mapper.dart';
 
 /// Maps community API JSON into [Post] models (threads feed, replies).
 class CommunityPostMapper {
