@@ -53,8 +53,10 @@
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
-	<key>GoogleMapsAPIKey</key>
-	<string>YOUR_GOOGLE_MAPS_API_KEY</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 </dict>
 </plist>
 

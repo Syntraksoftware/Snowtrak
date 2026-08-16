@@ -1,2 +1,6 @@
-app_identifier "com.syntrak.snowtrak.app" # replace with your app bundle id
-apple_id "you@company.com" # replace with owner Apple ID
+app_identifier "com.syntrak.snowtrak.app"
+
+# Read from the environment so the account email stays out of this public repo.
+# Local:  export FASTLANE_APPLE_ID="you@example.com"
+# CI:     set FASTLANE_APPLE_ID as a repository secret
+apple_id ENV["FASTLANE_APPLE_ID"]
