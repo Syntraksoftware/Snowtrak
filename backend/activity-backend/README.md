@@ -74,7 +74,6 @@ backend/activity-backend/
 │   └── supabase_client.py             # Query builder and SQL execution
 ├── middleware/
 │   └── auth.py                        # JWT extraction and validation
-├── SUPABASE_SETUP.sql                 # Database schema creation script
 ├── FRONTEND_ACTIVITY_API_SCHEMA.md    # Activity payload contract with frontend
 └── requirements.txt                    # Python dependencies (fastapi, supabase-py, etc.)
 ```
@@ -105,11 +104,18 @@ Environment variables (set via `.env` or deployment config):
 ### Setup instructions
 
 1. **Create database tables:**
-   ```bash
-   # Go to Supabase Dashboard → SQL Editor → Create New Query
-   # Paste contents of SUPABASE_SETUP.sql and run
-   # Creates: activities, activity_comments, activity_kudos, activity_shares tables and indexes
-   ```
+
+   The `public` schema is managed in Supabase itself — the dashboard is the
+   source of truth, not a file in this repository. The service expects these
+   tables to exist: `activities`, `activity_comments`, `activity_kudos`,
+   `activity_shares`, `user_stats`.
+
+   Incremental changes are kept as standalone scripts under
+   `backend/db/migrations/` (for example `004_activities_thumbnail_url.sql`)
+   and are applied through the Supabase SQL editor.
+
+   Note: `map_trail.*` is a different schema, owned by map-backend and
+   versioned with Alembic. See `backend/db/migrations/README.md`.
 
 2. **Install and run:**
    ```bash
@@ -147,7 +153,7 @@ pytest tests/ -v --tb=short  # Verbose output with short traceback
 
 - **Forgotten JWT secret alignment**: `JWT_SECRET` must match value in `main-backend` and shared deployment config
 - **Supabase ServiceRole key leakage**: Never commit `.env` file; use `.env.example` as template
-- **Model mismatch**: When adding fields to Activity, update both Pydantic schema and `SUPABASE_SETUP.sql` together
+- **Model mismatch**: When adding fields to Activity, update the Pydantic schema and the Supabase table together, and record the change as a script under `backend/db/migrations/`
 - **GPS location edge cases**: Handle empty location arrays and zero-distance activities
 
 ### Logging and monitoring
@@ -251,7 +257,7 @@ curl -X DELETE http://localhost:5100/api/v1/activities/{id} \
 **500 Database error**: Supabase connection failure
 - Check: SUPABASE_URL is reachable and correct
 - Check: SUPABASE_SERVICE_ROLE_KEY has proper permissions
-- Check: Database tables exist (run SUPABASE_SETUP.sql if missing)
+- Check: the `activities` tables exist in the Supabase project (see Setup above)
 
 **GPS metrics incorrect**: Distance or elevation gain is wrong
 - Verify: Locations are ordered by timestamp
@@ -267,7 +273,7 @@ curl -X DELETE http://localhost:5100/api/v1/activities/{id} \
 
 ### Performance tuning
 
-- Index activities by user_id for fast filtering (included in SUPABASE_SETUP.sql)
+- Index activities by user_id for fast filtering
 - Avoid N+1 queries: Use Supabase views (e.g., activity_stats) for aggregations
 - Cache frequent queries (e.g., user's activity count) in Redis if response time critical
 
