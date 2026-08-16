@@ -287,9 +287,17 @@ async def list_post_comments(
 
 
 @router.get("/{post_id}/conversation", response_model=ListResponse)
-async def get_post_conversation(request: Request, post_id: UUID):
+async def get_post_conversation(
+    request: Request,
+    post_id: UUID,
+    current_user: str | None = Depends(get_optional_user),
+):
     """
     Flattened conversation for one thread (chronological), same payload as
     ``/{post_id}/comments`` — alias for Threads-style ``conversation`` naming.
+
+    Declares the same dependencies as ``list_post_comments`` and forwards them
+    explicitly: calling a route handler as a plain function leaves any omitted
+    ``Depends`` default as the raw ``Depends`` object, not the resolved value.
     """
-    return await list_post_comments(request, post_id)
+    return await list_post_comments(request, post_id, current_user)
