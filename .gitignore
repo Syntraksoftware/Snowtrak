@@ -20,3 +20,12 @@ backend/deploy/env/staging.env
 backend/deploy/env/production.env
 *.p8
 .cursor/
+
+# graphify knowledge-graph output (graph.json exceeds the 5MB CI guard)
+graphify-out/
+
+# fastlane run report, regenerated on every build
+frontend/ios/fastlane/report.xml
+
+# editor settings
+.vscode/

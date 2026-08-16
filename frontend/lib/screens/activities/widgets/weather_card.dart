@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/models/weather.dart';
-import 'package:syntrak/screens/activities/widgets/home_section_card.dart';
-import 'package:syntrak/screens/activities/widgets/home_section_spacing.dart';
-import 'package:syntrak/screens/activities/widgets/home_selectable_chip.dart';
-import 'package:syntrak/ui/liquid/snowtrak_auth_theme.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/models/weather.dart';
+import 'package:snowtrak/screens/activities/widgets/home_section_card.dart';
+import 'package:snowtrak/screens/activities/widgets/home_section_spacing.dart';
+import 'package:snowtrak/screens/activities/widgets/home_selectable_chip.dart';
+import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 class WeatherCard extends StatefulWidget {
   const WeatherCard({
@@ -56,8 +56,8 @@ class _WeatherCardState extends State<WeatherCard> {
     if (widget.weatherData == null) {
       return Text(
         'Enable location or pull to refresh.',
-        style: SyntrakTypography.bodySmall.copyWith(
-          color: SyntrakColors.textTertiary,
+        style: SnowtrakTypography.bodySmall.copyWith(
+          color: SnowtrakColors.textTertiary,
         ),
       );
     }
@@ -76,22 +76,22 @@ class _WeatherCardState extends State<WeatherCard> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(data.condition.emoji, style: const TextStyle(fontSize: 32)),
-            const SizedBox(width: SyntrakSpacing.sm),
+            const SizedBox(width: SnowtrakSpacing.sm),
             Text(
               '${data.temperature.toStringAsFixed(0)}°',
-              style: SyntrakTypography.displaySmall.copyWith(
-                color: SyntrakColors.textPrimary,
+              style: SnowtrakTypography.displaySmall.copyWith(
+                color: SnowtrakColors.textPrimary,
                 fontWeight: FontWeight.w700,
                 fontSize: 28,
                 height: 1,
               ),
             ),
-            const SizedBox(width: SyntrakSpacing.sm),
+            const SizedBox(width: SnowtrakSpacing.sm),
             Expanded(
               child: Text(
                 '${data.condition.description} · ${data.windSpeed.toStringAsFixed(0)} km/h wind',
-                style: SyntrakTypography.bodySmall.copyWith(
-                  color: SyntrakColors.textSecondary,
+                style: SnowtrakTypography.bodySmall.copyWith(
+                  color: SnowtrakColors.textSecondary,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -102,8 +102,8 @@ class _WeatherCardState extends State<WeatherCard> {
         if (forecastDays.isNotEmpty) ...[
           const SizedBox(height: 10),
           Wrap(
-            spacing: SyntrakSpacing.xs,
-            runSpacing: SyntrakSpacing.xs,
+            spacing: SnowtrakSpacing.xs,
+            runSpacing: SnowtrakSpacing.xs,
             children: [
               HomeSelectableChip(
                 label: 'Now',
@@ -122,12 +122,12 @@ class _WeatherCardState extends State<WeatherCard> {
             ],
           ),
           if (selected != null) ...[
-            const SizedBox(height: SyntrakSpacing.xs),
+            const SizedBox(height: SnowtrakSpacing.xs),
             Text(
               'High ${selected.maxTemp.toStringAsFixed(0)}° · '
               'Low ${selected.minTemp.toStringAsFixed(0)}° · '
               'Avg ${selected.avgTemp.toStringAsFixed(0)}°',
-              style: SyntrakTypography.labelSmall.copyWith(
+              style: SnowtrakTypography.labelSmall.copyWith(
                 color: SnowtrakAuthTheme.brand,
                 fontWeight: FontWeight.w600,
               ),

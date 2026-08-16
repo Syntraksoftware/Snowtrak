@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/models/activity.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/models/activity.dart';
 
 class ActivityFeedCardBadges extends StatelessWidget {
   const ActivityFeedCardBadges({super.key, required this.activity});
@@ -13,10 +13,10 @@ class ActivityFeedCardBadges extends StatelessWidget {
       return const SizedBox.shrink();
     }
     return Padding(
-      padding: const EdgeInsets.all(SyntrakSpacing.md),
+      padding: const EdgeInsets.all(SnowtrakSpacing.md),
       child: Wrap(
-        spacing: SyntrakSpacing.sm,
-        runSpacing: SyntrakSpacing.xs,
+        spacing: SnowtrakSpacing.sm,
+        runSpacing: SnowtrakSpacing.xs,
         children: _buildBadges(activity),
       ),
     );
@@ -33,7 +33,7 @@ class ActivityFeedCardBadges extends StatelessWidget {
         _Badge(
           icon: Icons.emoji_events,
           label: 'Long',
-          color: SyntrakColors.accent,
+          color: SnowtrakColors.accent,
         ),
       );
     }
@@ -42,7 +42,7 @@ class ActivityFeedCardBadges extends StatelessWidget {
         _Badge(
           icon: Icons.trending_up,
           label: 'Elevation',
-          color: SyntrakColors.secondary,
+          color: SnowtrakColors.secondary,
         ),
       );
     }
@@ -51,7 +51,7 @@ class ActivityFeedCardBadges extends StatelessWidget {
         _Badge(
           icon: Icons.star,
           label: 'PR',
-          color: SyntrakColors.accent,
+          color: SnowtrakColors.accent,
         ),
       );
     }
@@ -74,22 +74,22 @@ class _Badge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: SyntrakSpacing.sm,
-        vertical: SyntrakSpacing.xs,
+        horizontal: SnowtrakSpacing.sm,
+        vertical: SnowtrakSpacing.xs,
       ),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(SyntrakRadius.md),
+        borderRadius: BorderRadius.circular(SnowtrakRadius.md),
         border: Border.all(color: color.withOpacity(0.3), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 14, color: color),
-          const SizedBox(width: SyntrakSpacing.xs / 2),
+          const SizedBox(width: SnowtrakSpacing.xs / 2),
           Text(
             label,
-            style: SyntrakTypography.labelSmall.copyWith(
+            style: SnowtrakTypography.labelSmall.copyWith(
               color: color,
               fontWeight: FontWeight.w600,
             ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/ui/liquid/snowtrak_auth_theme.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 /// Compact tappable row for home section previews.
 class HomeActionRow extends StatelessWidget {
@@ -20,14 +20,14 @@ class HomeActionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: SyntrakColors.surfaceVariant,
-      borderRadius: BorderRadius.circular(SyntrakRadius.md),
+      color: SnowtrakColors.surfaceVariant,
+      borderRadius: BorderRadius.circular(SnowtrakRadius.md),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(SyntrakRadius.md),
+        borderRadius: BorderRadius.circular(SnowtrakRadius.md),
         child: Padding(
           padding: const EdgeInsets.symmetric(
-            horizontal: SyntrakSpacing.sm,
+            horizontal: SnowtrakSpacing.sm,
             vertical: 10,
           ),
           child: Row(
@@ -38,16 +38,16 @@ class HomeActionRow extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: SyntrakTypography.labelLarge.copyWith(
-                        color: SyntrakColors.textPrimary,
+                      style: SnowtrakTypography.labelLarge.copyWith(
+                        color: SnowtrakColors.textPrimary,
                       ),
                     ),
                     if (subtitle != null) ...[
                       const SizedBox(height: 2),
                       Text(
                         subtitle!,
-                        style: SyntrakTypography.bodySmall.copyWith(
-                          color: SyntrakColors.textSecondary,
+                        style: SnowtrakTypography.bodySmall.copyWith(
+                          color: SnowtrakColors.textSecondary,
                         ),
                       ),
                     ],

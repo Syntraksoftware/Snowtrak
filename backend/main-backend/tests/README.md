@@ -1,6 +1,6 @@
 # Backend Tests
 
-Comprehensive test suite for the Syntrak backend API.
+Comprehensive test suite for the Snowtrak backend API.
 
 ## Test Structure
 
@@ -22,7 +22,7 @@ tests/
 **Important**: Python packages must be installed in a virtual environment (not system-wide).
 
 ```bash
-cd /path/to/syntrak-application
+cd /path/to/Snowtrak
 
 # Create shared virtual environment at repo root (if it doesn't exist)
 python3.11 -m venv .venv

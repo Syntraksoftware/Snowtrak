@@ -38,7 +38,7 @@ class MapConfig {
   static const String _clean2dRasterStyleJson = '''
 {
   "version": 8,
-  "name": "Syntrak Clean 2D",
+  "name": "Snowtrak Clean 2D",
   "glyphs": "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
   "sources": {
     "carto_light": {
@@ -65,7 +65,7 @@ class MapConfig {
   static const String _terrainRasterStyleJson = '''
 {
   "version": 8,
-  "name": "Syntrak Terrain",
+  "name": "Snowtrak Terrain",
   "glyphs": "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
   "sources": {
     "opentopo": {

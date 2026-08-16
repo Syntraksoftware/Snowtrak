@@ -153,7 +153,7 @@ class _NotificationsSettingsScreenState
             children: [
               _SettingsToggleRow(
                 label: 'Email Notifications',
-                subtitle: 'Receive emails from Syntrak',
+                subtitle: 'Receive emails from Snowtrak',
                 value: _emailEnabled,
                 onChanged: (value) => setState(() => _emailEnabled = value),
               ),

@@ -1,7 +1,7 @@
 /// Test data factories for creating test objects
-import 'package:syntrak/models/user.dart';
-import 'package:syntrak/models/activity.dart';
-import 'package:syntrak/models/auth_session.dart';
+import 'package:snowtrak/models/user.dart';
+import 'package:snowtrak/models/activity.dart';
+import 'package:snowtrak/models/auth_session.dart';
 
 class TestData {
   /// Create a test user

@@ -1,4 +1,4 @@
-import 'package:syntrak/models/post.dart';
+import 'package:snowtrak/models/post.dart';
 
 /// Sort helpers for community feed lists.
 abstract final class FeedPostSort {

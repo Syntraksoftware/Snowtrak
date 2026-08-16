@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/models/activity.dart';
-import 'package:syntrak/screens/activities/widgets/activity_feed_formatters.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/models/activity.dart';
+import 'package:snowtrak/screens/activities/widgets/activity_feed_formatters.dart';
 
 class ActivityFeedCardStatsRow extends StatelessWidget {
   const ActivityFeedCardStatsRow({super.key, required this.activity});
@@ -38,19 +38,19 @@ class _Stat extends StatelessWidget {
         children: [
           Text(
             value,
-            style: SyntrakTypography.bodyMedium.copyWith(
-              color: SyntrakColors.textPrimary,
+            style: SnowtrakTypography.bodyMedium.copyWith(
+              color: SnowtrakColors.textPrimary,
               fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: SyntrakSpacing.xs / 2),
+          const SizedBox(height: SnowtrakSpacing.xs / 2),
           Text(
             label,
-            style: SyntrakTypography.labelSmall.copyWith(
-              color: SyntrakColors.textTertiary,
+            style: SnowtrakTypography.labelSmall.copyWith(
+              color: SnowtrakColors.textTertiary,
             ),
             textAlign: TextAlign.center,
           ),

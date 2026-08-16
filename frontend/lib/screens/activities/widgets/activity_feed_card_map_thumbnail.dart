@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/models/location.dart';
-import 'package:syntrak/screens/activities/widgets/activity_route_preview_painter.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/models/location.dart';
+import 'package:snowtrak/screens/activities/widgets/activity_route_preview_painter.dart';
 
 class ActivityFeedCardMapThumbnail extends StatelessWidget {
   const ActivityFeedCardMapThumbnail({
@@ -20,7 +20,7 @@ class ActivityFeedCardMapThumbnail extends StatelessWidget {
     if (locations.isEmpty) {
       return Container(
         height: 200,
-        color: SyntrakColors.surfaceVariant,
+        color: SnowtrakColors.surfaceVariant,
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -28,14 +28,14 @@ class ActivityFeedCardMapThumbnail extends StatelessWidget {
             children: [
               Icon(
                 Icons.map_outlined,
-                color: SyntrakColors.textTertiary,
+                color: SnowtrakColors.textTertiary,
                 size: 40,
               ),
-              const SizedBox(height: SyntrakSpacing.sm),
+              const SizedBox(height: SnowtrakSpacing.sm),
               Text(
                 'No route data',
-                style: SyntrakTypography.bodySmall.copyWith(
-                  color: SyntrakColors.textTertiary,
+                style: SnowtrakTypography.bodySmall.copyWith(
+                  color: SnowtrakColors.textTertiary,
                 ),
               ),
             ],
@@ -49,7 +49,7 @@ class ActivityFeedCardMapThumbnail extends StatelessWidget {
       return Container(
         height: 200,
         width: double.infinity,
-        color: SyntrakColors.surfaceVariant,
+        color: SnowtrakColors.surfaceVariant,
         child: Stack(
           children: [
             Positioned.fill(
@@ -59,7 +59,7 @@ class ActivityFeedCardMapThumbnail extends StatelessWidget {
                 loadingBuilder: (context, child, progress) {
                   if (progress == null) return child;
                   return Container(
-                    color: SyntrakColors.surfaceVariant,
+                    color: SnowtrakColors.surfaceVariant,
                     child: const Center(child: CircularProgressIndicator()),
                   );
                 },
@@ -71,8 +71,8 @@ class ActivityFeedCardMapThumbnail extends StatelessWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          SyntrakColors.primary.withOpacity(0.1),
-                          SyntrakColors.secondary.withOpacity(0.1),
+                          SnowtrakColors.primary.withOpacity(0.1),
+                          SnowtrakColors.secondary.withOpacity(0.1),
                         ],
                       ),
                     ),
@@ -89,25 +89,25 @@ class ActivityFeedCardMapThumbnail extends StatelessWidget {
               ),
             ),
             Positioned(
-              bottom: SyntrakSpacing.sm,
-              right: SyntrakSpacing.sm,
+              bottom: SnowtrakSpacing.sm,
+              right: SnowtrakSpacing.sm,
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: SyntrakSpacing.sm,
-                  vertical: SyntrakSpacing.xs,
+                  horizontal: SnowtrakSpacing.sm,
+                  vertical: SnowtrakSpacing.xs,
                 ),
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.6),
-                  borderRadius: BorderRadius.circular(SyntrakRadius.sm),
+                  borderRadius: BorderRadius.circular(SnowtrakRadius.sm),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(Icons.location_on, size: 14, color: Colors.white),
-                    const SizedBox(width: SyntrakSpacing.xs / 2),
+                    const SizedBox(width: SnowtrakSpacing.xs / 2),
                     Text(
                       'View on map',
-                      style: SyntrakTypography.labelSmall.copyWith(
+                      style: SnowtrakTypography.labelSmall.copyWith(
                         color: Colors.white,
                       ),
                     ),
@@ -124,7 +124,7 @@ class ActivityFeedCardMapThumbnail extends StatelessWidget {
     return Container(
       height: 200,
       width: double.infinity,
-      decoration: BoxDecoration(color: SyntrakColors.surfaceVariant),
+      decoration: BoxDecoration(color: SnowtrakColors.surfaceVariant),
       child: Stack(
         children: [
           Container(
@@ -133,8 +133,8 @@ class ActivityFeedCardMapThumbnail extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  SyntrakColors.primary.withOpacity(0.1),
-                  SyntrakColors.secondary.withOpacity(0.1),
+                  SnowtrakColors.primary.withOpacity(0.1),
+                  SnowtrakColors.secondary.withOpacity(0.1),
                 ],
               ),
             ),
@@ -142,7 +142,7 @@ class ActivityFeedCardMapThumbnail extends StatelessWidget {
               child: Icon(
                 Icons.map,
                 size: 60,
-                color: SyntrakColors.textTertiary.withOpacity(0.3),
+                color: SnowtrakColors.textTertiary.withOpacity(0.3),
               ),
             ),
           ),
@@ -156,25 +156,25 @@ class ActivityFeedCardMapThumbnail extends StatelessWidget {
               ),
             ),
           Positioned(
-            bottom: SyntrakSpacing.sm,
-            right: SyntrakSpacing.sm,
+            bottom: SnowtrakSpacing.sm,
+            right: SnowtrakSpacing.sm,
             child: Container(
               padding: const EdgeInsets.symmetric(
-                horizontal: SyntrakSpacing.sm,
-                vertical: SyntrakSpacing.xs,
+                horizontal: SnowtrakSpacing.sm,
+                vertical: SnowtrakSpacing.xs,
               ),
               decoration: BoxDecoration(
                 color: Colors.black.withOpacity(0.6),
-                borderRadius: BorderRadius.circular(SyntrakRadius.sm),
+                borderRadius: BorderRadius.circular(SnowtrakRadius.sm),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(Icons.location_on, size: 14, color: Colors.white),
-                  const SizedBox(width: SyntrakSpacing.xs / 2),
+                  const SizedBox(width: SnowtrakSpacing.xs / 2),
                   Text(
                     'View on map',
-                    style: SyntrakTypography.labelSmall.copyWith(
+                    style: SnowtrakTypography.labelSmall.copyWith(
                       color: Colors.white,
                     ),
                   ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:syntrak/models/location.dart';
-import 'package:syntrak/screens/activities/widgets/activity_feed_card_map_thumbnail.dart';
+import 'package:snowtrak/models/location.dart';
+import 'package:snowtrak/screens/activities/widgets/activity_feed_card_map_thumbnail.dart';
 
 void main() {
   testWidgets('shows Image.network when imageUrl is provided', (tester) async {

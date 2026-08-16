@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:syntrak/core/logging/app_logger.dart';
-import 'package:syntrak/models/auth_session.dart';
-import 'package:syntrak/services/storage_service.dart';
+import 'package:snowtrak/core/logging/app_logger.dart';
+import 'package:snowtrak/models/auth_session.dart';
+import 'package:snowtrak/services/storage_service.dart';
 
 class AuthSessionStore {
   final StorageService _storageService;

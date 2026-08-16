@@ -1,4 +1,4 @@
-import 'package:syntrak/services/apis/auth_api.dart';
+import 'package:snowtrak/services/apis/auth_api.dart';
 
 class AuthRepository {
   AuthRepository(this._api);

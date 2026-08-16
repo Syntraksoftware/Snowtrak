@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
+import 'package:snowtrak/core/theme.dart';
 
 /// Standard titled card shell used across the progress tab.
 class ProgressSectionCard extends StatelessWidget {
@@ -15,12 +15,12 @@ class ProgressSectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+      margin: const EdgeInsets.symmetric(horizontal: SnowtrakSpacing.md),
       decoration: BoxDecoration(
-        color: SyntrakColors.surface,
-        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-        border: Border.all(color: SyntrakColors.divider),
-        boxShadow: SyntrakElevation.sm,
+        color: SnowtrakColors.surface,
+        borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
+        border: Border.all(color: SnowtrakColors.divider),
+        boxShadow: SnowtrakElevation.sm,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -28,30 +28,30 @@ class ProgressSectionCard extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(
-              SyntrakSpacing.md,
-              SyntrakSpacing.md,
-              SyntrakSpacing.md,
-              SyntrakSpacing.sm,
+              SnowtrakSpacing.md,
+              SnowtrakSpacing.md,
+              SnowtrakSpacing.md,
+              SnowtrakSpacing.sm,
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   title,
-                  style: SyntrakTypography.headlineSmall.copyWith(
-                    color: SyntrakColors.textPrimary,
+                  style: SnowtrakTypography.headlineSmall.copyWith(
+                    color: SnowtrakColors.textPrimary,
                   ),
                 ),
                 Icon(
                   Icons.chevron_right,
-                  color: SyntrakColors.textTertiary,
+                  color: SnowtrakColors.textTertiary,
                   size: 20,
                 ),
               ],
             ),
           ),
           child,
-          const SizedBox(height: SyntrakSpacing.sm),
+          const SizedBox(height: SnowtrakSpacing.sm),
         ],
       ),
     );

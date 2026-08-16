@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:syntrak/services/apis/activity_upload_api.dart';
+import 'package:snowtrak/services/apis/activity_upload_api.dart';
 
 /// Client-side orchestrator for Strava-style presigned upload (Phase 3).
 ///

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/screens/activities/widgets/home_action_row.dart';
-import 'package:syntrak/screens/activities/widgets/home_section_card.dart';
-import 'package:syntrak/screens/activities/widgets/home_section_spacing.dart';
-import 'package:syntrak/screens/home/home_tab_scope.dart';
-import 'package:syntrak/ui/liquid/auth_primary_button.dart';
-import 'package:syntrak/ui/liquid/snowtrak_auth_theme.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/screens/activities/widgets/home_action_row.dart';
+import 'package:snowtrak/screens/activities/widgets/home_section_card.dart';
+import 'package:snowtrak/screens/activities/widgets/home_section_spacing.dart';
+import 'package:snowtrak/screens/home/home_tab_scope.dart';
+import 'package:snowtrak/ui/liquid/auth_primary_button.dart';
+import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 class TrendingCard extends StatefulWidget {
   const TrendingCard({super.key});
@@ -40,7 +40,7 @@ class _TrendingCardState extends State<TrendingCard> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             for (var i = 0; i < _items.length; i++) ...[
-              if (i > 0) const SizedBox(height: SyntrakSpacing.xs),
+              if (i > 0) const SizedBox(height: SnowtrakSpacing.xs),
               HomeActionRow(
                 title: _items[i].title,
                 subtitle: _items[i].subtitle,
@@ -50,7 +50,7 @@ class _TrendingCardState extends State<TrendingCard> {
                 onTap: () => setState(() => _selectedIndex = i),
               ),
             ],
-            const SizedBox(height: SyntrakSpacing.sm),
+            const SizedBox(height: SnowtrakSpacing.sm),
             AuthPrimaryButton(
               label: 'Explore community',
               onPressed: () => HomeTabScope.selectTabOrNull(context, 1),

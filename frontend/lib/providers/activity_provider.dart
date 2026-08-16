@@ -1,14 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:syntrak/core/errors/app_result.dart';
-import 'package:syntrak/core/logging/app_logger.dart';
-import 'package:syntrak/helpers/mock_activities.dart';
-import 'package:syntrak/models/activity.dart';
-import 'package:syntrak/models/user_stats.dart';
-import 'package:syntrak/services/activities_service.dart';
-import 'package:syntrak/services/feed/activities_feed_cache.dart';
-import 'package:syntrak/services/feed/feed_rebase.dart';
+import 'package:snowtrak/core/errors/app_result.dart';
+import 'package:snowtrak/core/logging/app_logger.dart';
+import 'package:snowtrak/helpers/mock_activities.dart';
+import 'package:snowtrak/models/activity.dart';
+import 'package:snowtrak/models/user_stats.dart';
+import 'package:snowtrak/services/activities_service.dart';
+import 'package:snowtrak/services/feed/activities_feed_cache.dart';
+import 'package:snowtrak/services/feed/feed_rebase.dart';
 
 class ActivityProvider extends ChangeNotifier {
   ActivityProvider(

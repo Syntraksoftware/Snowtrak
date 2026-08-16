@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Syntrak Design System
+/// Snowtrak Design System
 /// Skiing-focused color palette with cool tones and winter sports energy
-class SyntrakColors {
+class SnowtrakColors {
   // Primary Colors - Cool blue with energy
   static const Color primary = Color(0xFF1E88E5); // Bright blue (skiing/snow)
   static const Color primaryDark = Color(0xFF1565C0);
@@ -55,7 +55,7 @@ class SyntrakColors {
 }
 
 /// Typography System
-class SyntrakTypography {
+class SnowtrakTypography {
   // Display
   static const TextStyle displayLarge = TextStyle(
     fontSize: 32,
@@ -161,7 +161,7 @@ class SyntrakTypography {
 }
 
 /// Spacing System (8px base unit)
-class SyntrakSpacing {
+class SnowtrakSpacing {
   static const double xs = 4.0;
   static const double sm = 8.0;
   static const double md = 16.0;
@@ -171,7 +171,7 @@ class SyntrakSpacing {
 }
 
 /// Border Radius System
-class SyntrakRadius {
+class SnowtrakRadius {
   static const double sm = 4.0;
   static const double md = 8.0;
   static const double lg = 12.0;
@@ -180,7 +180,7 @@ class SyntrakRadius {
 }
 
 /// Elevation/Shadow System
-class SyntrakElevation {
+class SnowtrakElevation {
   static List<BoxShadow> get sm => [
     BoxShadow(
       color: Colors.black.withOpacity(0.05),
@@ -214,99 +214,99 @@ class SyntrakElevation {
   ];
 }
 
-/// Syntrak Theme Configuration
-class SyntrakTheme {
+/// Snowtrak Theme Configuration
+class SnowtrakTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.light(
-        primary: SyntrakColors.primary,
-        primaryContainer: SyntrakColors.primaryLight,
-        secondary: SyntrakColors.secondary,
-        secondaryContainer: SyntrakColors.secondaryLight,
-        tertiary: SyntrakColors.accent,
-        surface: SyntrakColors.surface,
-        surfaceVariant: SyntrakColors.surfaceVariant,
-        background: SyntrakColors.background,
-        error: SyntrakColors.error,
-        onPrimary: SyntrakColors.textOnPrimary,
-        onSecondary: SyntrakColors.textOnPrimary,
-        onTertiary: SyntrakColors.textOnPrimary,
-        onSurface: SyntrakColors.textPrimary,
-        onSurfaceVariant: SyntrakColors.textSecondary,
-        onBackground: SyntrakColors.textPrimary,
-        onError: SyntrakColors.textOnPrimary,
+        primary: SnowtrakColors.primary,
+        primaryContainer: SnowtrakColors.primaryLight,
+        secondary: SnowtrakColors.secondary,
+        secondaryContainer: SnowtrakColors.secondaryLight,
+        tertiary: SnowtrakColors.accent,
+        surface: SnowtrakColors.surface,
+        surfaceVariant: SnowtrakColors.surfaceVariant,
+        background: SnowtrakColors.background,
+        error: SnowtrakColors.error,
+        onPrimary: SnowtrakColors.textOnPrimary,
+        onSecondary: SnowtrakColors.textOnPrimary,
+        onTertiary: SnowtrakColors.textOnPrimary,
+        onSurface: SnowtrakColors.textPrimary,
+        onSurfaceVariant: SnowtrakColors.textSecondary,
+        onBackground: SnowtrakColors.textPrimary,
+        onError: SnowtrakColors.textOnPrimary,
       ),
-      scaffoldBackgroundColor: SyntrakColors.background,
+      scaffoldBackgroundColor: SnowtrakColors.background,
       appBarTheme: AppBarTheme(
-        backgroundColor: SyntrakColors.surface,
-        foregroundColor: SyntrakColors.textPrimary,
+        backgroundColor: SnowtrakColors.surface,
+        foregroundColor: SnowtrakColors.textPrimary,
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: SyntrakTypography.headlineMedium.copyWith(
-          color: SyntrakColors.textPrimary,
+        titleTextStyle: SnowtrakTypography.headlineMedium.copyWith(
+          color: SnowtrakColors.textPrimary,
         ),
       ),
       cardTheme: CardThemeData(
-        color: SyntrakColors.surface,
+        color: SnowtrakColors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+          borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
         ),
         margin: EdgeInsets.zero,
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: SyntrakColors.surface,
-        selectedItemColor: SyntrakColors.primary,
-        unselectedItemColor: SyntrakColors.textTertiary,
-        selectedLabelStyle: SyntrakTypography.labelSmall,
-        unselectedLabelStyle: SyntrakTypography.labelSmall,
+        backgroundColor: SnowtrakColors.surface,
+        selectedItemColor: SnowtrakColors.primary,
+        unselectedItemColor: SnowtrakColors.textTertiary,
+        selectedLabelStyle: SnowtrakTypography.labelSmall,
+        unselectedLabelStyle: SnowtrakTypography.labelSmall,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
       ),
       textTheme: TextTheme(
-        displayLarge: SyntrakTypography.displayLarge.copyWith(color: SyntrakColors.textPrimary),
-        displayMedium: SyntrakTypography.displayMedium.copyWith(color: SyntrakColors.textPrimary),
-        displaySmall: SyntrakTypography.displaySmall.copyWith(color: SyntrakColors.textPrimary),
-        headlineLarge: SyntrakTypography.headlineLarge.copyWith(color: SyntrakColors.textPrimary),
-        headlineMedium: SyntrakTypography.headlineMedium.copyWith(color: SyntrakColors.textPrimary),
-        headlineSmall: SyntrakTypography.headlineSmall.copyWith(color: SyntrakColors.textPrimary),
-        bodyLarge: SyntrakTypography.bodyLarge.copyWith(color: SyntrakColors.textPrimary),
-        bodyMedium: SyntrakTypography.bodyMedium.copyWith(color: SyntrakColors.textSecondary),
-        bodySmall: SyntrakTypography.bodySmall.copyWith(color: SyntrakColors.textSecondary),
-        labelLarge: SyntrakTypography.labelLarge.copyWith(color: SyntrakColors.textPrimary),
-        labelMedium: SyntrakTypography.labelMedium.copyWith(color: SyntrakColors.textSecondary),
-        labelSmall: SyntrakTypography.labelSmall.copyWith(color: SyntrakColors.textTertiary),
+        displayLarge: SnowtrakTypography.displayLarge.copyWith(color: SnowtrakColors.textPrimary),
+        displayMedium: SnowtrakTypography.displayMedium.copyWith(color: SnowtrakColors.textPrimary),
+        displaySmall: SnowtrakTypography.displaySmall.copyWith(color: SnowtrakColors.textPrimary),
+        headlineLarge: SnowtrakTypography.headlineLarge.copyWith(color: SnowtrakColors.textPrimary),
+        headlineMedium: SnowtrakTypography.headlineMedium.copyWith(color: SnowtrakColors.textPrimary),
+        headlineSmall: SnowtrakTypography.headlineSmall.copyWith(color: SnowtrakColors.textPrimary),
+        bodyLarge: SnowtrakTypography.bodyLarge.copyWith(color: SnowtrakColors.textPrimary),
+        bodyMedium: SnowtrakTypography.bodyMedium.copyWith(color: SnowtrakColors.textSecondary),
+        bodySmall: SnowtrakTypography.bodySmall.copyWith(color: SnowtrakColors.textSecondary),
+        labelLarge: SnowtrakTypography.labelLarge.copyWith(color: SnowtrakColors.textPrimary),
+        labelMedium: SnowtrakTypography.labelMedium.copyWith(color: SnowtrakColors.textSecondary),
+        labelSmall: SnowtrakTypography.labelSmall.copyWith(color: SnowtrakColors.textTertiary),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: SyntrakColors.surfaceVariant,
+        fillColor: SnowtrakColors.surfaceVariant,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(SyntrakRadius.md),
+          borderRadius: BorderRadius.circular(SnowtrakRadius.md),
           borderSide: BorderSide.none,
         ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: SyntrakSpacing.md,
-          vertical: SyntrakSpacing.md,
+          horizontal: SnowtrakSpacing.md,
+          vertical: SnowtrakSpacing.md,
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: SyntrakColors.primary,
-          foregroundColor: SyntrakColors.textOnPrimary,
+          backgroundColor: SnowtrakColors.primary,
+          foregroundColor: SnowtrakColors.textOnPrimary,
           elevation: 0,
           padding: const EdgeInsets.symmetric(
-            horizontal: SyntrakSpacing.lg,
-            vertical: SyntrakSpacing.md,
+            horizontal: SnowtrakSpacing.lg,
+            vertical: SnowtrakSpacing.md,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(SyntrakRadius.round),
+            borderRadius: BorderRadius.circular(SnowtrakRadius.round),
           ),
-          textStyle: SyntrakTypography.labelLarge,
+          textStyle: SnowtrakTypography.labelLarge,
         ),
       ),
       iconTheme: IconThemeData(
-        color: SyntrakColors.textSecondary,
+        color: SnowtrakColors.textSecondary,
         size: 24,
       ),
     );
@@ -316,93 +316,93 @@ class SyntrakTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.dark(
-        primary: SyntrakColors.primaryLight,
-        primaryContainer: SyntrakColors.primary,
-        secondary: SyntrakColors.secondaryLight,
-        secondaryContainer: SyntrakColors.secondary,
-        tertiary: SyntrakColors.accentLight,
-        surface: SyntrakColors.darkSurface,
-        surfaceVariant: SyntrakColors.darkSurfaceVariant,
-        background: SyntrakColors.darkBackground,
-        error: SyntrakColors.error,
-        onPrimary: SyntrakColors.textOnPrimary,
-        onSecondary: SyntrakColors.textOnPrimary,
-        onTertiary: SyntrakColors.textOnPrimary,
-        onSurface: SyntrakColors.darkTextPrimary,
-        onSurfaceVariant: SyntrakColors.darkTextSecondary,
-        onBackground: SyntrakColors.darkTextPrimary,
-        onError: SyntrakColors.textOnPrimary,
+        primary: SnowtrakColors.primaryLight,
+        primaryContainer: SnowtrakColors.primary,
+        secondary: SnowtrakColors.secondaryLight,
+        secondaryContainer: SnowtrakColors.secondary,
+        tertiary: SnowtrakColors.accentLight,
+        surface: SnowtrakColors.darkSurface,
+        surfaceVariant: SnowtrakColors.darkSurfaceVariant,
+        background: SnowtrakColors.darkBackground,
+        error: SnowtrakColors.error,
+        onPrimary: SnowtrakColors.textOnPrimary,
+        onSecondary: SnowtrakColors.textOnPrimary,
+        onTertiary: SnowtrakColors.textOnPrimary,
+        onSurface: SnowtrakColors.darkTextPrimary,
+        onSurfaceVariant: SnowtrakColors.darkTextSecondary,
+        onBackground: SnowtrakColors.darkTextPrimary,
+        onError: SnowtrakColors.textOnPrimary,
       ),
-      scaffoldBackgroundColor: SyntrakColors.darkBackground,
+      scaffoldBackgroundColor: SnowtrakColors.darkBackground,
       appBarTheme: AppBarTheme(
-        backgroundColor: SyntrakColors.darkSurface,
-        foregroundColor: SyntrakColors.darkTextPrimary,
+        backgroundColor: SnowtrakColors.darkSurface,
+        foregroundColor: SnowtrakColors.darkTextPrimary,
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: SyntrakTypography.headlineMedium.copyWith(
-          color: SyntrakColors.darkTextPrimary,
+        titleTextStyle: SnowtrakTypography.headlineMedium.copyWith(
+          color: SnowtrakColors.darkTextPrimary,
         ),
       ),
       cardTheme: CardThemeData(
-        color: SyntrakColors.darkSurface,
+        color: SnowtrakColors.darkSurface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+          borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
         ),
         margin: EdgeInsets.zero,
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: SyntrakColors.darkSurface,
-        selectedItemColor: SyntrakColors.primaryLight,
-        unselectedItemColor: SyntrakColors.darkTextSecondary,
-        selectedLabelStyle: SyntrakTypography.labelSmall,
-        unselectedLabelStyle: SyntrakTypography.labelSmall,
+        backgroundColor: SnowtrakColors.darkSurface,
+        selectedItemColor: SnowtrakColors.primaryLight,
+        unselectedItemColor: SnowtrakColors.darkTextSecondary,
+        selectedLabelStyle: SnowtrakTypography.labelSmall,
+        unselectedLabelStyle: SnowtrakTypography.labelSmall,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
       ),
       textTheme: TextTheme(
-        displayLarge: SyntrakTypography.displayLarge.copyWith(color: SyntrakColors.darkTextPrimary),
-        displayMedium: SyntrakTypography.displayMedium.copyWith(color: SyntrakColors.darkTextPrimary),
-        displaySmall: SyntrakTypography.displaySmall.copyWith(color: SyntrakColors.darkTextPrimary),
-        headlineLarge: SyntrakTypography.headlineLarge.copyWith(color: SyntrakColors.darkTextPrimary),
-        headlineMedium: SyntrakTypography.headlineMedium.copyWith(color: SyntrakColors.darkTextPrimary),
-        headlineSmall: SyntrakTypography.headlineSmall.copyWith(color: SyntrakColors.darkTextPrimary),
-        bodyLarge: SyntrakTypography.bodyLarge.copyWith(color: SyntrakColors.darkTextPrimary),
-        bodyMedium: SyntrakTypography.bodyMedium.copyWith(color: SyntrakColors.darkTextSecondary),
-        bodySmall: SyntrakTypography.bodySmall.copyWith(color: SyntrakColors.darkTextSecondary),
-        labelLarge: SyntrakTypography.labelLarge.copyWith(color: SyntrakColors.darkTextPrimary),
-        labelMedium: SyntrakTypography.labelMedium.copyWith(color: SyntrakColors.darkTextSecondary),
-        labelSmall: SyntrakTypography.labelSmall.copyWith(color: SyntrakColors.darkTextSecondary),
+        displayLarge: SnowtrakTypography.displayLarge.copyWith(color: SnowtrakColors.darkTextPrimary),
+        displayMedium: SnowtrakTypography.displayMedium.copyWith(color: SnowtrakColors.darkTextPrimary),
+        displaySmall: SnowtrakTypography.displaySmall.copyWith(color: SnowtrakColors.darkTextPrimary),
+        headlineLarge: SnowtrakTypography.headlineLarge.copyWith(color: SnowtrakColors.darkTextPrimary),
+        headlineMedium: SnowtrakTypography.headlineMedium.copyWith(color: SnowtrakColors.darkTextPrimary),
+        headlineSmall: SnowtrakTypography.headlineSmall.copyWith(color: SnowtrakColors.darkTextPrimary),
+        bodyLarge: SnowtrakTypography.bodyLarge.copyWith(color: SnowtrakColors.darkTextPrimary),
+        bodyMedium: SnowtrakTypography.bodyMedium.copyWith(color: SnowtrakColors.darkTextSecondary),
+        bodySmall: SnowtrakTypography.bodySmall.copyWith(color: SnowtrakColors.darkTextSecondary),
+        labelLarge: SnowtrakTypography.labelLarge.copyWith(color: SnowtrakColors.darkTextPrimary),
+        labelMedium: SnowtrakTypography.labelMedium.copyWith(color: SnowtrakColors.darkTextSecondary),
+        labelSmall: SnowtrakTypography.labelSmall.copyWith(color: SnowtrakColors.darkTextSecondary),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: SyntrakColors.darkSurfaceVariant,
+        fillColor: SnowtrakColors.darkSurfaceVariant,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(SyntrakRadius.md),
+          borderRadius: BorderRadius.circular(SnowtrakRadius.md),
           borderSide: BorderSide.none,
         ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: SyntrakSpacing.md,
-          vertical: SyntrakSpacing.md,
+          horizontal: SnowtrakSpacing.md,
+          vertical: SnowtrakSpacing.md,
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: SyntrakColors.primaryLight,
-          foregroundColor: SyntrakColors.textOnPrimary,
+          backgroundColor: SnowtrakColors.primaryLight,
+          foregroundColor: SnowtrakColors.textOnPrimary,
           elevation: 0,
           padding: const EdgeInsets.symmetric(
-            horizontal: SyntrakSpacing.lg,
-            vertical: SyntrakSpacing.md,
+            horizontal: SnowtrakSpacing.lg,
+            vertical: SnowtrakSpacing.md,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(SyntrakRadius.round),
+            borderRadius: BorderRadius.circular(SnowtrakRadius.round),
           ),
-          textStyle: SyntrakTypography.labelLarge,
+          textStyle: SnowtrakTypography.labelLarge,
         ),
       ),
       iconTheme: IconThemeData(
-        color: SyntrakColors.darkTextSecondary,
+        color: SnowtrakColors.darkTextSecondary,
         size: 24,
       ),
     );

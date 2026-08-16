@@ -1,4 +1,4 @@
-import 'package:syntrak/models/ski_trail.dart';
+import 'package:snowtrak/models/ski_trail.dart';
 
 List<SkiTrail> mockSkiTrails() {
   return [

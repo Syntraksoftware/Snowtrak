@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/models/ski_trail.dart';
-import 'package:syntrak/screens/groups/widgets/trail_list_card.dart';
-import 'package:syntrak/screens/groups/widgets/trails_filter_sheets.dart';
-import 'package:syntrak/screens/groups/widgets/trails_mock_trails.dart';
-import 'package:syntrak/screens/groups/widgets/trails_search_bar.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/models/ski_trail.dart';
+import 'package:snowtrak/screens/groups/widgets/trail_list_card.dart';
+import 'package:snowtrak/screens/groups/widgets/trails_filter_sheets.dart';
+import 'package:snowtrak/screens/groups/widgets/trails_mock_trails.dart';
+import 'package:snowtrak/screens/groups/widgets/trails_search_bar.dart';
 
 class TrailsTab extends StatefulWidget {
   const TrailsTab({super.key});
@@ -109,14 +109,14 @@ class _TrailsTabState extends State<TrailsTab> {
     if (_isLoading) {
       return const Center(
         child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(SyntrakColors.primary),
+          valueColor: AlwaysStoppedAnimation<Color>(SnowtrakColors.primary),
         ),
       );
     }
 
     return RefreshIndicator(
       onRefresh: _loadTrails,
-      color: SyntrakColors.primary,
+      color: SnowtrakColors.primary,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
@@ -156,8 +156,8 @@ class _TrailsTabState extends State<TrailsTab> {
               child: Center(
                 child: Text(
                   'No trails match your filters',
-                  style: SyntrakTypography.bodyMedium.copyWith(
-                    color: SyntrakColors.textSecondary,
+                  style: SnowtrakTypography.bodyMedium.copyWith(
+                    color: SnowtrakColors.textSecondary,
                   ),
                 ),
               ),
@@ -165,16 +165,16 @@ class _TrailsTabState extends State<TrailsTab> {
           else
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(
-                SyntrakSpacing.md,
+                SnowtrakSpacing.md,
                 0,
-                SyntrakSpacing.md,
-                SyntrakSpacing.lg,
+                SnowtrakSpacing.md,
+                SnowtrakSpacing.lg,
               ),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     return Padding(
-                      padding: const EdgeInsets.only(bottom: SyntrakSpacing.sm),
+                      padding: const EdgeInsets.only(bottom: SnowtrakSpacing.sm),
                       child: TrailListCard(trail: _filteredTrails[index]),
                     );
                   },
@@ -209,7 +209,7 @@ class _FilterChipsRow extends StatelessWidget {
     final isCountry = selectedCountry != null;
 
     return Container(
-      color: SyntrakColors.background,
+      color: SnowtrakColors.background,
       child: Column(
         children: [
           SizedBox(
@@ -217,7 +217,7 @@ class _FilterChipsRow extends StatelessWidget {
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding:
-                  const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+                  const EdgeInsets.symmetric(horizontal: SnowtrakSpacing.md),
               children: [
                 FilterChip(
                   selected: isDifficulty,
@@ -234,28 +234,28 @@ class _FilterChipsRow extends StatelessWidget {
                       : Icon(
                           Icons.terrain,
                           size: 16,
-                          color: SyntrakColors.textSecondary,
+                          color: SnowtrakColors.textSecondary,
                         ),
                   label: Text(
                     isDifficulty
                         ? selectedDifficulty!.shortName
                         : 'Difficulty',
-                    style: SyntrakTypography.labelMedium.copyWith(
+                    style: SnowtrakTypography.labelMedium.copyWith(
                       color: isDifficulty
-                          ? SyntrakColors.primary
-                          : SyntrakColors.textSecondary,
+                          ? SnowtrakColors.primary
+                          : SnowtrakColors.textSecondary,
                       fontWeight:
                           isDifficulty ? FontWeight.w600 : FontWeight.normal,
                     ),
                   ),
-                  backgroundColor: SyntrakColors.surfaceVariant,
-                  selectedColor: SyntrakColors.primary.withAlpha(25),
+                  backgroundColor: SnowtrakColors.surfaceVariant,
+                  selectedColor: SnowtrakColors.primary.withAlpha(25),
                   side: BorderSide(
-                    color: isDifficulty ? SyntrakColors.primary : Colors.transparent,
+                    color: isDifficulty ? SnowtrakColors.primary : Colors.transparent,
                   ),
                   onSelected: (_) => onDifficultyTap(),
                 ),
-                const SizedBox(width: SyntrakSpacing.sm),
+                const SizedBox(width: SnowtrakSpacing.sm),
                 FilterChip(
                   selected: isCountry,
                   showCheckmark: false,
@@ -263,28 +263,28 @@ class _FilterChipsRow extends StatelessWidget {
                     Icons.public,
                     size: 16,
                     color: isCountry
-                        ? SyntrakColors.primary
-                        : SyntrakColors.textSecondary,
+                        ? SnowtrakColors.primary
+                        : SnowtrakColors.textSecondary,
                   ),
                   label: Text(
                     isCountry ? selectedCountry! : 'Country',
-                    style: SyntrakTypography.labelMedium.copyWith(
+                    style: SnowtrakTypography.labelMedium.copyWith(
                       color: isCountry
-                          ? SyntrakColors.primary
-                          : SyntrakColors.textSecondary,
+                          ? SnowtrakColors.primary
+                          : SnowtrakColors.textSecondary,
                       fontWeight:
                           isCountry ? FontWeight.w600 : FontWeight.normal,
                     ),
                   ),
-                  backgroundColor: SyntrakColors.surfaceVariant,
-                  selectedColor: SyntrakColors.primary.withAlpha(25),
+                  backgroundColor: SnowtrakColors.surfaceVariant,
+                  selectedColor: SnowtrakColors.primary.withAlpha(25),
                   side: BorderSide(
-                    color: isCountry ? SyntrakColors.primary : Colors.transparent,
+                    color: isCountry ? SnowtrakColors.primary : Colors.transparent,
                   ),
                   onSelected: (_) => onCountryTap(),
                 ),
                 if (isDifficulty || isCountry) ...[
-                  const SizedBox(width: SyntrakSpacing.sm),
+                  const SizedBox(width: SnowtrakSpacing.sm),
                   ActionChip(
                     avatar: const Icon(Icons.close, size: 16),
                     label: const Text('Clear'),
@@ -294,7 +294,7 @@ class _FilterChipsRow extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: SyntrakSpacing.sm),
+          const SizedBox(height: SnowtrakSpacing.sm),
         ],
       ),
     );
@@ -310,17 +310,17 @@ class _ResultsHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(
-        top: SyntrakSpacing.sm,
-        bottom: SyntrakSpacing.sm,
-        left: SyntrakSpacing.md,
-        right: SyntrakSpacing.md,
+        top: SnowtrakSpacing.sm,
+        bottom: SnowtrakSpacing.sm,
+        left: SnowtrakSpacing.md,
+        right: SnowtrakSpacing.md,
       ),
       child: Row(
         children: [
           Text(
             '$count trails',
-            style: SyntrakTypography.labelLarge.copyWith(
-              color: SyntrakColors.textPrimary,
+            style: SnowtrakTypography.labelLarge.copyWith(
+              color: SnowtrakColors.textPrimary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -330,12 +330,12 @@ class _ResultsHeader extends StatelessWidget {
             icon: Icon(
               Icons.sort,
               size: 18,
-              color: SyntrakColors.textSecondary,
+              color: SnowtrakColors.textSecondary,
             ),
             label: Text(
               'Sort',
-              style: SyntrakTypography.labelMedium.copyWith(
-                color: SyntrakColors.textSecondary,
+              style: SnowtrakTypography.labelMedium.copyWith(
+                color: SnowtrakColors.textSecondary,
               ),
             ),
           ),

@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import 'package:syntrak/models/activity.dart';
-import 'package:syntrak/models/user_stats.dart';
+import 'package:snowtrak/models/activity.dart';
+import 'package:snowtrak/models/user_stats.dart';
 
 class ActivitiesApi {
   ActivitiesApi({required Dio dio}) : _dio = dio;

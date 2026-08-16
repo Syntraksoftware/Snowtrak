@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/models/notification.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/models/notification.dart';
 
 /// Service for displaying in-app notifications (SnackBars, Banners, Overlays)
 /// 
@@ -33,7 +33,7 @@ class NotificationService {
     _showSnackBar(
       context,
       message: message,
-      backgroundColor: SyntrakColors.success,
+      backgroundColor: SnowtrakColors.success,
       icon: Icons.check_circle_outline,
       duration: duration,
       action: action,
@@ -50,7 +50,7 @@ class NotificationService {
     _showSnackBar(
       context,
       message: message,
-      backgroundColor: SyntrakColors.error,
+      backgroundColor: SnowtrakColors.error,
       icon: Icons.error_outline,
       duration: duration,
       action: action,
@@ -67,7 +67,7 @@ class NotificationService {
     _showSnackBar(
       context,
       message: message,
-      backgroundColor: SyntrakColors.info,
+      backgroundColor: SnowtrakColors.info,
       icon: Icons.info_outline,
       duration: duration,
       action: action,
@@ -84,7 +84,7 @@ class NotificationService {
     _showSnackBar(
       context,
       message: message,
-      backgroundColor: SyntrakColors.warning,
+      backgroundColor: SnowtrakColors.warning,
       icon: Icons.warning_amber_outlined,
       duration: duration,
       action: action,
@@ -123,9 +123,9 @@ class NotificationService {
       backgroundColor: backgroundColor,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(SyntrakRadius.md),
+        borderRadius: BorderRadius.circular(SnowtrakRadius.md),
       ),
-      margin: const EdgeInsets.all(SyntrakSpacing.md),
+      margin: const EdgeInsets.all(SnowtrakSpacing.md),
       duration: duration,
       action: action,
     );
@@ -215,15 +215,15 @@ class NotificationService {
       case NotificationType.kudos:
         return const Color(0xFFE91E63); // Pink
       case NotificationType.comment:
-        return SyntrakColors.primary;
+        return SnowtrakColors.primary;
       case NotificationType.follow:
-        return SyntrakColors.secondary;
+        return SnowtrakColors.secondary;
       case NotificationType.friendActivity:
-        return SyntrakColors.accent;
+        return SnowtrakColors.accent;
       case NotificationType.challenge:
         return const Color(0xFFFFD700); // Gold
       case NotificationType.group:
-        return SyntrakColors.info;
+        return SnowtrakColors.info;
       case NotificationType.weather:
         return const Color(0xFF607D8B); // Blue grey
       case NotificationType.powderDay:
@@ -231,7 +231,7 @@ class NotificationService {
       case NotificationType.achievement:
         return const Color(0xFFFFD700); // Gold
       case NotificationType.system:
-        return SyntrakColors.textSecondary;
+        return SnowtrakColors.textSecondary;
     }
   }
 }
@@ -329,12 +329,12 @@ class _NotificationBannerState extends State<_NotificationBanner>
             },
             child: Material(
               elevation: 8,
-              borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+              borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
               child: Container(
-                padding: const EdgeInsets.all(SyntrakSpacing.md),
+                padding: const EdgeInsets.all(SnowtrakSpacing.md),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+                  borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
                   border: Border.all(
                     color: typeColor.withOpacity(0.3),
                     width: 1,
@@ -371,9 +371,9 @@ class _NotificationBannerState extends State<_NotificationBanner>
                         children: [
                           Text(
                             notification.title,
-                            style: SyntrakTypography.labelLarge.copyWith(
+                            style: SnowtrakTypography.labelLarge.copyWith(
                               fontWeight: FontWeight.w600,
-                              color: SyntrakColors.textPrimary,
+                              color: SnowtrakColors.textPrimary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -381,8 +381,8 @@ class _NotificationBannerState extends State<_NotificationBanner>
                           const SizedBox(height: 2),
                           Text(
                             notification.message,
-                            style: SyntrakTypography.bodySmall.copyWith(
-                              color: SyntrakColors.textSecondary,
+                            style: SnowtrakTypography.bodySmall.copyWith(
+                              color: SnowtrakColors.textSecondary,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -396,7 +396,7 @@ class _NotificationBannerState extends State<_NotificationBanner>
                       onPressed: _dismiss,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
-                      color: SyntrakColors.textTertiary,
+                      color: SnowtrakColors.textTertiary,
                     ),
                   ],
                 ),
@@ -477,12 +477,12 @@ class _ToastMessageState extends State<_ToastMessage>
                 vertical: 12,
               ),
               decoration: BoxDecoration(
-                color: SyntrakColors.textPrimary.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(SyntrakRadius.round),
+                color: SnowtrakColors.textPrimary.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(SnowtrakRadius.round),
               ),
               child: Text(
                 widget.message,
-                style: SyntrakTypography.bodyMedium.copyWith(
+                style: SnowtrakTypography.bodyMedium.copyWith(
                   color: Colors.white,
                 ),
                 textAlign: TextAlign.center,

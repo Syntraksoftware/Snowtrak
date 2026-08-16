@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/activity_helpers.dart';
-import 'package:syntrak/core/di/service_locator.dart';
-import 'package:syntrak/models/activity.dart';
-import 'package:syntrak/providers/activity_provider.dart';
-import 'package:syntrak/screens/activities/activity_detail_screen.dart';
-import 'package:syntrak/services/apis/map_activities_api.dart';
-import 'package:syntrak/services/location_service.dart';
-import 'package:syntrak/services/map_config.dart';
+import 'package:snowtrak/core/activity_helpers.dart';
+import 'package:snowtrak/core/di/service_locator.dart';
+import 'package:snowtrak/models/activity.dart';
+import 'package:snowtrak/providers/activity_provider.dart';
+import 'package:snowtrak/screens/activities/activity_detail_screen.dart';
+import 'package:snowtrak/services/apis/map_activities_api.dart';
+import 'package:snowtrak/services/location_service.dart';
+import 'package:snowtrak/services/map_config.dart';
 
 class MapsScreen extends StatefulWidget {
   const MapsScreen({super.key});

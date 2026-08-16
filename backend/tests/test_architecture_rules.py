@@ -55,10 +55,16 @@ class ImportVisitor(ast.NodeVisitor):
     def visit_ImportFrom(self, node: ast.ImportFrom):
         """Handle: from module import name"""
         if node.module:
-            module = node.module.split(".")[0]  # Get top-level module
+            parts = node.module.split(".")
+            module = parts[0]  # Get top-level module
             names = {alias.name for alias in node.names}
             self.from_imports.setdefault(module, set()).update(names)
             self.imports.add(module)
+            # Also record the leaf package (e.g. "ports" in
+            # "domains.activities_service.ports") so layer checks see it.
+            if len(parts) > 1:
+                self.from_imports.setdefault(parts[-1], set()).update(names)
+                self.imports.add(parts[-1])
         self.generic_visit(node)
 
 
@@ -158,8 +164,13 @@ def test_api_imports_from_ports():
     for api_file in api_files:
         imports, from_imports = extract_imports(api_file)
 
-        # Check that ports is imported
-        if "ports" not in imports and "ports" not in from_imports:
+        # Check that ports is imported. Both spellings count:
+        #   from domains.<svc>.ports import X   -> module tail is "ports"
+        #   from domains.<svc> import ports     -> "ports" is an imported name
+        uses_ports = "ports" in imports or "ports" in from_imports or any(
+            "ports" in names for names in from_imports.values()
+        )
+        if not uses_ports:
             violations.append(
                 f"{api_file.relative_to(DOMAINS_DIR.parent.parent)}: "
                 f"must import from 'ports' (missing ports import)"

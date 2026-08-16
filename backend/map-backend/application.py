@@ -26,7 +26,8 @@ from config import get_config
 from db.connection import close_pool, create_pool, get_pool
 from domains.activities_service.api import router as activities_router
 from domains.activities_service.infra import get_activities_conn as activities_conn_impl
-from domains.activities_service.ports import set_activities_conn_provider
+from domains.activities_service.infra import upload_thumbnail as thumbnail_upload_impl
+from domains.activities_service.ports import set_activities_conn_provider, set_thumbnail_uploader
 from domains.elevation_dem_service.api import router as elevation_dem_router
 from domains.elevation_dem_service.infra import correct_dem_batch
 from domains.elevation_dem_service.ports import set_batch_correct_provider
@@ -57,12 +58,6 @@ def _get_rate_limit_policies() -> list[dict]:
             "window_seconds": 60,
         },
         {
-            "path_pattern": "/api/v1/map/trails/match",
-            "methods": ["POST"],
-            "limit": 20,
-            "window_seconds": 60,
-        },
-        {
             "path_pattern": "/api/v1/map/activities",
             "methods": ["POST"],
             "limit": 30,
@@ -83,6 +78,7 @@ def _get_rate_limit_policies() -> list[dict]:
 
 
 set_activities_conn_provider(activities_conn_impl)
+set_thumbnail_uploader(thumbnail_upload_impl)
 set_trails_conn_provider(trails_conn_impl)
 set_batch_correct_provider(correct_dem_batch)
 set_sync_runner_provider(sync_runner_impl)

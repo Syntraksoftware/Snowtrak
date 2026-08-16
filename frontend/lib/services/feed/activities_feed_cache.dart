@@ -1,5 +1,5 @@
-import 'package:syntrak/models/activity.dart';
-import 'package:syntrak/services/feed/feed_cache_store.dart';
+import 'package:snowtrak/models/activity.dart';
+import 'package:snowtrak/services/feed/feed_cache_store.dart';
 
 class ActivitiesFeedCache {
   ActivitiesFeedCache({FeedCacheStore? store})

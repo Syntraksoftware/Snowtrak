@@ -1,4 +1,4 @@
-import 'package:syntrak/models/post.dart';
+import 'package:snowtrak/models/post.dart';
 
 /// Serializes community [Post] models for on-device feed cache storage.
 abstract final class PostCacheCodec {

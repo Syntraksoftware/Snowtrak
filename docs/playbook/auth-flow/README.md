@@ -100,7 +100,7 @@ static String _firstNonEmpty(String? v1, String? v2, String fallback) {
 ```
 - v1 here is assumed to be a temp/ dev url
 - no suddenc changes 
-- if we have setup nothing, use default: https://main.syntrak.app
+- if we have setup nothing, use default: https://main.syntrak.io
 
 - on every request, if `authtokenstore` has a token, sets `authorization: bearer<access_token>`
 

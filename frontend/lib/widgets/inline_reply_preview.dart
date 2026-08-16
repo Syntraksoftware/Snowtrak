@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/models/post.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/models/post.dart';
 
 /// Threads-style reply teaser: stacked avatars + engagement summary.
 class InlineReplyPreview extends StatelessWidget {
@@ -51,8 +51,8 @@ class InlineReplyPreview extends StatelessWidget {
             Expanded(
               child: Text(
                 summary,
-                style: SyntrakTypography.bodySmall.copyWith(
-                  color: SyntrakColors.textSecondary,
+                style: SnowtrakTypography.bodySmall.copyWith(
+                  color: SnowtrakColors.textSecondary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -79,18 +79,18 @@ class _MiniAvatar extends StatelessWidget {
       height: 22,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: SyntrakColors.surface,
-        border: Border.all(color: SyntrakColors.divider, width: 1.5),
+        color: SnowtrakColors.surface,
+        border: Border.all(color: SnowtrakColors.divider, width: 1.5),
       ),
       child: CircleAvatar(
         radius: 9,
-        backgroundColor: SyntrakColors.primary.withValues(alpha: 0.12),
+        backgroundColor: SnowtrakColors.primary.withValues(alpha: 0.12),
         child: Text(
           initial,
-          style: SyntrakTypography.labelSmall.copyWith(
+          style: SnowtrakTypography.labelSmall.copyWith(
             fontSize: 9,
             fontWeight: FontWeight.w700,
-            color: SyntrakColors.primary,
+            color: SnowtrakColors.primary,
           ),
         ),
       ),

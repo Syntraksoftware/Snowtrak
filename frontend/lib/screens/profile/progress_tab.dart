@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/providers/activity_provider.dart';
-import 'package:syntrak/screens/profile/widgets/progress/progress_activity_calendar.dart';
-import 'package:syntrak/screens/profile/widgets/progress/progress_insight_cards.dart';
-import 'package:syntrak/screens/profile/widgets/progress/progress_streaks_banner.dart';
-import 'package:syntrak/screens/profile/widgets/progress/progress_weekly_overview.dart';
-import 'package:syntrak/widgets/skeleton.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/providers/activity_provider.dart';
+import 'package:snowtrak/screens/profile/widgets/progress/progress_activity_calendar.dart';
+import 'package:snowtrak/screens/profile/widgets/progress/progress_insight_cards.dart';
+import 'package:snowtrak/screens/profile/widgets/progress/progress_streaks_banner.dart';
+import 'package:snowtrak/screens/profile/widgets/progress/progress_weekly_overview.dart';
+import 'package:snowtrak/widgets/skeleton.dart';
 
 class ProgressTab extends StatelessWidget {
   const ProgressTab({super.key});
@@ -19,9 +19,9 @@ class ProgressTab extends StatelessWidget {
 
     return RefreshIndicator(
       onRefresh: () => provider.loadActivities(refresh: true, forceNetwork: true),
-      color: SyntrakColors.primary,
+      color: SnowtrakColors.primary,
       child: ColoredBox(
-        color: SyntrakColors.surface,
+        color: SnowtrakColors.surface,
         child: provider.isLoading && stats == null
           ? const SkeletonFeedList()
           : stats == null
@@ -43,7 +43,7 @@ class ProgressTab extends StatelessWidget {
                     },
                     activities: provider.activities,
                   ),
-                  const SizedBox(height: SyntrakSpacing.lg),
+                  const SizedBox(height: SnowtrakSpacing.lg),
                   ProgressInsightCards(
                     bestEfforts: stats.bestEfforts,
                     goals: {
@@ -70,7 +70,7 @@ class ProgressTab extends StatelessWidget {
                     },
                   ),
                   ProgressActivityCalendar(activityDays: stats.activityDays),
-                  const SizedBox(height: SyntrakSpacing.xl),
+                  const SizedBox(height: SnowtrakSpacing.xl),
                 ],
               ),
           ),
@@ -97,20 +97,20 @@ class _EmptyProgressState extends StatelessWidget {
           const Icon(
             Icons.downhill_skiing,
             size: 56,
-            color: SyntrakColors.textTertiary,
+            color: SnowtrakColors.textTertiary,
           ),
-          const SizedBox(height: SyntrakSpacing.md),
+          const SizedBox(height: SnowtrakSpacing.md),
           Text(
             'No activities yet',
-            style: SyntrakTypography.headlineSmall.copyWith(
-              color: SyntrakColors.textPrimary,
+            style: SnowtrakTypography.headlineSmall.copyWith(
+              color: SnowtrakColors.textPrimary,
             ),
           ),
-          const SizedBox(height: SyntrakSpacing.xs),
+          const SizedBox(height: SnowtrakSpacing.xs),
           Text(
             'Record your first run to see your progress here.',
-            style: SyntrakTypography.bodyMedium.copyWith(
-              color: SyntrakColors.textSecondary,
+            style: SnowtrakTypography.bodyMedium.copyWith(
+              color: SnowtrakColors.textSecondary,
             ),
             textAlign: TextAlign.center,
           ),

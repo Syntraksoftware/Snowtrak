@@ -1,6 +1,6 @@
 /// Mock classes for testing.
-import 'package:syntrak/services/storage_service.dart';
-import 'package:syntrak/services/location_service.dart';
+import 'package:snowtrak/services/storage_service.dart';
+import 'package:snowtrak/services/location_service.dart';
 
 /// Mock StorageService for testing
 class MockStorageService extends StorageService {

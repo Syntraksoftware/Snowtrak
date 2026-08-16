@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/models/location.dart';
+import 'package:snowtrak/models/location.dart';
 
 /// Draws a polyline of [locations] into the canvas bounds (normalized lat/lng).
 class ActivityRoutePreviewPainter extends CustomPainter {

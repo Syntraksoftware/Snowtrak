@@ -1,5 +1,5 @@
 import 'package:geolocator/geolocator.dart';
-import 'package:syntrak/models/location.dart';
+import 'package:snowtrak/models/location.dart';
 
 /// Service for calculating route metrics from GPS locations
 /// 

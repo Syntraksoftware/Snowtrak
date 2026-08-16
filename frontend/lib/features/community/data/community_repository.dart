@@ -1,5 +1,5 @@
 import 'package:image_picker/image_picker.dart';
-import 'package:syntrak/services/apis/community_api.dart';
+import 'package:snowtrak/services/apis/community_api.dart';
 
 class CommunityRepository {
   CommunityRepository(this._api);

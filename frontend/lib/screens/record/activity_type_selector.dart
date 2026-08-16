@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/activity_helpers.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/models/activity.dart';
+import 'package:snowtrak/core/activity_helpers.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/models/activity.dart';
 
 /// Compact half-screen modal picker. Returns the chosen [ActivityType] or null.
 Future<ActivityType?> showActivityTypePicker(BuildContext context) {
@@ -55,8 +55,8 @@ class _ActivityTypePicker extends StatelessWidget {
           const SizedBox(height: 20),
           Text(
             'Select Activity',
-            style: SyntrakTypography.headlineSmall.copyWith(
-              color: SyntrakColors.textPrimary,
+            style: SnowtrakTypography.headlineSmall.copyWith(
+              color: SnowtrakColors.textPrimary,
             ),
           ),
           const SizedBox(height: 16),
@@ -94,9 +94,9 @@ class _TypeTile extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: SyntrakColors.surfaceVariant,
+          color: SnowtrakColors.surfaceVariant,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: SyntrakColors.divider),
+          border: Border.all(color: SnowtrakColors.divider),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -113,8 +113,8 @@ class _TypeTile extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               type.displayName,
-              style: SyntrakTypography.labelMedium.copyWith(
-                color: SyntrakColors.textPrimary,
+              style: SnowtrakTypography.labelMedium.copyWith(
+                color: SnowtrakColors.textPrimary,
               ),
               textAlign: TextAlign.center,
             ),

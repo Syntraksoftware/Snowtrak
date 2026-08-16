@@ -1,7 +1,7 @@
 API standardization
 ====================
 
-Syntrak backends expose a single canonical **`/api/v1/*`** contract. Legacy paths have been removed.
+Snowtrak backends expose a single canonical **`/api/v1/*`** contract. Legacy paths have been removed.
 
 ---
 
@@ -19,7 +19,6 @@ Map routes:
 | Route | Method | Purpose |
 |-------|--------|---------|
 | `/api/v1/map/elevation/correct` | POST | Copernicus DEM elevation correction |
-| `/api/v1/map/trails/match` | POST | GPS track → trail segments |
 | `/api/v1/map/trails/resort` | GET | Resort trail GeoJSON |
 | `/api/v1/map/activities` | POST/GET | Map activity persistence |
 | `/api/v1/map/activities/{id}` | GET/PUT/DELETE | Single map activity |
@@ -67,7 +66,7 @@ Map API base URL includes the v1 prefix (`frontend/lib/core/config/app_config.da
 http://localhost:5200/api/v1/map   # dev
 ```
 
-Engine clients use relative paths (`/elevation/correct`, `/trails/match`, …) because the base URL already carries `/api/v1/map`.
+Engine clients use relative paths (`/elevation/correct`, `/trails/resort`, …) because the base URL already carries `/api/v1/map`.
 
 ---
 

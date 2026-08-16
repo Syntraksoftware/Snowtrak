@@ -1,7 +1,7 @@
-import 'package:syntrak/models/weather.dart';
-import 'package:syntrak/services/location_service.dart';
-import 'package:syntrak/services/weather_cache.dart';
-import 'package:syntrak/services/weather_service.dart';
+import 'package:snowtrak/models/weather.dart';
+import 'package:snowtrak/services/location_service.dart';
+import 'package:snowtrak/services/weather_cache.dart';
+import 'package:snowtrak/services/weather_service.dart';
 
 class ActivitiesContextRepository {
   final WeatherService _weatherService;

@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:syntrak/services/apis/community_api_helpers.dart';
+import 'package:snowtrak/services/apis/community_api_helpers.dart';
 
 class CommunityApi {
   CommunityApi({required Dio dio}) : _dio = dio;

@@ -1,6 +1,6 @@
-import 'package:syntrak/models/activity.dart';
-import 'package:syntrak/models/user_stats.dart';
-import 'package:syntrak/services/apis/activities_api.dart';
+import 'package:snowtrak/models/activity.dart';
+import 'package:snowtrak/models/user_stats.dart';
+import 'package:snowtrak/services/apis/activities_api.dart';
 
 class ActivitiesRepository {
   ActivitiesRepository(this._api);

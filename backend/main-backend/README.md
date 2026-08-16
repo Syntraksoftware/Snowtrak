@@ -1,4 +1,4 @@
-# Syntrak Auth API
+# Snowtrak Auth API
 
 FastAPI backend for authentication with Supabase integration. Supports persistent storage with automatic fallback to in-memory storage for development.
 

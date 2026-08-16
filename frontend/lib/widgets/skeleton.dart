@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
+import 'package:snowtrak/core/theme.dart';
 
 // Reusable skeleton loading placeholders. Drop in wherever a CircularProgressIndicator
 // was used during initial API fetch. One AnimationController per list via _SkeletonShimmer.
@@ -73,10 +73,10 @@ class _SkeletonFeedCard extends StatelessWidget {
       children: [
         Padding(
           padding: EdgeInsets.fromLTRB(
-            SyntrakSpacing.md,
-            SyntrakSpacing.md,
-            SyntrakSpacing.sm,
-            SyntrakSpacing.sm,
+            SnowtrakSpacing.md,
+            SnowtrakSpacing.md,
+            SnowtrakSpacing.sm,
+            SnowtrakSpacing.sm,
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,7 +108,7 @@ class _SkeletonFeedCard extends StatelessWidget {
             ],
           ),
         ),
-        Divider(height: 1, thickness: 1, color: SyntrakColors.divider),
+        Divider(height: 1, thickness: 1, color: SnowtrakColors.divider),
       ],
     );
   }
@@ -120,17 +120,17 @@ class _SkeletonNotificationRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(SyntrakSpacing.md),
+      padding: const EdgeInsets.all(SnowtrakSpacing.md),
       decoration: const BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: SyntrakColors.divider, width: 0.5),
+          bottom: BorderSide(color: SnowtrakColors.divider, width: 0.5),
         ),
       ),
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _SkeletonBox(width: 40, height: 40, radius: 20),
-          SizedBox(width: SyntrakSpacing.md),
+          SizedBox(width: SnowtrakSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,7 +164,7 @@ class _SkeletonBox extends StatelessWidget {
         width: width ?? double.infinity,
         height: height,
         decoration: BoxDecoration(
-          color: SyntrakColors.surfaceVariant,
+          color: SnowtrakColors.surfaceVariant,
           borderRadius: BorderRadius.circular(radius),
         ),
       );

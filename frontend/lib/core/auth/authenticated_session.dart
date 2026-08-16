@@ -1,4 +1,4 @@
-import 'package:syntrak/providers/auth_provider.dart';
+import 'package:snowtrak/providers/auth_provider.dart';
 
 /// Result of [ensureAuthenticatedSession]: token refreshed and session valid,
 /// or a user-facing error message.

@@ -1,1 +1,1 @@
-export 'package:syntrak/models/track_point.dart';
+export 'package:snowtrak/models/track_point.dart';

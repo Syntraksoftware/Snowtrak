@@ -1,6 +1,6 @@
-import 'package:syntrak/models/post.dart';
-import 'package:syntrak/screens/community/mappers/community_author_mapper.dart';
-import 'package:syntrak/screens/community/mappers/community_post_field_parsers.dart';
+import 'package:snowtrak/models/post.dart';
+import 'package:snowtrak/screens/community/mappers/community_author_mapper.dart';
+import 'package:snowtrak/screens/community/mappers/community_post_field_parsers.dart';
 
 class CommunityCommentTreeMapper {
   CommunityCommentTreeMapper._();

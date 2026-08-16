@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/features/activities/data/activities_context_repository.dart';
-import 'package:syntrak/models/weather.dart';
-import 'package:syntrak/providers/activity_provider.dart';
-import 'package:syntrak/providers/auth_provider.dart';
-import 'package:syntrak/screens/activities/activities_screen_controller.dart';
-import 'package:syntrak/screens/activities/widgets/activities_feed_sliver.dart';
-import 'package:syntrak/screens/activities/widgets/activities_header.dart';
-import 'package:syntrak/screens/activities/widgets/introduction_card.dart';
-import 'package:syntrak/screens/activities/widgets/trending_card.dart';
-import 'package:syntrak/screens/activities/widgets/weather_card.dart';
-import 'package:syntrak/screens/home/home_tab_scope.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/features/activities/data/activities_context_repository.dart';
+import 'package:snowtrak/models/weather.dart';
+import 'package:snowtrak/providers/activity_provider.dart';
+import 'package:snowtrak/providers/auth_provider.dart';
+import 'package:snowtrak/screens/activities/activities_screen_controller.dart';
+import 'package:snowtrak/screens/activities/widgets/activities_feed_sliver.dart';
+import 'package:snowtrak/screens/activities/widgets/activities_header.dart';
+import 'package:snowtrak/screens/activities/widgets/introduction_card.dart';
+import 'package:snowtrak/screens/activities/widgets/trending_card.dart';
+import 'package:snowtrak/screens/activities/widgets/weather_card.dart';
+import 'package:snowtrak/screens/home/home_tab_scope.dart';
 
 class ActivitiesScreen extends StatefulWidget {
   const ActivitiesScreen({super.key});
@@ -104,7 +104,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
               onRefresh: () async {
                 await _loadWeather();
               },
-              color: SyntrakColors.primary,
+              color: SnowtrakColors.primary,
               child: CustomScrollView(
                 slivers: [
                   // Custom header with bell and profile

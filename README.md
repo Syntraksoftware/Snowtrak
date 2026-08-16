@@ -4,15 +4,15 @@
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/Syntraksoftware/syntrak-application.git
-cd syntrak-application
+git clone https://github.com/Syntraksoftware/Snowtrak.git
+cd Snowtrak
 ```
 
 ### 2. Backend Setup (One-time)
 The backend uses a **shared Python environment** at the **repository root**: `.venv` (one venv for all four microservices).
 
 ```bash
-# From repository root (syntrak-application/)
+# From repository root (Snowtrak/)
 python3.11 -m venv .venv
 ./.venv/bin/pip install -r backend/requirements.txt
 ```
@@ -118,7 +118,7 @@ docker compose down
 
 If you previously used older compose files with fixed container names, run this once to clear legacy containers:
 ```bash
-docker rm -f syntrak-postgis syntrak-map-backend syntrak-main-backend syntrak-community-backend syntrak-activity-backend 2>/dev/null || true
+docker rm -f snowtrak-postgis snowtrak-map-backend snowtrak-main-backend snowtrak-community-backend snowtrak-activity-backend 2>/dev/null || true
 ```
 
 ## Roadmap — Social & Community Map Features

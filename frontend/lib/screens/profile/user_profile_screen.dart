@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/auth/authenticated_session.dart';
-import 'package:syntrak/core/di/service_locator.dart';
-import 'package:syntrak/core/errors/app_error.dart';
-import 'package:syntrak/core/errors/app_result.dart';
-import 'package:syntrak/core/logging/app_logger.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/services/community_service.dart';
-import 'package:syntrak/models/post.dart';
-import 'package:syntrak/providers/auth_provider.dart';
-import 'package:syntrak/screens/community/community_post_mapper.dart';
-import 'package:syntrak/widgets/profile_header.dart';
-import 'package:syntrak/widgets/message_card.dart';
+import 'package:snowtrak/core/auth/authenticated_session.dart';
+import 'package:snowtrak/core/di/service_locator.dart';
+import 'package:snowtrak/core/errors/app_error.dart';
+import 'package:snowtrak/core/errors/app_result.dart';
+import 'package:snowtrak/core/logging/app_logger.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/services/community_service.dart';
+import 'package:snowtrak/models/post.dart';
+import 'package:snowtrak/providers/auth_provider.dart';
+import 'package:snowtrak/screens/community/community_post_mapper.dart';
+import 'package:snowtrak/widgets/profile_header.dart';
+import 'package:snowtrak/widgets/message_card.dart';
 
 class UserProfileScreen extends StatefulWidget {
   final String? userId; // If null, shows current user's profile
@@ -164,7 +164,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     AppLogger.instance.debug('[UserProfileScreen] Building screen. isLoading: $_isLoading, error: $_error, posts: ${_posts.length}');
     
     return Scaffold(
-      backgroundColor: SyntrakColors.background,
+      backgroundColor: SnowtrakColors.background,
       appBar: AppBar(
         title: const Text('Profile'),
         backgroundColor: Colors.white,
@@ -182,12 +182,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         Text(
                           _error!,
                           textAlign: TextAlign.center,
-                          style: SyntrakTypography.bodyMedium.copyWith(
-                            color: SyntrakColors.error,
+                          style: SnowtrakTypography.bodyMedium.copyWith(
+                            color: SnowtrakColors.error,
                           ),
                         ),
                         if (_errorRetryable) ...[
-                          const SizedBox(height: SyntrakSpacing.md),
+                          const SizedBox(height: SnowtrakSpacing.md),
                           ElevatedButton(
                             onPressed: () => _loadPosts(refresh: true),
                             child: const Text('Retry'),
@@ -206,12 +206,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       if (_posts.isEmpty && !_isLoading)
                         SliverToBoxAdapter(
                           child: Container(
-                            padding: const EdgeInsets.all(SyntrakSpacing.xl),
+                            padding: const EdgeInsets.all(SnowtrakSpacing.xl),
                             child: Center(
                               child: Text(
                                 'No posts yet',
-                                style: SyntrakTypography.bodyLarge.copyWith(
-                                  color: SyntrakColors.textSecondary,
+                                style: SnowtrakTypography.bodyLarge.copyWith(
+                                  color: SnowtrakColors.textSecondary,
                                 ),
                               ),
                             ),
@@ -235,7 +235,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                 // Load more indicator
                                 return const Center(
                                   child: Padding(
-                                    padding: EdgeInsets.all(SyntrakSpacing.md),
+                                    padding: EdgeInsets.all(SnowtrakSpacing.md),
                                     child: CircularProgressIndicator(),
                                   ),
                                 );

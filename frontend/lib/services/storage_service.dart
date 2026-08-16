@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:syntrak/core/logging/app_logger.dart';
+import 'package:snowtrak/core/logging/app_logger.dart';
 
 class StorageService extends ChangeNotifier {
   static const String _secureTokenKey = 'auth_token';

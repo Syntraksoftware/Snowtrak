@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:syntrak/models/segment.dart';
-import 'package:syntrak/models/track_point.dart';
+import 'package:snowtrak/models/segment.dart';
+import 'package:snowtrak/models/track_point.dart';
 
 class GeoJsonBuilder {
   const GeoJsonBuilder();

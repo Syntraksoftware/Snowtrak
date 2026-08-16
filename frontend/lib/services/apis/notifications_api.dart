@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:syntrak/models/notification.dart';
+import 'package:snowtrak/models/notification.dart';
 
 class NotificationsApi {
   NotificationsApi({required Dio dio}) : _dio = dio;

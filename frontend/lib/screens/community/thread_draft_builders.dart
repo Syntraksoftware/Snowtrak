@@ -1,5 +1,5 @@
-import 'package:syntrak/models/post.dart';
-import 'package:syntrak/models/user.dart';
+import 'package:snowtrak/models/post.dart';
+import 'package:snowtrak/models/user.dart';
 
 class CommunityDraftBuilders {
   CommunityDraftBuilders._();

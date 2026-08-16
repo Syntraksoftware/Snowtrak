@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/providers/auth_provider.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/providers/auth_provider.dart';
 
 /// Twitter / Threads-style inline composer at the top of the feed.
 class CompactComposer extends StatefulWidget {
@@ -67,28 +67,28 @@ class _CompactComposerState extends State<CompactComposer> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(
-            SyntrakSpacing.md,
-            SyntrakSpacing.md,
-            SyntrakSpacing.md,
-            SyntrakSpacing.sm,
+            SnowtrakSpacing.md,
+            SnowtrakSpacing.md,
+            SnowtrakSpacing.md,
+            SnowtrakSpacing.sm,
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               CircleAvatar(
                 radius: 20,
-                backgroundColor: SyntrakColors.primary.withValues(alpha: 0.12),
+                backgroundColor: SnowtrakColors.primary.withValues(alpha: 0.12),
                 child: user?.firstName != null
                     ? Text(
                         user!.firstName![0].toUpperCase(),
-                        style: SyntrakTypography.labelMedium.copyWith(
-                          color: SyntrakColors.primary,
+                        style: SnowtrakTypography.labelMedium.copyWith(
+                          color: SnowtrakColors.primary,
                           fontWeight: FontWeight.w700,
                         ),
                       )
                     : const Icon(
                         Icons.person_outline,
-                        color: SyntrakColors.textSecondary,
+                        color: SnowtrakColors.textSecondary,
                         size: 20,
                       ),
               ),
@@ -103,8 +103,8 @@ class _CompactComposerState extends State<CompactComposer> {
                       readOnly: widget.onComposeTap != null,
                       maxLines: _isExpanded ? 4 : 1,
                       maxLength: widget.maxCharacters,
-                      style: SyntrakTypography.bodyLarge.copyWith(
-                        color: SyntrakColors.textPrimary,
+                      style: SnowtrakTypography.bodyLarge.copyWith(
+                        color: SnowtrakColors.textPrimary,
                       ),
                       onTap: () {
                         if (widget.onComposeTap != null) {
@@ -117,8 +117,8 @@ class _CompactComposerState extends State<CompactComposer> {
                       },
                       decoration: InputDecoration(
                         hintText: 'Start a thread…',
-                        hintStyle: SyntrakTypography.bodyLarge.copyWith(
-                          color: SyntrakColors.textTertiary,
+                        hintStyle: SnowtrakTypography.bodyLarge.copyWith(
+                          color: SnowtrakColors.textTertiary,
                         ),
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.zero,
@@ -133,10 +133,10 @@ class _CompactComposerState extends State<CompactComposer> {
                         child: FilledButton(
                           onPressed: canPost ? _handlePost : null,
                           style: FilledButton.styleFrom(
-                            backgroundColor: SyntrakColors.primary,
+                            backgroundColor: SnowtrakColors.primary,
                             foregroundColor: Colors.white,
                             disabledBackgroundColor:
-                                SyntrakColors.primary.withValues(alpha: 0.35),
+                                SnowtrakColors.primary.withValues(alpha: 0.35),
                             padding: const EdgeInsets.symmetric(
                               horizontal: 18,
                               vertical: 8,
@@ -145,13 +145,13 @@ class _CompactComposerState extends State<CompactComposer> {
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             shape: RoundedRectangleBorder(
                               borderRadius:
-                                  BorderRadius.circular(SyntrakRadius.round),
+                                  BorderRadius.circular(SnowtrakRadius.round),
                             ),
                             elevation: 0,
                           ),
                           child: Text(
                             'Post',
-                            style: SyntrakTypography.labelMedium.copyWith(
+                            style: SnowtrakTypography.labelMedium.copyWith(
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
                             ),
@@ -165,7 +165,7 @@ class _CompactComposerState extends State<CompactComposer> {
             ],
           ),
         ),
-        const Divider(height: 1, thickness: 1, color: SyntrakColors.divider),
+        const Divider(height: 1, thickness: 1, color: SnowtrakColors.divider),
       ],
     );
   }

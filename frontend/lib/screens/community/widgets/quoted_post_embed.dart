@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/models/post.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/models/post.dart';
 
 /// Threads-style quoted post embed.
 class QuotedPostEmbed extends StatelessWidget {
@@ -17,8 +17,8 @@ class QuotedPostEmbed extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(SyntrakRadius.md),
-        border: Border.all(color: SyntrakColors.divider),
+        borderRadius: BorderRadius.circular(SnowtrakRadius.md),
+        border: Border.all(color: SnowtrakColors.divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -27,12 +27,12 @@ class QuotedPostEmbed extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 10,
-                backgroundColor: SyntrakColors.primary.withValues(alpha: 0.12),
+                backgroundColor: SnowtrakColors.primary.withValues(alpha: 0.12),
                 child: Text(
                   initial,
-                  style: SyntrakTypography.labelSmall.copyWith(
+                  style: SnowtrakTypography.labelSmall.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: SyntrakColors.primary,
+                    color: SnowtrakColors.primary,
                     fontSize: 9,
                   ),
                 ),
@@ -40,15 +40,15 @@ class QuotedPostEmbed extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 post.author.username,
-                style: SyntrakTypography.labelMedium.copyWith(
+                style: SnowtrakTypography.labelMedium.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: SyntrakColors.textPrimary,
+                  color: SnowtrakColors.textPrimary,
                 ),
               ),
               Text(
                 '  ·  ${post.timestampLabel}',
-                style: SyntrakTypography.bodySmall.copyWith(
-                  color: SyntrakColors.textTertiary,
+                style: SnowtrakTypography.bodySmall.copyWith(
+                  color: SnowtrakColors.textTertiary,
                 ),
               ),
             ],
@@ -59,8 +59,8 @@ class QuotedPostEmbed extends StatelessWidget {
               post.text,
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
-              style: SyntrakTypography.bodyMedium.copyWith(
-                color: SyntrakColors.textPrimary,
+              style: SnowtrakTypography.bodyMedium.copyWith(
+                color: SnowtrakColors.textPrimary,
                 height: 1.35,
               ),
             ),

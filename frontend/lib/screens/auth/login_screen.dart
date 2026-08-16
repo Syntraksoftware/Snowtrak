@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/providers/auth_provider.dart';
-import 'package:syntrak/screens/auth/auth_feedback.dart';
-import 'package:syntrak/screens/auth/register_screen.dart';
-import 'package:syntrak/ui/liquid/liquid.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/providers/auth_provider.dart';
+import 'package:snowtrak/screens/auth/auth_feedback.dart';
+import 'package:snowtrak/screens/auth/register_screen.dart';
+import 'package:snowtrak/ui/liquid/liquid.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -97,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: SyntrakSpacing.lg),
+                const SizedBox(height: SnowtrakSpacing.lg),
                 AuthLabeledField(
                   label: 'Password',
                   controller: _passwordController,
@@ -114,25 +114,25 @@ class _LoginScreenState extends State<LoginScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: SyntrakSpacing.xl),
+                const SizedBox(height: SnowtrakSpacing.xl),
                 AuthPrimaryButton(
                   label: 'Log In',
                   isLoading: _isLoading,
                   onPressed: _handleLogin,
                 ),
-                const SizedBox(height: SyntrakSpacing.xl),
+                const SizedBox(height: SnowtrakSpacing.xl),
                 const AuthOrDivider(),
-                const SizedBox(height: SyntrakSpacing.xl),
+                const SizedBox(height: SnowtrakSpacing.xl),
                 AuthSocialButton(
                   provider: AuthSocialProvider.google,
                   onPressed: () => _showComingSoon('Google'),
                 ),
-                const SizedBox(height: SyntrakSpacing.md),
+                const SizedBox(height: SnowtrakSpacing.md),
                 AuthSocialButton(
                   provider: AuthSocialProvider.apple,
                   onPressed: () => _showComingSoon('Apple'),
                 ),
-                const SizedBox(height: SyntrakSpacing.xl),
+                const SizedBox(height: SnowtrakSpacing.xl),
                 AuthAccountLink(
                   prompt: "Don't have an account?",
                   actionLabel: 'Sign up',

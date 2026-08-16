@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/providers/auth_provider.dart';
-import 'package:syntrak/screens/settings/notifications_settings_screen.dart';
-import 'package:syntrak/screens/settings/privacy_settings_screen.dart';
-import 'package:syntrak/screens/settings/account_settings_screen.dart';
-import 'package:syntrak/screens/settings/activity_settings_screen.dart';
-import 'package:syntrak/screens/settings/display_settings_screen.dart';
-import 'package:syntrak/screens/settings/data_storage_screen.dart';
-import 'package:syntrak/screens/settings/help_support_screen.dart';
-import 'package:syntrak/screens/settings/widgets/settings_ios_widgets.dart';
+import 'package:snowtrak/providers/auth_provider.dart';
+import 'package:snowtrak/screens/settings/notifications_settings_screen.dart';
+import 'package:snowtrak/screens/settings/privacy_settings_screen.dart';
+import 'package:snowtrak/screens/settings/account_settings_screen.dart';
+import 'package:snowtrak/screens/settings/activity_settings_screen.dart';
+import 'package:snowtrak/screens/settings/display_settings_screen.dart';
+import 'package:snowtrak/screens/settings/data_storage_screen.dart';
+import 'package:snowtrak/screens/settings/help_support_screen.dart';
+import 'package:snowtrak/screens/settings/widgets/settings_ios_widgets.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -130,7 +130,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               SettingsIosRow(
                 icon: Icons.info,
                 iconBackground: const Color(0xFF8E8E93), // iOS Gray
-                label: 'About Syntrak',
+                label: 'About Snowtrak',
                 subtitle: 'Version 1.0.0',
                 onTap: () => _showAboutDialog(),
               ),
@@ -168,7 +168,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Footer
           Center(
             child: Text(
-              'Syntrak v1.0.0 (Build 1)',
+              'Snowtrak v1.0.0 (Build 1)',
               style: TextStyle(
                 fontSize: 13,
                 color: Colors.grey[500],
@@ -193,7 +193,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: const Text('About Syntrak'),
+        title: const Text('About Snowtrak'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,

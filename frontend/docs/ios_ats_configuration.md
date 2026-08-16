@@ -2,7 +2,7 @@
 
 ## Current Policy
 
-By default, Syntrak enforces Apple's App Transport Security (ATS):
+By default, Snowtrak enforces Apple's App Transport Security (ATS):
 - **HTTPS only** for remote API calls
 - **No local network** access allowed by default
 - Secure, production-ready settings

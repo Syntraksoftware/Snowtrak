@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/di/service_locator.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/features/activities/data/activities_repository.dart';
-import 'package:syntrak/models/activity.dart';
-import 'package:syntrak/providers/auth_provider.dart';
-import 'package:syntrak/screens/profile/widgets/profile_activity_list_card.dart';
-import 'package:syntrak/screens/profile/widgets/profile_activities_search_bar.dart';
+import 'package:snowtrak/core/di/service_locator.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/features/activities/data/activities_repository.dart';
+import 'package:snowtrak/models/activity.dart';
+import 'package:snowtrak/providers/auth_provider.dart';
+import 'package:snowtrak/screens/profile/widgets/profile_activity_list_card.dart';
+import 'package:snowtrak/screens/profile/widgets/profile_activities_search_bar.dart';
 
 class ActivitiesTab extends StatefulWidget {
   const ActivitiesTab({
@@ -98,7 +98,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
       pinned: true,
       floating: false,
       automaticallyImplyLeading: false,
-      backgroundColor: SyntrakColors.surface,
+      backgroundColor: SnowtrakColors.surface,
       surfaceTintColor: Colors.transparent,
       elevation: innerBoxIsScrolled ? 2 : 0,
       shadowColor: Colors.black26,
@@ -140,20 +140,20 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
               Icon(
                 Icons.search_off,
                 size: 64,
-                color: SyntrakColors.textTertiary,
+                color: SnowtrakColors.textTertiary,
               ),
-              const SizedBox(height: SyntrakSpacing.md),
+              const SizedBox(height: SnowtrakSpacing.md),
               Text(
                 'No activities found',
-                style: SyntrakTypography.headlineSmall.copyWith(
-                  color: SyntrakColors.textSecondary,
+                style: SnowtrakTypography.headlineSmall.copyWith(
+                  color: SnowtrakColors.textSecondary,
                 ),
               ),
-              const SizedBox(height: SyntrakSpacing.sm),
+              const SizedBox(height: SnowtrakSpacing.sm),
               Text(
                 'Try a different search term',
-                style: SyntrakTypography.bodyMedium.copyWith(
-                  color: SyntrakColors.textTertiary,
+                style: SnowtrakTypography.bodyMedium.copyWith(
+                  color: SnowtrakColors.textTertiary,
                 ),
               ),
             ],
@@ -169,27 +169,27 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
         ],
         body: Center(
           child: Padding(
-            padding: const EdgeInsets.all(SyntrakSpacing.xl),
+            padding: const EdgeInsets.all(SnowtrakSpacing.xl),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
                   Icons.downhill_skiing,
                   size: 80,
-                  color: SyntrakColors.textTertiary,
+                  color: SnowtrakColors.textTertiary,
                 ),
-                const SizedBox(height: SyntrakSpacing.lg),
+                const SizedBox(height: SnowtrakSpacing.lg),
                 Text(
                   'No activities yet',
-                  style: SyntrakTypography.headlineMedium.copyWith(
-                    color: SyntrakColors.textSecondary,
+                  style: SnowtrakTypography.headlineMedium.copyWith(
+                    color: SnowtrakColors.textSecondary,
                   ),
                 ),
-                const SizedBox(height: SyntrakSpacing.sm),
+                const SizedBox(height: SnowtrakSpacing.sm),
                 Text(
                   'Start recording your first skiing activity!',
-                  style: SyntrakTypography.bodyMedium.copyWith(
-                    color: SyntrakColors.textTertiary,
+                  style: SnowtrakTypography.bodyMedium.copyWith(
+                    color: SnowtrakColors.textTertiary,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -206,9 +206,9 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
       ],
       body: RefreshIndicator(
         onRefresh: _loadActivities,
-        color: SyntrakColors.primary,
+        color: SnowtrakColors.primary,
         child: ListView.builder(
-          padding: const EdgeInsets.all(SyntrakSpacing.md),
+          padding: const EdgeInsets.all(SnowtrakSpacing.md),
           itemCount: _filteredActivities.length,
           itemBuilder: (context, index) {
             final activity = _filteredActivities[index];
@@ -216,7 +216,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
             return Padding(
               padding: EdgeInsets.only(
                 bottom: index < _filteredActivities.length - 1
-                    ? SyntrakSpacing.md
+                    ? SnowtrakSpacing.md
                     : 0,
               ),
               child: ProfileActivityListCard(

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/widgets/feed_action_bar.dart';
+import 'package:snowtrak/widgets/feed_action_bar.dart';
 
 /// Back-compat wrapper — community cards use [FeedActionBar] directly.
 class MessageActions extends StatelessWidget {

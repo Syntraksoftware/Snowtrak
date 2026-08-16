@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/ui/liquid/auth_legal_footer.dart';
-import 'package:syntrak/ui/liquid/snowtrak_auth_theme.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/ui/liquid/auth_legal_footer.dart';
+import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 /// Strava-style auth shell: white background, headline, optional close.
 class AuthPageScaffold extends StatelessWidget {
@@ -21,16 +21,16 @@ class AuthPageScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SyntrakColors.surface,
+      backgroundColor: SnowtrakColors.surface,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                SyntrakSpacing.lg,
-                SyntrakSpacing.md,
-                SyntrakSpacing.md,
+                SnowtrakSpacing.lg,
+                SnowtrakSpacing.md,
+                SnowtrakSpacing.md,
                 0,
               ),
               child: Row(
@@ -43,7 +43,7 @@ class AuthPageScaffold extends StatelessWidget {
                     IconButton(
                       onPressed: onClose,
                       style: IconButton.styleFrom(
-                        backgroundColor: SyntrakColors.surfaceVariant,
+                        backgroundColor: SnowtrakColors.surfaceVariant,
                         shape: const CircleBorder(),
                       ),
                       icon: const Icon(Icons.close, size: 20),
@@ -54,20 +54,20 @@ class AuthPageScaffold extends StatelessWidget {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(
-                  SyntrakSpacing.lg,
-                  SyntrakSpacing.xl,
-                  SyntrakSpacing.lg,
-                  SyntrakSpacing.lg,
+                  SnowtrakSpacing.lg,
+                  SnowtrakSpacing.xl,
+                  SnowtrakSpacing.lg,
+                  SnowtrakSpacing.lg,
                 ),
                 child: body,
               ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                SyntrakSpacing.lg,
+                SnowtrakSpacing.lg,
                 0,
-                SyntrakSpacing.lg,
-                SyntrakSpacing.lg,
+                SnowtrakSpacing.lg,
+                SnowtrakSpacing.lg,
               ),
               child: footer ?? const AuthLegalFooter(),
             ),

@@ -1,7 +1,7 @@
 import 'package:image_picker/image_picker.dart';
-import 'package:syntrak/core/errors/app_error.dart';
-import 'package:syntrak/core/errors/app_result.dart';
-import 'package:syntrak/features/community/data/community_repository.dart';
+import 'package:snowtrak/core/errors/app_error.dart';
+import 'package:snowtrak/core/errors/app_result.dart';
+import 'package:snowtrak/features/community/data/community_repository.dart';
 
 class CommunityService {
   CommunityService({required CommunityRepository communityRepository})

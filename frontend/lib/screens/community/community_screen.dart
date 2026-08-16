@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/screens/community/threads_tab.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/screens/community/threads_tab.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
@@ -13,12 +13,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SyntrakColors.background,
+      backgroundColor: SnowtrakColors.background,
       appBar: AppBar(
         title: const Text('Community'),
         elevation: 0,
-        backgroundColor: SyntrakColors.surface,
-        foregroundColor: SyntrakColors.textPrimary,
+        backgroundColor: SnowtrakColors.surface,
+        foregroundColor: SnowtrakColors.textPrimary,
       ),
       body: const ThreadsTab(),
     );

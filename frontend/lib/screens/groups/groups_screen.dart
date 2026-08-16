@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/screens/groups/active_tab.dart';
-import 'package:syntrak/screens/groups/challenges_tab.dart';
-import 'package:syntrak/screens/groups/clubs_tab.dart';
-import 'package:syntrak/screens/groups/trails_tab.dart';
-import 'package:syntrak/screens/groups/widgets/groups_tab_bar.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/screens/groups/active_tab.dart';
+import 'package:snowtrak/screens/groups/challenges_tab.dart';
+import 'package:snowtrak/screens/groups/clubs_tab.dart';
+import 'package:snowtrak/screens/groups/trails_tab.dart';
+import 'package:snowtrak/screens/groups/widgets/groups_tab_bar.dart';
 
 class GroupsScreen extends StatefulWidget {
   const GroupsScreen({super.key});
@@ -32,15 +32,15 @@ class _GroupsScreenState extends State<GroupsScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SyntrakColors.background,
+      backgroundColor: SnowtrakColors.background,
       appBar: AppBar(
         title: const Text('Groups'),
         centerTitle: false,
-        titleSpacing: SyntrakSpacing.md,
+        titleSpacing: SnowtrakSpacing.md,
         elevation: 0,
         scrolledUnderElevation: 0,
-        backgroundColor: SyntrakColors.surface,
-        foregroundColor: SyntrakColors.textPrimary,
+        backgroundColor: SnowtrakColors.surface,
+        foregroundColor: SnowtrakColors.textPrimary,
         actions: [
           IconButton(
             icon: const Icon(Icons.search_rounded),

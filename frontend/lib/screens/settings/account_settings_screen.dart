@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/providers/auth_provider.dart';
-import 'package:syntrak/screens/settings/widgets/settings_account_widgets.dart';
-import 'package:syntrak/screens/settings/widgets/settings_ios_widgets.dart';
+import 'package:snowtrak/providers/auth_provider.dart';
+import 'package:snowtrak/screens/settings/widgets/settings_account_widgets.dart';
+import 'package:snowtrak/screens/settings/widgets/settings_ios_widgets.dart';
 
 class AccountSettingsScreen extends StatefulWidget {
   const AccountSettingsScreen({super.key});

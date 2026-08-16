@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/models/post.dart';
-import 'package:syntrak/screens/community/widgets/quoted_post_embed.dart';
-import 'package:syntrak/widgets/feed_action_bar.dart';
-import 'package:syntrak/widgets/inline_reply_preview.dart';
-import 'package:syntrak/widgets/post_media_gallery.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/models/post.dart';
+import 'package:snowtrak/screens/community/widgets/quoted_post_embed.dart';
+import 'package:snowtrak/widgets/feed_action_bar.dart';
+import 'package:snowtrak/widgets/inline_reply_preview.dart';
+import 'package:snowtrak/widgets/post_media_gallery.dart';
 
 class MessageCard extends StatefulWidget {
   const MessageCard({
@@ -169,10 +169,10 @@ class _ThreadsPostCard extends StatelessWidget {
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
-              SyntrakSpacing.md,
-              SyntrakSpacing.md,
-              SyntrakSpacing.sm,
-              SyntrakSpacing.sm,
+              SnowtrakSpacing.md,
+              SnowtrakSpacing.md,
+              SnowtrakSpacing.sm,
+              SnowtrakSpacing.sm,
             ),
             child: IntrinsicHeight(
               child: Row(
@@ -197,7 +197,7 @@ class _ThreadsPostCard extends StatelessWidget {
                           const SizedBox(height: 10),
                           ClipRRect(
                             borderRadius:
-                                BorderRadius.circular(SyntrakRadius.md),
+                                BorderRadius.circular(SnowtrakRadius.md),
                             child: PostMediaGallery(
                               urls: post.media!,
                               borderRadius: BorderRadius.zero,
@@ -228,7 +228,7 @@ class _ThreadsPostCard extends StatelessWidget {
             ),
           ),
         ),
-        const Divider(height: 1, thickness: 1, color: SyntrakColors.divider),
+        const Divider(height: 1, thickness: 1, color: SnowtrakColors.divider),
       ],
     );
   }
@@ -268,7 +268,7 @@ class _ThreadReplyRow extends StatelessWidget {
                 if (hasMedia) ...[
                   const SizedBox(height: 8),
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(SyntrakRadius.sm),
+                    borderRadius: BorderRadius.circular(SnowtrakRadius.sm),
                     child: PostMediaGallery(
                       urls: post.media!,
                       borderRadius: BorderRadius.zero,
@@ -308,7 +308,7 @@ class _AvatarColumn extends StatelessWidget {
               child: Container(
                 width: 2,
                 margin: const EdgeInsets.only(top: 6),
-                color: SyntrakColors.divider,
+                color: SnowtrakColors.divider,
               ),
             ),
         ],
@@ -338,11 +338,11 @@ class _PostAvatar extends StatelessWidget {
       onTap: onTap,
       child: CircleAvatar(
         radius: radius,
-        backgroundColor: SyntrakColors.primary.withValues(alpha: 0.12),
+        backgroundColor: SnowtrakColors.primary.withValues(alpha: 0.12),
         child: Text(
           initial,
-          style: SyntrakTypography.labelMedium.copyWith(
-            color: SyntrakColors.primary,
+          style: SnowtrakTypography.labelMedium.copyWith(
+            color: SnowtrakColors.primary,
             fontWeight: FontWeight.w700,
             fontSize: radius * 0.55,
           ),
@@ -370,25 +370,25 @@ class _ThreadsMetaRow extends StatelessWidget {
                 child: Text(
                   post.author.username,
                   style: (compact
-                          ? SyntrakTypography.labelMedium
-                          : SyntrakTypography.labelLarge)
+                          ? SnowtrakTypography.labelMedium
+                          : SnowtrakTypography.labelLarge)
                       .copyWith(
                     fontWeight: FontWeight.w700,
-                    color: SyntrakColors.textPrimary,
+                    color: SnowtrakColors.textPrimary,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               Text(
                 '  ·  ',
-                style: SyntrakTypography.bodySmall.copyWith(
-                  color: SyntrakColors.textTertiary,
+                style: SnowtrakTypography.bodySmall.copyWith(
+                  color: SnowtrakColors.textTertiary,
                 ),
               ),
               Text(
                 post.timestampLabel,
-                style: SyntrakTypography.bodySmall.copyWith(
-                  color: SyntrakColors.textTertiary,
+                style: SnowtrakTypography.bodySmall.copyWith(
+                  color: SnowtrakColors.textTertiary,
                 ),
               ),
             ],
@@ -403,7 +403,7 @@ class _ThreadsMetaRow extends StatelessWidget {
             onPressed: () {},
             icon: const Icon(
               Icons.more_horiz_rounded,
-              color: SyntrakColors.textSecondary,
+              color: SnowtrakColors.textSecondary,
             ),
           ),
       ],
@@ -422,10 +422,10 @@ class _ThreadBodyText extends StatelessWidget {
     return Text(
       text,
       style: (compact
-              ? SyntrakTypography.bodyMedium
-              : SyntrakTypography.bodyLarge)
+              ? SnowtrakTypography.bodyMedium
+              : SnowtrakTypography.bodyLarge)
           .copyWith(
-        color: SyntrakColors.textPrimary,
+        color: SnowtrakColors.textPrimary,
         height: 1.4,
         letterSpacing: 0.1,
       ),
