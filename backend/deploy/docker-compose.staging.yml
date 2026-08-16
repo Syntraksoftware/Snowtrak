@@ -1,4 +1,15 @@
 services:
+  # Not published on any host port: the backends reach it as redis://redis:6379/0
+  # over the Compose network. It has no password, so it must never be published.
+  # appendonly keeps the activity-pipeline stream across restarts -- without it a
+  # container restart silently drops whatever was still in flight.
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
   main-backend:
     build:
       context: ../
@@ -10,9 +21,13 @@ services:
       FASTAPI_ENV: staging
       HOST: 0.0.0.0
       PORT: 8080
+      RATE_LIMIT_REDIS_URL: redis://redis:6379/0
+      WEATHER_CACHE_REDIS_URL: redis://redis:6379/0
     ports:
       - "127.0.0.1:8080:8080"
     restart: unless-stopped
+    depends_on:
+      - redis
 
   community-backend:
     build:
@@ -25,9 +40,13 @@ services:
       FASTAPI_ENV: staging
       HOST: 0.0.0.0
       PORT: 5001
+      RATE_LIMIT_REDIS_URL: redis://redis:6379/0
+      CACHE_REDIS_URL: redis://redis:6379/0
     ports:
       - "127.0.0.1:15001:5001"
     restart: unless-stopped
+    depends_on:
+      - redis
 
   activity-backend:
     build:
@@ -40,6 +59,12 @@ services:
       FASTAPI_ENV: staging
       HOST: 0.0.0.0
       PORT: 5100
+      RATE_LIMIT_REDIS_URL: redis://redis:6379/0
     ports:
       - "127.0.0.1:15100:5100"
     restart: unless-stopped
+    depends_on:
+      - redis
+
+volumes:
+  redis_data:
