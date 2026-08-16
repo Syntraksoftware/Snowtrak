@@ -132,22 +132,30 @@ jobs:
 
       # Gates on the report already produced rather than scanning a second
       # time. A second trivy-action run means a second binary and DB download
-      # per service, eight per workflow, which is what started failing. The
-      # scan above already filters to fixable CRITICAL/HIGH, so any result at
-      # all is a finding.
+      # per service, eight per workflow, which is what started failing.
+      #
+      # Filters on level, because trivy's SARIF writer ignores the severity
+      # input that its table output honours -- a scan asked for CRITICAL,HIGH
+      # still emits MEDIUM and LOW findings into the file. level maps exactly:
+      # error is CRITICAL/HIGH, warning is MEDIUM, note is LOW. Counting every
+      # result instead would gate on LOW severity issues.
       - name: Fail on fixable CRITICAL/HIGH vulnerabilities
         if: steps.trivy.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail
           report="trivy-${{ matrix.service }}.sarif"
-          count=$(jq '[.runs[].results[]?] | length' "$report")
+          filter='[.runs[].results[]? | select(.level == "error")]'
+
+          total=$(jq '[.runs[].results[]?] | length' "$report")
+          count=$(jq "$filter | length" "$report")
+          echo "${{ matrix.service }}: $count CRITICAL/HIGH of $total findings."
+
           if [ "$count" -eq 0 ]; then
-            echo "No fixable CRITICAL/HIGH vulnerabilities in ${{ matrix.service }}."
             exit 0
           fi
           echo "::error::$count fixable CRITICAL/HIGH vulnerabilities in ${{ matrix.service }}"
-          jq -r '.runs[].results[]? | "  \(.ruleId)\t\(.message.text | split("\n")[0])"' "$report" | sort -u
+          jq -r "$filter"' | .[] | "  \(.ruleId)\t\(.message.text | split("\n")[0])"' "$report" | sort -u
           exit 1
 
       - name: Log in to GHCR
