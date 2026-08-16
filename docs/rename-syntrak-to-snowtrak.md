@@ -20,6 +20,7 @@ infrastructure or an external identity, not because they were missed.
 | IDE module | `frontend/syntrak.iml` → `frontend/snowtrak.iml` |
 | Docker containers | `syntrak-redis`, `syntrak-postgis`, `syntrak-{main,map,activity,community}-backend` → `snowtrak-*` |
 | Prose | READMEs, `docs/`, playbooks, backend docstrings |
+| Clone URLs | The GitHub repository was already renamed to `Syntraksoftware/Snowtrak`; docs still pointed at `syntrak-application` and relied on GitHub's redirect |
 
 Verified: `dart analyze lib test` reports 0 errors and 0 warnings; all backend
 suites pass (157 passed, 1 skipped).
@@ -82,7 +83,7 @@ repository, so its side has to be updated separately.
 | `POSTGRES_PASSWORD=syntrak_local_dev` | `backend/postgres.env{,.example}:9` | Local dev credential only |
 | `sqlalchemy.url = …syntrak:syntrak_local_dev@…/syntrak` | `backend/alembic.ini:93` | Must match the role/database above |
 | `syntrak:activity-pipeline` | `backend/activity-backend/config.py:38` | Redis stream key — a rename orphans in-flight messages |
-| `/srv/syntrak-application` | `backend/deploy/bootstrap_droplet.sh:5`, `docs/developer_handoff.md:74,84` | VPS checkout path; needs a move plus a systemd/Caddy update |
+| `/srv/syntrak-application` | `backend/deploy/bootstrap_droplet.sh:5`, `docs/developer_handoff.md:74,84`, `docs/playbook/map-backend_beta.md:22`, `docs/vps_setup.md:88` | VPS checkout path; needs a move plus a systemd/Caddy update. `docs/vps_setup.md` now clones the renamed repo into this directory explicitly (`git clone …/Snowtrak.git syntrak-application`) so the documented path still matches the server. |
 | `~/.ssh/syntrak_do_ed25519` | `docs/developer_handoff.md:32,38` | Local SSH key filename on each developer's machine |
 | `$XDG_CACHE_HOME/syntrak/dem_glo30` | `backend/map-backend/services/dem_service.py:41` | Re-downloads the DEM tile cache |
 

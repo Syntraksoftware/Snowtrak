@@ -4,15 +4,15 @@
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/Syntraksoftware/syntrak-application.git
-cd syntrak-application
+git clone https://github.com/Syntraksoftware/Snowtrak.git
+cd Snowtrak
 ```
 
 ### 2. Backend Setup (One-time)
 The backend uses a **shared Python environment** at the **repository root**: `.venv` (one venv for all four microservices).
 
 ```bash
-# From repository root (syntrak-application/)
+# From repository root (Snowtrak/)
 python3.11 -m venv .venv
 ./.venv/bin/pip install -r backend/requirements.txt
 ```

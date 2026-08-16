@@ -18,7 +18,7 @@ Use the **repository-root** virtual environment (`.venv/` next to `backend/`), n
 **Activate the venv** (each new shell), from the repository root:
 
 ```bash
-cd /path/to/syntrak-application   # repository root
+cd /path/to/Snowtrak   # repository root
 source .venv/bin/activate
 ```
 

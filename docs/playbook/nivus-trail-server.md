@@ -1,6 +1,6 @@
 # Nivus trail server (external microservice)
 
-Nivus is a **dedicated compute service** outside `syntrak-application`. It owns track post-processing (Engines 1–3) and PostGIS trail matching.
+Nivus is a **dedicated compute service** outside the `Snowtrak` repository. It owns track post-processing (Engines 1–3) and PostGIS trail matching.
 
 Repository: `~/Desktop/nivus/` (Python package `nivus`).
 

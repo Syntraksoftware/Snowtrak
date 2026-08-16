@@ -91,7 +91,8 @@ Use a stable location such as `/srv/syntrak-application`:
 sudo mkdir -p /srv
 sudo chown deploy:deploy /srv
 cd /srv
-git clone https://github.com/Syntraksoftware/syntrak-application.git
+# The repo is now Snowtrak; clone into the existing deploy directory name.
+git clone https://github.com/Syntraksoftware/Snowtrak.git syntrak-application
 cd syntrak-application
 ```
 

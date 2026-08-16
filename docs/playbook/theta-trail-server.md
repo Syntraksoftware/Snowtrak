@@ -3,7 +3,7 @@
 > **Renamed to Nivus.** See [nivus-trail-server.md](./nivus-trail-server.md).  
 > Repository: `~/Desktop/nivus/` · package `nivus` · env `NIVUS_DATABASE_URL`
 
-Theta is a **dedicated server** outside `syntrak-application`. It owns all track post-processing and PostGIS trail matching.
+Theta is a **dedicated server** outside the `Snowtrak` repository. It owns all track post-processing and PostGIS trail matching.
 
 Repository location: sibling workspace (e.g. `~/Desktop/nivus/`).
 
