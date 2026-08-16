@@ -6,12 +6,9 @@ Ensures all cross-layer dependencies flow through ports.
 """
 
 import ast
-import sys
 from pathlib import Path
-from typing import Set
 
 import pytest
-
 
 DOMAINS_DIR = Path(__file__).parent.parent / "map-backend" / "domains"
 
@@ -42,8 +39,8 @@ class ImportVisitor(ast.NodeVisitor):
     """Visitor to collect all imports from an AST."""
 
     def __init__(self):
-        self.imports: Set[str] = set()
-        self.from_imports: dict[str, Set[str]] = {}  # module -> {names}
+        self.imports: set[str] = set()
+        self.from_imports: dict[str, set[str]] = {}  # module -> {names}
 
     def visit_Import(self, node: ast.Import):
         """Handle: import module [as alias]"""
@@ -73,7 +70,7 @@ def get_api_files() -> list[Path]:
     return sorted(DOMAINS_DIR.glob("*/api.py"))
 
 
-def extract_imports(file_path: Path) -> tuple[Set[str], dict[str, Set[str]]]:
+def extract_imports(file_path: Path) -> tuple[set[str], dict[str, set[str]]]:
     """Parse Python file and extract all imports."""
     try:
         tree = ast.parse(file_path.read_text())
@@ -187,14 +184,13 @@ def test_api_no_forbidden_module_combinations():
     violations = []
     for api_file in api_files:
         content = api_file.read_text()
-        domain_name = api_file.parent.name
 
         # Forbidden direct imports in api.py
         forbidden_patterns = [
             ("services.", "direct service import (use ports)"),
             ("db.connection", "direct db.connection import (use ports)"),
-            (f"from .models import", "internal model import (use ports)"),
-            (f"from ..models import", "parent model import (use ports)"),
+            ("from .models import", "internal model import (use ports)"),
+            ("from ..models import", "parent model import (use ports)"),
         ]
 
         for pattern, reason in forbidden_patterns:

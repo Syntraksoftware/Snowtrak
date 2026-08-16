@@ -9,6 +9,7 @@ Activity Backend - FastAPI Application
 Minimal service for skiing activity records.
 """
 
+import contextlib
 import asyncio
 import logging
 import os
@@ -86,10 +87,10 @@ async def lifespan(app: FastAPI):
 
     worker.stop()
     worker_task.cancel()
-    try:
+    # cancel() always surfaces as CancelledError here; awaiting is only to let
+    # the task finish unwinding before the process exits.
+    with contextlib.suppress(asyncio.CancelledError):
         await worker_task
-    except asyncio.CancelledError:
-        pass
     logger.info("Shutting down Activity Backend")
 
 

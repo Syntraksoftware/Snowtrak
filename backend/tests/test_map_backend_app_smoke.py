@@ -56,9 +56,9 @@ def smoke_env(monkeypatch: pytest.MonkeyPatch):
 @pytest.fixture
 def map_app_full(smoke_env: None, monkeypatch: pytest.MonkeyPatch):
     from db.connection import require_pool_conn
-    from domains.trails_service.ports import get_trails_conn
 
     from application import create_app
+    from domains.trails_service.ports import get_trails_conn
 
     app = create_app()
 
@@ -189,6 +189,7 @@ async def test_backend_main_py_exports_same_app_type(
     smoke_env: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from db.connection import require_pool_conn
+
     from domains.trails_service.ports import get_trails_conn
 
     async def _mock_trails_conn():

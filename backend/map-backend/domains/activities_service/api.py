@@ -11,8 +11,8 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
 import asyncpg
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from shared.track_pipeline_schemas import (
     ActivityStatsOut,
@@ -147,10 +147,7 @@ def _build_processed_track_out(
         lat = float(r["lat"])
         z = float(r["elev_m"])
         ts_raw = point_timestamps[i] if point_timestamps and i < len(point_timestamps) else None
-        if ts_raw:
-            ts = datetime.fromisoformat(ts_raw.replace("Z", "+00:00"))
-        else:
-            ts = recorded_at
+        ts = datetime.fromisoformat(ts_raw.replace("Z", "+00:00")) if ts_raw else recorded_at
         st = r["segment_type"]
         seg_type = PointSegmentType(st) if st else None
         points_out.append(

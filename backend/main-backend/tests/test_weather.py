@@ -107,8 +107,8 @@ class TestWeatherSnapshotEndpoint:
 )
 def test_weather_snapshot_integration_call_real_api():
     """Integration test: call Open-Meteo real API (no API key required)."""
-    from app.services.weather import weather_service
     from app.schemas.weather import WeatherLocation, WeatherSnapshotRequest
+    from app.services.weather import weather_service
 
     req = WeatherSnapshotRequest(
         activity_id=1,
@@ -177,8 +177,8 @@ class FakeRedis:
 
 def test_weather_service_uses_cache_for_same_athlete_nearby_location(monkeypatch):
     from app.schemas.weather import WeatherLocation, WeatherSnapshotRequest
-    from app.services.weather_cache import RedisWeatherCache
     from app.services.weather import WeatherService
+    from app.services.weather_cache import RedisWeatherCache
 
     fake_redis = FakeRedis()
     weather_cache = RedisWeatherCache(
@@ -222,8 +222,8 @@ def test_weather_service_uses_cache_for_same_athlete_nearby_location(monkeypatch
 
 def test_weather_service_refreshes_cache_for_far_location(monkeypatch):
     from app.schemas.weather import WeatherLocation, WeatherSnapshotRequest
-    from app.services.weather_cache import RedisWeatherCache
     from app.services.weather import WeatherService
+    from app.services.weather_cache import RedisWeatherCache
 
     fake_redis = FakeRedis()
     weather_cache = RedisWeatherCache(

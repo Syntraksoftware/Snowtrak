@@ -1,7 +1,6 @@
 """Pydantic models for Activity Backend."""
 
 from pydantic import BaseModel, Field
-
 from shared.pipeline_enums import ProcessingStatus
 
 

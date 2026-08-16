@@ -5,7 +5,6 @@ from functools import lru_cache
 
 from pydantic import Field, computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
 from shared.jwt_env import JWT_SECRET_FIELD
 
 

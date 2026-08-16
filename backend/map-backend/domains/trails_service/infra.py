@@ -3,9 +3,8 @@
 from collections.abc import AsyncGenerator
 
 import asyncpg
-from fastapi import HTTPException, status
-
 from db.connection import get_pool
+from fastapi import HTTPException, status
 
 
 async def get_trails_conn() -> AsyncGenerator[asyncpg.Connection, None]:

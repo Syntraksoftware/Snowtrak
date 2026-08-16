@@ -7,7 +7,6 @@ from typing import Literal
 
 from pydantic import Field, computed_field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
 from shared.jwt_env import JWT_SECRET_FIELD
 
 # Load ``.env`` next to this file so ``uvicorn main:app`` works from ``backend/`` or ``map-backend/``.

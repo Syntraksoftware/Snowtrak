@@ -4,55 +4,105 @@ on:
   push:
     paths:
       - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
   pull_request:
     paths:
       - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+
+# Every step here used to end in `|| true`, so all four jobs reported success
+# whatever happened -- they were green through months in which the rest of CI
+# was red. The suites they run do pass; they simply were not gating anything.
 
 jobs:
-  test-and-lint:
-    name: Test & Lint (${{ matrix.service }})
+  test:
+    name: Test (${{ matrix.service }})
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        service: [main-backend, community-backend, activity-backend, map-backend]
+        # map-backend has no tests/ directory of its own; its code is covered by
+        # the shared suite below, which imports from it.
+        service: [main-backend, community-backend, activity-backend]
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      # Each service's own requirements, not backend/requirements.txt. The
+      # unified file uses >= ranges and resolves to different versions than the
+      # pinned ones that ship in the image, so testing against it tested
+      # something other than production. The four files also cannot share one
+      # environment -- supabase wants httpx<0.28 while map-backend pins 0.28.1.
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          cd "backend/${{ matrix.service }}"
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          if [ -f requirements-test.txt ]; then
+            pip install -r requirements-test.txt
+          else
+            pip install pytest pytest-asyncio
+          fi
+
+      - name: Run tests
+        run: |
+          set -euo pipefail
+          cd "backend/${{ matrix.service }}"
+          python -m pytest -q tests
+        env:
+          PYTHONPATH: .:..
+
+  shared-tests:
+    name: Test (shared)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      # backend/tests holds 31 tests covering map-backend, the activities
+      # domain, and two architectural guards -- the ports/adapters layering
+      # check and the route-handler dependency check. No job ran them, so both
+      # guards were dead the whole time they existed. They need map-backend's
+      # dependencies; conftest.py puts the paths on sys.path itself.
+      - name: Install map-backend dependencies
+        run: |
+          set -euo pipefail
+          pip install --upgrade pip
+          pip install -r backend/map-backend/requirements.txt pytest pytest-asyncio
+
+      - name: Run shared tests
+        run: |
+          set -euo pipefail
+          cd backend
+          python -m pytest -q tests
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
-        run: |
-          python -m venv .venv
-          . .venv/bin/activate
-          pip install --upgrade pip
-          pip install -r backend/requirements.txt
+      # Pinned: an unpinned linter turns a new release into a red build on a
+      # branch that changed nothing.
+      - name: Install ruff
+        run: pip install ruff==0.16.3
 
-      - name: Run tests (if present)
-        run: |
-          . .venv/bin/activate
-          if [ -d "backend/${{ matrix.service }}/tests" ]; then
-            pytest -q backend/${{ matrix.service }}/tests || true
-          else
-            echo "no tests for ${{ matrix.service }}"
-          fi
-
-      - name: Run linter (optional)
-        run: |
-          . .venv/bin/activate
-          pip install ruff || true
-          ruff check backend/${{ matrix.service }} || true
-
-      - name: Package OpenAPI artifact (manual extraction)
-        run: |
-          echo "If service exposes /openapi.json at runtime, run the local extractor script to fetch and store under packages/shared/openapi/"
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.service }}-reports
-          path: |
-            backend/${{ matrix.service }}/.coverage || true
+      # The whole tree, not per service. Running it per service left
+      # backend/tests, backend/shared and backend/scripts unlinted -- 38
+      # violations that no job would ever have reported.
+      - name: Run ruff
+        run: ruff check backend

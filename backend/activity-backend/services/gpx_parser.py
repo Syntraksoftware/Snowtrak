@@ -6,7 +6,6 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 from typing import Any
 
-
 _GPX_NS = {"gpx": "http://www.topografix.com/GPX/1/1"}
 
 

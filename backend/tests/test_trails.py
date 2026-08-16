@@ -7,8 +7,9 @@ from unittest.mock import AsyncMock, MagicMock
 import httpx
 import pytest
 from fastapi import FastAPI
-from domains.trails_service.ports import get_trails_conn
+
 from domains.trails_service.api import router
+from domains.trails_service.ports import get_trails_conn
 
 
 @pytest.fixture
@@ -79,6 +80,7 @@ async def test_trails_resort_503_without_pool(
     trails_app: FastAPI, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     import db.connection as db_conn
+
     from domains.trails_service.infra import get_trails_conn as trails_conn_impl
     from domains.trails_service.ports import set_trails_conn_provider
 

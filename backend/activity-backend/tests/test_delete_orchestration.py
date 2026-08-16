@@ -5,7 +5,6 @@ from fastapi import status
 
 from middleware.auth import get_current_user
 from routes import activities_management_routes
-from services.activity_deletion_service import ActivityDeletionService
 from services.map_backend_client import MapBackendClient
 
 

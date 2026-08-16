@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import math
 from typing import Any, Protocol, cast
@@ -75,7 +76,7 @@ class RedisWeatherCache:
         self._redis_client: RedisWeatherCacheClient | None = redis_client
 
     @classmethod
-    def from_settings(cls, app_settings: Settings = settings) -> "RedisWeatherCache":
+    def from_settings(cls, app_settings: Settings = settings) -> RedisWeatherCache:
         return cls(
             enabled=app_settings.weather_cache_enabled,
             redis_url=app_settings.weather_cache_redis_url,
@@ -169,10 +170,9 @@ class RedisWeatherCache:
             return WeatherCacheEntry.model_validate_json(raw_entry)
         except ValueError:
             logger.warning("Weather cache entry is invalid for athlete %s", athlete_id)
-            try:
+            # Best effort: a cache that cannot be cleaned is not a request failure.
+            with contextlib.suppress(redis.RedisError):
                 self._get_redis_client().delete(cache_key)
-            except redis.RedisError:
-                pass
             return None
 
     def _get_redis_client(self) -> RedisWeatherCacheClient:

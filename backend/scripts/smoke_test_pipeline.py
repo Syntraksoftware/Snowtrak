@@ -18,10 +18,9 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
@@ -90,7 +89,7 @@ def test_nivus_math(client: httpx.Client, points: list[dict], match_trails: bool
     print(f"\n[3/4] Nivus pipeline ({label})")
     body = {
         "id": str(uuid.uuid4()),
-        "recorded_at": points[0].get("timestamp") or datetime.now(timezone.utc).isoformat(),
+        "recorded_at": points[0].get("timestamp") or datetime.now(UTC).isoformat(),
         "source_type": "gpx",
         "match_trails": match_trails,
         "points": points,
