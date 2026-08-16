@@ -393,25 +393,3 @@ class _TrainingLogCard extends StatelessWidget {
     );
   }
 }
-
-class _FreeTrialButton extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: SnowtrakSpacing.md),
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: () {},
-        style: ElevatedButton.styleFrom(
-          backgroundColor: SnowtrakColors.accent,
-          foregroundColor: SnowtrakColors.textOnPrimary,
-          padding: const EdgeInsets.symmetric(vertical: SnowtrakSpacing.md),
-        ),
-        child: Text(
-          'Start a free trial',
-          style: SnowtrakTypography.labelLarge,
-        ),
-      ),
-    );
-  }
-}

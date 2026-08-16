@@ -79,7 +79,7 @@ class GpsFilterService {
     double totalWeight = 1.0; // Current point has weight 1
     double weightedLat = point.latitude;
     double weightedLng = point.longitude;
-    double? weightedAlt = point.altitude;
+    double weightedAlt = point.altitude;
     double? weightedSpeed = point.speed >= 0 ? point.speed : null;
 
     // Add recent points with decreasing weights
@@ -90,10 +90,7 @@ class GpsFilterService {
       weightedLat += recentPoints[i].latitude * weight;
       weightedLng += recentPoints[i].longitude * weight;
 
-      final alt = recentPoints[i].altitude;
-      if (alt != null) {
-        weightedAlt = (weightedAlt ?? point.altitude ?? 0.0) + alt * weight;
-      }
+      weightedAlt += recentPoints[i].altitude * weight;
 
       final speed = recentPoints[i].speed;
       if (speed >= 0) {
@@ -106,8 +103,7 @@ class GpsFilterService {
     // but may need to return original point if construction fails
     final smoothedLat = weightedLat / totalWeight;
     final smoothedLng = weightedLng / totalWeight;
-    final smoothedAlt =
-        weightedAlt != null ? weightedAlt / totalWeight : point.altitude;
+    final smoothedAlt = weightedAlt / totalWeight;
     double smoothedSpeed;
     if (weightedSpeed != null) {
       smoothedSpeed = weightedSpeed / totalWeight;
