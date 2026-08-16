@@ -98,13 +98,19 @@ cd syntrak-application
 
 ## 5. Create VPS env files
 
-Copy the example env templates and fill in real secrets.
+Each backend reads its own env file. They are not merged into one file per
+environment: `POSTGRES_SCHEMA` alone differs per service, so a shared file
+would point three services at one schema. See `backend/deploy/README.md`.
 
 ```bash
-mkdir -p backend/deploy/env
-cp backend/deploy/env/staging.env.example backend/deploy/env/staging.env
-cp backend/deploy/env/production.env.example backend/deploy/env/production.env
+for svc in main community activity map; do
+  cp "backend/${svc}-backend/.env.example" "backend/${svc}-backend/.env"
+  chmod 600 "backend/${svc}-backend/.env"
+done
 ```
+
+Staging and production separate by checkout directory, not by filename -- each
+has its own clone with its own set of these files.
 
 Populate:
 
@@ -227,7 +233,7 @@ If Caddy fails to start:
 
 If a backend container fails:
 
-- Check the relevant env file in `backend/deploy/env/`.
+- Check the relevant service's `backend/<service>-backend/.env`.
 - Use `docker compose logs -f <service-name>`.
 - Confirm Supabase credentials and JWT secrets are correct.
 

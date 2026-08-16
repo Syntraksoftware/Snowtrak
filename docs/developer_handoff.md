@@ -111,10 +111,15 @@ Required GitHub secrets:
 
 Keep App Store Connect secrets in GitHub repository secrets.
 
-Keep backend runtime secrets in the VPS env files:
+Keep backend runtime secrets in the per-service VPS env files, one per
+backend, in each environment's own checkout:
 
-- `backend/deploy/env/staging.env`
-- `backend/deploy/env/production.env`
+- `/srv/syntrak-application/backend/<service>-backend/.env` (production)
+- `/srv/snowtrak-staging/backend/<service>-backend/.env` (staging)
+
+Deploy credentials themselves live in GitHub environment secrets
+(`VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_APP_DIR`), one set per
+environment, not in repository secrets.
 
 Do not commit real `.env` files to git.
 

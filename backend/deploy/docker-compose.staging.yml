@@ -15,7 +15,7 @@ services:
       context: ../
       dockerfile: ./main-backend/Dockerfile
     env_file:
-      - ./env/staging.env
+      - ../main-backend/.env
     environment:
       PYTHONUNBUFFERED: "1"
       FASTAPI_ENV: staging
@@ -23,10 +23,10 @@ services:
       PORT: 8080
       RATE_LIMIT_REDIS_URL: redis://redis:6379/0
       WEATHER_CACHE_REDIS_URL: redis://redis:6379/0
-      # Pinned here, not left to the merged env file. Compose's environment
-      # block wins over env_file, so a single RATE_LIMIT_NAMESPACE accidentally
-      # merged into <env>.env cannot collapse all four services onto one
-      # shared rate-limit counter.
+      # Pinned here as well as in the service's .env. Compose's environment
+      # block wins over env_file, so these survive an env file that is edited,
+      # regenerated, or consolidated later -- the four services must never share
+      # one rate-limit namespace.
       RATE_LIMIT_NAMESPACE: main-backend
       WEATHER_CACHE_NAMESPACE: main-backend
     ports:
@@ -40,7 +40,7 @@ services:
       context: ../
       dockerfile: ./community-backend/Dockerfile
     env_file:
-      - ./env/staging.env
+      - ../community-backend/.env
     environment:
       PYTHONUNBUFFERED: "1"
       FASTAPI_ENV: staging
@@ -48,10 +48,10 @@ services:
       PORT: 5001
       RATE_LIMIT_REDIS_URL: redis://redis:6379/0
       CACHE_REDIS_URL: redis://redis:6379/0
-      # Pinned here, not left to the merged env file. Compose's environment
-      # block wins over env_file, so a single RATE_LIMIT_NAMESPACE accidentally
-      # merged into <env>.env cannot collapse all four services onto one
-      # shared rate-limit counter.
+      # Pinned here as well as in the service's .env. Compose's environment
+      # block wins over env_file, so these survive an env file that is edited,
+      # regenerated, or consolidated later -- the four services must never share
+      # one rate-limit namespace.
       RATE_LIMIT_NAMESPACE: community-backend
       CACHE_NAMESPACE: community-backend-cache
     ports:
@@ -65,17 +65,17 @@ services:
       context: ../
       dockerfile: ./activity-backend/Dockerfile
     env_file:
-      - ./env/staging.env
+      - ../activity-backend/.env
     environment:
       PYTHONUNBUFFERED: "1"
       FASTAPI_ENV: staging
       HOST: 0.0.0.0
       PORT: 5100
       RATE_LIMIT_REDIS_URL: redis://redis:6379/0
-      # Pinned here, not left to the merged env file. Compose's environment
-      # block wins over env_file, so a single RATE_LIMIT_NAMESPACE accidentally
-      # merged into <env>.env cannot collapse all four services onto one
-      # shared rate-limit counter.
+      # Pinned here as well as in the service's .env. Compose's environment
+      # block wins over env_file, so these survive an env file that is edited,
+      # regenerated, or consolidated later -- the four services must never share
+      # one rate-limit namespace.
       RATE_LIMIT_NAMESPACE: activity-backend
     ports:
       - "127.0.0.1:15100:5100"

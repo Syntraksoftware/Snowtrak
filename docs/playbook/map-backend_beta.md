@@ -13,7 +13,7 @@ Behavior
 
 How to re-enable (staging -> enable map-backend)
 
-1. Ensure SYNTRAK_DATABASE_URL in `backend/deploy/env/staging.env` points to a resolvable and reachable Postgres/Supabase instance.
+1. Ensure SYNTRAK_DATABASE_URL in `backend/map-backend/.env` in the staging checkout points to a resolvable and reachable Postgres/Supabase instance.
 2. Add the map-backend service to `backend/deploy/docker-compose.staging.yml` (copy from production `docker-compose.production.yml`), or run the production compose file that contains the map-backend service.
 3. Restart or start the map-backend container on the droplet:
 

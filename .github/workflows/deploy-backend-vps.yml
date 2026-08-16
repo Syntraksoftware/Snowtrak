@@ -81,11 +81,17 @@ jobs:
               exit 0
             fi
 
-            # The env file holds live credentials and is not in git; fail loudly
-            # rather than starting services with silently missing configuration.
-            ENV_FILE="backend/deploy/env/${DEPLOY_ENV}.env"
-            if [ ! -f "$ENV_FILE" ]; then
-              echo "::error::$ENV_FILE is missing on the host. See backend/deploy/README.md." >&2
+            # Each service reads its own env file, which holds live credentials
+            # and is not in git. They are deliberately not merged: POSTGRES_SCHEMA
+            # alone differs per service (main / community / map), so one shared
+            # file would point three services at one schema. Fail loudly rather
+            # than starting against missing configuration.
+            missing=""
+            for svc in main community activity map; do
+              [ -f "backend/${svc}-backend/.env" ] || missing="$missing backend/${svc}-backend/.env"
+            done
+            if [ -n "$missing" ]; then
+              echo "::error::missing env files:$missing -- see backend/deploy/README.md" >&2
               exit 1
             fi
 

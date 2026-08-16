@@ -16,7 +16,7 @@ internet ──▶ Caddy (host, :80 :443) ──▶ 127.0.0.1:8080  main-backend
 | `docker-compose.production.yml` | Live stack. Project name `snowtrak-prod`. |
 | `docker-compose.staging.yml` | On-demand test stack. Project name `snowtrak-staging`, ports in the 15xxx range. |
 | `Caddyfile.example` | Reverse-proxy layout for both. |
-| `env/*.env.example` | Templates. The real `env/production.env` and `env/staging.env` live only on the box. |
+| `../*-backend/.env` | Live credentials, one file per service, never in git. Templates are each service's own `.env.example`. |
 | `bootstrap_droplet.sh` | First-time host setup. |
 
 Deploys are manual: **Actions → Deploy Backend to VPS → Run workflow**. The
@@ -34,38 +34,42 @@ Docker port. The Compose files bind every port to `127.0.0.1` as a second
 layer, so a missing or misedited firewall is no longer sufficient on its own
 to expose a service.
 
-## Building the env file
+## Environment configuration
 
-Each Compose file reads one `env/<environment>.env`. That file is not in git.
+Each service reads its own `backend/<service>-backend/.env`. They are
+deliberately **not** merged into one file per environment.
 
-Copy the template and fill it in from the four per-service `.env` files:
+An earlier design did merge them. It does not work, and the reason is not
+cosmetic:
 
-```bash
-cd backend/deploy
-cp env/production.env.example env/production.env
-chmod 600 env/production.env
-$EDITOR env/production.env
+```
+main-backend       POSTGRES_SCHEMA=main
+community-backend  POSTGRES_SCHEMA=community
+map-backend        POSTGRES_SCHEMA=map
 ```
 
-Three things to get right when merging four files into one:
+One shared file points all three at a single schema. `APP_NAME`,
+`CORS_ALLOWED_ORIGINS`, and `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` diverge the same
+way. Keeping the files per service keeps those differences intact and means
+there is nothing to migrate -- the files the droplet already runs on are the
+files the production stack reads.
 
-1. **`RATE_LIMIT_NAMESPACE` must not be in the merged file.** Each service
-   needs its own (`main-backend`, `community-backend`, `activity-backend`,
-   `map-backend`). The Compose files pin them per service, and Compose's
-   `environment:` block wins over `env_file:`, so a stray value in the env
-   file is overridden rather than collapsing all four onto one shared
-   rate-limit counter. Leave it out and let the Compose files decide.
+Staging and production stay separate by living in **different checkouts**, not
+different filenames:
 
-2. **`HOST`, `PORT`, and `FASTAPI_ENV` are also set per service in Compose.**
-   Anything you put in the env file for those is ignored.
+```
+/srv/syntrak-application/backend/<service>-backend/.env   production
+/srv/snowtrak-staging/backend/<service>-backend/.env      staging
+```
 
-3. **`main-backend` names its JWT settings differently.** It reads
-   `SECRET_KEY` and `ALGORITHM`; the other three read `JWT_SECRET` and
-   `JWT_ALGORITHM`. Set both pairs to the same values or tokens minted by one
-   service will not verify in another.
+`HOST`, `PORT`, `FASTAPI_ENV` and the rate-limit and cache namespaces are set
+in the Compose files instead, where `environment:` wins over `env_file:`. That
+holds the four services apart even if an env file is later edited or
+consolidated by mistake.
 
-`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and the JWT settings are shared
-by all four and belong in the merged file.
+One thing to keep consistent by hand: `main-backend` reads `SECRET_KEY` and
+`ALGORITHM` where the other three read `JWT_SECRET` and `JWT_ALGORITHM`. If
+those disagree, tokens minted by one service will not verify in another.
 
 ## Cutting over from the old layout
 
@@ -77,8 +81,8 @@ file is a one-time swap with roughly a minute of downtime.
 cd <VPS_APP_DIR>
 git fetch origin && git checkout --detach origin/main
 
-# 1. Build the env file first; the deploy workflow refuses to start without it.
-ls -l backend/deploy/env/production.env
+# 1. The env files are already there from the old layout; confirm, don't rebuild.
+ls -l backend/*-backend/.env
 
 # 2. Start the new stack under its own project name. It cannot bind the
 #    host ports while the old one holds them, so stop the old one first.
