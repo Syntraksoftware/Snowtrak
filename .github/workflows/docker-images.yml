@@ -112,29 +112,43 @@ jobs:
           exit-code: '0'
           timeout: 10m
 
+      # Uploads run only if the scan actually produced a file. Guarding on
+      # always() alone turns a failed scan into three failures, burying the one
+      # that matters -- which is how a Trivy binary download failing with exit
+      # 35 surfaced as "Path does not exist: trivy-*.sarif".
       - name: Upload Trivy scan to GitHub Security tab
-        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        if: always() && steps.trivy.outcome == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy-${{ matrix.service }}.sarif
 
       - name: Upload scan artifact
-        if: always()
+        if: always() && steps.trivy.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: trivy-${{ matrix.service }}
           path: trivy-${{ matrix.service }}.sarif
           if-no-files-found: error
 
+      # Gates on the report already produced rather than scanning a second
+      # time. A second trivy-action run means a second binary and DB download
+      # per service, eight per workflow, which is what started failing. The
+      # scan above already filters to fixable CRITICAL/HIGH, so any result at
+      # all is a finding.
       - name: Fail on fixable CRITICAL/HIGH vulnerabilities
-        uses: aquasecurity/trivy-action@v0.35.0
-        with:
-          image-ref: ${{ steps.vars.outputs.sha_tag }}
-          format: table
-          severity: CRITICAL,HIGH
-          ignore-unfixed: true
-          exit-code: '1'
-          timeout: 10m
+        if: steps.trivy.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          report="trivy-${{ matrix.service }}.sarif"
+          count=$(jq '[.runs[].results[]?] | length' "$report")
+          if [ "$count" -eq 0 ]; then
+            echo "No fixable CRITICAL/HIGH vulnerabilities in ${{ matrix.service }}."
+            exit 0
+          fi
+          echo "::error::$count fixable CRITICAL/HIGH vulnerabilities in ${{ matrix.service }}"
+          jq -r '.runs[].results[]? | "  \(.ruleId)\t\(.message.text | split("\n")[0])"' "$report" | sort -u
+          exit 1
 
       - name: Log in to GHCR
         if: github.event_name != 'pull_request'
