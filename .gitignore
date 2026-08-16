@@ -20,3 +20,6 @@ backend/deploy/env/staging.env
 backend/deploy/env/production.env
 *.p8
 .cursor/
+
+# graphify knowledge-graph output (graph.json exceeds the 5MB CI guard)
+graphify-out/
