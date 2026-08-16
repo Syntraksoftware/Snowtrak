@@ -1,6 +1,35 @@
 {
   "components": {
     "schemas": {
+      "BestEffort": {
+        "description": "A single best-effort entry (longest, most elevation, fastest pace).",
+        "properties": {
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "is_pr": {
+            "default": false,
+            "title": "Is Pr",
+            "type": "boolean"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "value",
+          "date"
+        ],
+        "title": "BestEffort",
+        "type": "object"
+      },
       "CommentCreate": {
         "description": "Schema for creating a comment.",
         "properties": {
@@ -138,6 +167,18 @@
             "title": "Locations",
             "type": "array"
           },
+          "map_activity_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "UUID of map_trail.activities row when pipeline persisted server-side",
+            "title": "Map Activity Id"
+          },
           "name": {
             "anyOf": [
               {
@@ -148,6 +189,11 @@
               }
             ],
             "title": "Name"
+          },
+          "processing_status": {
+            "$ref": "#/components/schemas/ProcessingStatus",
+            "default": "ready",
+            "description": "Pipeline lifecycle; sync bridge writes ready immediately"
           },
           "start_time": {
             "title": "Start Time",
@@ -244,6 +290,17 @@
             "title": "Locations",
             "type": "array"
           },
+          "map_activity_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Map Activity Id"
+          },
           "max_pace": {
             "anyOf": [
               {
@@ -266,9 +323,35 @@
             ],
             "title": "Name"
           },
+          "processing_status": {
+            "$ref": "#/components/schemas/ProcessingStatus",
+            "default": "ready"
+          },
           "start_time": {
             "title": "Start Time",
             "type": "string"
+          },
+          "storage_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storage Key"
+          },
+          "thumbnail_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Url"
           },
           "type": {
             "title": "Type",
@@ -561,6 +644,18 @@
         "title": "PaginationMeta",
         "type": "object"
       },
+      "ProcessingStatus": {
+        "description": "Lifecycle of an activity through upload and server-side pipeline.",
+        "enum": [
+          "pending",
+          "uploading",
+          "processing",
+          "ready",
+          "failed"
+        ],
+        "title": "ProcessingStatus",
+        "type": "string"
+      },
       "ShareLinkResponse": {
         "description": "Schema for activity share link response.",
         "properties": {
@@ -592,6 +687,208 @@
           "liked"
         ],
         "title": "ToggleKudosResponse",
+        "type": "object"
+      },
+      "UploadCompleteResponse": {
+        "description": "Acknowledgement that raw file upload finished; pipeline queued or running.",
+        "properties": {
+          "activity_id": {
+            "title": "Activity Id",
+            "type": "string"
+          },
+          "message": {
+            "default": "Pipeline processing started",
+            "title": "Message",
+            "type": "string"
+          },
+          "processing_status": {
+            "$ref": "#/components/schemas/ProcessingStatus"
+          }
+        },
+        "required": [
+          "activity_id",
+          "processing_status"
+        ],
+        "title": "UploadCompleteResponse",
+        "type": "object"
+      },
+      "UploadUrlRequest": {
+        "description": "Request presigned upload URL for async GPX/FIT pipeline.",
+        "properties": {
+          "activity_type": {
+            "default": "alpine",
+            "description": "Stored as activity_type",
+            "title": "Activity Type",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "source_type": {
+            "default": "gpx",
+            "description": "gpx | fit",
+            "title": "Source Type",
+            "type": "string"
+          }
+        },
+        "title": "UploadUrlRequest",
+        "type": "object"
+      },
+      "UploadUrlResponse": {
+        "description": "Presigned upload target + placeholder activity row.",
+        "properties": {
+          "activity_id": {
+            "title": "Activity Id",
+            "type": "string"
+          },
+          "processing_status": {
+            "$ref": "#/components/schemas/ProcessingStatus",
+            "default": "pending"
+          },
+          "storage_key": {
+            "title": "Storage Key",
+            "type": "string"
+          },
+          "token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token"
+          },
+          "upload_url": {
+            "title": "Upload Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "activity_id",
+          "upload_url",
+          "storage_key"
+        ],
+        "title": "UploadUrlResponse",
+        "type": "object"
+      },
+      "UserStatsResponse": {
+        "description": "Cached user stats returned by GET /me/stats.",
+        "properties": {
+          "activity_days": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Activity Days",
+            "type": "array"
+          },
+          "all_time_distance_km": {
+            "title": "All Time Distance Km",
+            "type": "number"
+          },
+          "all_time_elev_gain_m": {
+            "title": "All Time Elev Gain M",
+            "type": "number"
+          },
+          "all_time_session_count": {
+            "title": "All Time Session Count",
+            "type": "integer"
+          },
+          "all_time_time_min": {
+            "title": "All Time Time Min",
+            "type": "integer"
+          },
+          "best_efforts": {
+            "items": {
+              "$ref": "#/components/schemas/BestEffort"
+            },
+            "title": "Best Efforts",
+            "type": "array"
+          },
+          "current_streak_weeks": {
+            "title": "Current Streak Weeks",
+            "type": "integer"
+          },
+          "last_week_session_count": {
+            "title": "Last Week Session Count",
+            "type": "integer"
+          },
+          "longest_streak_weeks": {
+            "title": "Longest Streak Weeks",
+            "type": "integer"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          },
+          "week_start": {
+            "title": "Week Start",
+            "type": "string"
+          },
+          "weekly_distance_km": {
+            "title": "Weekly Distance Km",
+            "type": "number"
+          },
+          "weekly_elev_gain_m": {
+            "title": "Weekly Elev Gain M",
+            "type": "number"
+          },
+          "weekly_session_count": {
+            "title": "Weekly Session Count",
+            "type": "integer"
+          },
+          "weekly_time_min": {
+            "title": "Weekly Time Min",
+            "type": "integer"
+          },
+          "yearly_distance_km": {
+            "title": "Yearly Distance Km",
+            "type": "number"
+          },
+          "yearly_elev_gain_m": {
+            "title": "Yearly Elev Gain M",
+            "type": "number"
+          },
+          "yearly_session_count": {
+            "title": "Yearly Session Count",
+            "type": "integer"
+          },
+          "yearly_time_min": {
+            "title": "Yearly Time Min",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "user_id",
+          "week_start",
+          "weekly_distance_km",
+          "weekly_time_min",
+          "weekly_elev_gain_m",
+          "weekly_session_count",
+          "last_week_session_count",
+          "yearly_distance_km",
+          "yearly_time_min",
+          "yearly_elev_gain_m",
+          "yearly_session_count",
+          "all_time_distance_km",
+          "all_time_time_min",
+          "all_time_elev_gain_m",
+          "all_time_session_count",
+          "current_streak_weeks",
+          "longest_streak_weeks",
+          "activity_days",
+          "best_efforts"
+        ],
+        "title": "UserStatsResponse",
         "type": "object"
       },
       "ValidationError": {
@@ -891,6 +1188,116 @@
           }
         },
         "summary": "List My Activities",
+        "tags": [
+          "activities"
+        ]
+      }
+    },
+    "/api/v1/activities/me/stats": {
+      "get": {
+        "description": "Return cached stats for the authenticated user.\n\nNo cached row means the user has no activities yet \u2014 returns zeros without\ntouching the DB. The cache is first written when they create an activity.",
+        "operationId": "get_my_stats_api_v1_activities_me_stats_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserStatsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get My Stats",
+        "tags": [
+          "activities"
+        ]
+      }
+    },
+    "/api/v1/activities/upload-url": {
+      "post": {
+        "description": "Reserve a feed activity row and return a presigned Supabase Storage upload URL.",
+        "operationId": "create_upload_url_api_v1_activities_upload_url_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadUrlRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadUrlResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Upload Url",
         "tags": [
           "activities"
         ]
@@ -1325,6 +1732,65 @@
           }
         },
         "summary": "Create Share Link",
+        "tags": [
+          "activities"
+        ]
+      }
+    },
+    "/api/v1/activities/{activity_id}/upload-complete": {
+      "post": {
+        "description": "Client finished uploading raw file \u2014 enqueue or run pipeline inline.",
+        "operationId": "upload_complete_api_v1_activities__activity_id__upload_complete_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "activity_id",
+            "required": true,
+            "schema": {
+              "title": "Activity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadCompleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Upload Complete",
         "tags": [
           "activities"
         ]

@@ -175,6 +175,17 @@
             ],
             "title": "Stats"
           },
+          "thumbnail_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Url"
+          },
           "user_id": {
             "title": "User Id",
             "type": "string"
@@ -575,80 +586,6 @@
         "title": "TrackPointOut",
         "type": "object"
       },
-      "TrailMatchRequest": {
-        "additionalProperties": false,
-        "description": "Match track geometry to named trails (implementation-specific).",
-        "properties": {
-          "points": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/TrackPointIn"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Alternative to processed_track when no Engine 1 id exists yet",
-            "title": "Points"
-          },
-          "processed_track": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ProcessedTrackIn"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "resort_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Reserved for future resort-scoped layers; ignored by the current matcher",
-            "title": "Resort Id"
-          },
-          "segments": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/SegmentOut-Input"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Engine 2 segments; only ``descent`` slices are matched to ``map_trail.ski_runs``. If omitted, the server treats the full track as a single descent.",
-            "title": "Segments"
-          }
-        },
-        "title": "TrailMatchRequest",
-        "type": "object"
-      },
-      "TrailMatchResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "segments": {
-            "items": {
-              "$ref": "#/components/schemas/SegmentOut-Output"
-            },
-            "title": "Segments",
-            "type": "array"
-          }
-        },
-        "title": "TrailMatchResponse",
-        "type": "object"
-      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -687,6 +624,28 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "_ThumbnailRequest": {
+        "properties": {
+          "activity_id": {
+            "title": "Activity Id",
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Points",
+            "type": "array"
+          }
+        },
+        "required": [
+          "activity_id",
+          "points"
+        ],
+        "title": "_ThumbnailRequest",
         "type": "object"
       }
     }
@@ -806,7 +765,86 @@
         ]
       }
     },
+    "/api/v1/map/activities/thumbnail": {
+      "post": {
+        "description": "Generate and upload a route thumbnail from raw GPS points (live recording path).",
+        "operationId": "generate_activity_thumbnail_api_v1_map_activities_thumbnail_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/_ThumbnailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Generate Activity Thumbnail Api V1 Map Activities Thumbnail Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generate Activity Thumbnail",
+        "tags": [
+          "activities"
+        ]
+      }
+    },
     "/api/v1/map/activities/{activity_id}": {
+      "delete": {
+        "description": "Delete activity header; ``track_points`` and ``segments`` cascade via FK.",
+        "operationId": "delete_activity_api_v1_map_activities__activity_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "activity_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Activity Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Activity",
+        "tags": [
+          "activities"
+        ]
+      },
       "get": {
         "operationId": "get_activity_api_v1_map_activities__activity_id__get",
         "parameters": [
@@ -891,51 +929,9 @@
         ]
       }
     },
-    "/api/v1/map/trails/match": {
-      "post": {
-        "description": "Fill ``trail_name`` / ``difficulty`` on **descent** ``SegmentOut`` rows using PostGIS.\n\nNon-descent segments are returned unchanged. Order and count match the working segment list.",
-        "operationId": "match_trails_api_v1_map_trails_match_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TrailMatchRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TrailMatchResponse"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Match Trails",
-        "tags": [
-          "trails"
-        ]
-      }
-    },
     "/api/v1/map/trails/resort": {
       "get": {
-        "description": "GeoJSON ``FeatureCollection`` of ``map_trail.ski_runs`` lines intersecting the bbox envelope.\n\nIntended for Engine 4 clients to prefetch a resort vector layer.",
+        "description": "GeoJSON ``FeatureCollection`` of ``map_trail.ski_runs`` lines intersecting the bbox.\n\nUsed by MapLibre to prefetch a resort vector layer. For segment enrichment,\ncall the theta trail server instead of map-backend.",
         "operationId": "resort_trails_geojson_api_v1_map_trails_resort_get",
         "parameters": [
           {

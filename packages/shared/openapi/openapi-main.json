@@ -606,6 +606,261 @@
         ],
         "title": "ValidationError",
         "type": "object"
+      },
+      "WeatherLocation": {
+        "description": "Coordinates and location hint used for a weather lookup.",
+        "properties": {
+          "city_hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City Hint"
+          },
+          "latitude": {
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Latitude",
+            "type": "number"
+          },
+          "longitude": {
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Longitude",
+            "type": "number"
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "title": "WeatherLocation",
+        "type": "object"
+      },
+      "WeatherSnapshot": {
+        "description": "Weather snapshot at a specific point in time.",
+        "properties": {
+          "atmosphere": {
+            "$ref": "#/components/schemas/WeatherSnapshotAtmosphere"
+          },
+          "condition": {
+            "title": "Condition",
+            "type": "string"
+          },
+          "condition_code": {
+            "title": "Condition Code",
+            "type": "string"
+          },
+          "icon_url": {
+            "title": "Icon Url",
+            "type": "string"
+          },
+          "precipitation": {
+            "$ref": "#/components/schemas/WeatherSnapshotPrecipitation"
+          },
+          "temperatures": {
+            "$ref": "#/components/schemas/WeatherSnapshotTemperatures"
+          },
+          "timestamp": {
+            "title": "Timestamp",
+            "type": "string"
+          },
+          "wind": {
+            "$ref": "#/components/schemas/WeatherSnapshotWind"
+          }
+        },
+        "required": [
+          "timestamp",
+          "condition",
+          "condition_code",
+          "icon_url",
+          "temperatures",
+          "atmosphere",
+          "wind",
+          "precipitation"
+        ],
+        "title": "WeatherSnapshot",
+        "type": "object"
+      },
+      "WeatherSnapshotAtmosphere": {
+        "description": "Atmospheric conditions for a weather snapshot.",
+        "properties": {
+          "humidity_percent": {
+            "title": "Humidity Percent",
+            "type": "integer"
+          },
+          "pressure_hpa": {
+            "title": "Pressure Hpa",
+            "type": "number"
+          },
+          "uv_index": {
+            "title": "Uv Index",
+            "type": "number"
+          }
+        },
+        "required": [
+          "humidity_percent",
+          "pressure_hpa",
+          "uv_index"
+        ],
+        "title": "WeatherSnapshotAtmosphere",
+        "type": "object"
+      },
+      "WeatherSnapshotPrecipitation": {
+        "description": "Precipitation signal for a weather snapshot.",
+        "properties": {
+          "probability_percent": {
+            "title": "Probability Percent",
+            "type": "integer"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "probability_percent",
+          "type"
+        ],
+        "title": "WeatherSnapshotPrecipitation",
+        "type": "object"
+      },
+      "WeatherSnapshotRequest": {
+        "description": "Request payload used to build a weather snapshot.",
+        "properties": {
+          "activity_id": {
+            "title": "Activity Id",
+            "type": "integer"
+          },
+          "athlete_id": {
+            "title": "Athlete Id",
+            "type": "integer"
+          },
+          "location": {
+            "$ref": "#/components/schemas/WeatherLocation"
+          },
+          "strava_reported_celsius": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strava Reported Celsius"
+          }
+        },
+        "required": [
+          "activity_id",
+          "athlete_id",
+          "location"
+        ],
+        "title": "WeatherSnapshotRequest",
+        "type": "object"
+      },
+      "WeatherSnapshotResponse": {
+        "description": "Normalized weather response returned by the API.",
+        "properties": {
+          "activity_id": {
+            "description": "Activity identifier",
+            "title": "Activity Id",
+            "type": "integer"
+          },
+          "athlete_id": {
+            "description": "Athlete identifier",
+            "title": "Athlete Id",
+            "type": "integer"
+          },
+          "location": {
+            "$ref": "#/components/schemas/WeatherLocation"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "weather_snapshot": {
+            "$ref": "#/components/schemas/WeatherSnapshot"
+          }
+        },
+        "required": [
+          "activity_id",
+          "athlete_id",
+          "source",
+          "location",
+          "weather_snapshot"
+        ],
+        "title": "WeatherSnapshotResponse",
+        "type": "object"
+      },
+      "WeatherSnapshotTemperatures": {
+        "description": "Temperature values for a weather snapshot.",
+        "properties": {
+          "ambient_celsius": {
+            "title": "Ambient Celsius",
+            "type": "number"
+          },
+          "feels_like_celsius": {
+            "title": "Feels Like Celsius",
+            "type": "number"
+          },
+          "strava_reported_celsius": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strava Reported Celsius"
+          }
+        },
+        "required": [
+          "ambient_celsius",
+          "feels_like_celsius"
+        ],
+        "title": "WeatherSnapshotTemperatures",
+        "type": "object"
+      },
+      "WeatherSnapshotWind": {
+        "description": "Wind conditions for a weather snapshot.",
+        "properties": {
+          "bearing_degrees": {
+            "title": "Bearing Degrees",
+            "type": "integer"
+          },
+          "cardinal_direction": {
+            "title": "Cardinal Direction",
+            "type": "string"
+          },
+          "gust_meters_per_second": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gust Meters Per Second"
+          },
+          "speed_meters_per_second": {
+            "title": "Speed Meters Per Second",
+            "type": "number"
+          }
+        },
+        "required": [
+          "speed_meters_per_second",
+          "bearing_degrees",
+          "cardinal_direction"
+        ],
+        "title": "WeatherSnapshotWind",
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -617,7 +872,7 @@
   },
   "info": {
     "description": "## Canonical API surface\n\nAll supported clients MUST use **`/api/v1/*`** paths documented here.",
-    "title": "Syntrak Auth API",
+    "title": "Snowtrak Auth API",
     "version": "1.0.0",
     "x-canonical-prefix": "/api/v1"
   },
@@ -1463,6 +1718,48 @@
         "summary": "Get User Profile By Id",
         "tags": [
           "Users"
+        ]
+      }
+    },
+    "/api/v1/weather/snapshot": {
+      "post": {
+        "description": "Build a weather snapshot for the provided activity coordinates.",
+        "operationId": "get_weather_snapshot_api_v1_weather_snapshot_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeatherSnapshotRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeatherSnapshotResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Weather Snapshot",
+        "tags": [
+          "Weather"
         ]
       }
     }

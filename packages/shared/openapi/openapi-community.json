@@ -1956,7 +1956,7 @@
     },
     "/api/v1/posts/{post_id}/conversation": {
       "get": {
-        "description": "Flattened conversation for one thread (chronological), same payload as\n``/{post_id}/comments`` \u2014 alias for Threads-style ``conversation`` naming.",
+        "description": "Flattened conversation for one thread (chronological), same payload as\n``/{post_id}/comments`` \u2014 alias for Threads-style ``conversation`` naming.\n\nDeclares the same dependencies as ``list_post_comments`` and forwards them\nexplicitly: calling a route handler as a plain function leaves any omitted\n``Depends`` default as the raw ``Depends`` object, not the resolved value.",
         "operationId": "get_post_conversation_api_v1_posts__post_id__conversation_get",
         "parameters": [
           {
@@ -1967,6 +1967,22 @@
               "format": "uuid",
               "title": "Post Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
             }
           }
         ],
