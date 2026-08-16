@@ -29,9 +29,8 @@ from shared.track_pipeline_schemas import (
 )
 
 from config import get_config
-from domains.activities_service.ports import get_activities_conn
+from domains.activities_service.ports import get_activities_conn, upload_thumbnail
 from engine.thumbnail import render_route_png
-from services.supabase_client import upload_thumbnail
 
 logger = logging.getLogger(__name__)
 

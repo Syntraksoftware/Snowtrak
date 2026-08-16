@@ -6,6 +6,12 @@ from typing import Protocol
 import asyncpg
 
 
+class ThumbnailUploader(Protocol):
+    """Provider that uploads a route thumbnail PNG and returns its public URL."""
+
+    def __call__(self, activity_id: str, png_bytes: bytes) -> str: ...
+
+
 class ActivitiesConnectionProvider(Protocol):
     """Dependency provider that yields one activity DB connection."""
 
@@ -27,3 +33,19 @@ async def get_activities_conn() -> AsyncGenerator[asyncpg.Connection, None]:
         raise RuntimeError("activities connection provider is not configured")
     async for conn in _activities_conn_provider():
         yield conn
+
+
+_thumbnail_uploader: ThumbnailUploader | None = None
+
+
+def set_thumbnail_uploader(provider: ThumbnailUploader) -> None:
+    """Register the runtime implementation for thumbnail uploads."""
+    global _thumbnail_uploader
+    _thumbnail_uploader = provider
+
+
+def upload_thumbnail(activity_id: str, png_bytes: bytes) -> str:
+    """Upload a route thumbnail through the configured provider."""
+    if _thumbnail_uploader is None:
+        raise RuntimeError("thumbnail uploader is not configured")
+    return _thumbnail_uploader(activity_id, png_bytes)
