@@ -23,8 +23,14 @@ services:
       PORT: 8080
       RATE_LIMIT_REDIS_URL: redis://redis:6379/0
       WEATHER_CACHE_REDIS_URL: redis://redis:6379/0
+      # Pinned here, not left to the merged env file. Compose's environment
+      # block wins over env_file, so a single RATE_LIMIT_NAMESPACE accidentally
+      # merged into <env>.env cannot collapse all four services onto one
+      # shared rate-limit counter.
+      RATE_LIMIT_NAMESPACE: main-backend
+      WEATHER_CACHE_NAMESPACE: main-backend
     ports:
-      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:15080:8080"
     restart: unless-stopped
     depends_on:
       - redis
@@ -42,6 +48,12 @@ services:
       PORT: 5001
       RATE_LIMIT_REDIS_URL: redis://redis:6379/0
       CACHE_REDIS_URL: redis://redis:6379/0
+      # Pinned here, not left to the merged env file. Compose's environment
+      # block wins over env_file, so a single RATE_LIMIT_NAMESPACE accidentally
+      # merged into <env>.env cannot collapse all four services onto one
+      # shared rate-limit counter.
+      RATE_LIMIT_NAMESPACE: community-backend
+      CACHE_NAMESPACE: community-backend-cache
     ports:
       - "127.0.0.1:15001:5001"
     restart: unless-stopped
@@ -60,6 +72,11 @@ services:
       HOST: 0.0.0.0
       PORT: 5100
       RATE_LIMIT_REDIS_URL: redis://redis:6379/0
+      # Pinned here, not left to the merged env file. Compose's environment
+      # block wins over env_file, so a single RATE_LIMIT_NAMESPACE accidentally
+      # merged into <env>.env cannot collapse all four services onto one
+      # shared rate-limit counter.
+      RATE_LIMIT_NAMESPACE: activity-backend
     ports:
       - "127.0.0.1:15100:5100"
     restart: unless-stopped

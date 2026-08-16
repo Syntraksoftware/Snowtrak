@@ -1,18 +1,15 @@
+# Caddy runs on the host, not in Docker, and terminates TLS for every API
+# hostname. Certificates are obtained and renewed automatically, which is why
+# port 80 must stay open in the cloud firewall alongside 443 -- the ACME
+# HTTP-01 challenge and the plain-HTTP redirect both need it.
+#
+# Every upstream below is 127.0.0.1. The Compose files bind their published
+# ports to loopback, so these services are reachable through Caddy and from
+# nowhere else. Do not add an upstream that is not 127.0.0.1.
+#
 # Replace the example domains with your real DNS names.
-# Caddy will automatically obtain and renew TLS certificates.
 
-staging-main.example.com {
-	reverse_proxy 127.0.0.1:8080
-}
-
-staging-community.example.com {
-	reverse_proxy 127.0.0.1:15001
-}
-
-staging-activity.example.com {
-	reverse_proxy 127.0.0.1:15100
-}
-
+# --- production: backend/deploy/docker-compose.production.yml, -p snowtrak-prod
 main.example.com {
 	reverse_proxy 127.0.0.1:8080
 }
@@ -27,4 +24,25 @@ activity.example.com {
 
 map.example.com {
 	reverse_proxy 127.0.0.1:5200
+}
+
+# --- staging: backend/deploy/docker-compose.staging.yml, -p snowtrak-staging
+#
+# Staging is not kept running. It is brought up for a test and taken down
+# again, so these hostnames return 502 whenever the stack is down; that is
+# expected, not a fault. The ports are deliberately in a separate range so
+# staging can run beside production without displacing it.
+#
+# There is no staging map-backend: the staging stack omits it and the Flutter
+# staging flavour ships with map features disabled.
+staging-main.example.com {
+	reverse_proxy 127.0.0.1:15080
+}
+
+staging-community.example.com {
+	reverse_proxy 127.0.0.1:15001
+}
+
+staging-activity.example.com {
+	reverse_proxy 127.0.0.1:15100
 }
