@@ -14,10 +14,13 @@ platform :ios do
   end
 
   def flutter_define_args(app_env:, map_features_enabled:)
-    [
+    args = [
       "--dart-define=APP_ENV=#{app_env}",
       "--dart-define=ENABLE_MAP_FEATURES=#{map_features_enabled}",
     ]
+    maptiler_key = ENV["MAPTILER_API_KEY"]
+    args << "--dart-define=MAPTILER_API_KEY=#{maptiler_key}" if maptiler_key && !maptiler_key.empty?
+    args
   end
 
   def flutter_build_debug(target:, app_env:, map_features_enabled:)
@@ -43,7 +46,7 @@ platform :ios do
       *flutter_define_args(app_env: app_env, map_features_enabled: map_features_enabled),
     ].join(" "))
 
-    ipa_files = Dir["build/ios/ipa/*.ipa"]
+    ipa_files = Dir["../build/ios/ipa/*.ipa"]
     UI.user_error!("No IPA produced by flutter build") if ipa_files.empty?
 
     ipa_files.max_by { |path| File.mtime(path) }
@@ -61,9 +64,14 @@ platform :ios do
     )
   end
 
+  # `flutter analyze` crashes on Flutter 3.38.6 (the version pinned in CI): its
+  # flutter_tools looks for analysis_server.dart.snapshot, but the bundled Dart
+  # SDK 3.10.7 ships only analysis_server_aot.dart.snapshot, so the launch fails
+  # with exit code 64. `dart analyze` runs the same analyzer over the same
+  # analysis_options.yaml and is unaffected. Revisit when Flutter is upgraded.
   def flutter_quality_gate
     sh("flutter pub get")
-    sh("flutter analyze")
+    sh("dart analyze")
     sh("flutter test")
   end
 
@@ -96,7 +104,7 @@ platform :ios do
     ipa_path = flutter_build_ipa(
       target: "lib/main_staging.dart",
       app_env: "staging",
-      map_features_enabled: false,
+      map_features_enabled: true,
     )
     upload_to_testflight(
       api_key: api_key,
