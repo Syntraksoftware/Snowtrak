@@ -18,7 +18,7 @@ COPY map-backend/requirements.txt ./requirements.txt
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir --upgrade "wheel>=0.46.2" "setuptools>=80.9.0" "jaraco.context>=6.1.0"
+RUN pip install --no-cache-dir --upgrade "pip>=26.1.2" "wheel>=0.46.2" "setuptools>=80.9.0" "jaraco.context>=6.1.0"
 
 # Copy application code, shared package, and repo-level db helpers (asyncpg pool + Alembic tree)
 COPY map-backend/ ./
