@@ -95,7 +95,12 @@ jobs:
           set -euo pipefail
           docker run --rm "${{ steps.vars.outputs.sha_tag }}" python -c "import shared.auth; print('shared import OK')"
 
-      - name: Scan image with Trivy (SARIF)
+      # Reporting and gating are deliberately two steps. A single step with
+      # exit-code 1 fails before the upload steps run, so a real vulnerability
+      # produced no Security-tab entry and no artifact at all -- the scan was
+      # loudest exactly when its output was least available. Report first with
+      # exit-code 0, upload, then gate. The second scan reuses the cached DB.
+      - name: Scan image with Trivy (SARIF report)
         id: trivy
         uses: aquasecurity/trivy-action@v0.35.0
         with:
@@ -104,21 +109,32 @@ jobs:
           output: trivy-${{ matrix.service }}.sarif
           severity: CRITICAL,HIGH
           ignore-unfixed: true
-          exit-code: '1'
+          exit-code: '0'
           timeout: 10m
 
       - name: Upload Trivy scan to GitHub Security tab
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy-${{ matrix.service }}.sarif
 
       - name: Upload scan artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: trivy-${{ matrix.service }}
           path: trivy-${{ matrix.service }}.sarif
           if-no-files-found: error
+
+      - name: Fail on fixable CRITICAL/HIGH vulnerabilities
+        uses: aquasecurity/trivy-action@v0.35.0
+        with:
+          image-ref: ${{ steps.vars.outputs.sha_tag }}
+          format: table
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
+          timeout: 10m
 
       - name: Log in to GHCR
         if: github.event_name != 'pull_request'

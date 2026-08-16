@@ -48,6 +48,13 @@ jobs:
         with:
           flutter-version: '3.38.6'
       
+      - name: Create placeholder MapTiler asset
+        # frontend/pubspec.yaml declares .env.local.json as an asset, but the file
+        # is gitignored (it holds a real MapTiler key), so CI never has it and the
+        # asset bundle fails to build. MapConfig.init() already tolerates an empty
+        # file and --dart-define overrides it, so a stub is enough here.
+        run: echo '{}' > frontend/.env.local.json
+
       - name: Install dependencies
         run: |
           cd frontend
