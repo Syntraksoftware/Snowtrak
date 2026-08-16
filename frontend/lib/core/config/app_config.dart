@@ -117,10 +117,10 @@ class AppConfig {
       case AppEnvironment.prod:
         return AppConfig(
           environment: environment,
-          mainApiBaseUrl: 'https://main.syntrak.app/api/v1',
-          activityApiBaseUrl: 'https://activity.syntrak.app/api/v1',
-          communityApiBaseUrl: 'https://community.syntrak.app/api/v1',
-          mapApiBaseUrl: 'https://map.syntrak.app/api/v1/map',
+          mainApiBaseUrl: 'https://main.syntrak.io/api/v1',
+          activityApiBaseUrl: 'https://activity.syntrak.io/api/v1',
+          communityApiBaseUrl: 'https://community.syntrak.io/api/v1',
+          mapApiBaseUrl: 'https://map.syntrak.io/api/v1/map',
         );
     }
   }
