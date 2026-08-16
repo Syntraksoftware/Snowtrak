@@ -75,7 +75,8 @@ those disagree, tokens minted by one service will not verify in another.
 
 The droplet previously ran `backend/docker-compose.yml` -- the development
 stack -- which publishes on `0.0.0.0`. Moving to this directory's production
-file is a one-time swap with roughly a minute of downtime.
+file is a one-time swap. Built ahead of time, the outage is seconds, not
+minutes.
 
 ```bash
 cd <VPS_APP_DIR>
@@ -84,14 +85,19 @@ git fetch origin && git checkout --detach origin/main
 # 1. The env files are already there from the old layout; confirm, don't rebuild.
 ls -l backend/*-backend/.env
 
-# 2. Start the new stack under its own project name. It cannot bind the
-#    host ports while the old one holds them, so stop the old one first.
-docker compose -f backend/docker-compose.yml down
-
+# 2. Build first, while the old stack is still serving. This is the slow part
+#    -- four images on one vCPU -- and doing it before the swap keeps the
+#    outage to the few seconds it takes to stop one stack and start another.
 docker compose -f backend/deploy/docker-compose.production.yml \
-  -p snowtrak-prod up -d --build
+  -p snowtrak-prod build
 
-# 3. Verify before trusting it.
+# 3. Swap. The new stack cannot bind the host ports while the old one holds
+#    them, so the old one goes down first.
+docker compose -f backend/docker-compose.yml down
+docker compose -f backend/deploy/docker-compose.production.yml \
+  -p snowtrak-prod up -d
+
+# 4. Verify before trusting it.
 for p in 8080 5001 5100 5200; do curl -fsS "http://127.0.0.1:$p/health" && echo " :$p ok"; done
 curl -fsS https://main.syntrak.io/health && echo " public ok"
 ```
@@ -103,10 +109,17 @@ docker compose -f backend/deploy/docker-compose.production.yml -p snowtrak-prod 
 docker compose -f backend/docker-compose.yml up -d
 ```
 
-The old stack's Redis data does not carry over: the new one uses the
-`snowtrak-prod_redis_data` volume. Redis here holds rate-limit counters,
-caches, and the activity pipeline stream, all of which rebuild -- but let the
-pipeline drain before cutting over if an upload is in flight.
+Nothing carries over from the old stack's Redis, and nothing needs to: it ran
+without a volume, so its data was already lost on every restart. The new
+service has one, plus `appendonly`, so the activity pipeline stream survives a
+restart for the first time. Still worth letting an in-flight upload finish
+before the swap.
+
+The env files are untouched by the cutover -- both stacks read the same
+`backend/<service>-backend/.env` files -- so the only differences are the port
+binding, the project name, and Redis gaining persistence. Caddy needs no
+change: it already proxies to `127.0.0.1`, which the old `0.0.0.0` binding
+happened to include.
 
 ## Staging
 
