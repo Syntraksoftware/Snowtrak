@@ -30,6 +30,9 @@ on:
           - up
           - down
 
+permissions:
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest

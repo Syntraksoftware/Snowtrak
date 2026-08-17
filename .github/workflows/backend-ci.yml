@@ -14,6 +14,9 @@ on:
 # whatever happened -- they were green through months in which the rest of CI
 # was red. The suites they run do pass; they simply were not gating anything.
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Test (${{ matrix.service }})

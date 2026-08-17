@@ -17,7 +17,7 @@ Use this together with [docs/vps_setup.md](vps_setup.md), [docs/key_inventory.md
 - A GitHub account with access to the repository.
 - Git installed locally.
 - SSH key access to the VPS.
-- GitHub repository secrets for the Apple and VPS credentials listed in [docs/key_inventory.md](key_inventory.md).
+- GitHub secrets for the credentials listed in [docs/key_inventory.md](key_inventory.md): Apple credentials as repository secrets, VPS credentials as environment secrets under `staging` and `production` (see section 7).
 - Access to the VPS environment files for staging and production.
 
 ## 3. How to connect to the server
@@ -68,24 +68,29 @@ The standard path is:
    - triggering the GitHub Actions deploy workflow, or
    - SSHing into the server and pulling the matching branch manually.
 
+Each environment has its own checkout and its own Compose project name. Use
+the right pair -- deploying staging from the production checkout reads the
+wrong revision and the wrong env files, and omitting `-p` lets one stack
+replace the other.
+
 ### Manual VPS update for staging
 
 ```bash
-cd /srv/syntrak-application
+cd /srv/snowtrak-staging      # the staging VPS_APP_DIR, not the production one
 git fetch origin
 git checkout develop
 git reset --hard origin/develop
-docker compose -f backend/deploy/docker-compose.staging.yml up -d --build
+docker compose -f backend/deploy/docker-compose.staging.yml -p snowtrak-staging up -d --build
 ```
 
 ### Manual VPS update for production
 
 ```bash
-cd /srv/syntrak-application
+cd /srv/syntrak-application   # the production VPS_APP_DIR
 git fetch origin
 git checkout main
 git reset --hard origin/main
-docker compose -f backend/deploy/docker-compose.production.yml up -d --build
+docker compose -f backend/deploy/docker-compose.production.yml -p snowtrak-prod up -d --build
 ```
 
 ## 6. How deployment should work
@@ -100,7 +105,8 @@ docker compose -f backend/deploy/docker-compose.production.yml up -d --build
 
 Use [.github/workflows/deploy-backend-vps.yml](../.github/workflows/deploy-backend-vps.yml) when you want to deploy without logging into the VPS.
 
-Required GitHub secrets:
+Required GitHub **environment** secrets, one set per environment (`staging`
+and `production`), not repository-wide:
 
 - `VPS_HOST`
 - `VPS_USER`

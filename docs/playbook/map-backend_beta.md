@@ -13,17 +13,20 @@ Behavior
 
 How to re-enable (staging -> enable map-backend)
 
+`backend/deploy/docker-compose.staging.yml` does not define `map-backend` and
+`backend/deploy/Caddyfile.example` gives staging no map host, so the staging
+stack does not read `backend/map-backend/.env` at all. These steps are for
+standing up a separate map-beta deployment: step 2 is what puts the service in
+the stack, and only then does step 1's env file get read.
+
 1. Ensure SYNTRAK_DATABASE_URL in `backend/map-backend/.env` in the staging checkout points to a resolvable and reachable Postgres/Supabase instance.
-2. Add the map-backend service to `backend/deploy/docker-compose.staging.yml` (copy from production `docker-compose.production.yml`), or run the production compose file that contains the map-backend service.
+2. Add the map-backend service to `backend/deploy/docker-compose.staging.yml`, copying the block from `docker-compose.production.yml` and moving the published port into the 15xxx range so it does not collide with production.
 3. Restart or start the map-backend container on the droplet:
 
 ```bash
-# on droplet
-cd /srv/syntrak-application
-# start only map service from production compose (example):
-docker compose -f backend/deploy/docker-compose.production.yml up -d map-backend
-# or modify staging compose and then:
-docker compose -f backend/deploy/docker-compose.staging.yml up -d map-backend
+# on droplet, in the staging checkout -- not the production one
+cd /srv/snowtrak-staging
+docker compose -f backend/deploy/docker-compose.staging.yml -p snowtrak-staging up -d map-backend
 ```
 
 Notes

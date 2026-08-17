@@ -58,8 +58,9 @@ Read sites that actually matter (the rest are docs and comments):
    it ahead of the existing one.
 2. Deploy. Nothing breaks — the old variable is still honoured.
 3. Add `SNOWTRAK_DATABASE_URL` to each service's `backend/<service>-backend/.env`
-   on the VPS, in both checkouts, and to GitHub Actions secrets. Leave the old
-   one in place.
+   on the VPS, in both checkouts. Leave the old one in place. It does not go
+   into GitHub secrets: no workflow reads a database URL, and the deploy
+   workflow only holds the four `VPS_*` credentials.
 4. Confirm the services read the new variable, then remove the fallback and the
    old variable in a follow-up commit.
 

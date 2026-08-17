@@ -146,7 +146,7 @@ Both stacks bind their service ports to `127.0.0.1` only, so Caddy is the public
 
 Staging stack:
 
-- `main-backend` on local port `18080`
+- `main-backend` on local port `15080`
 - `community-backend` on local port `15001`
 - `activity-backend` on local port `15100`
 
@@ -161,16 +161,22 @@ Production stack:
 
 From the repository root on the VPS:
 
+Neither Compose file sets a `name:`, so Compose derives the project name from
+the checkout directory. Pass `-p` explicitly -- otherwise two stacks run from
+one checkout share a project name and the second replaces the first. These
+names match `.github/workflows/deploy-backend-vps.yml` and
+`backend/deploy/Caddyfile.example`.
+
 ```bash
-docker compose -f backend/deploy/docker-compose.staging.yml up -d --build
-docker compose -f backend/deploy/docker-compose.production.yml up -d --build
+docker compose -f backend/deploy/docker-compose.staging.yml -p snowtrak-staging up -d --build
+docker compose -f backend/deploy/docker-compose.production.yml -p snowtrak-prod up -d --build
 ```
 
 Check status:
 
 ```bash
-docker compose -f backend/deploy/docker-compose.staging.yml ps
-docker compose -f backend/deploy/docker-compose.production.yml ps
+docker compose -f backend/deploy/docker-compose.staging.yml -p snowtrak-staging ps
+docker compose -f backend/deploy/docker-compose.production.yml -p snowtrak-prod ps
 ```
 
 Health checks:
