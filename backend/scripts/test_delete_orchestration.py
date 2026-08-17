@@ -4,10 +4,9 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import sys
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
@@ -29,7 +28,7 @@ def mint_token(user_id: str) -> str:
     cfg = get_config()
     payload = {
         "sub": user_id,
-        "exp": datetime.now(timezone.utc).timestamp() + 3600,
+        "exp": datetime.now(UTC).timestamp() + 3600,
     }
     return jwt.encode(payload, cfg.JWT_SECRET, algorithm=cfg.JWT_ALGORITHM)
 
@@ -39,21 +38,21 @@ async def create_map_activity(client: httpx.AsyncClient) -> str:
         "user_id": TEST_USER_ID,
         "processed_track": {
             "id": str(uuid.uuid4()),
-            "recorded_at": datetime.now(timezone.utc).isoformat(),
+            "recorded_at": datetime.now(UTC).isoformat(),
             "source_type": "live",
             "points": [
                 {
                     "lat": 47.5,
                     "lon": 8.5,
                     "elevation_m": 1200.0,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                     "speed_kmh": 12.0,
                 },
                 {
                     "lat": 47.501,
                     "lon": 8.501,
                     "elevation_m": 1190.0,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                     "speed_kmh": 15.0,
                 },
             ],
@@ -84,7 +83,7 @@ async def verify_map_points(client: httpx.AsyncClient, map_id: str) -> int:
 
 
 async def create_feed_activity(client: httpx.AsyncClient, token: str, map_id: str) -> str:
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
     body = {
         "type": "alpine",
         "name": "DELETE orchestration smoke",

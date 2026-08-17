@@ -3,6 +3,7 @@
 import logging
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from shared.pipeline_enums import ProcessingStatus
 
 from middleware.auth import get_current_user, get_optional_user
 from models import (
@@ -21,7 +22,6 @@ from services.activity_deletion_service import ActivityDeletionService
 from services.map_backend_client import get_map_backend_client
 from services.supabase_client import get_activity_client
 from services.user_stats_service import get_stats_service
-from shared.pipeline_enums import ProcessingStatus
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

@@ -1,6 +1,5 @@
 """Port contracts for trails_service (resort GeoJSON reads)."""
 
-import asyncpg
 
 _trails_conn_provider = None
 

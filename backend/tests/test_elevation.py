@@ -8,6 +8,7 @@ import httpx
 import numpy as np
 import pytest
 from fastapi import FastAPI
+
 from domains.elevation_dem_service.api import clear_dem_correction_cache, router
 
 

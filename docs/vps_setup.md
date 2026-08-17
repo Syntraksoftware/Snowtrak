@@ -98,13 +98,19 @@ cd syntrak-application
 
 ## 5. Create VPS env files
 
-Copy the example env templates and fill in real secrets.
+Each backend reads its own env file. They are not merged into one file per
+environment: `POSTGRES_SCHEMA` alone differs per service, so a shared file
+would point three services at one schema. See `backend/deploy/README.md`.
 
 ```bash
-mkdir -p backend/deploy/env
-cp backend/deploy/env/staging.env.example backend/deploy/env/staging.env
-cp backend/deploy/env/production.env.example backend/deploy/env/production.env
+for svc in main community activity map; do
+  cp "backend/${svc}-backend/.env.example" "backend/${svc}-backend/.env"
+  chmod 600 "backend/${svc}-backend/.env"
+done
 ```
+
+Staging and production separate by checkout directory, not by filename -- each
+has its own clone with its own set of these files.
 
 Populate:
 
@@ -140,7 +146,7 @@ Both stacks bind their service ports to `127.0.0.1` only, so Caddy is the public
 
 Staging stack:
 
-- `main-backend` on local port `18080`
+- `main-backend` on local port `15080`
 - `community-backend` on local port `15001`
 - `activity-backend` on local port `15100`
 
@@ -155,16 +161,22 @@ Production stack:
 
 From the repository root on the VPS:
 
+Neither Compose file sets a `name:`, so Compose derives the project name from
+the checkout directory. Pass `-p` explicitly -- otherwise two stacks run from
+one checkout share a project name and the second replaces the first. These
+names match `.github/workflows/deploy-backend-vps.yml` and
+`backend/deploy/Caddyfile.example`.
+
 ```bash
-docker compose -f backend/deploy/docker-compose.staging.yml up -d --build
-docker compose -f backend/deploy/docker-compose.production.yml up -d --build
+docker compose -f backend/deploy/docker-compose.staging.yml -p snowtrak-staging up -d --build
+docker compose -f backend/deploy/docker-compose.production.yml -p snowtrak-prod up -d --build
 ```
 
 Check status:
 
 ```bash
-docker compose -f backend/deploy/docker-compose.staging.yml ps
-docker compose -f backend/deploy/docker-compose.production.yml ps
+docker compose -f backend/deploy/docker-compose.staging.yml -p snowtrak-staging ps
+docker compose -f backend/deploy/docker-compose.production.yml -p snowtrak-prod ps
 ```
 
 Health checks:
@@ -227,7 +239,7 @@ If Caddy fails to start:
 
 If a backend container fails:
 
-- Check the relevant env file in `backend/deploy/env/`.
+- Check the relevant service's `backend/<service>-backend/.env`.
 - Use `docker compose logs -f <service-name>`.
 - Confirm Supabase credentials and JWT secrets are correct.
 

@@ -8,10 +8,10 @@ from typing import Any
 from uuid import uuid4
 
 from postgrest import CountMethod
+from shared.pipeline_enums import ProcessingStatus
 from supabase import Client, create_client
 
 from config import get_config
-from shared.pipeline_enums import ProcessingStatus
 
 logger = logging.getLogger(__name__)
 

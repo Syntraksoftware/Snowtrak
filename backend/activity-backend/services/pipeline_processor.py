@@ -5,7 +5,8 @@ from __future__ import annotations
 import logging
 from datetime import datetime
 from typing import Any
-from uuid import uuid4
+
+from shared.pipeline_enums import ProcessingStatus
 
 from config import get_config
 from services.gpx_parser import parse_gpx_bytes
@@ -13,7 +14,6 @@ from services.map_backend_client import MapBackendClient, get_map_backend_client
 from services.nivus_client import NivusClient, get_nivus_client
 from services.supabase_client import ActivitySupabaseClient
 from services.user_stats_service import get_stats_service
-from shared.pipeline_enums import ProcessingStatus
 
 logger = logging.getLogger(__name__)
 

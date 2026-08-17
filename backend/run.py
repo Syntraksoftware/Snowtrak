@@ -151,10 +151,9 @@ def start_all_services():
         reported_stops = set()
         while True:
             for service_name, proc in processes.items():
-                if proc.poll() is not None:
-                    if service_name not in reported_stops:
-                        print(f"⚠️  {service_name}-backend stopped (exit code: {proc.returncode})")
-                        reported_stops.add(service_name)
+                if proc.poll() is not None and service_name not in reported_stops:
+                    print(f"⚠️  {service_name}-backend stopped (exit code: {proc.returncode})")
+                    reported_stops.add(service_name)
             import time
 
             time.sleep(1)

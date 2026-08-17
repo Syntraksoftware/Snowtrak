@@ -95,7 +95,12 @@ jobs:
           set -euo pipefail
           docker run --rm "${{ steps.vars.outputs.sha_tag }}" python -c "import shared.auth; print('shared import OK')"
 
-      - name: Scan image with Trivy (SARIF)
+      # Reporting and gating are deliberately two steps. A single step with
+      # exit-code 1 fails before the upload steps run, so a real vulnerability
+      # produced no Security-tab entry and no artifact at all -- the scan was
+      # loudest exactly when its output was least available. Report first with
+      # exit-code 0, upload, then gate. The second scan reuses the cached DB.
+      - name: Scan image with Trivy (SARIF report)
         id: trivy
         uses: aquasecurity/trivy-action@v0.35.0
         with:
@@ -104,21 +109,54 @@ jobs:
           output: trivy-${{ matrix.service }}.sarif
           severity: CRITICAL,HIGH
           ignore-unfixed: true
-          exit-code: '1'
+          exit-code: '0'
           timeout: 10m
 
+      # Uploads run only if the scan actually produced a file. Guarding on
+      # always() alone turns a failed scan into three failures, burying the one
+      # that matters -- which is how a Trivy binary download failing with exit
+      # 35 surfaced as "Path does not exist: trivy-*.sarif".
       - name: Upload Trivy scan to GitHub Security tab
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        if: always() && steps.trivy.outcome == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy-${{ matrix.service }}.sarif
 
       - name: Upload scan artifact
+        if: always() && steps.trivy.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: trivy-${{ matrix.service }}
           path: trivy-${{ matrix.service }}.sarif
           if-no-files-found: error
+
+      # Gates on the report already produced rather than scanning a second
+      # time. A second trivy-action run means a second binary and DB download
+      # per service, eight per workflow, which is what started failing.
+      #
+      # Filters on level, because trivy's SARIF writer ignores the severity
+      # input that its table output honours -- a scan asked for CRITICAL,HIGH
+      # still emits MEDIUM and LOW findings into the file. level maps exactly:
+      # error is CRITICAL/HIGH, warning is MEDIUM, note is LOW. Counting every
+      # result instead would gate on LOW severity issues.
+      - name: Fail on fixable CRITICAL/HIGH vulnerabilities
+        if: steps.trivy.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          report="trivy-${{ matrix.service }}.sarif"
+          filter='[.runs[].results[]? | select(.level == "error")]'
+
+          total=$(jq '[.runs[].results[]?] | length' "$report")
+          count=$(jq "$filter | length" "$report")
+          echo "${{ matrix.service }}: $count CRITICAL/HIGH of $total findings."
+
+          if [ "$count" -eq 0 ]; then
+            exit 0
+          fi
+          echo "::error::$count fixable CRITICAL/HIGH vulnerabilities in ${{ matrix.service }}"
+          jq -r "$filter"' | .[] | "  \(.ruleId)\t\(.message.text | split("\n")[0])"' "$report" | sort -u
+          exit 1
 
       - name: Log in to GHCR
         if: github.event_name != 'pull_request'

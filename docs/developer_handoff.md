@@ -2,7 +2,7 @@
 
 This document is for future developers who need to continue the VPS deployment work, push changes, or operate the app in a predictable way.
 
-Use this together with [docs/vps_setup.md](vps_setup.md), [docs/key_inventory.md](key_inventory.md), [docs/branch_policy.md](branch_policy.md), [docs/api_standardization.md](api_standardization.md), and [docs/playbook/map-backend_beta.md](playbook/map-backend_beta.md).
+Use this together with [docs/vps_setup.md](vps_setup.md), [docs/branch_policy.md](branch_policy.md), [docs/api_standardization.md](api_standardization.md), and [docs/playbook/map-backend_beta.md](playbook/map-backend_beta.md).
 
 ## 1. What this project uses
 
@@ -17,7 +17,7 @@ Use this together with [docs/vps_setup.md](vps_setup.md), [docs/key_inventory.md
 - A GitHub account with access to the repository.
 - Git installed locally.
 - SSH key access to the VPS.
-- GitHub repository secrets for the Apple and VPS credentials listed in [docs/key_inventory.md](key_inventory.md).
+- The GitHub secrets listed in section 7: Apple credentials as repository secrets, VPS credentials as environment secrets under `staging` and `production`.
 - Access to the VPS environment files for staging and production.
 
 ## 3. How to connect to the server
@@ -68,24 +68,29 @@ The standard path is:
    - triggering the GitHub Actions deploy workflow, or
    - SSHing into the server and pulling the matching branch manually.
 
+Each environment has its own checkout and its own Compose project name. Use
+the right pair -- deploying staging from the production checkout reads the
+wrong revision and the wrong env files, and omitting `-p` lets one stack
+replace the other.
+
 ### Manual VPS update for staging
 
 ```bash
-cd /srv/syntrak-application
+cd /srv/snowtrak-staging      # the staging VPS_APP_DIR, not the production one
 git fetch origin
 git checkout develop
 git reset --hard origin/develop
-docker compose -f backend/deploy/docker-compose.staging.yml up -d --build
+docker compose -f backend/deploy/docker-compose.staging.yml -p snowtrak-staging up -d --build
 ```
 
 ### Manual VPS update for production
 
 ```bash
-cd /srv/syntrak-application
+cd /srv/syntrak-application   # the production VPS_APP_DIR
 git fetch origin
 git checkout main
 git reset --hard origin/main
-docker compose -f backend/deploy/docker-compose.production.yml up -d --build
+docker compose -f backend/deploy/docker-compose.production.yml -p snowtrak-prod up -d --build
 ```
 
 ## 6. How deployment should work
@@ -100,7 +105,8 @@ docker compose -f backend/deploy/docker-compose.production.yml up -d --build
 
 Use [.github/workflows/deploy-backend-vps.yml](../.github/workflows/deploy-backend-vps.yml) when you want to deploy without logging into the VPS.
 
-Required GitHub secrets:
+Required GitHub **environment** secrets, one set per environment (`staging`
+and `production`), not repository-wide:
 
 - `VPS_HOST`
 - `VPS_USER`
@@ -109,12 +115,20 @@ Required GitHub secrets:
 
 ## 7. Secrets and env files
 
-Keep App Store Connect secrets in GitHub repository secrets.
+Keep the App Store Connect and build secrets in GitHub **repository** secrets --
+they are the same for every lane, so there is nothing to scope per environment:
+`ASC_KEY_BASE64`, `ASC_KEY_ID`, `ASC_ISSUER_ID`, `APP_IDENTIFIER`,
+`PROV_PROFILE_NAME`, `FASTLANE_APPLE_ID`, `MAPTILER_API_KEY`.
 
-Keep backend runtime secrets in the VPS env files:
+Keep backend runtime secrets in the per-service VPS env files, one per
+backend, in each environment's own checkout:
 
-- `backend/deploy/env/staging.env`
-- `backend/deploy/env/production.env`
+- `/srv/syntrak-application/backend/<service>-backend/.env` (production)
+- `/srv/snowtrak-staging/backend/<service>-backend/.env` (staging)
+
+Deploy credentials themselves live in GitHub environment secrets
+(`VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_APP_DIR`), one set per
+environment, not in repository secrets.
 
 Do not commit real `.env` files to git.
 
@@ -139,7 +153,7 @@ Do not commit real `.env` files to git.
 Start with:
 
 1. Read [docs/branch_policy.md](branch_policy.md).
-2. Read [docs/key_inventory.md](key_inventory.md).
+2. Read section 7 above, then [backend/deploy/README.md](../backend/deploy/README.md).
 3. Read [docs/vps_setup.md](vps_setup.md).
 4. Verify you can SSH into the VPS.
 5. Verify staging can deploy before changing production.

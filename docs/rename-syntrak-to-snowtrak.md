@@ -57,13 +57,14 @@ Read sites that actually matter (the rest are docs and comments):
    For `map-backend/config.py`, add a `SNOWTRAK_DATABASE_URL` field and resolve
    it ahead of the existing one.
 2. Deploy. Nothing breaks — the old variable is still honoured.
-3. Add `SNOWTRAK_DATABASE_URL` to the VPS `.env`, `backend/deploy/env/*.env`,
-   and GitHub Actions secrets. Leave the old one in place.
+3. Add `SNOWTRAK_DATABASE_URL` to each service's `backend/<service>-backend/.env`
+   on the VPS, in both checkouts. Leave the old one in place. It does not go
+   into GitHub secrets: no workflow reads a database URL, and the deploy
+   workflow only holds the four `VPS_*` credentials.
 4. Confirm the services read the new variable, then remove the fallback and the
    old variable in a follow-up commit.
 
-Also update when this lands: `backend/deploy/env/production.env.example:15`,
-`backend/map-backend/.env.example:15`, `backend/postgres.env.example:2`,
+Also update when this lands: `backend/map-backend/.env.example:15`, `backend/postgres.env.example:2`,
 `backend/alembic.ini:89-90`, and the `SYNTRAK_DATABASE_URL` mentions in
 `backend/db/migrations/README.md`, `docs/vps_setup.md`,
 `docs/playbook/map-flow/README.md`, and `docs/playbook/nivus-trail-server.md`.

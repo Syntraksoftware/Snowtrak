@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 from supabase import create_client
@@ -224,7 +224,7 @@ def _parse_date(value: str) -> date | None:
     if not value:
         return None
     try:
-        return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(timezone.utc).date()
+        return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(UTC).date()
     except ValueError:
         logger.warning("Could not parse activity date: %s", value)
         return None

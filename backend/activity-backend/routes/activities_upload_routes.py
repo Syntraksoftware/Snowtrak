@@ -7,6 +7,7 @@ from datetime import datetime
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from shared.pipeline_enums import ProcessingStatus
 
 from config import get_config
 from middleware.auth import get_current_user
@@ -14,7 +15,6 @@ from models import UploadCompleteResponse, UploadUrlRequest, UploadUrlResponse
 from services.pipeline_processor import PipelineProcessor, build_storage_key
 from services.pipeline_queue import publish_pipeline_job
 from services.supabase_client import get_activity_client
-from shared.pipeline_enums import ProcessingStatus
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

@@ -1,6 +1,16 @@
 default_platform(:ios)
 
 platform :ios do
+  # fastlane runs lanes with the working directory set to this fastlane folder,
+  # not the Flutter project root. That is not a detail: `flutter pub get` walks
+  # up the tree and worked by accident, `flutter test` does not and failed, and
+  # `dart analyze` silently analysed the fastlane directory -- zero Dart files,
+  # "No issues found!", a quality gate that passed without looking at the app.
+  # Anchor on this file's own location instead of the process directory.
+  def flutter_root
+    File.expand_path("../..", File.dirname(__FILE__))
+  end
+
   def app_identifier
     ENV.fetch("APP_IDENTIFIER", "com.syntrak.snowtrak.app")
   end
@@ -24,29 +34,35 @@ platform :ios do
   end
 
   def flutter_build_debug(target:, app_env:, map_features_enabled:)
-    sh([
-      "flutter",
-      "build",
-      "ios",
-      "--debug",
-      "--no-codesign",
-      "-t",
-      target,
-      *flutter_define_args(app_env: app_env, map_features_enabled: map_features_enabled),
-    ].join(" "))
+    Dir.chdir(flutter_root) do
+      sh([
+        "flutter",
+        "build",
+        "ios",
+        "--debug",
+        "--no-codesign",
+        "-t",
+        target,
+        *flutter_define_args(app_env: app_env, map_features_enabled: map_features_enabled),
+      ].join(" "))
+    end
   end
 
   def flutter_build_ipa(target:, app_env:, map_features_enabled:)
-    sh([
-      "flutter",
-      "build",
-      "ipa",
-      "-t",
-      target,
-      *flutter_define_args(app_env: app_env, map_features_enabled: map_features_enabled),
-    ].join(" "))
+    Dir.chdir(flutter_root) do
+      sh([
+        "flutter",
+        "build",
+        "ipa",
+        "-t",
+        target,
+        *flutter_define_args(app_env: app_env, map_features_enabled: map_features_enabled),
+      ].join(" "))
+    end
 
-    ipa_files = Dir["../build/ios/ipa/*.ipa"]
+    # Absolute, for the same reason: "../build" resolved against the fastlane
+    # folder points at frontend/ios/build, which flutter never writes to.
+    ipa_files = Dir[File.join(flutter_root, "build/ios/ipa/*.ipa")]
     UI.user_error!("No IPA produced by flutter build") if ipa_files.empty?
 
     ipa_files.max_by { |path| File.mtime(path) }
@@ -70,9 +86,11 @@ platform :ios do
   # with exit code 64. `dart analyze` runs the same analyzer over the same
   # analysis_options.yaml and is unaffected. Revisit when Flutter is upgraded.
   def flutter_quality_gate
-    sh("flutter pub get")
-    sh("dart analyze")
-    sh("flutter test")
+    Dir.chdir(flutter_root) do
+      sh("flutter pub get")
+      sh("dart analyze")
+      sh("flutter test")
+    end
   end
 
   def build_release_ipa

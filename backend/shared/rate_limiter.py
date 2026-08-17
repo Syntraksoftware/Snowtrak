@@ -5,15 +5,14 @@ from __future__ import annotations
 import fnmatch
 import logging
 import time
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from typing import Callable, Iterable, Optional
 
+import redis.asyncio as redis
 from fastapi import FastAPI
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
-
-import redis.asyncio as redis
 
 logger = logging.getLogger(__name__)
 
@@ -23,12 +22,12 @@ class RateLimitPolicy:
     """A route/method-specific rate limit policy."""
 
     path_pattern: str
-    methods: Optional[set[str]]
+    methods: set[str] | None
     limit: int
     window_seconds: int
 
     @classmethod
-    def from_dict(cls, value: dict) -> "RateLimitPolicy":
+    def from_dict(cls, value: dict) -> RateLimitPolicy:
         methods = value.get("methods")
         normalized_methods = None
 
@@ -64,8 +63,8 @@ class RedisRateLimitMiddleware(BaseHTTPMiddleware):
         redis_client: redis.Redis,
         namespace: str,
         policies: Iterable[RateLimitPolicy],
-        default_policy: Optional[RateLimitPolicy] = None,
-        client_key_func: Optional[Callable[[Request], str]] = None,
+        default_policy: RateLimitPolicy | None = None,
+        client_key_func: Callable[[Request], str] | None = None,
         fail_open: bool = True,
     ):
         super().__init__(app)
@@ -140,7 +139,7 @@ class RedisRateLimitMiddleware(BaseHTTPMiddleware):
                 content={"detail": "Rate limiting unavailable"},
             )
 
-    def _select_policy(self, request: Request) -> Optional[RateLimitPolicy]:
+    def _select_policy(self, request: Request) -> RateLimitPolicy | None:
         method = request.method.upper()
         path = request.url.path
 
@@ -160,9 +159,9 @@ def add_redis_rate_limiter(
     redis_url: str,
     namespace: str,
     policies: Iterable[dict | RateLimitPolicy],
-    default_limit: Optional[int] = None,
+    default_limit: int | None = None,
     default_window_seconds: int = 60,
-    client_key_func: Optional[Callable[[Request], str]] = None,
+    client_key_func: Callable[[Request], str] | None = None,
     fail_open: bool = True,
 ) -> None:
     """Attach Redis-backed rate limiter middleware to a FastAPI app."""

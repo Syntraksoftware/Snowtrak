@@ -55,13 +55,19 @@ def _source_files() -> list[Path]:
 
 
 def _dependency_params(func: ast.FunctionDef | ast.AsyncFunctionDef) -> list[str]:
-    """Names of parameters whose default is a FastAPI dependency marker."""
+    """Names of parameters whose default is a FastAPI dependency marker.
+
+    strict=True on purpose: padding makes the two lists the same length by
+    construction, so a mismatch means an argument shape this function does not
+    model (positional-only parameters, say) and silently mis-pairing names with
+    defaults would make the whole check quietly wrong.
+    """
     args = func.args.args + func.args.kwonlyargs
     padding = [None] * (len(func.args.args) - len(func.args.defaults))
     defaults = padding + list(func.args.defaults) + list(func.args.kw_defaults)
     return [
         arg.arg
-        for arg, default in zip(args, defaults)
+        for arg, default in zip(args, defaults, strict=True)
         if isinstance(default, ast.Call)
         and isinstance(default.func, ast.Name)
         and default.func.id in DEPENDENCY_MARKERS

@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
 import asyncpg
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from .bbox import parse_bbox
 from .geojson import rows_to_feature_collection

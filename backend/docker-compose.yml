@@ -1,9 +1,21 @@
+# Every published port below binds to 127.0.0.1 on purpose. A bare "8080:8080"
+# publishes on 0.0.0.0, and Docker writes its own iptables rules ahead of ufw, so
+# a host firewall does not undo it. This file was found serving production with
+# Redis and all four APIs reachable from the public internet; loopback binding is
+# the fix that survives a misconfigured firewall. Caddy runs on the host and
+# reverse-proxies to these ports, so nothing here needs an external address.
+#
+# Backends reach Redis as redis://redis:6379/0 over the Compose network, which
+# does not involve the published port at all -- 6379 is published only so a
+# developer can run redis-cli against it locally.
 services:
   redis:
+    # No requirepass: reachable only over the Compose network and loopback.
+    # If this ever needs a non-loopback binding, set a password first.
     image: redis:7-alpine
     container_name: snowtrak-redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     restart: unless-stopped
 
   main-backend:
@@ -20,7 +32,7 @@ services:
       - RATE_LIMIT_REDIS_URL=redis://redis:6379/0
       - WEATHER_CACHE_REDIS_URL=redis://redis:6379/0
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     depends_on:
       - redis
     restart: unless-stopped
@@ -39,7 +51,7 @@ services:
       - RATE_LIMIT_REDIS_URL=redis://redis:6379/0
       - CACHE_REDIS_URL=redis://redis:6379/0
     ports:
-      - "5001:5001"
+      - "127.0.0.1:5001:5001"
     depends_on:
       - redis
     restart: unless-stopped
@@ -57,7 +69,7 @@ services:
       - PORT=5100
       - RATE_LIMIT_REDIS_URL=redis://redis:6379/0
     ports:
-      - "5100:5100"
+      - "127.0.0.1:5100:5100"
     depends_on:
       - redis
     restart: unless-stopped
@@ -82,7 +94,7 @@ services:
       - POSTGIS_PASSWORD=${POSTGRES_PASSWORD:-syntrak_local_dev}
       - RATE_LIMIT_REDIS_URL=redis://redis:6379/0
     ports:
-      - "5200:5200"
+      - "127.0.0.1:5200:5200"
     depends_on:
       - redis
     restart: unless-stopped
@@ -94,7 +106,7 @@ services:
     env_file:
       - ./postgres.env
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgis_data:/var/lib/postgresql/data
     healthcheck:

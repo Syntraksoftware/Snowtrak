@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from shared import ListResponse
 
+from config import get_config
 from middleware.auth import get_optional_user
 from routes.community_models import (
     CommentsBatchRequest,
@@ -21,7 +22,6 @@ from routes.community_models import (
     PostCommentsBundle,
 )
 from routes.list_response_builder import build_paginated_list_response
-from services.supabase_client import get_community_client
 from services.community_cache import (
     feed_cache_key,
     get_cache_version,
@@ -29,7 +29,7 @@ from services.community_cache import (
     post_comments_cache_key,
     set_cached_json,
 )
-from config import get_config
+from services.supabase_client import get_community_client
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

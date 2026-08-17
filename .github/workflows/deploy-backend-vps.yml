@@ -1,5 +1,10 @@
 name: Deploy Backend to VPS
 
+# Manual only, by choice. A merge to main is not a deploy: you pick when
+# production changes. The production environment additionally carries a
+# required reviewer, so this workflow pauses for approval before it touches
+# the live stack.
+
 on:
   workflow_dispatch:
     inputs:
@@ -11,30 +16,104 @@ on:
         options:
           - staging
           - production
+      ref:
+        description: Branch or tag to deploy (staging only; production always deploys main)
+        required: false
+        default: main
+        type: string
+      action:
+        description: Bring the stack up, or take it down (staging only)
+        required: true
+        default: up
+        type: choice
+        options:
+          - up
+          - down
+
+permissions:
+  contents: read
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Resolves VPS_HOST, VPS_USER, VPS_SSH_KEY and VPS_APP_DIR from the chosen
+    # environment. Staging and production therefore point at different checkout
+    # directories on the box, which is what stops one from git-reset --hard'ing
+    # over the other.
+    environment: ${{ inputs.environment }}
     steps:
+      - name: Reject a production teardown
+        if: inputs.environment == 'production' && inputs.action == 'down'
+        run: |
+          echo "::error::Refusing to take production down from this workflow." >&2
+          exit 1
+
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          DEPLOY_ENV: ${{ inputs.environment }}
+          DEPLOY_REF: ${{ inputs.ref }}
+          DEPLOY_ACTION: ${{ inputs.action }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          envs: DEPLOY_ENV,DEPLOY_REF,DEPLOY_ACTION
           script: |
-            set -e
+            set -euo pipefail
             cd "${{ secrets.VPS_APP_DIR }}"
-            git fetch origin
 
-            if [ "${{ inputs.environment }}" = "production" ]; then
-              git checkout main
-              git reset --hard origin/main
-              docker compose -f backend/deploy/docker-compose.production.yml up -d --build
+            if [ "$DEPLOY_ENV" = "production" ]; then
+              COMPOSE=backend/deploy/docker-compose.production.yml
+              PROJECT=snowtrak-prod
+              REF=main
+              HEALTH_PORT=8080
             else
-              git checkout develop
-              git reset --hard origin/develop
-              docker compose -f backend/deploy/docker-compose.staging.yml up -d --build
+              COMPOSE=backend/deploy/docker-compose.staging.yml
+              PROJECT=snowtrak-staging
+              REF="$DEPLOY_REF"
+              HEALTH_PORT=15080
             fi
 
+            # -p pins the Compose project name. Without it both files resolve to
+            # the name of their parent directory ("deploy") and a staging deploy
+            # replaces the production containers instead of running beside them.
+            if [ "$DEPLOY_ACTION" = "down" ]; then
+              docker compose -f "$COMPOSE" -p "$PROJECT" down
+              echo "$PROJECT stopped."
+              exit 0
+            fi
+
+            # Each service reads its own env file, which holds live credentials
+            # and is not in git. They are deliberately not merged: POSTGRES_SCHEMA
+            # alone differs per service (main / community / map), so one shared
+            # file would point three services at one schema. Fail loudly rather
+            # than starting against missing configuration.
+            missing=""
+            for svc in main community activity map; do
+              [ -f "backend/${svc}-backend/.env" ] || missing="$missing backend/${svc}-backend/.env"
+            done
+            if [ -n "$missing" ]; then
+              echo "::error::missing env files:$missing -- see backend/deploy/README.md" >&2
+              exit 1
+            fi
+
+            git fetch origin --prune --tags
+            git checkout --detach "origin/$REF" 2>/dev/null || git checkout --detach "$REF"
+            echo "Deploying $DEPLOY_ENV from $REF at $(git rev-parse --short HEAD)"
+
+            docker compose -f "$COMPOSE" -p "$PROJECT" up -d --build
             docker image prune -f
+
+            # Compose returns as soon as the containers start, which is before
+            # uvicorn is listening. Poll instead of trusting the exit code.
+            for i in $(seq 1 30); do
+              if curl -fsS -o /dev/null "http://127.0.0.1:${HEALTH_PORT}/health"; then
+                echo "main-backend healthy after ${i}0s"
+                exit 0
+              fi
+              sleep 10
+            done
+            echo "::error::main-backend did not become healthy within 5 minutes." >&2
+            docker compose -f "$COMPOSE" -p "$PROJECT" logs --tail 50 main-backend >&2
+            exit 1
