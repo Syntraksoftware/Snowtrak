@@ -157,8 +157,16 @@ jobs:
             # alone differs per service (main / community / map), so one shared
             # file would point three services at one schema. Fail loudly rather
             # than starting against missing configuration.
+            # Only the services this environment actually runs. The staging
+            # Compose file has no map-backend, so demanding a map env file there
+            # failed a deploy over configuration the stack never reads.
+            env_svcs="main community activity"
+            if [ "$DEPLOY_ENV" = "production" ]; then
+              env_svcs="$env_svcs map"
+            fi
+
             missing=""
-            for svc in main community activity map; do
+            for svc in $env_svcs; do
               [ -f "backend/${svc}-backend/.env" ] || missing="$missing backend/${svc}-backend/.env"
             done
             if [ -n "$missing" ]; then
