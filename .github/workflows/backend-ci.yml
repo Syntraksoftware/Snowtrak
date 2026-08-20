@@ -5,7 +5,12 @@ on:
   # required check that never starts leaves the PR permanently pending and
   # unmergeable -- which is exactly what a docs-only PR would have done while
   # this was filtered on 'backend/**'.
+  #
+  # push is scoped to the long-lived branches while pull_request is not. An
+  # unscoped push ran these five jobs a second time for every PR branch commit,
+  # producing two runs of an identical suite for the same SHA.
   push:
+    branches: [main, develop]
   pull_request:
 
 # Every step here used to end in `|| true`, so all four jobs reported success
