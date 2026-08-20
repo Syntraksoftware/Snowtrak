@@ -87,11 +87,10 @@ git fetch origin && git checkout --detach origin/main
 # 1. The env files are already there from the old layout; confirm, don't rebuild.
 ls -l backend/*-backend/.env
 
-# 2. Build first, while the old stack is still serving. This is the slow part
-#    -- four images on one vCPU -- and doing it before the swap keeps the
-#    outage to the few seconds it takes to stop one stack and start another.
-docker compose -f backend/deploy/docker-compose.production.yml \
-  -p snowtrak-prod build
+# 2. There is nothing to build. Images are built and scanned in CI and pulled
+#    by digest at deploy time, so the slow four-image build on one vCPU is
+#    gone. Run the deploy workflow to bring the new stack up (step 3 shows what
+#    it does on the box).
 
 # 3. Swap. The new stack cannot bind the host ports while the old one holds
 #    them, so the old one goes down first. The old stack has no `name:` in its
@@ -101,8 +100,8 @@ docker compose -f backend/deploy/docker-compose.production.yml \
 #    fails to bind.
 docker compose ls
 docker compose -f backend/docker-compose.yml -p <old-project-name> down
-docker compose -f backend/deploy/docker-compose.production.yml \
-  -p snowtrak-prod up -d
+
+# Then run: Actions -> Deploy Backend to VPS -> production, ref: v1.2.3
 
 # 4. Verify before trusting it. Stop on the first failure -- without the
 #    `|| break` a later passing check masks an earlier one.
@@ -153,6 +152,33 @@ over the other.
 
 `staging-map.syntrak.io` has no DNS record. Add one only if a staging
 map-backend is ever introduced.
+
+## Break glass
+
+**Rolling back.** Re-run the deploy workflow with the previous release tag.
+That is the whole procedure -- images for older tags stay in GHCR, so there is
+nothing to rebuild.
+
+**If Actions is unavailable.** On the box, with digests taken from the last
+good deploy's job summary:
+
+```bash
+cd <VPS_APP_DIR>
+export SNOWTRAK_MAIN_IMAGE=ghcr.io/syntraksoftware/snowtrak-main-backend@sha256:...
+export SNOWTRAK_COMMUNITY_IMAGE=ghcr.io/syntraksoftware/snowtrak-community-backend@sha256:...
+export SNOWTRAK_ACTIVITY_IMAGE=ghcr.io/syntraksoftware/snowtrak-activity-backend@sha256:...
+export SNOWTRAK_MAP_IMAGE=ghcr.io/syntraksoftware/snowtrak-map-backend@sha256:...
+docker compose -f backend/deploy/docker-compose.production.yml -p snowtrak-prod pull
+docker compose -f backend/deploy/docker-compose.production.yml -p snowtrak-prod up -d
+```
+
+This is the only sanctioned manual path, and it exists for the case where the
+normal one is down. It is not a shortcut for a routine deploy.
+
+**The limit of all this.** Anyone with SSH to the droplet can bypass every
+control above. That is a trust boundary, not a technical one. The controls are
+that the bypass is not the documented route, and that SSH access is granted
+narrowly -- not that it is impossible.
 
 ## GitHub environments
 
