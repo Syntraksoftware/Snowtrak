@@ -4,7 +4,10 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - 'v*'
+      # Final versions only. 'v*' also matched pre-release tags such as
+      # v0.0.1-rc1, so the release candidate used to verify the backend deploy
+      # path would itself have uploaded a build to App Store Connect.
+      - 'v[0-9]+.[0-9]+.[0-9]+'
 
 permissions:
   contents: read
@@ -13,6 +16,9 @@ jobs:
   build-and-upload:
     name: Build iOS and Upload to App Store Connect
     runs-on: macos-latest
+    # Pauses for an admin's approval before any binary reaches Apple. The tag
+    # still starts the run; the upload waits.
+    environment: appstore
     steps:
       - uses: actions/checkout@v4
 
