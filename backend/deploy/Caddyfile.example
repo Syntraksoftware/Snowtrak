@@ -33,8 +33,10 @@ map.example.com {
 # expected, not a fault. The ports are deliberately in a separate range so
 # staging can run beside production without displacing it.
 #
-# There is no staging map-backend: the staging stack omits it and the Flutter
-# staging flavour ships with map features disabled.
+# The staging stack runs the same four services as production. The Flutter
+# staging flavour builds with map features enabled and points at
+# staging-map.<domain>, so omitting the map host left every staging map call
+# failing on DNS.
 staging-main.example.com {
 	reverse_proxy 127.0.0.1:15080
 }
@@ -45,4 +47,8 @@ staging-community.example.com {
 
 staging-activity.example.com {
 	reverse_proxy 127.0.0.1:15100
+}
+
+staging-map.example.com {
+	reverse_proxy 127.0.0.1:15200
 }

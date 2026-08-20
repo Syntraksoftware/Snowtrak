@@ -142,16 +142,20 @@ Actions → Deploy Backend to VPS → Run workflow
   action:      up      ... then later ...  down
 ```
 
-It uses `snowtrak-staging` as its project name and ports 15080/15001/15100, so
-it runs beside production rather than replacing it. It has no `map-backend`;
-the Flutter staging flavour ships with map features disabled.
+It uses `snowtrak-staging` as its project name and ports
+15080/15001/15100/15200, so it runs beside production rather than replacing it.
+It runs the same four services as production: the Flutter staging flavour
+builds with map features enabled and points at `staging-map.syntrak.io`, so a
+staging stack without a map-backend left every map call in the staging app
+failing on DNS.
 
 Staging and production use different `VPS_APP_DIR` values, set per GitHub
 environment, so they are separate checkouts and neither can `git reset --hard`
 over the other.
 
-`staging-map.syntrak.io` has no DNS record. Add one only if a staging
-map-backend is ever introduced.
+`staging-map.syntrak.io` needs a DNS A record pointing at the droplet, the
+same as the other staging hosts. Until it exists, the staging app's map calls
+fail even though the backend is running.
 
 ## Break glass
 

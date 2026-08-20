@@ -79,12 +79,10 @@ jobs:
             exit 1
           fi
 
-          # map-backend is production-only; the staging Compose file has no such
-          # service, so resolving it would fail on an image that is never used.
-          services="main-backend community-backend activity-backend"
-          if [ "$DEPLOY_ENV" = "production" ]; then
-            services="$services map-backend"
-          fi
+          # Both stacks run the same four services. Keep in step with the
+          # Compose files -- an unresolved service leaves its image variable
+          # unset, and the `:?` in the Compose file aborts the deploy.
+          services="main-backend community-backend activity-backend map-backend"
 
           echo "Resolving \`$image_tag\`" >> "$GITHUB_STEP_SUMMARY"
           for svc in $services; do
@@ -131,15 +129,20 @@ jobs:
             set -euo pipefail
             cd "${{ secrets.VPS_APP_DIR }}"
 
+            # Both environments check out the ref being deployed. Production
+            # used to pin REF=main, from when it always deployed branch HEAD.
+            # That would now pair images built from the tag with Compose files
+            # taken from main -- so a rollback to an older tag would run old
+            # images against newer Compose files, which is the one moment that
+            # surprise is least welcome.
+            REF="$DEPLOY_REF"
             if [ "$DEPLOY_ENV" = "production" ]; then
               COMPOSE=backend/deploy/docker-compose.production.yml
               PROJECT=snowtrak-prod
-              REF=main
               HEALTH_PORT=8080
             else
               COMPOSE=backend/deploy/docker-compose.staging.yml
               PROJECT=snowtrak-staging
-              REF="$DEPLOY_REF"
               HEALTH_PORT=15080
             fi
 
@@ -157,16 +160,11 @@ jobs:
             # alone differs per service (main / community / map), so one shared
             # file would point three services at one schema. Fail loudly rather
             # than starting against missing configuration.
-            # Only the services this environment actually runs. The staging
-            # Compose file has no map-backend, so demanding a map env file there
-            # failed a deploy over configuration the stack never reads.
-            env_svcs="main community activity"
-            if [ "$DEPLOY_ENV" = "production" ]; then
-              env_svcs="$env_svcs map"
-            fi
-
+            # Both stacks run the same four services, so both need all four env
+            # files. Keep this list in step with the Compose files: a service
+            # present there and missing here starts against no configuration.
             missing=""
-            for svc in $env_svcs; do
+            for svc in main community activity map; do
               [ -f "backend/${svc}-backend/.env" ] || missing="$missing backend/${svc}-backend/.env"
             done
             if [ -n "$missing" ]; then

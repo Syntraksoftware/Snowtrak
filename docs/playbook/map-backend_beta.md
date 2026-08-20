@@ -1,33 +1,25 @@
 Map Backend — Beta / Internal Testflight Notice
 
-Status: intentionally disabled in Beta (staging)
+Status: **enabled on staging as of 2026-08-20**
 
-Purpose
+Earlier this document described map-backend as intentionally disabled on
+staging. That was true of the Compose file but never of the app: the Flutter
+staging flavour builds with `map_features_enabled: true` and points at
+`staging-map.syntrak.io`, so "disabled" in practice meant every staging map
+call failed on DNS rather than being switched off.
 
-For internal beta / TestFlight builds we intentionally do not run the Map Backend. Map-related features (static map generation, elevation lookup, PostGIS sync) are not required for the beta; disabling the container avoids DNS/DB errors and reduces external API usage.
+Staging now runs the same four services as production, on port 15200. To
+actually disable map features for a beta build, set
+`map_features_enabled: false` in the staging lane of
+`frontend/ios/fastlane/Fastfile` -- changing the backend alone does not do it.
 
-Behavior
+Remaining setup
 
-- The map-backend container should not be present or running on staging/beta droplets.
-- Monitoring/alerting for the map-backend service should be suppressed for the beta environment to avoid noise.
-
-How to re-enable (staging -> enable map-backend)
-
-`backend/deploy/docker-compose.staging.yml` does not define `map-backend` and
-`backend/deploy/Caddyfile.example` gives staging no map host, so the staging
-stack does not read `backend/map-backend/.env` at all. These steps are for
-standing up a separate map-beta deployment: step 2 is what puts the service in
-the stack, and only then does step 1's env file get read.
-
-1. Ensure SYNTRAK_DATABASE_URL in `backend/map-backend/.env` in the staging checkout points to a resolvable and reachable Postgres/Supabase instance.
-2. Add the map-backend service to `backend/deploy/docker-compose.staging.yml`, copying the block from `docker-compose.production.yml` and moving the published port into the 15xxx range so it does not collide with production.
-3. Restart or start the map-backend container on the droplet:
-
-```bash
-# on droplet, in the staging checkout -- not the production one
-cd /srv/snowtrak-staging
-docker compose -f backend/deploy/docker-compose.staging.yml -p snowtrak-staging up -d map-backend
-```
+- `staging-map.syntrak.io` needs a DNS A record pointing at the droplet.
+- `backend/map-backend/.env` must exist in the staging checkout with
+  staging-specific credentials. Do not copy production's: the map service
+  writes, and pointing staging at the production database is how a test
+  corrupts real data.
 
 Notes
 
