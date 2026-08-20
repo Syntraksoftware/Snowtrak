@@ -17,9 +17,9 @@ on:
           - staging
           - production
       ref:
-        description: Branch or tag to deploy (staging only; production always deploys main)
-        required: false
-        default: main
+        description: 'Release tag (v1.2.3), or a 40-char commit SHA for staging only'
+        required: true
+        default: ''
         type: string
       action:
         description: Bring the stack up, or take it down (staging only)
@@ -42,6 +42,70 @@ jobs:
     # over the other.
     environment: ${{ inputs.environment }}
     steps:
+      - name: Resolve image digests
+        id: images
+        shell: bash
+        env:
+          REF: ${{ inputs.ref }}
+          DEPLOY_ENV: ${{ inputs.environment }}
+        run: |
+          set -euo pipefail
+
+          # A teardown pulls nothing, but `docker compose down` still parses the
+          # Compose file, and the image variables there are `:?` so that a real
+          # deploy fails loudly rather than running an empty image reference.
+          # Unset them and the teardown aborts instead of the stack coming down.
+          if [ "${{ inputs.action }}" = "down" ]; then
+            for v in SNOWTRAK_MAIN_IMAGE SNOWTRAK_COMMUNITY_IMAGE \
+                     SNOWTRAK_ACTIVITY_IMAGE SNOWTRAK_MAP_IMAGE; do
+              echo "$v=unused-for-teardown" >> "$GITHUB_ENV"
+            done
+            echo "Teardown: image resolution skipped." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # Production takes release tags only. Staging additionally takes a raw
+          # commit SHA so a develop commit can be tested without cutting a tag.
+          if [[ "$REF" =~ ^v ]]; then
+            image_tag="$REF"
+          elif [[ "$REF" =~ ^[0-9a-f]{40}$ ]]; then
+            if [ "$DEPLOY_ENV" = "production" ]; then
+              echo "::error::production deploys a v* release tag, not a raw SHA." >&2
+              exit 1
+            fi
+            image_tag="sha-$REF"
+          else
+            echo "::error::ref must be a v* tag or a 40-character commit SHA, got '$REF'." >&2
+            exit 1
+          fi
+
+          # map-backend is production-only; the staging Compose file has no such
+          # service, so resolving it would fail on an image that is never used.
+          services="main-backend community-backend activity-backend"
+          if [ "$DEPLOY_ENV" = "production" ]; then
+            services="$services map-backend"
+          fi
+
+          echo "Resolving \`$image_tag\`" >> "$GITHUB_STEP_SUMMARY"
+          for svc in $services; do
+            image="ghcr.io/syntraksoftware/snowtrak-${svc}"
+            digest=$(docker buildx imagetools inspect "${image}:${image_tag}" \
+              --format '{{.Manifest.Digest}}')
+            if [ -z "$digest" ]; then
+              echo "::error::could not resolve ${image}:${image_tag}" >&2
+              exit 1
+            fi
+            pinned="${image}@${digest}"
+            echo "- \`${svc}\` -> \`${digest}\`" >> "$GITHUB_STEP_SUMMARY"
+
+            case "$svc" in
+              main-backend)      echo "SNOWTRAK_MAIN_IMAGE=$pinned"      >> "$GITHUB_ENV" ;;
+              community-backend) echo "SNOWTRAK_COMMUNITY_IMAGE=$pinned" >> "$GITHUB_ENV" ;;
+              activity-backend)  echo "SNOWTRAK_ACTIVITY_IMAGE=$pinned"  >> "$GITHUB_ENV" ;;
+              map-backend)       echo "SNOWTRAK_MAP_IMAGE=$pinned"       >> "$GITHUB_ENV" ;;
+            esac
+          done
+
       - name: Reject a production teardown
         if: inputs.environment == 'production' && inputs.action == 'down'
         run: |
@@ -54,11 +118,15 @@ jobs:
           DEPLOY_ENV: ${{ inputs.environment }}
           DEPLOY_REF: ${{ inputs.ref }}
           DEPLOY_ACTION: ${{ inputs.action }}
+          SNOWTRAK_MAIN_IMAGE: ${{ env.SNOWTRAK_MAIN_IMAGE }}
+          SNOWTRAK_COMMUNITY_IMAGE: ${{ env.SNOWTRAK_COMMUNITY_IMAGE }}
+          SNOWTRAK_ACTIVITY_IMAGE: ${{ env.SNOWTRAK_ACTIVITY_IMAGE }}
+          SNOWTRAK_MAP_IMAGE: ${{ env.SNOWTRAK_MAP_IMAGE }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: DEPLOY_ENV,DEPLOY_REF,DEPLOY_ACTION
+          envs: DEPLOY_ENV,DEPLOY_REF,DEPLOY_ACTION,SNOWTRAK_MAIN_IMAGE,SNOWTRAK_COMMUNITY_IMAGE,SNOWTRAK_ACTIVITY_IMAGE,SNOWTRAK_MAP_IMAGE
           script: |
             set -euo pipefail
             cd "${{ secrets.VPS_APP_DIR }}"
@@ -102,7 +170,10 @@ jobs:
             git checkout --detach "origin/$REF" 2>/dev/null || git checkout --detach "$REF"
             echo "Deploying $DEPLOY_ENV from $REF at $(git rev-parse --short HEAD)"
 
-            docker compose -f "$COMPOSE" -p "$PROJECT" up -d --build
+            # Pull the exact digests CI scanned. The box no longer builds: the
+            # image that Trivy passed is the image that runs.
+            docker compose -f "$COMPOSE" -p "$PROJECT" pull
+            docker compose -f "$COMPOSE" -p "$PROJECT" up -d
             docker image prune -f
 
             # Compose returns as soon as the containers start, which is before

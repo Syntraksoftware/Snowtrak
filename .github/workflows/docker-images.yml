@@ -3,6 +3,9 @@ name: Docker Images
 on:
   push:
     branches: [main, develop, restructure]
+    # Release tags publish too. Without this a v1.2.3 tag builds nothing, and
+    # the deploy workflow's digest lookup has no image to find.
+    tags: ['v*']
   pull_request:
     branches: [main, develop, restructure]
   workflow_dispatch:

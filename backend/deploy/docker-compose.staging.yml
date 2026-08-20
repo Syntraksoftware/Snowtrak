@@ -11,9 +11,7 @@ services:
     restart: unless-stopped
 
   main-backend:
-    build:
-      context: ../
-      dockerfile: ./main-backend/Dockerfile
+    image: ${SNOWTRAK_MAIN_IMAGE:?set by the deploy workflow to a pinned digest}
     env_file:
       - ../main-backend/.env
     environment:
@@ -36,9 +34,7 @@ services:
       - redis
 
   community-backend:
-    build:
-      context: ../
-      dockerfile: ./community-backend/Dockerfile
+    image: ${SNOWTRAK_COMMUNITY_IMAGE:?set by the deploy workflow to a pinned digest}
     env_file:
       - ../community-backend/.env
     environment:
@@ -61,9 +57,7 @@ services:
       - redis
 
   activity-backend:
-    build:
-      context: ../
-      dockerfile: ./activity-backend/Dockerfile
+    image: ${SNOWTRAK_ACTIVITY_IMAGE:?set by the deploy workflow to a pinned digest}
     env_file:
       - ../activity-backend/.env
     environment:
