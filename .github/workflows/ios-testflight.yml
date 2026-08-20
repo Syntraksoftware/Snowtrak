@@ -3,7 +3,9 @@ name: iOS Staging
 on:
   workflow_dispatch:
   push:
-    branches: [ develop, main ]
+    # develop only. main releases through v* tags, so a merge to main used to
+    # produce a redundant TestFlight build of the same code.
+    branches: [ develop ]
 
 permissions:
   contents: read
