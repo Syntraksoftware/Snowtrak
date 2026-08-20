@@ -10,6 +10,28 @@
 
 **Spec:** `DEPLOY_AUTHORIZATION_SPEC.md` (repository root)
 
+## Status as of 2026-08-20
+
+| Task | State |
+|---|---|
+| 1. `appstore` environment + reviewer | done — live, verified |
+| 2. iOS reviewer gate, tag pattern narrowed | done — PR #30 |
+| 3. backend-ci always runs | done — PR #30, plus a duplicate-run fix not in this plan |
+| 4. Rulesets installed | done — PR #31, both verified against a live push |
+| 5. Tag trigger for image publish | done — PR #32 |
+| 6. Compose runs published images | done — PR #32 |
+| 7. Deploy by resolved digest | done — PR #32, plus a teardown fix not in this plan |
+| 8. Staging verification | **blocked** — needs the GHCR packages made public, then a UI-run deploy |
+| 9. Documentation | done — PR #33 |
+
+Deviations from this plan, both found while implementing:
+
+- Task 3 gained a scope on the `push:` trigger. Dropping the paths filter left
+  `push` unscoped, so every PR-branch commit ran the five jobs twice.
+- Task 7 gained a teardown branch. `docker compose down` parses the Compose
+  file, so with the image variables unset a `down` would have aborted on `:?`
+  instead of stopping the stack.
+
 ## Global Constraints
 
 - Image names are `ghcr.io/syntraksoftware/snowtrak-<service>` where `<service>` is one of `main-backend`, `community-backend`, `activity-backend`, `map-backend`.

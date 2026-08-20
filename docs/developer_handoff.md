@@ -68,30 +68,20 @@ The standard path is:
    - triggering the GitHub Actions deploy workflow, or
    - SSHing into the server and pulling the matching branch manually.
 
-Each environment has its own checkout and its own Compose project name. Use
-the right pair -- deploying staging from the production checkout reads the
-wrong revision and the wrong env files, and omitting `-p` lets one stack
-replace the other.
+### Updating the VPS
 
-### Manual VPS update for staging
+Use **Actions -> Deploy Backend to VPS -> Run workflow**. There is no manual
+path for a routine deploy: the workflow pins each service to the image digest
+CI scanned and Trivy passed, which a hand-run `docker compose` does not do.
 
-```bash
-cd /srv/snowtrak-staging      # the staging VPS_APP_DIR, not the production one
-git fetch origin
-git checkout develop
-git reset --hard origin/develop
-docker compose -f backend/deploy/docker-compose.staging.yml -p snowtrak-staging up -d --build
-```
+- staging: `environment: staging`, `ref: v1.2.3` or a 40-character commit SHA
+- production: `environment: production`, `ref: v1.2.3`
 
-### Manual VPS update for production
+Production pauses for a required reviewer before it touches the live stack.
 
-```bash
-cd /srv/syntrak-application   # the production VPS_APP_DIR
-git fetch origin
-git checkout main
-git reset --hard origin/main
-docker compose -f backend/deploy/docker-compose.production.yml -p snowtrak-prod up -d --build
-```
+Feature branches cannot be deployed directly. Images are published only for
+`main`, `develop` and `v*` tags, so feature work reaches staging by merging to
+`develop` first -- which now requires a PR with passing checks.
 
 ## 6. How deployment should work
 

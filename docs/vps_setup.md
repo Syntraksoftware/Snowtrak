@@ -157,22 +157,22 @@ Production stack:
 - `activity-backend` on local port `5100`
 - `map-backend` on local port `5200`
 
-## 8. First deploy, manually
+## 8. First deploy
 
-From the repository root on the VPS:
+Deploys run through **Actions -> Deploy Backend to VPS -> Run workflow**. Pick
+the environment and give it a release tag (`v1.2.3`); staging also accepts a
+40-character commit SHA.
 
-Neither Compose file sets a `name:`, so Compose derives the project name from
-the checkout directory. Pass `-p` explicitly -- otherwise two stacks run from
-one checkout share a project name and the second replaces the first. These
-names match `.github/workflows/deploy-backend-vps.yml` and
-`backend/deploy/Caddyfile.example`.
+The workflow resolves each service to a published image digest and the box
+pulls it. **Nothing is built on the VPS.** The image CI scanned with Trivy is
+the image that runs, which is not true of a hand-run `docker compose`.
 
-```bash
-docker compose -f backend/deploy/docker-compose.staging.yml -p snowtrak-staging up -d --build
-docker compose -f backend/deploy/docker-compose.production.yml -p snowtrak-prod up -d --build
-```
+Production pauses for a required reviewer before it touches the live stack.
 
-Check status:
+Check status. `-p` is required: neither Compose file sets a `name:`, so Compose
+would otherwise derive the project from the checkout directory and two stacks
+run from one checkout would collide. These names match
+`.github/workflows/deploy-backend-vps.yml` and `backend/deploy/Caddyfile.example`.
 
 ```bash
 docker compose -f backend/deploy/docker-compose.staging.yml -p snowtrak-staging ps
@@ -182,9 +182,12 @@ docker compose -f backend/deploy/docker-compose.production.yml -p snowtrak-prod 
 Health checks:
 
 ```bash
-curl http://127.0.0.1:18080/health
+# staging
+curl http://127.0.0.1:15080/health
 curl http://127.0.0.1:15001/health
 curl http://127.0.0.1:15100/health
+
+# production
 curl http://127.0.0.1:8080/health
 curl http://127.0.0.1:5001/health
 curl http://127.0.0.1:5100/health
