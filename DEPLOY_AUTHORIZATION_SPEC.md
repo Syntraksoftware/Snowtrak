@@ -17,7 +17,7 @@ Verified against the repository on 2026-08-18:
 | A push to `main` ships to TestFlight with no PR and no test gate | `.github/workflows/ios-testflight.yml` triggers on `push: branches: [develop, main]` |
 | Any `v*` tag uploads a binary to App Store Connect with no reviewer | `.github/workflows/flutter-release.yml` triggers on `push: tags: ['v*']`, no `environment:` |
 | Production deploys mutable branch HEAD, so there is no rollback target | `deploy-backend-vps.yml` checks out `origin/main` |
-| The image Trivy scans is not the image production runs | `docker-images.yml` sets `push: false`; the VPS builds its own with `up -d --build` |
+| The image Trivy scans is not the image production runs | `deploy-backend-vps.yml` runs `up -d --build`, so the VPS builds its own from source. CI publishes scanned images to GHCR that nothing consumes |
 | The docs teach the bypass as normal practice | `git reset --hard` + `docker compose up` appears in `vps_setup.md`, `developer_handoff.md`, `backend/deploy/README.md` |
 
 `.github/branch-protection.md` describes the right rules but labels them "recommended". They were never applied.
@@ -88,18 +88,29 @@ Branch rulesets do not cover tags. Without this, the tag that triggers an App St
 
 ### 2.1 What already exists
 
-`docker-images.yml` already computes a `push` output (`push=true` for non-`pull_request` events) and already names images `ghcr.io/syntraksoftware/snowtrak-<service>`. The build step hardcodes `push: false` and ignores that output. This section completes a half-written mechanism.
+More than an earlier draft of this spec credited. `docker-images.yml` already:
+
+- names images `ghcr.io/syntraksoftware/snowtrak-<service>`
+- builds locally with `load: true` for scanning, then logs in to GHCR and pushes in a separate step, gated on `github.event_name != 'pull_request'`
+- orders those steps correctly: build → smoke check → Trivy report → upload SARIF → Trivy gate → push, so a failing scan never publishes
+
+Verified: the `Log in to GHCR` and `Push image tags to GHCR` steps both completed successfully on the latest `main` run (`32045435488`). Images for `:main`, `:latest` and `:sha-<sha>` exist today.
+
+The `push: false` that appears in the file is on the *first* build step and is deliberate — that build exists to be loaded locally for scanning, not to publish.
+
+So the publish half is done. The gap is entirely on the consuming side: **nothing pulls those images.** The VPS builds its own from source, which is what makes the scanned artifact and the running artifact different.
 
 ### 2.2 Changes to `docker-images.yml`
 
-- **Add a tag trigger.** The workflow currently fires on `push: branches: [main, develop, restructure]` only — no tags. A `v1.2.3` tag therefore publishes nothing, and section 2.4's digest resolution would find no such image. Add `push: tags: ['v*']`. Without this the rest of section 2 cannot work.
-- Add `docker/login-action@v3` against `ghcr.io` using `GITHUB_TOKEN`. The workflow already declares `packages: write`.
-- Extend the tag logic to handle `refs/tags/v*`: publish `:v<version>` alongside the existing `:sha-<sha>`.
-- Add a push step **after** the Trivy gate. The image is already present locally via `load: true`, so this step tags and pushes what was scanned.
+One change only:
 
-Step order is load-bearing and must not be reordered: **build → smoke check → Trivy report → upload SARIF → Trivy gate → push.** Pushing before the gate would publish an image that failed its own scan. A PR keeps `push: false`, so fork PRs cannot write to the registry.
+- **Add a tag trigger.** The workflow fires on `push: branches: [main, develop, restructure]` — no tags. A `v1.2.3` tag therefore publishes nothing, and section 2.4's digest resolution would find no such image. Add `tags: ['v*']` under the existing `push:`.
 
-Package visibility: public. The repository is public and the images contain only already-public source — env files are mounted at runtime via `env_file:` and are not in the image. A public package lets the VPS pull with no credentials, removing a secret from the deploy path rather than adding one.
+No login step, no push step, no tag-logic change is needed. The existing `vars` step builds its image tag from `GITHUB_REF_NAME`, which for a tag push is the tag name itself, so `v1.2.3` yields `snowtrak-<service>:v1.2.3` with no edit. `:latest` is applied only when the ref is `main`, so tags will not move it.
+
+Known imprecision, accepted: the push step is a second `build-push-action` invocation reusing the `type=gha` cache rather than pushing the exact image object that was scanned. With a cache hit it produces identical bytes. Tightening this to push the scanned image by digest is a possible follow-up, not a blocker.
+
+Package visibility: must be **public**. The repository is public and the images contain only already-public source — env files are mounted at runtime via `env_file:` and are not in the image. A public package lets the VPS pull with no credentials, removing a secret from the deploy path rather than adding one. This is set in the package settings UI and cannot be done with the current CLI token scopes (`gist`, `read:org`, `repo`, `workflow`), so it is a manual step.
 
 ### 2.3 Changes to the Compose files
 
