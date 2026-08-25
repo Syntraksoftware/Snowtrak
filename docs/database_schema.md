@@ -52,7 +52,7 @@ defines them and no test asserts their shape.
 | Column | Type | Null | Default | Key |
 |---|---|---|---|---|
 | `id` | uuid | no | `gen_random_uuid()` | PK |
-| `activity_id` | uuid | no | `gen_random_uuid()` |  |
+| `activity_id` | uuid | no |  | FK → `activities.id` |
 | `user_id` | uuid | no |  | FK → `user_info.id` |
 | `content` | text | no |  |  |
 | `created_at` | timestamp with time zone | yes | `now()` |  |
@@ -63,8 +63,8 @@ defines them and no test asserts their shape.
 | Column | Type | Null | Default | Key |
 |---|---|---|---|---|
 | `id` | uuid | no | `gen_random_uuid()` | PK |
-| `activity_id` | uuid | no | `gen_random_uuid()` |  |
-| `user_id` | uuid | no | `gen_random_uuid()` | FK → `user_info.id` |
+| `activity_id` | uuid | no |  | FK → `activities.id` |
+| `user_id` | uuid | no |  | FK → `user_info.id` |
 | `created_at` | timestamp with time zone | yes | `now()` |  |
 
 ### `activity_locations`
@@ -87,8 +87,8 @@ defines them and no test asserts their shape.
 | Column | Type | Null | Default | Key |
 |---|---|---|---|---|
 | `id` | uuid | no | `gen_random_uuid()` | PK |
-| `activity_id` | uuid | no | `gen_random_uuid()` |  |
-| `user_id` | uuid | no | `gen_random_uuid()` | FK → `user_info.id` |
+| `activity_id` | uuid | no |  | FK → `activities.id` |
+| `user_id` | uuid | no |  | FK → `user_info.id` |
 | `token` | character varying | no |  |  |
 | `created_at` | timestamp with time zone | yes | `now()` |  |
 | `expires_at` | timestamp with time zone | yes |  |  |
