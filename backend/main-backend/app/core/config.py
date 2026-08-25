@@ -5,8 +5,12 @@ Loads environment variables and provides type-safe config access.
 
 import json
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import AliasChoices, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# The value a fresh checkout runs on. Named so the validator below can
+# recognise it; it is public in this repo and must never reach a droplet.
+DEV_SECRET_KEY = "dev-secret-key-change-in-production"
 
 
 class Settings(BaseSettings):
@@ -24,13 +28,24 @@ class Settings(BaseSettings):
     app_version: str = Field(default="1.0.0", alias="APP_VERSION")
     debug: bool = Field(default=True, alias="DEBUG")
     environment: str = Field(default="development", alias="ENVIRONMENT")
+    # Set by the Compose files, where ENVIRONMENT is not. Read here only so
+    # the dev-secret check below can tell a deployed stack from a laptop.
+    fastapi_env: str = Field(default="development", alias="FASTAPI_ENV")
 
     # Server
     host: str = Field(default="0.0.0.0", alias="HOST")
     port: int = Field(default=8080, alias="PORT")
 
     # JWT
-    secret_key: str = Field(default="dev-secret-key-change-in-production", alias="SECRET_KEY")
+    # JWT_SECRET is accepted as well as SECRET_KEY. The three satellite
+    # services already take either name (shared/jwt_env.py); without the same
+    # here, an env file that sets only JWT_SECRET leaves this service signing
+    # tokens with the development default while the others verify against the
+    # real one -- every token minted rejected, and no configuration missing.
+    secret_key: str = Field(
+        default=DEV_SECRET_KEY,
+        validation_alias=AliasChoices("SECRET_KEY", "JWT_SECRET"),
+    )
     algorithm: str = Field(default="HS256", alias="ALGORITHM")
     access_token_expire_minutes: int = Field(default=60, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
     refresh_token_expire_days: int = Field(default=7, alias="REFRESH_TOKEN_EXPIRE_DAYS")
@@ -115,6 +130,27 @@ class Settings(BaseSettings):
                     "supabase_service_role_key is provided but supabase_url is missing. "
                     "Both SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set together."
                 )
+
+        return self
+
+    @model_validator(mode="after")
+    def reject_dev_secret_when_deployed(self):
+        """Refuse to start on the built-in secret outside development.
+
+        The default exists so a fresh checkout runs. Left in place on the
+        droplet it is worse than a missing value: the service starts, signs
+        tokens with a key published in this repo, and nothing looks wrong.
+        """
+        deployed = {"production", "staging"}
+        if self.secret_key == DEV_SECRET_KEY and (
+            self.fastapi_env.lower() in deployed or self.environment.lower() in deployed
+        ):
+            raise ValueError(
+                "SECRET_KEY is still the development default while FASTAPI_ENV/"
+                "ENVIRONMENT says this is a deployed stack. Set SECRET_KEY (or "
+                "JWT_SECRET) in backend/main-backend/.env to the same value the "
+                "other services verify with."
+            )
 
         return self
 

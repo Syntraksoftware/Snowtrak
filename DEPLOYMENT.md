@@ -92,7 +92,9 @@ Uploading takes ~15–25 min. It lands the build in App Store Connect; it does
 Approve the `production` environment when it pauses.
 
 The workflow resolves each service to an image digest, prints them in the run
-summary, pulls, and polls `/health` for up to 5 minutes. Takes ~3–5 min.
+summary, pulls, and polls all four `/health` endpoints for up to 5 minutes. If
+any of them never answers, it puts the previous digests back before failing.
+Takes ~3–5 min.
 
 ### 6. Check it
 
@@ -137,8 +139,17 @@ Two things to know:
 
 ## Rolling back
 
-Re-run the deploy workflow with the previous tag. That is the whole procedure —
-older images stay in GHCR, so there is nothing to rebuild.
+A deploy that fails its health check rolls itself back — it recorded the digests
+it replaced and puts them back. The run ends red, because a rollback is a failed
+deploy, but production is already on the last good images. Read the log to see
+which service refused to start.
+
+To go back deliberately, re-run the deploy workflow with the previous tag. Older
+images stay in GHCR, so there is nothing to rebuild.
+
+Neither path touches the database. Alembic revisions are applied by hand and are
+not reverted, so keep migrations backward-compatible: add, do not remove, and
+drop the old column a release later.
 
 | Field | Value |
 |---|---|
@@ -157,7 +168,8 @@ Takes the same ~3–5 min as a deploy.
 | `could not resolve ...:v1.2.3` | Docker Images did not publish for that tag | Check the Docker Images run for that tag; a failed Trivy gate blocks publishing |
 | Tag push rejected | You are not a repository admin | Ask an admin to cut the tag |
 | PR will not merge | One of the 8 required checks has not passed | Check the PR's checks; `Build, Scan, Push` and `Validate iOS` do not block |
-| Health poll times out | Service did not start | The workflow prints the last 50 log lines of `main-backend` on failure |
+| Health poll times out | One of the four services did not start | The workflow prints the last 30 log lines of each, then rolls back to the previous digests |
+| Deploy fails on `missing env config` | An `.env` on the box has no `SECRET_KEY`/`JWT_SECRET`, `SUPABASE_URL` or `SUPABASE_SERVICE_ROLE_KEY` | Set it — see [backend/deploy/README.md](backend/deploy/README.md#environment-configuration) |
 
 ## Break glass
 

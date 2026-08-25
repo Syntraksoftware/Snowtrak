@@ -68,9 +68,18 @@ protects those keys, and only those keys. `POSTGRES_SCHEMA`, `APP_NAME`,
 `CORS_ALLOWED_ORIGINS` and the JWT settings live in the env files alone, so
 consolidating the files still collapses them. Keep the files per service.
 
-One thing to keep consistent by hand: `main-backend` reads `SECRET_KEY` and
-`ALGORITHM` where the other three read `JWT_SECRET` and `JWT_ALGORITHM`. If
-those disagree, tokens minted by one service will not verify in another.
+All four services accept **either** `SECRET_KEY` or `JWT_SECRET`, so the name
+in each file does not have to match -- but the **value** does. `main-backend`
+signs; the other three verify. If the values disagree, every token minted is
+rejected everywhere else, and nothing in the logs says "misconfigured".
+
+`main-backend` refuses to start on its built-in development secret whenever
+`FASTAPI_ENV` says production or staging, so the failure that used to be silent
+is now a container that will not come up. The deploy workflow checks for the
+key before it gets that far.
+
+Still by hand: `main-backend` reads `ALGORITHM` where the other three read
+`JWT_ALGORITHM`. Both default to HS256, so this only bites if you change one.
 
 ## Cutting over from the old layout
 
@@ -159,9 +168,18 @@ fail even though the backend is running.
 
 ## Break glass
 
-**Rolling back.** Re-run the deploy workflow with the previous release tag.
-That is the whole procedure -- images for older tags stay in GHCR, so there is
-nothing to rebuild.
+**Rolling back.** Usually you do not have to. A deploy records the digests it
+is replacing, and puts them back itself if any of the four services fails to
+answer `/health` within five minutes. The run still ends red -- a rollback is a
+failed deploy -- but the stack is already back on the last good images.
+
+To go back deliberately, re-run the deploy workflow with the previous release
+tag. Images for older tags stay in GHCR, so there is nothing to rebuild.
+
+The one case the automatic path cannot cover is a release that changed the
+database. Alembic revisions are applied by hand and are not reverted, so a
+rollback pairs old code with a new schema: keep migrations backward-compatible
+(add, do not remove; drop the old column a release later).
 
 **If Actions is unavailable.** On the box, with digests taken from the last
 good deploy's job summary:
