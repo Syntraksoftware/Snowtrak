@@ -23,12 +23,16 @@ Use the **same Supabase project** as the rest of the app so `map_trail.*` lives 
    ```
    If the password contains `@`, `#`, or other reserved characters, **URL-encode** it.
 
-4. **Run migrations** (from `backend/`):
+4. **Keep the revision id under 32 characters.** Alembic creates
+   `alembic_version.version_num` as `varchar(32)`. A longer id applies its DDL
+   and then fails to record itself, so the migration can never complete.
+
+5. **Run migrations** (from `backend/`):
    ```bash
    alembic upgrade head
    ```
 
-5. **map-backend + OpenSkiMap sync**  
+6. **map-backend + OpenSkiMap sync**  
    Set the same value as **`SYNTRAK_DATABASE_URL`** in `map-backend/.env` (or the process environment) so `create_pool()` and scheduled sync use Supabase Postgres.
 
 ## Optional: local Docker PostGIS
