@@ -21,6 +21,25 @@ files are mounted at runtime and are not baked in. Making the packages public
 means the VPS pulls with no credentials, so there is one less secret in the
 deploy path.
 
+Check it without deploying — a token request for a public package needs no
+login, and a 200 means the pull step will work:
+
+```bash
+for s in main community activity map; do
+  img="syntraksoftware/snowtrak-$s-backend"
+  tok=$(curl -sf "https://ghcr.io/token?scope=repository:$img:pull&service=ghcr.io" \
+        | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
+  printf "%-18s %s\n" "$s" "$(curl -s -o /dev/null -w '%{http_code}' \
+    -H "Authorization: Bearer $tok" "https://ghcr.io/v2/$img/manifests/<tag>")"
+done
+```
+
+**The box itself has preconditions too**, and they are worth checking before a
+release rather than during one: the checkout owned by `VPS_USER`, no local
+modifications in it, an `.env` per service, and credentials in those files that
+are still current. Each is spelled out in
+[backend/deploy/README.md](backend/deploy/README.md#what-the-box-has-to-look-like).
+
 ## The rules, in one place
 
 | Thing | Rule |
@@ -154,8 +173,11 @@ No approval needed. Check `http://127.0.0.1:15080/health` on the box.
 
 Take it down with the same workflow and `action: down`.
 
-Two things to know:
+Three things to know:
 
+- **Staging shares production's Supabase project.** There is only one, so a
+  staging stack reads and writes the live database. It is a code sandbox, not a
+  data one — a like made on staging is a real like.
 - A feature branch cannot be deployed. Images are published only for `main`,
   `develop` and `v*` tags, so merge to `develop` first and deploy its SHA.
 - An `-rc` tag is safe. It deploys to staging but does **not** reach the App
@@ -194,6 +216,10 @@ Takes the same ~3–5 min as a deploy.
 | PR will not merge | One of the 8 required checks has not passed | Check the PR's checks; `Build, Scan, Push` and `Validate iOS` do not block |
 | Health poll times out | One of the four services did not start | The workflow prints the last 30 log lines of each, then rolls back to the previous digests |
 | Deploy fails on `missing env config` | An `.env` on the box has no `SECRET_KEY`/`JWT_SECRET`, `SUPABASE_URL` or `SUPABASE_SERVICE_ROLE_KEY` | Set it — see [backend/deploy/README.md](backend/deploy/README.md#environment-configuration) |
+| `cannot lock ref ... Permission denied` | Something ran `git` as root in the checkout, so the deploy user cannot write `.git` | `chown -R <VPS_USER>:<VPS_USER> <VPS_APP_DIR>` |
+| `Your local changes would be overwritten by checkout` | A tracked file was hand-edited on the box | Back it up outside the repo, then `git checkout -- <file>` |
+| A service starts, then exits on a database error | The `.env` holds a credential that has since been rotated | Update the `.env` in **every** checkout; a running container keeps working on the old one until it restarts, which hides this until a deploy |
+| `(ECIRCUITBREAKER) too many authentication failures` | A container crash-looped against a wrong database password and Supabase blocked new connections | Fix the credential, stop the stack so it stops retrying, wait a few minutes |
 
 ## Break glass
 

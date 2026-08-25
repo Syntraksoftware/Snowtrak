@@ -81,62 +81,76 @@ key before it gets that far.
 Still by hand: `main-backend` reads `ALGORITHM` where the other three read
 `JWT_ALGORITHM`. Both default to HS256, so this only bites if you change one.
 
-## Cutting over from the old layout
+## The cutover, and what it cost
 
-The droplet previously ran `backend/docker-compose.yml` -- the development
-stack. It now binds to `127.0.0.1` as well, so the swap is about the project
-name, Redis persistence, and having a file that is meant for production, not
-about closing an exposure. Built ahead of time, the outage is seconds, not
-minutes.
+Done on 2026-08-25 at `v0.0.2-rc1`. Until then the droplet had run
+`backend/docker-compose.yml` -- the development stack, project name `backend`,
+images built on the box -- continuously for seven weeks. `snowtrak-prod` had
+never started. Every service bound `0.0.0.0` and relied on the cloud firewall;
+they now bind `127.0.0.1`, and Redis publishes no host port at all.
+
+The swap is what it always was: the new stack cannot bind the host ports while
+the old one holds them, so the old one goes down first.
 
 ```bash
 cd <VPS_APP_DIR>
-git fetch origin && git checkout --detach origin/main
+docker compose ls        # confirm the old project name before trusting it
 
-# 1. The env files are already there from the old layout; confirm, don't rebuild.
-ls -l backend/*-backend/.env
+# Pull first. This touches nothing that is running and takes the outage from
+# minutes to seconds.
+for s in main community activity map; do
+  docker pull ghcr.io/syntraksoftware/snowtrak-$s-backend:<tag>
+done
 
-# 2. There is nothing to build. Images are built and scanned in CI and pulled
-#    by digest at deploy time, so the slow four-image build on one vCPU is
-#    gone. Run the deploy workflow to bring the new stack up (step 3 shows what
-#    it does on the box).
+docker compose -f backend/docker-compose.yml -p backend down   # outage starts here
+# then: Actions -> Deploy Backend to VPS -> production, ref: <tag>
+```
 
-# 3. Swap. The new stack cannot bind the host ports while the old one holds
-#    them, so the old one goes down first. The old stack has no `name:` in its
-#    Compose file, so its project name is whatever `docker compose ls` reports
-#    -- Compose derives it from the checkout directory. Confirm, then pass it
-#    explicitly: guessing wrong leaves the old containers up and the new stack
-#    fails to bind.
-docker compose ls
-docker compose -f backend/docker-compose.yml -p <old-project-name> down
+Queue the workflow *before* taking the old stack down: the production
+environment pauses for a reviewer, and the stack stays down for however long
+that approval takes.
 
-# Then run: Actions -> Deploy Backend to VPS -> production, ref: v1.2.3
+Verify, stopping at the first failure so a later pass cannot mask an earlier
+one:
 
-# 4. Verify before trusting it. Stop on the first failure -- without the
-#    `|| break` a later passing check masks an earlier one.
+```bash
 for p in 8080 5001 5100 5200; do
   curl -fsS "http://127.0.0.1:$p/health" && echo " :$p ok" || { echo " :$p FAILED"; break; }
 done
 curl -fsS https://main.syntrak.io/health && echo " public ok"
 ```
 
-Rollback, if the new stack misbehaves:
+Rollback, if the new stack misbehaves. The old images are still on the box as
+`backend-*:latest`, and `backend/docker-compose.yml` is still tracked, so it
+survives the detached checkout the deploy performs:
 
 ```bash
 docker compose -f backend/deploy/docker-compose.production.yml -p snowtrak-prod down
-docker compose -f backend/docker-compose.yml -p <old-project-name> up -d
+docker compose -f backend/docker-compose.yml -p backend up -d
 ```
 
-Nothing carries over from the old stack's Redis, and nothing needs to: it ran
-without a volume, so its data was already lost on every restart. The new
-service has one, plus `appendonly`, so the activity pipeline stream survives a
-restart for the first time. Still worth letting an in-flight upload finish
-before the swap.
+Note that the first production deploy has no automatic rollback. The workflow
+recovers by putting back the digests it replaced, and on a first deploy there
+are no `snowtrak-prod` containers to read them from; it says so and leaves the
+stack for inspection. From the second deploy onwards the net is there.
 
-The env files are untouched by the cutover -- both stacks read the same
-`backend/<service>-backend/.env` files -- so the only differences are the
-project name and Redis gaining persistence. Caddy needs no change: both stacks
-publish the same loopback ports.
+### What the box has to look like
+
+The cutover was planned at under a minute of downtime and took roughly fifteen,
+because three preconditions were only discovered when the deploy hit them. None
+were in the release. All of them are checkable in advance, and a second
+environment will meet them again.
+
+| Requirement | How it failed | Check |
+|---|---|---|
+| The checkout is owned by `VPS_USER` | `git` had been run as root in it, so `git fetch` could not write refs: `cannot lock ref ... Permission denied` | `find <VPS_APP_DIR> -not -user <VPS_USER>` returns nothing |
+| No local modifications in the checkout | `backend/docker-compose.yml` had been hand-edited on the box (a `dns:` override). `git checkout --detach` refuses rather than discard it | `git status --short` shows no ` M` lines |
+| Every service has its `.env`, in **both** checkouts | Staging had none at all, so its first deploy stopped at the env gate | `ls <VPS_APP_DIR>/backend/*-backend/.env` |
+| The env files hold current credentials | They still carried a database password that had since been rotated, so `map-backend` crash-looped until Supabase's auth circuit breaker tripped | Start a throwaway container and connect once, before deploying |
+
+The env gate stops before pulling or starting anything, so a failure there
+changes nothing on the box. The other three do not: they leave you mid-cutover
+with the old stack already down.
 
 ## Staging
 
@@ -163,8 +177,41 @@ environment, so they are separate checkouts and neither can `git reset --hard`
 over the other.
 
 `staging-map.syntrak.io` needs a DNS A record pointing at the droplet, the
-same as the other staging hosts. Until it exists, the staging app's map calls
-fail even though the backend is running.
+same as the other staging hosts. As of 2026-08-25 it still has none, so that
+one hostname does not resolve and Caddy cannot obtain a certificate for it.
+The backend behind it runs regardless -- the deploy health-checks
+`127.0.0.1:15200` on the box, not the public name.
+
+### Caddy is maintained by hand, and was wrong
+
+`Caddyfile.example` is a reference, not something any pipeline applies. Until
+2026-08-25 the live Caddyfile pointed all three staging hostnames at the
+**production** ports:
+
+```
+staging-main.syntrak.io      -> 127.0.0.1:8080    # production main-backend
+staging-community.syntrak.io -> 127.0.0.1:5001    # production community-backend
+staging-activity.syntrak.io  -> 127.0.0.1:5100    # production activity-backend
+```
+
+So "staging" answered every request with production, and had done for as long
+as the hostnames existed. Anything anyone tested on staging was tested against
+the live stack. The correct mapping is the 15xxx range:
+
+| Hostname | Upstream |
+|---|---|
+| `staging-main` | `127.0.0.1:15080` |
+| `staging-community` | `127.0.0.1:15001` |
+| `staging-activity` | `127.0.0.1:15100` |
+| `staging-map` | `127.0.0.1:15200` |
+
+The lesson generalises: a staging hostname that answers is not evidence that
+staging is running. Check what it is proxying to, not whether it returns 200.
+
+Every upstream now imports the `restart_tolerant` snippet, which retries for
+10s so the seconds a container spends restarting during a deploy do not surface
+as 502s. Applied live on 2026-08-25; keep `Caddyfile.example` and the real file
+in step by hand.
 
 ## Break glass
 
