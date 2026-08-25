@@ -108,6 +108,8 @@ defines them and no test asserts their shape.
 
 ### `device_tokens`
 
+**Reserved, not dead.** The push-notification code that uses it exists on branches that were never merged (`feat: build device_token related operations`, `feat: build notification sender service`); the current tree has none of it. `scripts/send_notification.sh` is the surviving piece.
+
 | Column | Type | Null | Default | Key |
 |---|---|---|---|---|
 | `id` | uuid | no | `gen_random_uuid()` | PK |
@@ -124,6 +126,8 @@ defines them and no test asserts their shape.
 | `updated_at` | timestamp with time zone | no | `now()` |  |
 
 ### `post_likes`
+
+**Unused.** Nothing in backend/ or frontend/ references it, and nothing ever did -- `git log -S post_likes` is empty. The community backend uses `post_votes` instead. Holds rows anyway, most recent 2026-01-29, so something wrote them outside this repository. Superseded, not reserved.
 
 | Column | Type | Null | Default | Key |
 |---|---|---|---|---|
@@ -185,6 +189,8 @@ defines them and no test asserts their shape.
 
 ### `ski_resorts`
 
+**Unused and empty.** The map pipeline uses the `map_trail` schema that Alembic owns (`ski_runs`, `ski_lifts`), not these. No code, no history, no rows.
+
 | Column | Type | Null | Default | Key |
 |---|---|---|---|---|
 | `id` | uuid | no | `gen_random_uuid()` | PK |
@@ -204,6 +210,8 @@ defines them and no test asserts their shape.
 | `updated_at` | timestamp with time zone | yes | `now()` |  |
 
 ### `ski_trails`
+
+**Unused and empty.** The map pipeline uses the `map_trail` schema that Alembic owns (`ski_runs`, `ski_lifts`), not these. No code, no history, no rows.
 
 | Column | Type | Null | Default | Key |
 |---|---|---|---|---|

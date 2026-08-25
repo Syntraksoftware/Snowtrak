@@ -31,6 +31,30 @@ POSTGIS_INTERNALS = {"spatial_ref_sys", "geometry_columns", "geography_columns"}
 ALEMBIC_OWNED = {"map_cache_entries", "elevation_samples"}
 ALEMBIC_BOOKKEEPING = {"alembic_version"}
 
+# Tables no code in this repository reads or writes. Checked against backend/
+# and frontend/lib, and against git history. Recorded here so the next person
+# does not have to repeat the search before deciding what to do with them.
+TABLE_NOTES = {
+    "post_likes": (
+        "**Unused.** Nothing in backend/ or frontend/ references it, and nothing "
+        "ever did -- `git log -S post_likes` is empty. The community backend uses "
+        "`post_votes` instead. Holds rows anyway, most recent 2026-01-29, so "
+        "something wrote them outside this repository. Superseded, not reserved."
+    ),
+    "device_tokens": (
+        "**Reserved, not dead.** The push-notification code that uses it exists on "
+        "branches that were never merged (`feat: build device_token related "
+        "operations`, `feat: build notification sender service`); the current tree "
+        "has none of it. `scripts/send_notification.sh` is the surviving piece."
+    ),
+    "ski_resorts": (
+        "**Unused and empty.** The map pipeline uses the `map_trail` schema that "
+        "Alembic owns (`ski_runs`, `ski_lifts`), not these. No code, no history, "
+        "no rows."
+    ),
+}
+TABLE_NOTES["ski_trails"] = TABLE_NOTES["ski_resorts"]
+
 
 def load_env() -> dict[str, str]:
     env = {}
@@ -76,7 +100,9 @@ def render_table(name: str, definition: dict) -> str:
             f"| {f'`{default}`' if default != '' else ''} "
             f"| {describe_key(spec.get('description', ''))} |"
         )
-    return f"### `{name}`\n\n" + "\n".join(rows) + "\n"
+    note = TABLE_NOTES.get(name)
+    heading = f"### `{name}`\n\n" + (f"{note}\n\n" if note else "")
+    return heading + "\n".join(rows) + "\n"
 
 
 def main() -> None:
