@@ -4,6 +4,7 @@ import logging
 from collections import defaultdict
 from typing import Any
 
+from services.constants.community_tables import POST_LIKES
 from services.mappers.community_row_mappers import flatten_user_info
 
 logger = logging.getLogger(__name__)
@@ -32,28 +33,26 @@ class CommunityPostReadOperations:
         reposted_by_current_user: dict[str, bool] = defaultdict(bool)
 
         try:
-            vote_response = (
-                self._client.table("post_votes")
-                .select("post_id, user_id, vote_value")
+            # A row in post_likes is a like; there is no value to weigh. This
+            # read used to count post_votes rows with vote_value > 0, which was
+            # a second implementation of the same feature over a second table.
+            like_response = (
+                self._client.table(POST_LIKES)
+                .select("post_id, user_id")
                 .in_("post_id", post_ids)
                 .execute()
             )
-            vote_rows = getattr(vote_response, "data", None)
-            if isinstance(vote_rows, list):
-                for row in vote_rows:
+            like_rows = getattr(like_response, "data", None)
+            if isinstance(like_rows, list):
+                for row in like_rows:
                     post_id = str(row.get("post_id", ""))
-                    vote_value = int(row.get("vote_value", 0) or 0)
-                    if post_id and vote_value > 0:
-                        like_counts[post_id] += 1
-                    if (
-                        current_user_id
-                        and post_id
-                        and str(row.get("user_id", "")) == current_user_id
-                        and vote_value > 0
-                    ):
+                    if not post_id:
+                        continue
+                    like_counts[post_id] += 1
+                    if current_user_id and str(row.get("user_id", "")) == current_user_id:
                         liked_by_current_user[post_id] = True
         except Exception as exception:
-            logger.warning("Failed to hydrate post_votes engagement fields: %s", exception)
+            logger.warning("Failed to hydrate post_likes engagement fields: %s", exception)
 
         try:
             repost_response = (

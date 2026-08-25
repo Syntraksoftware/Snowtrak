@@ -1,6 +1,6 @@
 """Track point ordering and segment difficulty for map_trail pipeline persistence.
 
-Revision ID: 003_map_trail_activity_point_order
+Revision ID: 003_track_point_sort_idx
 Revises: 002_ski_runs_source
 Create Date: 2026-04-06
 
@@ -11,7 +11,11 @@ from __future__ import annotations
 from alembic import op
 from sqlalchemy import text
 
-revision = "003_map_trail_activity_point_order"
+# Alembic stores this in alembic_version.version_num, which it creates as
+# varchar(32). The previous id -- 003_map_trail_activity_point_order -- was 34
+# characters, so this revision applied its DDL and then failed to stamp itself,
+# every time, on every database. Keep revision ids under 32 characters.
+revision = "003_track_point_sort_idx"
 down_revision = "002_ski_runs_source"
 branch_labels = None
 depends_on = None

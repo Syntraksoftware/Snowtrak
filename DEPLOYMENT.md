@@ -79,7 +79,31 @@ approve `appstore`.
 Uploading takes ~15–25 min. It lands the build in App Store Connect; it does
 **not** submit it for review.
 
-### 5. Deploy the backend
+### 5. Apply any schema change
+
+**Before the deploy, not after.** The deploy workflow rolls itself back when a
+release fails its health check, and that restores the images only — nothing
+reverts a migration. Deploying first means the window where new code meets an
+old schema is the window you are least watching.
+
+Does this release touch the database?
+
+```bash
+cd backend && .test-venv/bin/python -m alembic current   # is it behind head?
+git log --oneline main@{1}..main -- backend/db/migrations # anything new?
+```
+
+- **Alembic revision** (PostGIS, `map_trail`): `python -m alembic upgrade head`
+  from `backend/`.
+- **Supabase table**: run the numbered `.sql` in the Supabase SQL editor, then
+  `python scripts/dump_supabase_schema.py` and commit the refreshed record.
+- **Neither**: skip to step 6.
+
+Whatever you run must leave the *previous* release able to run against it — add
+columns, do not remove them, and drop the old one a release later. The full rule
+is in [docs/database_changes.md](docs/database_changes.md).
+
+### 6. Deploy the backend
 
 **Actions → Deploy Backend to VPS → Run workflow**
 
@@ -92,9 +116,11 @@ Uploading takes ~15–25 min. It lands the build in App Store Connect; it does
 Approve the `production` environment when it pauses.
 
 The workflow resolves each service to an image digest, prints them in the run
-summary, pulls, and polls `/health` for up to 5 minutes. Takes ~3–5 min.
+summary, pulls, and polls all four `/health` endpoints for up to 5 minutes. If
+any of them never answers, it puts the previous digests back before failing.
+Takes ~3–5 min.
 
-### 6. Check it
+### 7. Check it
 
 ```bash
 curl -fsS https://main.syntrak.io/health && echo " public ok"
@@ -106,7 +132,7 @@ On the box, if you want to confirm the running images match the summary:
 docker compose -f backend/deploy/docker-compose.production.yml -p snowtrak-prod ps
 ```
 
-### 7. Submit the app to Apple
+### 8. Submit the app to Apple
 
 App Store Connect → your build → submit for review. This step is deliberately
 manual and outside CI.
@@ -137,8 +163,17 @@ Two things to know:
 
 ## Rolling back
 
-Re-run the deploy workflow with the previous tag. That is the whole procedure —
-older images stay in GHCR, so there is nothing to rebuild.
+A deploy that fails its health check rolls itself back — it recorded the digests
+it replaced and puts them back. The run ends red, because a rollback is a failed
+deploy, but production is already on the last good images. Read the log to see
+which service refused to start.
+
+To go back deliberately, re-run the deploy workflow with the previous tag. Older
+images stay in GHCR, so there is nothing to rebuild.
+
+Neither path touches the database. Migrations are applied by hand and are not
+reverted, so keep them backward-compatible: add, do not remove, and drop the old
+column a release later. See [docs/database_changes.md](docs/database_changes.md).
 
 | Field | Value |
 |---|---|
@@ -157,7 +192,8 @@ Takes the same ~3–5 min as a deploy.
 | `could not resolve ...:v1.2.3` | Docker Images did not publish for that tag | Check the Docker Images run for that tag; a failed Trivy gate blocks publishing |
 | Tag push rejected | You are not a repository admin | Ask an admin to cut the tag |
 | PR will not merge | One of the 8 required checks has not passed | Check the PR's checks; `Build, Scan, Push` and `Validate iOS` do not block |
-| Health poll times out | Service did not start | The workflow prints the last 50 log lines of `main-backend` on failure |
+| Health poll times out | One of the four services did not start | The workflow prints the last 30 log lines of each, then rolls back to the previous digests |
+| Deploy fails on `missing env config` | An `.env` on the box has no `SECRET_KEY`/`JWT_SECRET`, `SUPABASE_URL` or `SUPABASE_SERVICE_ROLE_KEY` | Set it — see [backend/deploy/README.md](backend/deploy/README.md#environment-configuration) |
 
 ## Break glass
 

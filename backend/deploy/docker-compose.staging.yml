@@ -77,5 +77,27 @@ services:
     depends_on:
       - redis
 
+  map-backend:
+    image: ${SNOWTRAK_MAP_IMAGE:?set by the deploy workflow to a pinned digest}
+    env_file:
+      - ../map-backend/.env
+    environment:
+      PYTHONUNBUFFERED: "1"
+      FASTAPI_ENV: staging
+      HOST: 0.0.0.0
+      PORT: 5200
+      MAP_STORAGE_BACKEND: supabase
+      RATE_LIMIT_REDIS_URL: redis://redis:6379/0
+      # Pinned here as well as in the service's .env. Compose's environment
+      # block wins over env_file, so these survive an env file that is edited,
+      # regenerated, or consolidated later -- the four services must never share
+      # one rate-limit namespace.
+      RATE_LIMIT_NAMESPACE: map-backend
+    ports:
+      - "127.0.0.1:15200:5200"
+    restart: unless-stopped
+    depends_on:
+      - redis
+
 volumes:
   redis_data:

@@ -158,7 +158,7 @@ async def repost_post(
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="Could not save repost. If this continues, check that "
-                    "the post_reposts table exists (see community-backend SQL setup).",
+                    "the post_reposts table exists -- docs/database_schema.md records it.",
                 ) from None
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -194,7 +194,7 @@ async def undo_repost_post(
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="Could not update repost. If this continues, check that "
-                    "the post_reposts table exists (see community-backend SQL setup).",
+                    "the post_reposts table exists -- docs/database_schema.md records it.",
                 ) from None
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -267,7 +267,7 @@ async def vote_post(
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="Could not save vote. If this continues, check that "
-                    "the post_votes table exists (see community-backend SQL setup).",
+                    "the post_votes table exists -- docs/database_schema.md records it.",
                 ) from None
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

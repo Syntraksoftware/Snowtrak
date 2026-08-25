@@ -102,7 +102,7 @@ class FakeQuery:
             if self.table_name == "posts" and "post_id" not in payload:
                 payload["post_id"] = f"post-{uuid.uuid4().hex[:6]}"
             if (
-                self.table_name in {"comments", "post_votes", "comment_votes"}
+                self.table_name in {"comments", "post_likes", "post_votes", "comment_votes"}
                 and "id" not in payload
             ):
                 payload["id"] = f"row-{uuid.uuid4().hex[:6]}"
@@ -194,6 +194,7 @@ class FakeSupabaseClient:
                     },
                 }
             ],
+            "post_likes": [],
             "post_votes": [],
             "comment_votes": [],
         }
@@ -265,6 +266,27 @@ def test_set_post_vote_computes_score(operations_client):
     assert vote_result is not None
     assert vote_result["vote_value"] == 1
     assert vote_result["score"] == 1
+
+
+def test_liking_twice_does_not_double_count(operations_client):
+    operations_client.set_post_vote("post-1", "user-1", 1)
+    again = operations_client.set_post_vote("post-1", "user-1", 1)
+
+    assert again["score"] == 1
+
+
+def test_unliking_removes_the_like(operations_client):
+    operations_client.set_post_vote("post-1", "user-1", 1)
+    cleared = operations_client.set_post_vote("post-1", "user-1", 0)
+
+    assert cleared["score"] == 0
+
+
+def test_two_users_liking_counts_both(operations_client):
+    operations_client.set_post_vote("post-1", "user-1", 1)
+    second = operations_client.set_post_vote("post-1", "user-2", 1)
+
+    assert second["score"] == 2
 
 
 def test_count_posts_by_subthread(operations_client):

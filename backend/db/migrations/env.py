@@ -26,7 +26,29 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
+def _load_url_from_map_backend_env() -> None:
+    """Read SYNTRAK_DATABASE_URL out of map-backend/.env if it is not exported.
+
+    Alembic only looks at os.environ, while the URL lives in the env file that
+    every other tool reads -- so `alembic upgrade head` needed the variable
+    exported by hand, and forgetting it did not say so: it fell back to the
+    localhost URL in alembic.ini and failed as `role "syntrak" does not exist`.
+    An exported value still wins, so CI and the droplet are unaffected.
+    """
+    if os.environ.get("SYNTRAK_DATABASE_URL"):
+        return
+    env_file = _MAP_BACKEND_ROOT / ".env"
+    if not env_file.exists():
+        return
+    for line in env_file.read_text().splitlines():
+        key, sep, value = line.partition("=")
+        if sep and key.strip() == "SYNTRAK_DATABASE_URL":
+            os.environ["SYNTRAK_DATABASE_URL"] = value.strip().strip("\"'")
+            return
+
+
 def get_database_url() -> str:
+    _load_url_from_map_backend_env()
     url = os.environ.get("SYNTRAK_DATABASE_URL")
     if url:
         return url

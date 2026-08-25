@@ -147,6 +147,8 @@ All features above depend on the single-user pipeline (`math` branch) being stab
 - **[Backend README](backend/README.md)** - Backend services, startup, configuration
 - **[Frontend README](frontend/README.md)** - Frontend setup, development
 - **[Backend Technical Guide](backend/docs/technical_guide.md)** - Backend architecture, contracts, operations, troubleshooting
+- **[Changing the database](docs/database_changes.md)** - Which mechanism owns which table, and the add-then-remove ordering a rollback depends on
+- **[Supabase schema](docs/database_schema.md)** - Generated record of the live tables and columns; not a migration
 - **[Frontend Technical Guide](frontend/docs/technical_guide.md)** - Frontend architecture, contracts, operations, troubleshooting
 - **[Main Backend](backend/main-backend/README.md)** - Authentication API
 - **[Community Backend](backend/community-backend/README.md)** - Social features
