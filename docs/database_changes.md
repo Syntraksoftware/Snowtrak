@@ -12,16 +12,17 @@ one owns a table is the first question for any change.
 | Owner | What it covers | How a change is applied |
 |---|---|---|
 | **Alembic** — `backend/db/migrations/versions/` | PostGIS only: `map_cache_entries`, `elevation_samples`, and everything in the `map_trail` schema | `alembic upgrade head` from `backend/`, by hand |
-| **Supabase dashboard** — nothing in this repo | Every application table: `profiles`, `user_info`, `user_stats`, `avatars`, `activities`, `activity_locations`, `activity_comments`, `activity_kudos`, `activity_shares`, `posts`, `post_votes`, `post_reposts`, `subthreads`, `comments` | Typed into the Supabase SQL editor, by hand |
+| **Supabase dashboard** — nothing in this repo | Every application table: `profiles`, `user_info`, `user_stats`, `activities`, `posts`, `comments` and eleven more — full list in [database_schema.md](database_schema.md) | Typed into the Supabase SQL editor, by hand |
 | **Loose SQL** — `backend/db/migrations/004_activities_thumbnail_url.sql` | One column on `activities` | Pasted into the Supabase SQL editor, by hand |
 
 Two things follow from that table, and both are worth saying plainly.
 
-**The fourteen tables the app is built on are not defined anywhere in this
-repo.** They were created by hand in the Supabase dashboard. Nothing here can
-recreate them, no test asserts their shape, and the only description of them is
-whatever the code happens to read. A second environment cannot be stood up from
-this repository alone.
+**The seventeen tables the app is built on are not defined anywhere in this
+repo.** They were created by hand in the Supabase dashboard, so nothing here can
+recreate them and no test asserts their shape.
+[database_schema.md](database_schema.md) records what they currently look like,
+but it is a record rather than a script: a second environment still cannot be
+stood up from this repository alone.
 
 **`004_activities_thumbnail_url.sql` is not an Alembic revision.** The number
 makes it look like it follows `003`, but it is not in the chain, Alembic has
@@ -89,8 +90,9 @@ There is no rename. A rename is an add and a remove, so it is both sequences
 end to end: add the new column, write both, read the new one, stop writing the
 old one, then drop it. That is three releases, not one.
 
-`004_activities_thumbnail_url.sql` is the first step of exactly this —
-`thumbnail_url` was added, and the older column is still there.
+`004_activities_thumbnail_url.sql` is the additive half of exactly this: it
+added `thumbnail_url` to `activities`. No older column sits beside it, so
+nothing is waiting to be dropped.
 
 ## Practical notes
 
@@ -101,7 +103,9 @@ old one, then drop it. That is three releases, not one.
   `004_activities_thumbnail_url.sql`, numbered, committed in the same PR as the
   code that needs it, before you paste it into the dashboard. It is not
   automation, but it means the change is reviewable and the next person can see
-  what was run.
+  what was run. Afterwards run `python scripts/dump_supabase_schema.py` and
+  commit the refreshed [database_schema.md](database_schema.md), so the record
+  in git matches the database again.
 - **Always `IF NOT EXISTS` / `IF EXISTS`.** Applying by hand means applying
   twice eventually.
 - **Additive columns must be nullable or have a default.** A `NOT NULL` column
