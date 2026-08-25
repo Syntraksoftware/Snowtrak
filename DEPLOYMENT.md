@@ -147,9 +147,9 @@ which service refused to start.
 To go back deliberately, re-run the deploy workflow with the previous tag. Older
 images stay in GHCR, so there is nothing to rebuild.
 
-Neither path touches the database. Alembic revisions are applied by hand and are
-not reverted, so keep migrations backward-compatible: add, do not remove, and
-drop the old column a release later.
+Neither path touches the database. Migrations are applied by hand and are not
+reverted, so keep them backward-compatible: add, do not remove, and drop the old
+column a release later. See [docs/database_changes.md](docs/database_changes.md).
 
 | Field | Value |
 |---|---|

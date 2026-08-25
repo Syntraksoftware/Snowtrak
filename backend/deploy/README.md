@@ -177,9 +177,9 @@ To go back deliberately, re-run the deploy workflow with the previous release
 tag. Images for older tags stay in GHCR, so there is nothing to rebuild.
 
 The one case the automatic path cannot cover is a release that changed the
-database. Alembic revisions are applied by hand and are not reverted, so a
-rollback pairs old code with a new schema: keep migrations backward-compatible
-(add, do not remove; drop the old column a release later).
+database. Migrations are applied by hand and are not reverted, so a rollback
+pairs old code with a new schema. The ordering that keeps that safe is in
+[docs/database_changes.md](../../docs/database_changes.md).
 
 **If Actions is unavailable.** On the box, with digests taken from the last
 good deploy's job summary:
