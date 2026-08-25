@@ -3,8 +3,8 @@
 import logging
 from typing import Any
 
-from services.constants.community_tables import POST_REPOSTS, POST_VOTES, POSTS
-from services.helpers.engagement_ops import set_vote
+from services.constants.community_tables import POST_LIKES, POST_REPOSTS, POSTS
+from services.helpers.engagement_ops import set_like
 
 logger = logging.getLogger(__name__)
 
@@ -116,13 +116,17 @@ class CommunityPostWriteOperations:
             if not post:
                 return None
 
-            score = set_vote(
+            # post_likes has no vote column: a like is a row. The app only
+            # ever sends 1 or 0, and no downvote has ever been cast, so -1 is
+            # taken as clearing the like rather than rejected -- the endpoint
+            # keeps its shape either way.
+            score = set_like(
                 self._client,
-                table_name=POST_VOTES,
+                table_name=POST_LIKES,
                 entity_field="post_id",
                 entity_id=post_id,
                 user_id=user_id,
-                vote_type=vote_type,
+                liked=vote_type > 0,
             )
 
             return {
