@@ -79,7 +79,31 @@ approve `appstore`.
 Uploading takes ~15–25 min. It lands the build in App Store Connect; it does
 **not** submit it for review.
 
-### 5. Deploy the backend
+### 5. Apply any schema change
+
+**Before the deploy, not after.** The deploy workflow rolls itself back when a
+release fails its health check, and that restores the images only — nothing
+reverts a migration. Deploying first means the window where new code meets an
+old schema is the window you are least watching.
+
+Does this release touch the database?
+
+```bash
+cd backend && .test-venv/bin/python -m alembic current   # is it behind head?
+git log --oneline main@{1}..main -- backend/db/migrations # anything new?
+```
+
+- **Alembic revision** (PostGIS, `map_trail`): `python -m alembic upgrade head`
+  from `backend/`.
+- **Supabase table**: run the numbered `.sql` in the Supabase SQL editor, then
+  `python scripts/dump_supabase_schema.py` and commit the refreshed record.
+- **Neither**: skip to step 6.
+
+Whatever you run must leave the *previous* release able to run against it — add
+columns, do not remove them, and drop the old one a release later. The full rule
+is in [docs/database_changes.md](docs/database_changes.md).
+
+### 6. Deploy the backend
 
 **Actions → Deploy Backend to VPS → Run workflow**
 
@@ -96,7 +120,7 @@ summary, pulls, and polls all four `/health` endpoints for up to 5 minutes. If
 any of them never answers, it puts the previous digests back before failing.
 Takes ~3–5 min.
 
-### 6. Check it
+### 7. Check it
 
 ```bash
 curl -fsS https://main.syntrak.io/health && echo " public ok"
@@ -108,7 +132,7 @@ On the box, if you want to confirm the running images match the summary:
 docker compose -f backend/deploy/docker-compose.production.yml -p snowtrak-prod ps
 ```
 
-### 7. Submit the app to Apple
+### 8. Submit the app to Apple
 
 App Store Connect → your build → submit for review. This step is deliberately
 manual and outside CI.

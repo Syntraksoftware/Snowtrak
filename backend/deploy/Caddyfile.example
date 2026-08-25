@@ -9,21 +9,39 @@
 #
 # Replace the example domains with your real DNS names.
 
+# A deploy replaces containers, so each upstream refuses connections for a few
+# seconds while the new one boots. Without this Caddy returns 502 immediately
+# and the deploy is visible to users; with it the request waits and is served
+# by the container that just came up. 10s covers a normal restart -- a service
+# that is properly down still fails, it just takes 10s to say so.
+(restart_tolerant) {
+	lb_try_duration 10s
+	lb_try_interval 250ms
+}
+
 # --- production: backend/deploy/docker-compose.production.yml, -p snowtrak-prod
 main.example.com {
-	reverse_proxy 127.0.0.1:8080
+	reverse_proxy 127.0.0.1:8080 {
+		import restart_tolerant
+	}
 }
 
 community.example.com {
-	reverse_proxy 127.0.0.1:5001
+	reverse_proxy 127.0.0.1:5001 {
+		import restart_tolerant
+	}
 }
 
 activity.example.com {
-	reverse_proxy 127.0.0.1:5100
+	reverse_proxy 127.0.0.1:5100 {
+		import restart_tolerant
+	}
 }
 
 map.example.com {
-	reverse_proxy 127.0.0.1:5200
+	reverse_proxy 127.0.0.1:5200 {
+		import restart_tolerant
+	}
 }
 
 # --- staging: backend/deploy/docker-compose.staging.yml, -p snowtrak-staging
@@ -38,17 +56,25 @@ map.example.com {
 # staging-map.<domain>, so omitting the map host left every staging map call
 # failing on DNS.
 staging-main.example.com {
-	reverse_proxy 127.0.0.1:15080
+	reverse_proxy 127.0.0.1:15080 {
+		import restart_tolerant
+	}
 }
 
 staging-community.example.com {
-	reverse_proxy 127.0.0.1:15001
+	reverse_proxy 127.0.0.1:15001 {
+		import restart_tolerant
+	}
 }
 
 staging-activity.example.com {
-	reverse_proxy 127.0.0.1:15100
+	reverse_proxy 127.0.0.1:15100 {
+		import restart_tolerant
+	}
 }
 
 staging-map.example.com {
-	reverse_proxy 127.0.0.1:15200
+	reverse_proxy 127.0.0.1:15200 {
+		import restart_tolerant
+	}
 }
