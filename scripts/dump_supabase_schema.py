@@ -47,13 +47,7 @@ TABLE_NOTES = {
         "operations`, `feat: build notification sender service`); the current tree "
         "has none of it. `scripts/send_notification.sh` is the surviving piece."
     ),
-    "ski_resorts": (
-        "**Unused and empty.** The map pipeline uses the `map_trail` schema that "
-        "Alembic owns (`ski_runs`, `ski_lifts`), not these. No code, no history, "
-        "no rows."
-    ),
 }
-TABLE_NOTES["ski_trails"] = TABLE_NOTES["ski_resorts"]
 
 
 def load_env() -> dict[str, str]:
@@ -133,6 +127,10 @@ def main() -> None:
         "the `map_trail` schema is not exposed, so the five tables Alembic keeps",
         "there do not appear below; and check constraints, indexes, triggers and",
         "row-level-security policies are invisible to it.",
+        "",
+        "On that last one: every table in `public` has RLS enabled and carries no",
+        "policies, so every role except the service role and the table owner is",
+        "denied by default. See `backend/db/migrations/006_enable_row_level_security.sql`.",
         "",
         "## Application tables",
         "",

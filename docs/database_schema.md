@@ -15,6 +15,10 @@ the `map_trail` schema is not exposed, so the five tables Alembic keeps
 there do not appear below; and check constraints, indexes, triggers and
 row-level-security policies are invisible to it.
 
+On that last one: every table in `public` has RLS enabled and carries no
+policies, so every role except the service role and the table owner is
+denied by default. See `backend/db/migrations/006_enable_row_level_security.sql`.
+
 ## Application tables
 
 Created by hand in the Supabase dashboard. Nothing in this repository
@@ -186,52 +190,6 @@ defines them and no test asserts their shape.
 | `home` | text | yes |  |  |
 | `created_at` | timestamp with time zone | yes | `now()` |  |
 | `updated_at` | timestamp with time zone | yes | `now()` |  |
-
-### `ski_resorts`
-
-**Unused and empty.** The map pipeline uses the `map_trail` schema that Alembic owns (`ski_runs`, `ski_lifts`), not these. No code, no history, no rows.
-
-| Column | Type | Null | Default | Key |
-|---|---|---|---|---|
-| `id` | uuid | no | `gen_random_uuid()` | PK |
-| `name` | text | no |  |  |
-| `country` | text | no |  |  |
-| `region` | text | yes |  |  |
-| `latitude` | numeric | yes |  |  |
-| `longitude` | numeric | yes |  |  |
-| `website_url` | text | yes |  |  |
-| `total_trails` | integer | yes | `0` |  |
-| `total_lifts` | integer | yes | `0` |  |
-| `vertical_drop_m` | integer | yes |  |  |
-| `base_elevation_m` | integer | yes |  |  |
-| `peak_elevation_m` | integer | yes |  |  |
-| `image_url` | text | yes |  |  |
-| `created_at` | timestamp with time zone | yes | `now()` |  |
-| `updated_at` | timestamp with time zone | yes | `now()` |  |
-
-### `ski_trails`
-
-**Unused and empty.** The map pipeline uses the `map_trail` schema that Alembic owns (`ski_runs`, `ski_lifts`), not these. No code, no history, no rows.
-
-| Column | Type | Null | Default | Key |
-|---|---|---|---|---|
-| `id` | uuid | no | `gen_random_uuid()` | PK |
-| `resort_id` | uuid | yes |  | FK → `ski_resorts.id` |
-| `name` | text | no |  |  |
-| `difficulty` | text | no |  |  |
-| `length_km` | numeric | no |  |  |
-| `elevation_drop_m` | integer | no |  |  |
-| `is_groomed` | boolean | yes | `true` |  |
-| `has_snowmaking` | boolean | yes | `false` |  |
-| `description` | text | yes |  |  |
-| `rating` | numeric | yes |  |  |
-| `review_count` | integer | yes | `0` |  |
-| `image_url` | text | yes |  |  |
-| `features` | text[] | yes |  |  |
-| `status` | text | yes | `open` |  |
-| `created_at` | timestamp with time zone | yes | `now()` |  |
-| `updated_at` | timestamp with time zone | yes | `now()` |  |
-| `search_vector` | tsvector | yes |  |  |
 
 ### `subthreads`
 
