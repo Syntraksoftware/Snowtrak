@@ -51,7 +51,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       'All notifications marked as read',
                     );
                   },
-                  child: Text(
+                  child: const Text(
                     'Mark all read',
                     style: TextStyle(
                       color: SnowtrakColors.primary,
@@ -144,11 +144,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             Container(
               width: 80,
               height: 80,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: SnowtrakColors.surfaceVariant,
                 shape: BoxShape.circle,
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.notifications_off_outlined,
                 size: 40,
                 color: SnowtrakColors.textTertiary,
@@ -182,7 +182,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.error_outline,
               size: 48,
               color: SnowtrakColors.error,
@@ -273,7 +273,7 @@ class _NotificationItem extends StatelessWidget {
           onTap: onTap,
           child: Container(
             padding: const EdgeInsets.all(SnowtrakSpacing.md),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               border: Border(
                 bottom: BorderSide(
                   color: SnowtrakColors.divider,
@@ -332,7 +332,7 @@ class _NotificationItem extends StatelessWidget {
                   Container(
                     width: 8,
                     height: 8,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: SnowtrakColors.primary,
                       shape: BoxShape.circle,
                     ),

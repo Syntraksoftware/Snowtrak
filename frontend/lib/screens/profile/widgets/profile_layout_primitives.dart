@@ -62,7 +62,7 @@ class ProfileMetricTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = accentColor ?? SnowtrakAuthTheme.brand;
+    final accent = accentColor ?? context.colors.primary;
 
     return Expanded(
       child: Container(

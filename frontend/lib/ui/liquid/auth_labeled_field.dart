@@ -28,7 +28,7 @@ class AuthLabeledField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: SnowtrakAuthTheme.fieldLabel),
+        Text(label, style: SnowtrakAuthTheme.fieldLabel(context)),
         const SizedBox(height: SnowtrakSpacing.sm),
         TextFormField(
           controller: controller,
@@ -50,12 +50,12 @@ class AuthLabeledField extends StatelessWidget {
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(SnowtrakAuthTheme.fieldRadius),
-              borderSide: const BorderSide(color: SnowtrakAuthTheme.fieldBorder),
+              borderSide: BorderSide(color: context.colors.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(SnowtrakAuthTheme.fieldRadius),
-              borderSide: const BorderSide(
-                color: SnowtrakAuthTheme.brand,
+              borderSide: BorderSide(
+                color: context.colors.primary,
                 width: 1.5,
               ),
             ),

@@ -36,7 +36,7 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
 
           // Storage
           _buildSectionHeader('STORAGE'),
-          _SettingsGroup(
+          const _SettingsGroup(
             children: [
               _StorageRow(label: 'Total App Storage', value: '124.5 MB'),
               _StorageRow(label: 'Cached Images', value: '45.2 MB'),

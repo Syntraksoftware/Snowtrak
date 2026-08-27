@@ -39,7 +39,7 @@ class _WeatherCardState extends State<WeatherCard> {
         icon: Icons.wb_cloudy_outlined,
         title: "Today's conditions",
         subtitle: 'Tap a day for the forecast',
-        iconColor: SnowtrakAuthTheme.brand,
+        iconColor: context.colors.primary,
         child: _buildBody(),
       ),
     );
@@ -128,7 +128,7 @@ class _WeatherCardState extends State<WeatherCard> {
               'Low ${selected.minTemp.toStringAsFixed(0)}° · '
               'Avg ${selected.avgTemp.toStringAsFixed(0)}°',
               style: SnowtrakTypography.labelSmall.copyWith(
-                color: SnowtrakAuthTheme.brand,
+                color: context.colors.primary,
                 fontWeight: FontWeight.w600,
               ),
             ),

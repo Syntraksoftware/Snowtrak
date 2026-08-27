@@ -166,8 +166,8 @@ class HelpSupportScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => CupertinoAlertDialog(
         title: const Text('Report a Problem'),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 16),
+        content: const Padding(
+          padding: EdgeInsets.only(top: 16),
           child: CupertinoTextField(
             placeholder: 'Describe the issue...',
             maxLines: 4,
@@ -195,8 +195,8 @@ class HelpSupportScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => CupertinoAlertDialog(
         title: const Text('Feature Request'),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 16),
+        content: const Padding(
+          padding: EdgeInsets.only(top: 16),
           child: CupertinoTextField(
             placeholder: 'Describe your idea...',
             maxLines: 4,

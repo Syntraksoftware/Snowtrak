@@ -24,8 +24,8 @@ class AuthPrimaryButton extends StatelessWidget {
       child: FilledButton(
         onPressed: enabled ? onPressed : null,
         style: FilledButton.styleFrom(
-          backgroundColor: SnowtrakAuthTheme.brand,
-          disabledBackgroundColor: SnowtrakAuthTheme.brandMuted.withValues(alpha: 0.35),
+          backgroundColor: context.colors.primary,
+          disabledBackgroundColor: context.colors.textTertiary.withValues(alpha: 0.35),
           foregroundColor: context.colors.textOnPrimary,
           disabledForegroundColor: context.colors.textOnPrimary.withValues(alpha: 0.85),
           elevation: 0,

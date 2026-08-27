@@ -37,14 +37,14 @@ class ProfileActivitiesSearchBar extends StatelessWidget {
             hintStyle: SnowtrakTypography.bodyMedium.copyWith(
               color: SnowtrakColors.textTertiary,
             ),
-            prefixIcon: Icon(
+            prefixIcon: const Icon(
               Icons.search,
               color: SnowtrakColors.textTertiary,
               size: 22,
             ),
             suffixIcon: controller.text.isNotEmpty
                 ? IconButton(
-                    icon: Icon(
+                    icon: const Icon(
                       Icons.close,
                       color: SnowtrakColors.textSecondary,
                       size: 20,

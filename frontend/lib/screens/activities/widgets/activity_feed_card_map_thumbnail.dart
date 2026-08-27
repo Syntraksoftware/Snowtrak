@@ -26,7 +26,7 @@ class ActivityFeedCardMapThumbnail extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
+              const Icon(
                 Icons.map_outlined,
                 color: SnowtrakColors.textTertiary,
                 size: 40,
@@ -124,7 +124,7 @@ class ActivityFeedCardMapThumbnail extends StatelessWidget {
     return Container(
       height: 200,
       width: double.infinity,
-      decoration: BoxDecoration(color: SnowtrakColors.surfaceVariant),
+      decoration: const BoxDecoration(color: SnowtrakColors.surfaceVariant),
       child: Stack(
         children: [
           Container(

@@ -20,7 +20,7 @@ class HomeSelectableChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = SnowtrakAuthTheme.brand;
+    final accent = context.colors.primary;
 
     return Material(
       color: Colors.transparent,

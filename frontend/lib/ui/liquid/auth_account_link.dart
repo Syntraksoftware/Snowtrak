@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:snowtrak/core/theme.dart';
 import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 class AuthAccountLink extends StatelessWidget {
@@ -19,13 +20,13 @@ class AuthAccountLink extends StatelessWidget {
     return Center(
       child: Text.rich(
         TextSpan(
-          style: SnowtrakAuthTheme.legalText.copyWith(fontSize: 14),
+          style: SnowtrakAuthTheme.legalText(context).copyWith(fontSize: 14),
           children: [
             TextSpan(text: '$prompt '),
             TextSpan(
               text: actionLabel,
-              style: const TextStyle(
-                color: SnowtrakAuthTheme.brand,
+              style: TextStyle(
+                color: context.colors.primary,
                 fontWeight: FontWeight.w600,
               ),
               recognizer: TapGestureRecognizer()..onTap = onPressed,

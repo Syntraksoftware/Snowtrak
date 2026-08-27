@@ -94,7 +94,7 @@ class TrailListCard extends StatelessWidget {
                           const SizedBox(height: 2),
                           Row(
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.place,
                                 size: 14,
                                 color: SnowtrakColors.textSecondary,
@@ -163,7 +163,7 @@ class TrailListCard extends StatelessWidget {
                         ),
                         const Spacer(),
                         if (trail.isGroomed)
-                          TrailBadge(
+                          const TrailBadge(
                             icon: Icons.ac_unit,
                             label: 'Groomed',
                             color: SnowtrakColors.info,

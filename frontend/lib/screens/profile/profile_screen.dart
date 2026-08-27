@@ -89,9 +89,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                           refresh: true,
                           forceNetwork: true,
                         ),
-                        child: CustomScrollView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          slivers: const [
+                        child: const CustomScrollView(
+                          physics: AlwaysScrollableScrollPhysics(),
+                          slivers: [
                             SliverToBoxAdapter(child: ProfileHeader()),
                             SliverToBoxAdapter(child: _OwnTotals()),
                             SliverToBoxAdapter(child: ProfileHomeContent()),

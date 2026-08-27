@@ -42,7 +42,7 @@ class ProgressSectionCard extends StatelessWidget {
                     color: SnowtrakColors.textPrimary,
                   ),
                 ),
-                Icon(
+                const Icon(
                   Icons.chevron_right,
                   color: SnowtrakColors.textTertiary,
                   size: 20,

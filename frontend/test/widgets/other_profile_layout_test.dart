@@ -20,10 +20,10 @@ void main() {
       MaterialApp(
         theme: SnowtrakTheme.lightTheme,
         home: Scaffold(
-          appBar: StPageHeader(
+          appBar: const StPageHeader(
             title: 'Cache Tester',
             eyebrow: '@cachetester',
-            leading: const BackButton(),
+            leading: BackButton(),
           ),
           body: ListView(
             children: const [

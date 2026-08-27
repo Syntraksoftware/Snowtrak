@@ -203,7 +203,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                   CircleAvatar(
                     radius: 36,
                     backgroundColor:
-                        SnowtrakAuthTheme.brand.withValues(alpha: 0.12),
+                        context.colors.primary.withValues(alpha: 0.12),
                     backgroundImage:
                         avatarUrl != null ? NetworkImage(avatarUrl) : null,
                     child: avatarUrl == null
@@ -212,7 +212,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                                 ? displayName[0].toUpperCase()
                                 : 'U',
                             style: SnowtrakTypography.headlineMedium.copyWith(
-                              color: SnowtrakAuthTheme.brand,
+                              color: context.colors.primary,
                               fontWeight: FontWeight.bold,
                             ),
                           )
@@ -264,7 +264,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                       _InfoChip(
                         icon: Icons.downhill_skiing,
                         label: skiLevel,
-                        color: SnowtrakAuthTheme.brand,
+                        color: context.colors.primary,
                       ),
                     if (home != null)
                       _InfoChip(

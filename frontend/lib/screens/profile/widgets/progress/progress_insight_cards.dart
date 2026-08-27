@@ -194,7 +194,7 @@ class _GoalsCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                Icon(
+                const Icon(
                   Icons.downhill_skiing,
                   color: SnowtrakColors.primary,
                   size: 24,
@@ -224,7 +224,7 @@ class _GoalsCard extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(
+            const Icon(
               Icons.chevron_right,
               color: SnowtrakColors.textTertiary,
             ),
@@ -254,7 +254,7 @@ class _RelativeEffortCard extends StatelessWidget {
               relativeEffort['currentRange'] as String? ?? '',
               SnowtrakColors.primary,
             ),
-            Divider(
+            const Divider(
               height: 1,
               color: SnowtrakColors.divider,
             ),

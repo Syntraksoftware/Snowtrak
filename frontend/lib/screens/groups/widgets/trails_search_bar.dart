@@ -68,7 +68,7 @@ class TrailsSearchBar extends StatelessWidget {
             ),
             suffixIcon: controller.text.isNotEmpty
                 ? IconButton(
-                    icon: Icon(
+                    icon: const Icon(
                       Icons.close,
                       color: SnowtrakColors.textSecondary,
                       size: 20,

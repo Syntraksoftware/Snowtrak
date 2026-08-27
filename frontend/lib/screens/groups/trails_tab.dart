@@ -231,7 +231,7 @@ class _FilterChipsRow extends StatelessWidget {
                             shape: BoxShape.circle,
                           ),
                         )
-                      : Icon(
+                      : const Icon(
                           Icons.terrain,
                           size: 16,
                           color: SnowtrakColors.textSecondary,
@@ -327,7 +327,7 @@ class _ResultsHeader extends StatelessWidget {
           const Spacer(),
           TextButton.icon(
             onPressed: () {},
-            icon: Icon(
+            icon: const Icon(
               Icons.sort,
               size: 18,
               color: SnowtrakColors.textSecondary,

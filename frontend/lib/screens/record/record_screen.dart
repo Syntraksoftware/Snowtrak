@@ -310,7 +310,7 @@ class _RecordScreenState extends State<RecordScreen>
                   color: SnowtrakColors.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.check_rounded,
+                child: const Icon(Icons.check_rounded,
                     color: SnowtrakColors.primary, size: 34),
               ),
               const SizedBox(height: 14),
@@ -366,14 +366,14 @@ class _RecordScreenState extends State<RecordScreen>
                       Expanded(
                           child: _StatItem(
                               value: fmtDist(distance), label: 'Distance')),
-                      VerticalDivider(
+                      const VerticalDivider(
                           width: 1,
                           thickness: 1,
                           color: SnowtrakColors.divider),
                       Expanded(
                           child: _StatItem(
                               value: fmtDur(duration), label: 'Time')),
-                      VerticalDivider(
+                      const VerticalDivider(
                           width: 1,
                           thickness: 1,
                           color: SnowtrakColors.divider),
@@ -586,7 +586,7 @@ class _RecordScreenState extends State<RecordScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(
+              const CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(
                     SnowtrakColors.primary),
               ),
@@ -717,7 +717,7 @@ class _ProcessingOverlay extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(
+                const SizedBox(
                   width: 56,
                   height: 56,
                   child: CircularProgressIndicator(
@@ -759,7 +759,7 @@ class _ProcessingOverlay extends StatelessWidget {
                             child: _StatItem(
                                 label: 'Distance',
                                 value: _formattedDistance)),
-                        VerticalDivider(
+                        const VerticalDivider(
                             width: 1,
                             thickness: 1,
                             color: SnowtrakColors.divider),
@@ -768,7 +768,7 @@ class _ProcessingOverlay extends StatelessWidget {
                                 label: 'Elevation',
                                 value:
                                     '+${elevationGain.toStringAsFixed(0)} m')),
-                        VerticalDivider(
+                        const VerticalDivider(
                             width: 1,
                             thickness: 1,
                             color: SnowtrakColors.divider),
@@ -848,7 +848,7 @@ class _RecentreButton extends StatelessWidget {
             ),
           ],
         ),
-        child: Icon(Icons.my_location,
+        child: const Icon(Icons.my_location,
             color: SnowtrakColors.primary, size: 20),
       ),
     );

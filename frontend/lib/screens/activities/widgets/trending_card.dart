@@ -35,7 +35,7 @@ class _TrendingCardState extends State<TrendingCard> {
         icon: Icons.trending_up,
         title: 'Trending now',
         subtitle: 'Tap to preview, explore below',
-        iconColor: SnowtrakAuthTheme.brand,
+        iconColor: context.colors.primary,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

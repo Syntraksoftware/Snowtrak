@@ -33,7 +33,7 @@ class ProfileActivityListCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
-        side: BorderSide(color: SnowtrakColors.divider),
+        side: const BorderSide(color: SnowtrakColors.divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -54,7 +54,7 @@ class ProfileActivityListCard extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                           ),
                         )
-                      : Icon(
+                      : const Icon(
                           Icons.person,
                           size: 20,
                           color: SnowtrakColors.textTertiary,
@@ -86,7 +86,7 @@ class ProfileActivityListCard extends StatelessWidget {
                       const SizedBox(height: SnowtrakSpacing.xs / 2),
                       Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.directions_walk,
                             size: 14,
                             color: SnowtrakColors.textTertiary,
@@ -163,7 +163,7 @@ class ProfileActivityListCard extends StatelessWidget {
                     Container(
                       width: 40,
                       height: 40,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
                             SnowtrakColors.primary,
@@ -206,7 +206,7 @@ class ProfileActivityListCard extends StatelessWidget {
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      child: Text(
+                      child: const Text(
                         'View',
                         style: SnowtrakTypography.labelMedium,
                       ),
@@ -220,7 +220,7 @@ class ProfileActivityListCard extends StatelessWidget {
           Container(
             height: 200,
             width: double.infinity,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: SnowtrakColors.surfaceVariant,
             ),
             child: ClipRRect(
@@ -300,7 +300,7 @@ class ProfileActivityListCard extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.map,
                     color: SnowtrakColors.textTertiary,
                     size: 40,
@@ -321,7 +321,7 @@ class ProfileActivityListCard extends StatelessWidget {
     } catch (e) {
       return Container(
         color: SnowtrakColors.surfaceVariant,
-        child: Center(
+        child: const Center(
           child: Icon(
             Icons.map,
             color: SnowtrakColors.textTertiary,

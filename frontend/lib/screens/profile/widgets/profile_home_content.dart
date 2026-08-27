@@ -30,7 +30,6 @@ class ProfileHomeContent extends StatefulWidget {
 
 class _ProfileHomeContentState extends State<ProfileHomeContent> {
   int _periodIndex = 0; // 0 = Week, 1 = Year, 2 = All-time
-  static const _accent = SnowtrakAuthTheme.brand;
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +63,7 @@ class _ProfileHomeContentState extends State<ProfileHomeContent> {
       icon: Icons.badge_outlined,
       title: 'Athlete identity & gear',
       subtitle: 'Bio, sports, and equipment',
-      iconColor: _accent,
+      iconColor: context.colors.primary,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -74,10 +73,10 @@ class _ProfileHomeContentState extends State<ProfileHomeContent> {
             value: 'Not set',
           ),
           const SizedBox(height: SnowtrakSpacing.sm),
-          Wrap(
+          const Wrap(
             spacing: SnowtrakSpacing.sm,
             runSpacing: SnowtrakSpacing.sm,
-            children: const [
+            children: [
               ProfileChip(label: 'Alpine', icon: Icons.downhill_skiing, selected: true),
               ProfileChip(label: 'Cross-country', icon: Icons.nordic_walking),
               ProfileChip(label: 'Snowboard', icon: Icons.snowboarding),
@@ -99,10 +98,10 @@ class _ProfileHomeContentState extends State<ProfileHomeContent> {
             height: 72,
           ),
           const SizedBox(height: SnowtrakSpacing.sm),
-          Wrap(
+          const Wrap(
             spacing: SnowtrakSpacing.sm,
             runSpacing: SnowtrakSpacing.sm,
-            children: const [
+            children: [
               ProfileChip(label: 'Alpine Club', icon: Icons.groups_outlined),
               ProfileChip(label: 'Corp Team', icon: Icons.business_outlined),
             ],
@@ -143,7 +142,7 @@ class _ProfileHomeContentState extends State<ProfileHomeContent> {
       icon: Icons.insights_outlined,
       title: 'Performance summaries',
       subtitle: 'Distance, time, and personal records',
-      iconColor: _accent,
+      iconColor: context.colors.primary,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -211,7 +210,7 @@ class _ProfileHomeContentState extends State<ProfileHomeContent> {
       icon: Icons.history,
       title: 'Training history',
       subtitle: 'Recent workouts and consistency',
-      iconColor: _accent,
+      iconColor: context.colors.primary,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -237,11 +236,11 @@ class _ProfileHomeContentState extends State<ProfileHomeContent> {
       icon: Icons.people_outline,
       title: 'Social & community',
       subtitle: 'Followers, kudos, and challenges',
-      iconColor: _accent,
-      child: Column(
+      iconColor: context.colors.primary,
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const ProfileMetricRow(
+          ProfileMetricRow(
             left: ProfileMetricTile(
               icon: Icons.person_add_outlined,
               label: 'Following',
@@ -255,8 +254,8 @@ class _ProfileHomeContentState extends State<ProfileHomeContent> {
               unit: '',
             ),
           ),
-          const SizedBox(height: SnowtrakSpacing.sm),
-          const ProfileMetricRow(
+          SizedBox(height: SnowtrakSpacing.sm),
+          ProfileMetricRow(
             left: ProfileMetricTile(
               icon: Icons.thumb_up_outlined,
               label: 'Kudos',
@@ -270,12 +269,12 @@ class _ProfileHomeContentState extends State<ProfileHomeContent> {
               unit: '',
             ),
           ),
-          const SizedBox(height: SnowtrakSpacing.md),
+          SizedBox(height: SnowtrakSpacing.md),
           _ChallengePreview(
             title: '100K vertical February',
             progress: 0,
           ),
-          const SizedBox(height: SnowtrakSpacing.sm),
+          SizedBox(height: SnowtrakSpacing.sm),
           _ChallengePreview(
             title: 'Gran Fondo prep',
             progress: 0,
@@ -290,7 +289,7 @@ class _ProfileHomeContentState extends State<ProfileHomeContent> {
       icon: Icons.shield_outlined,
       title: 'Privacy controls',
       subtitle: 'Location data and visibility',
-      iconColor: _accent,
+      iconColor: context.colors.primary,
       child: const ProfilePrivacyControls(),
     );
   }
@@ -370,7 +369,7 @@ class _ChallengePreview extends StatelessWidget {
             value: progress,
             minHeight: 6,
             backgroundColor: SnowtrakColors.surfaceVariant,
-            color: SnowtrakAuthTheme.brand,
+            color: context.colors.primary,
           ),
         ),
       ],

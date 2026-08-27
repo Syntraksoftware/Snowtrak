@@ -101,7 +101,7 @@ class _ChallengesTabState extends State<ChallengesTab> {
               margin: const EdgeInsets.all(SnowtrakSpacing.md),
               height: 200,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
+                gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
@@ -211,7 +211,7 @@ class _ChallengesTabState extends State<ChallengesTab> {
                       vertical: SnowtrakSpacing.md,
                     ),
                   ),
-                  child: Text(
+                  child: const Text(
                     'Join Challenge',
                     style: SnowtrakTypography.labelLarge,
                   ),
@@ -230,7 +230,7 @@ class _ChallengesTabState extends State<ChallengesTab> {
               ),
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.person,
                     size: 18,
                     color: SnowtrakColors.textSecondary,
@@ -289,7 +289,7 @@ class _ChallengesTabState extends State<ChallengesTab> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.emoji_events,
                       size: 80,
                       color: SnowtrakColors.textTertiary,

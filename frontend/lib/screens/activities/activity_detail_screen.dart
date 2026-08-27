@@ -180,9 +180,9 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: SnowtrakColors.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: EdgeInsets.fromLTRB(
             24, 12, 24, MediaQuery.of(context).padding.bottom + 24),
@@ -205,7 +205,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                 color: SnowtrakColors.error.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.delete_outline_rounded,
+              child: const Icon(Icons.delete_outline_rounded,
                   color: SnowtrakColors.error, size: 28),
             ),
             const SizedBox(height: 16),
@@ -259,7 +259,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       return Scaffold(
         backgroundColor: SnowtrakColors.background,
         appBar: _buildAppBar(null),
-        body: Center(
+        body: const Center(
           child: CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(SnowtrakColors.primary),
           ),
@@ -380,7 +380,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                               child: _StatCell(
                                   label: 'Distance',
                                   value: activity.formattedDistance)),
-                          VerticalDivider(
+                          const VerticalDivider(
                               width: 1,
                               thickness: 1,
                               color: SnowtrakColors.surfaceVariant),
@@ -391,7 +391,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                         ],
                       ),
                     ),
-                    Divider(
+                    const Divider(
                         height: 1,
                         thickness: 1,
                         color: SnowtrakColors.surfaceVariant),
@@ -402,7 +402,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                               child: _StatCell(
                                   label: 'Moving Time',
                                   value: activity.formattedDuration)),
-                          VerticalDivider(
+                          const VerticalDivider(
                               width: 1,
                               thickness: 1,
                               color: SnowtrakColors.surfaceVariant),
@@ -435,7 +435,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                         label: 'Start',
                         value: DateFormat('MMM d, y · h:mm a')
                             .format(activity.startTime)),
-                    Divider(
+                    const Divider(
                         height: 1,
                         thickness: 1,
                         color: SnowtrakColors.surfaceVariant),
@@ -562,7 +562,7 @@ class _MapZoomControls extends StatelessWidget {
         children: [
           IconButton(
             visualDensity: VisualDensity.compact,
-            icon: Icon(Icons.add,
+            icon: const Icon(Icons.add,
                 color: SnowtrakColors.textPrimary, size: 20),
             onPressed: () => onZoomIn(),
           ),
@@ -572,7 +572,7 @@ class _MapZoomControls extends StatelessWidget {
               color: SnowtrakColors.surfaceVariant),
           IconButton(
             visualDensity: VisualDensity.compact,
-            icon: Icon(Icons.remove,
+            icon: const Icon(Icons.remove,
                 color: SnowtrakColors.textPrimary, size: 20),
             onPressed: () => onZoomOut(),
           ),

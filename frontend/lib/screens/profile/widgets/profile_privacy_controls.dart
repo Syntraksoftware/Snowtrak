@@ -66,8 +66,8 @@ class _ProfilePrivacyControlsState extends State<ProfilePrivacyControls> {
           icon: const Icon(Icons.settings_outlined, size: 18),
           label: const Text('Manage in settings'),
           style: OutlinedButton.styleFrom(
-            foregroundColor: SnowtrakAuthTheme.brand,
-            side: const BorderSide(color: SnowtrakAuthTheme.brand),
+            foregroundColor: context.colors.primary,
+            side: BorderSide(color: context.colors.primary),
             padding: const EdgeInsets.symmetric(vertical: SnowtrakSpacing.sm),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(SnowtrakRadius.round),
@@ -113,10 +113,10 @@ class ProfilePrivacyToggleRow extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: SnowtrakAuthTheme.brand.withValues(alpha: 0.12),
+                  color: context.colors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(SnowtrakRadius.sm),
                 ),
-                child: Icon(icon, size: 18, color: SnowtrakAuthTheme.brand),
+                child: Icon(icon, size: 18, color: context.colors.primary),
               ),
               const SizedBox(width: SnowtrakSpacing.sm),
               Expanded(
@@ -144,7 +144,7 @@ class ProfilePrivacyToggleRow extends StatelessWidget {
                 value: value,
                 onChanged: onChanged,
                 activeThumbColor: SnowtrakColors.textOnPrimary,
-                activeTrackColor: SnowtrakAuthTheme.brand,
+                activeTrackColor: context.colors.primary,
                 inactiveThumbColor: SnowtrakColors.surface,
                 inactiveTrackColor: SnowtrakColors.border,
               ),
@@ -152,8 +152,8 @@ class ProfilePrivacyToggleRow extends StatelessWidget {
           ),
         ),
         if (showDivider)
-          Padding(
-            padding: const EdgeInsets.only(left: 48),
+          const Padding(
+            padding: EdgeInsets.only(left: 48),
             child: Divider(
               height: 1,
               thickness: 1,

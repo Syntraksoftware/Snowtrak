@@ -35,7 +35,7 @@ class _IntroductionCardState extends State<IntroductionCard> {
         icon: Icons.downhill_skiing,
         title: 'New to Snowtrak?',
         subtitle: 'Pick a starting point',
-        iconColor: SnowtrakAuthTheme.brand,
+        iconColor: context.colors.primary,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

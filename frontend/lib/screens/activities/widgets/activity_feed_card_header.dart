@@ -49,7 +49,7 @@ class ActivityFeedCardHeader extends StatelessWidget {
                     ),
                     const SizedBox(width: SnowtrakSpacing.xs),
                     if (!activity.isPublic)
-                      Icon(
+                      const Icon(
                         Icons.lock_outline,
                         size: 14,
                         color: SnowtrakColors.textTertiary,

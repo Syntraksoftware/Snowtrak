@@ -67,7 +67,7 @@ class LocationPermissionDialog extends StatelessWidget {
               color: SnowtrakColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(
+            child: const Icon(
               Icons.location_on,
               color: SnowtrakColors.primary,
               size: 36,

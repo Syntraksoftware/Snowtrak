@@ -116,7 +116,7 @@ class _ClubsTabState extends State<ClubsTab> {
                         backgroundColor: SnowtrakColors.primary,
                         foregroundColor: SnowtrakColors.textOnPrimary,
                       ),
-                      child: Text(
+                      child: const Text(
                         'Learn more',
                         style: SnowtrakTypography.labelLarge,
                       ),
@@ -160,13 +160,13 @@ class _ClubsTabState extends State<ClubsTab> {
                     },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: SnowtrakColors.primary,
-                      side: BorderSide(color: SnowtrakColors.primary),
+                      side: const BorderSide(color: SnowtrakColors.primary),
                       padding: const EdgeInsets.symmetric(
                         horizontal: SnowtrakSpacing.md,
                         vertical: SnowtrakSpacing.sm,
                       ),
                     ),
-                    child: Text(
+                    child: const Text(
                       'Create',
                       style: SnowtrakTypography.labelMedium,
                     ),
@@ -189,7 +189,7 @@ class _ClubsTabState extends State<ClubsTab> {
                 children: [
                   Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.group,
                         size: 18,
                         color: SnowtrakColors.textSecondary,
@@ -290,7 +290,7 @@ class _ClubsTabState extends State<ClubsTab> {
                 const SizedBox(height: SnowtrakSpacing.xs),
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.people,
                       size: 14,
                       color: SnowtrakColors.textSecondary,

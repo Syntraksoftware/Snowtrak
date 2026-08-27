@@ -30,7 +30,7 @@ class ActivityFeedCardBadges extends StatelessWidget {
     final badges = <Widget>[];
     if (activity.distance > 10000) {
       badges.add(
-        _Badge(
+        const _Badge(
           icon: Icons.emoji_events,
           label: 'Long',
           color: SnowtrakColors.accent,
@@ -39,7 +39,7 @@ class ActivityFeedCardBadges extends StatelessWidget {
     }
     if (activity.elevationGain > 1000) {
       badges.add(
-        _Badge(
+        const _Badge(
           icon: Icons.trending_up,
           label: 'Elevation',
           color: SnowtrakColors.secondary,
@@ -48,7 +48,7 @@ class ActivityFeedCardBadges extends StatelessWidget {
     }
     if (activity.distance > 5000 && activity.elevationGain > 500) {
       badges.add(
-        _Badge(
+        const _Badge(
           icon: Icons.star,
           label: 'PR',
           color: SnowtrakColors.accent,

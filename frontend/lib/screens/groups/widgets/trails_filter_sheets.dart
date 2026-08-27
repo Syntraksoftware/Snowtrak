@@ -28,7 +28,7 @@ Future<void> showTrailsDifficultyPicker(
             ),
           ),
           const SizedBox(height: SnowtrakSpacing.md),
-          Text(
+          const Text(
             'Select Difficulty',
             style: SnowtrakTypography.headlineSmall,
           ),
@@ -99,7 +99,7 @@ Future<void> showTrailsCountryPicker(
             ),
           ),
           const SizedBox(height: SnowtrakSpacing.md),
-          Text(
+          const Text(
             'Select Country',
             style: SnowtrakTypography.headlineSmall,
           ),

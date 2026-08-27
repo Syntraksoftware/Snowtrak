@@ -73,7 +73,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
 
           // Account & Personalization
-          SettingsIosSectionHeader('ACCOUNT'),
+          const SettingsIosSectionHeader('ACCOUNT'),
           SettingsIosGroup(
             children: [
               SettingsIosRow(
@@ -89,7 +89,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
 
           // App Settings
-          SettingsIosSectionHeader('APP'),
+          const SettingsIosSectionHeader('APP'),
           SettingsIosGroup(
             children: [
               SettingsIosRow(
@@ -119,7 +119,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
 
           // Support
-          SettingsIosSectionHeader('SUPPORT'),
+          const SettingsIosSectionHeader('SUPPORT'),
           SettingsIosGroup(
             children: [
               SettingsIosRow(

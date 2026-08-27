@@ -137,7 +137,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
+              const Icon(
                 Icons.search_off,
                 size: 64,
                 color: SnowtrakColors.textTertiary,
@@ -173,7 +173,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
+                const Icon(
                   Icons.downhill_skiing,
                   size: 80,
                   color: SnowtrakColors.textTertiary,

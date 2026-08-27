@@ -274,9 +274,9 @@ class _MapsScreenState extends State<MapsScreen> {
     }
 
     if (_isLoading || _initialCameraPosition == null) {
-      return Scaffold(
-        appBar: const StPageHeader(title: 'Map'),
-        body: const Center(
+      return const Scaffold(
+        appBar: StPageHeader(title: 'Map'),
+        body: Center(
           child: CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(SnowtrakColors.ink),
           ),

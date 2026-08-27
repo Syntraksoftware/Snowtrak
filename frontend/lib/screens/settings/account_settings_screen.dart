@@ -43,7 +43,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           const SizedBox(height: 24),
 
           // Contact Information
-          SettingsIosSectionHeader('CONTACT INFORMATION'),
+          const SettingsIosSectionHeader('CONTACT INFORMATION'),
           SettingsIosGroup(
             dividerLeadingPadding: 16,
             children: [
@@ -64,7 +64,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           const SizedBox(height: 24),
 
           // Security
-          SettingsIosSectionHeader('SECURITY'),
+          const SettingsIosSectionHeader('SECURITY'),
           SettingsIosGroup(
             dividerLeadingPadding: 16,
             children: [
@@ -89,7 +89,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           const SizedBox(height: 24),
 
           // Connected Accounts
-          SettingsIosSectionHeader('CONNECTED ACCOUNTS'),
+          const SettingsIosSectionHeader('CONNECTED ACCOUNTS'),
           SettingsIosGroup(
             dividerLeadingPadding: 16,
             children: [
@@ -114,7 +114,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           const SizedBox(height: 24),
 
           // Sessions
-          SettingsIosSectionHeader('SESSIONS'),
+          const SettingsIosSectionHeader('SESSIONS'),
           SettingsIosGroup(
             dividerLeadingPadding: 16,
             children: [
@@ -178,8 +178,8 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
       context: context,
       builder: (context) => CupertinoAlertDialog(
         title: const Text('Change Email'),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 16),
+        content: const Padding(
+          padding: EdgeInsets.only(top: 16),
           child: CupertinoTextField(
             placeholder: 'New email address',
             keyboardType: TextInputType.emailAddress,
@@ -207,12 +207,12 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
       context: context,
       builder: (context) => CupertinoAlertDialog(
         title: const Text('Add Phone Number'),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 16),
+        content: const Padding(
+          padding: EdgeInsets.only(top: 16),
           child: CupertinoTextField(
             placeholder: 'Phone number',
             keyboardType: TextInputType.phone,
-            prefix: const Padding(
+            prefix: Padding(
               padding: EdgeInsets.only(left: 8),
               child: Text('+1'),
             ),
@@ -240,10 +240,10 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
       context: context,
       builder: (context) => CupertinoAlertDialog(
         title: const Text('Change Password'),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 16),
+        content: const Padding(
+          padding: EdgeInsets.only(top: 16),
           child: Column(
-            children: const [
+            children: [
               CupertinoTextField(
                 placeholder: 'Current password',
                 obscureText: true,

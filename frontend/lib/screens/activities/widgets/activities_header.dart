@@ -29,7 +29,7 @@ class ActivitiesHeader extends StatelessWidget {
           Expanded(
             child: Text.rich(
               TextSpan(
-                style: SnowtrakAuthTheme.pageTitle.copyWith(fontSize: 28),
+                style: SnowtrakAuthTheme.pageTitle(context).copyWith(fontSize: 28),
                 children: [
                   TextSpan(
                     text: 'Welcome back, ',
@@ -42,7 +42,7 @@ class ActivitiesHeader extends StatelessWidget {
                   ),
                   TextSpan(
                     text: username,
-                    style: SnowtrakAuthTheme.pageTitle.copyWith(
+                    style: SnowtrakAuthTheme.pageTitle(context).copyWith(
                       fontSize: 28,
                       height: 1.2,
                     ),
@@ -58,7 +58,7 @@ class ActivitiesHeader extends StatelessWidget {
             builder: (context, authProvider, _) {
               final user = authProvider.user;
               return Material(
-                color: SnowtrakAuthTheme.brand,
+                color: context.colors.primary,
                 shape: const CircleBorder(),
                 clipBehavior: Clip.antiAlias,
                 child: InkWell(

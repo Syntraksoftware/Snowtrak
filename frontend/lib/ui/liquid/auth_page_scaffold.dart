@@ -37,7 +37,7 @@ class AuthPageScaffold extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: Text(title, style: SnowtrakAuthTheme.pageTitle),
+                    child: Text(title, style: SnowtrakAuthTheme.pageTitle(context)),
                   ),
                   if (onClose != null)
                     IconButton(

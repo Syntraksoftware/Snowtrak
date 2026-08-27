@@ -54,11 +54,11 @@ class ChallengesDetailCard extends StatelessWidget {
                 right: -4,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: SnowtrakColors.accent,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.arrow_upward,
                     color: SnowtrakColors.textOnPrimary,
                     size: 12,
@@ -169,11 +169,11 @@ class ChallengesRecommendedCard extends StatelessWidget {
                 right: -4,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: SnowtrakColors.accent,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.arrow_upward,
                     color: SnowtrakColors.textOnPrimary,
                     size: 10,

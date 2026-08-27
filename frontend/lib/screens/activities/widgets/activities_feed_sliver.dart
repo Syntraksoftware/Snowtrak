@@ -42,7 +42,7 @@ class ActivitiesFeedSliver extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.downhill_skiing,
                       size: 80,
                       color: SnowtrakColors.textTertiary,
@@ -87,13 +87,13 @@ class ActivitiesFeedSliver extends StatelessWidget {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: SnowtrakAuthTheme.brand.withValues(alpha: 0.12),
+                    color: context.colors.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(SnowtrakRadius.md),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.history,
                     size: 20,
-                    color: SnowtrakAuthTheme.brand,
+                    color: context.colors.primary,
                   ),
                 ),
                 const SizedBox(width: SnowtrakSpacing.sm),

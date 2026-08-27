@@ -122,7 +122,7 @@ class _RecordStatsCardState extends State<RecordStatsCard>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Divider(height: 1, color: SnowtrakColors.divider),
+                    const Divider(height: 1, color: SnowtrakColors.divider),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(8, 16, 8, 18),
                       child: ValueListenableBuilder<Duration>(
@@ -177,7 +177,7 @@ class RecordControls extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: SnowtrakColors.surface,
-        border: Border(
+        border: const Border(
           top: BorderSide(color: SnowtrakColors.divider),
         ),
         boxShadow: [
@@ -214,7 +214,7 @@ class RecordControls extends StatelessWidget {
         labelColor: SnowtrakColors.primary,
         onTap: onStart,
       ),
-      _ControlButton(
+      const _ControlButton(
         icon: Icons.route_outlined,
         label: 'Add Route',
         onTap: null,
@@ -237,7 +237,7 @@ class RecordControls extends StatelessWidget {
         labelColor: SnowtrakColors.textSecondary,
         onTap: onStop,
       ),
-      _ControlButton(
+      const _ControlButton(
         icon: Icons.more_horiz,
         label: 'More',
         onTap: null,
@@ -502,7 +502,7 @@ class _GpsDeniedSheet extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child:
-                Icon(Icons.location_off, color: SnowtrakColors.error, size: 30),
+                const Icon(Icons.location_off, color: SnowtrakColors.error, size: 30),
           ),
           const SizedBox(height: 16),
           Text(

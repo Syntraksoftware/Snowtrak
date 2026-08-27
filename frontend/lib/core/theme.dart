@@ -514,7 +514,7 @@ class SnowtrakTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.light(
+      colorScheme: const ColorScheme.light(
         primary: SnowtrakColors.primary,
         primaryContainer: SnowtrakColors.primaryLight,
         secondary: SnowtrakColors.secondary,
@@ -552,7 +552,7 @@ class SnowtrakTheme {
         ),
         margin: EdgeInsets.zero,
       ),
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: SnowtrakColors.surface,
         selectedItemColor: SnowtrakColors.ink,
         unselectedItemColor: SnowtrakColors.neutral400,
@@ -617,7 +617,7 @@ class SnowtrakTheme {
   static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.dark(
+      colorScheme: const ColorScheme.dark(
         primary: SnowtrakColors.primaryLight,
         primaryContainer: SnowtrakColors.primary,
         secondary: SnowtrakColors.secondaryLight,
@@ -655,7 +655,7 @@ class SnowtrakTheme {
         ),
         margin: EdgeInsets.zero,
       ),
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: SnowtrakColors.darkSurface,
         selectedItemColor: SnowtrakColors.primaryLight,
         unselectedItemColor: SnowtrakColors.darkTextSecondary,
@@ -705,7 +705,7 @@ class SnowtrakTheme {
           textStyle: SnowtrakTypography.labelLarge,
         ),
       ),
-      iconTheme: IconThemeData(
+      iconTheme: const IconThemeData(
         color: SnowtrakColors.darkTextSecondary,
         size: 24,
       ),

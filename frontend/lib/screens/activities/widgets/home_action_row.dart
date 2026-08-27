@@ -54,7 +54,7 @@ class HomeActionRow extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(icon, size: 18, color: SnowtrakAuthTheme.brand),
+              Icon(icon, size: 18, color: context.colors.primary),
             ],
           ),
         ),
