@@ -19,7 +19,11 @@ from shared import ListResponse
 
 from config import get_config
 from middleware.auth import get_current_user, get_optional_user
-from routes.community_models import FollowStatsResponse, FollowUserResponse
+from routes.community_models import (
+    FollowResultResponse,
+    FollowStatsResponse,
+    FollowUserResponse,
+)
 from routes.list_response_builder import build_paginated_list_response
 from services.community_cache import (
     follow_stats_cache_key,
@@ -51,24 +55,97 @@ async def remove_follower(
     await invalidate_follow_stats_cache()
 
 
-@router.post("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.get("/me/requests", response_model=ListResponse)
+async def list_my_requests(
+    request: Request,
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_user: str = Depends(get_current_user),
+):
+    """People asking to follow you, newest first."""
+    client = get_community_client()
+    rows = await offload(client.list_requests, current_user, limit, offset)
+    total = await offload(client.count_requests, current_user)
+    return build_paginated_list_response(
+        request=request,
+        items=[FollowUserResponse(**row) for row in rows],
+        limit=limit,
+        offset=offset,
+        total=total,
+    )
+
+
+@router.post("/me/requests/{user_id}/approve", status_code=status.HTTP_204_NO_CONTENT)
+async def approve_request(
+    user_id: UUID,
+    current_user: str = Depends(get_current_user),
+):
+    """Let somebody in. 404 when there was no request to approve."""
+    if not await offload(get_community_client().approve_request, current_user, str(user_id)):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No such follow request",
+        ) from None
+    await invalidate_follow_stats_cache()
+
+
+@router.delete("/me/requests/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def deny_request(
+    user_id: UUID,
+    current_user: str = Depends(get_current_user),
+):
+    """Refuse a request. Succeeds even if there was none."""
+    await offload(get_community_client().deny_request, current_user, str(user_id))
+    await invalidate_follow_stats_cache()
+
+
+@router.delete("/{user_id}/request", status_code=status.HTTP_204_NO_CONTENT)
+async def withdraw_request(
+    user_id: UUID,
+    current_user: str = Depends(get_current_user),
+):
+    """Take back a request you sent. Succeeds even if there was none."""
+    await offload(get_community_client().withdraw_request, current_user, str(user_id))
+    await invalidate_follow_stats_cache()
+
+
+@router.post("/{user_id}", response_model=FollowResultResponse)
 async def follow_user(
     user_id: UUID,
     current_user: str = Depends(get_current_user),
 ):
-    """Follow somebody. Idempotent."""
-    if str(user_id) == current_user:
+    """Follow somebody, or ask to. Idempotent either way.
+
+    The privacy flag is read fresh on every call, never from cache. The
+    cached follow_stats can be up to CACHE_FOLLOW_STATS_TTL_SECONDS stale,
+    but that only mislabels the button -- the decision made here is not
+    allowed to come from a cache.
+    """
+    target = str(user_id)
+    if target == current_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You cannot follow yourself",
         ) from None
 
-    if not await offload(get_community_client().follow, current_user, str(user_id)):
+    client = get_community_client()
+
+    if await offload(client.is_private_account, target):
+        if not await offload(client.request_follow, current_user, target):
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Could not request to follow this user",
+            ) from None
+        await invalidate_follow_stats_cache()
+        return FollowResultResponse(state="requested")
+
+    if not await offload(client.follow, current_user, target):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Could not follow this user",
         ) from None
     await invalidate_follow_stats_cache()
+    return FollowResultResponse(state="following")
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)

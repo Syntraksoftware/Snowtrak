@@ -19,7 +19,7 @@ from fastapi.testclient import TestClient
 import main as community_main
 from middleware.auth import get_current_user, get_optional_user
 from routes import comments as comments_routes
-from routes import media_routes, posts_read_routes, posts_write_routes
+from routes import follows_routes, media_routes, posts_read_routes, posts_write_routes
 from routes import subthreads as subthreads_routes
 from services.community_media_operations import (
     CommunityMediaUploadResult,
@@ -80,6 +80,11 @@ class StubCommunityClient:
             "reposted_by_current_user": False,
             "media_urls": [],
         }
+        # Follow-graph state, kept separate from the fixtures above because
+        # the follow-request tests mutate it per-test via stub_client.
+        self.follows: set[tuple[str, str]] = set()
+        self.requests: set[tuple[str, str]] = set()
+        self.private_accounts: set[str] = set()
 
     def upload_community_media(self, user_id, file_bytes, content_type, extension):
         if len(file_bytes) > _MEDIA_MAX:
@@ -263,6 +268,53 @@ class StubCommunityClient:
             "score": vote_type,
         }
 
+    def is_private_account(self, user_id):
+        return user_id in self.private_accounts
+
+    def follow(self, follower_id, followee_id):
+        self.follows.add((follower_id, followee_id))
+        return True
+
+    def unfollow(self, follower_id, followee_id):
+        self.follows.discard((follower_id, followee_id))
+        return True
+
+    def request_follow(self, requester_id, target_id):
+        self.requests.add((requester_id, target_id))
+        return True
+
+    def withdraw_request(self, requester_id, target_id):
+        self.requests.discard((requester_id, target_id))
+        return True
+
+    def deny_request(self, target_id, requester_id):
+        self.requests.discard((requester_id, target_id))
+        return True
+
+    def approve_request(self, target_id, requester_id):
+        if (requester_id, target_id) not in self.requests:
+            return False
+        self.requests.discard((requester_id, target_id))
+        self.follows.add((requester_id, target_id))
+        return True
+
+    def list_requests(self, target_id, limit=20, offset=0):
+        rows = [
+            {
+                "user_id": requester_id,
+                "email": None,
+                "first_name": None,
+                "last_name": None,
+                "created_at": "2026-01-01T00:00:00Z",
+            }
+            for requester_id, tgt in sorted(self.requests)
+            if tgt == target_id
+        ]
+        return rows[offset : offset + limit]
+
+    def count_requests(self, target_id):
+        return sum(1 for _requester_id, tgt in self.requests if tgt == target_id)
+
 
 @pytest.fixture
 def stub_client():
@@ -277,6 +329,7 @@ def app(monkeypatch, stub_client):
     monkeypatch.setattr(posts_write_routes, "get_community_client", lambda: stub_client)
     monkeypatch.setattr(comments_routes, "get_community_client", lambda: stub_client)
     monkeypatch.setattr(media_routes, "get_community_client", lambda: stub_client)
+    monkeypatch.setattr(follows_routes, "get_community_client", lambda: stub_client)
 
     community_main.app.dependency_overrides[get_current_user] = lambda: "user-1"
     community_main.app.dependency_overrides[get_optional_user] = lambda: "user-1"
