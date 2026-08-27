@@ -587,3 +587,19 @@ def test_visible_post_ids_denies_when_the_lookup_fails(visibility_client):
 
     visibility_client._client.table = explode
     assert visibility_client.visible_post_ids(["public-post"], "visibility.eq.public") == set()
+
+
+def test_shared_visibility_expression_covers_all_three_tiers():
+    from shared.visibility import visible_rows_expression
+
+    anonymous = visible_rows_expression(None, [])
+    assert anonymous == "visibility.eq.public"
+
+    viewer = visible_rows_expression("user-1", ["user-2"])
+    assert "visibility.eq.public" in viewer
+    assert "user_id.eq.user-1" in viewer
+    assert "and(visibility.eq.followers,user_id.in.(user-2))" in viewer
+
+    # PostgREST rejects an empty in.(), so the clause must not be built.
+    alone = visible_rows_expression("user-1", [])
+    assert "in.()" not in alone

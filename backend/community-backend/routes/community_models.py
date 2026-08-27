@@ -4,8 +4,7 @@ used for organizing and standardizing the data structures across different route
 """
 
 from pydantic import BaseModel, Field
-
-from services.visibility import PUBLIC
+from shared.visibility import PUBLIC
 
 
 class PostCreate(BaseModel):

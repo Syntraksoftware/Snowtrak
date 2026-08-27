@@ -5,9 +5,10 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
+from shared.visibility import visible_rows_expression
+
 from services.constants.community_tables import POST_LIKES, POSTS
 from services.mappers.community_row_mappers import flatten_user_info
-from services.visibility import visible_posts_expression
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ class CommunityPostReadOperations:
         against the same list.
         """
         following = self.following_ids(current_user_id) if current_user_id else []
-        return visible_posts_expression(current_user_id, following), following
+        return visible_rows_expression(current_user_id, following), following
 
     def _hydrate(
         self,

@@ -8,14 +8,12 @@ docs/service-ownership.md.
 import logging
 from typing import Any
 
+from shared.follow_graph import MAX_FOLLOW_IDS
+from shared.follow_graph import following_ids as _following_ids
+
 from services.constants.community_tables import FOLLOWS
 
 logger = logging.getLogger(__name__)
-
-# A read that walks the whole graph would be unbounded; nobody follows this
-# many people, and past it the predicate belongs in a Postgres view.
-# ponytail: cap the in-memory follow list, move to a DB-side join if it bites.
-MAX_FOLLOW_IDS = 1000
 
 
 class CommunityFollowOperations:
@@ -127,9 +125,7 @@ class CommunityFollowOperations:
 
     def following_ids(self, user_id: str) -> list[str]:
         """Ids `user_id` follows, for the feed's visibility filter."""
-        return self._edge_ids(
-            select_field="followee_id", match_field="follower_id", user_id=user_id
-        )
+        return _following_ids(self._client, user_id)
 
     def follower_ids(self, user_id: str) -> list[str]:
         return self._edge_ids(
