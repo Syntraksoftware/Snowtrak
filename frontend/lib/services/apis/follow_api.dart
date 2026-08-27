@@ -19,9 +19,18 @@ class FollowApi {
     return FollowStats.fromJson(data);
   }
 
-  Future<void> follow(String userId) => _dio.post<void>('/follows/$userId');
+  /// Follow, or ask to. Returns `following` or `requested` — a private
+  /// account turns the first into the second and the client cannot guess.
+  Future<String> follow(String userId) async {
+    final response = await _dio.post<Map<String, dynamic>>('/follows/$userId');
+    return response.data?['state'] as String? ?? 'following';
+  }
 
   Future<void> unfollow(String userId) => _dio.delete<void>('/follows/$userId');
+
+  /// Take back a request you sent.
+  Future<void> withdrawRequest(String userId) =>
+      _dio.delete<void>('/follows/$userId/request');
 
   /// People who follow [userId], newest first.
   Future<List<Map<String, dynamic>>> getFollowers(

@@ -67,15 +67,36 @@ class _FollowButtonState extends State<FollowButton> {
     final current = _stats;
     if (current == null || _busy) return;
 
-    // Flip first: a follow that takes a round trip to acknowledge feels broken.
+    // Flip first: a follow that takes a round trip to acknowledge feels
+    // broken. The server's answer replaces the guess a moment later.
     setState(() {
-      _stats = current.toggled();
+      _stats = current.hasRequested || (current.isPrivate && !current.isFollowing)
+          ? current.requested()
+          : current.toggled();
       _busy = true;
     });
 
-    final result = current.isFollowing
-        ? await _followService.unfollow(widget.userId)
-        : await _followService.follow(widget.userId);
+    final AppResult<void> result;
+    if (current.isFollowing) {
+      result = await _followService.unfollow(widget.userId);
+    } else if (current.hasRequested) {
+      result = await _followService.withdrawRequest(widget.userId);
+    } else {
+      final followed = await _followService.follow(widget.userId);
+      // The server decides which of the two happened; a private account we
+      // did not know about turns a follow into a request.
+      switch (followed) {
+        case AppSuccess(:final value):
+          if (mounted) {
+            setState(() {
+              _stats = value == 'requested' ? current.requested() : current.toggled();
+            });
+          }
+          result = const AppSuccess(null);
+        case AppFailure(:final error):
+          result = AppFailure(error);
+      }
+    }
 
     if (!mounted) return;
 
@@ -165,6 +186,14 @@ class _FollowButtonState extends State<FollowButton> {
         );
       }
       return const _ButtonPlaceholder();
+    }
+
+    if (stats.hasRequested) {
+      return OutlinedButton(
+        onPressed: _busy ? null : _toggle,
+        style: _outlinedStyle,
+        child: const Text('Requested'),
+      );
     }
 
     if (stats.isFollowing) {

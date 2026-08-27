@@ -14,11 +14,14 @@ class FollowService {
   Future<AppResult<FollowStats>> getStats(String userId) =>
       _run(() => _followApi.getStats(userId));
 
-  Future<AppResult<void>> follow(String userId) =>
+  Future<AppResult<String>> follow(String userId) =>
       _run(() => _followApi.follow(userId));
 
   Future<AppResult<void>> unfollow(String userId) =>
       _run(() => _followApi.unfollow(userId));
+
+  Future<AppResult<void>> withdrawRequest(String userId) =>
+      _run(() => _followApi.withdrawRequest(userId));
 
   Future<AppResult<List<Map<String, dynamic>>>> getFollowers(
     String userId, {
