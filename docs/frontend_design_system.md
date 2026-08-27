@@ -1,10 +1,16 @@
 # Frontend design system
 
-How colour, spacing, and type are defined in the Flutter app, and how the
-~268 places that currently bypass the system get converted.
+How colour, spacing, and type are defined in the Flutter app.
 
-**Status:** the token layer is built and tested. Conversion has not started.
-Dark mode is built but switched off.
+**Status:** the token layer is built and tested, and the conversion is
+complete — 963 call sites read `context.colors`, and zero raw hex or Material
+colours remain in `lib/` outside the three documented exceptions.
+`test/core/design_system_guard_test.dart` enforces that on every run.
+
+Dark mode is built, tested, and **switched off**: `main.dart` pins
+`themeMode: ThemeMode.light`. The palette proves light and dark differ and
+that `lerp` is correct; nothing proves dark mode looks right, because nobody
+has seen it. Expect a round of visual fixes when Phase 4 flips the switch.
 
 ## The protocol
 
@@ -134,22 +140,30 @@ is worse than one that visibly does nothing. So:
 `test/core/theme_test.dart`, and the missing dark tokens (`darkTextTertiary`,
 `darkTextQuaternary`, `darkDivider`, `darkBorder`, `scrim`/`darkScrim`).
 
-**Phase 2 — stop the bleeding.** The rule is in `CLAUDE.md`. Add a CI grep when
-convenient so no new violation lands.
+**Phase 2 — stop the bleeding.** Done, and by a test rather than a grep:
+`test/core/design_system_guard_test.dart` reads source and fails the build on a
+raw hex, a Material colour, or a role read off `SnowtrakColors` outside
+`theme.dart`. It scans source rather than rendering widgets because the thing
+being prevented is a line of code, not a pixel — a golden passes happily on a
+correctly-coloured literal.
 
-**Phase 3 — convert, one module at a time.** Start with `lib/widgets/`: shared
-widgets are reached from the most screens, so converting them moves the most
-surface per file. Then `lib/ui/`, then screens by feature area.
+**Phase 3 — convert.** Done. `lib/widgets/`, `lib/ui/`, then screens by feature
+area, one violation class per commit.
 
-**Phase 4 — wire the picker.** Only once Phase 3 is done for every screen a
-user can reach. Then `themeMode` follows the setting, and the setting persists.
+**Phase 4 — wire the picker.** Not started. The display settings screen
+currently shows Light and says dark mode is in progress; the selection row
+comes back here. Before it does, someone has to look at dark mode — see the
+status note at the top of this document — and the five status colours need
+their own pass, which `theme.dart` marks with a `ponytail:` comment.
 
-### Do not sweep
+### Converting was one module at a time; keeping it is not
 
-One module per change, one violation class per commit. A repo-wide
-find-and-replace produces a diff nobody can review and cannot be verified in
-both modes. Convert a file when you are already editing it, or convert a module
-deliberately — never both at once.
+Phase 3 ran one module per change and one violation class per commit, because a
+repo-wide find-and-replace produces a diff nobody can review.
+
+That guidance has expired. There is nothing left to convert, and new code has
+no grace period: the guard fails the build the first time, so a violation never
+becomes a backlog item to schedule.
 
 ### Per-file recipe
 
