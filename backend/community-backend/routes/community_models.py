@@ -5,6 +5,8 @@ used for organizing and standardizing the data structures across different route
 
 from pydantic import BaseModel, Field
 
+from services.visibility import PUBLIC
+
 
 class PostCreate(BaseModel):
     """Schema for creating a post."""
@@ -17,6 +19,9 @@ class PostCreate(BaseModel):
     quoted_comment_id: str | None = None
     repost_of_comment_id: str | None = None
     media_urls: list[str] | None = None
+    # public | followers | private. Defaults to public so a client that has
+    # not been updated keeps posting exactly as it did before.
+    visibility: str = PUBLIC
 
 
 class CommunityQuotedPostPreview(BaseModel):
@@ -99,6 +104,7 @@ class CommunityPostResponse(BaseModel):
     quoted_comment: CommunityQuotedCommentPreview | None = None
     repost_of_comment_id: str | None = None
     media_urls: list[str] = Field(default_factory=list)
+    visibility: str = "public"
 
 
 class FollowStatsResponse(BaseModel):

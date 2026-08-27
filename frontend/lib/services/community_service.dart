@@ -85,6 +85,7 @@ class CommunityService {
     String? quotedCommentId,
     String? repostOfCommentId,
     List<String>? mediaUrls,
+    String visibility = 'public',
   }) {
     return _run(() => _communityRepository.createPost(
           subthreadId: subthreadId,
@@ -95,6 +96,7 @@ class CommunityService {
           quotedCommentId: quotedCommentId,
           repostOfCommentId: repostOfCommentId,
           mediaUrls: mediaUrls,
+          visibility: visibility,
         ));
   }
 

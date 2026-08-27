@@ -20,6 +20,20 @@ class FollowService {
   Future<AppResult<void>> unfollow(String userId) =>
       _run(() => _followApi.unfollow(userId));
 
+  Future<AppResult<List<Map<String, dynamic>>>> getFollowers(
+    String userId, {
+    int limit = 20,
+    int offset = 0,
+  }) =>
+      _run(() => _followApi.getFollowers(userId, limit: limit, offset: offset));
+
+  Future<AppResult<List<Map<String, dynamic>>>> getFollowing(
+    String userId, {
+    int limit = 20,
+    int offset = 0,
+  }) =>
+      _run(() => _followApi.getFollowing(userId, limit: limit, offset: offset));
+
   Future<AppResult<void>> removeFollower(String userId) =>
       _run(() => _followApi.removeFollower(userId));
 

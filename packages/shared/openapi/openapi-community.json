@@ -455,6 +455,11 @@
           "user_id": {
             "title": "User Id",
             "type": "string"
+          },
+          "visibility": {
+            "default": "public",
+            "title": "Visibility",
+            "type": "string"
           }
         },
         "required": [
@@ -933,6 +938,11 @@
           },
           "title": {
             "title": "Title",
+            "type": "string"
+          },
+          "visibility": {
+            "default": "public",
+            "title": "Visibility",
             "type": "string"
           }
         },

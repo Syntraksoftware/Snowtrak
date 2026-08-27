@@ -7,6 +7,7 @@ from typing import Any
 
 from services.constants.community_tables import POST_LIKES, POSTS
 from services.mappers.community_row_mappers import flatten_user_info
+from services.visibility import visible_posts_expression
 
 logger = logging.getLogger(__name__)
 
@@ -14,10 +15,21 @@ logger = logging.getLogger(__name__)
 class CommunityPostReadOperations:
     """Mixin containing read and count operations for posts."""
 
+    def _visible_posts(self, current_user_id: str | None) -> tuple[str, list[str]]:
+        """The visibility predicate for this viewer, and the ids behind it.
+
+        The ids come back too because rows that arrive without going through
+        the filter -- a quoted post's preview -- have to be checked in Python
+        against the same list.
+        """
+        following = self.following_ids(current_user_id) if current_user_id else []
+        return visible_posts_expression(current_user_id, following), following
+
     def _hydrate(
         self,
         posts: list[dict[str, Any]],
         current_user_id: str | None = None,
+        expression: str | None = None,
     ) -> list[dict[str, Any]]:
         """Attach engagement counts and quoted previews to `posts` in place.
 
@@ -29,11 +41,14 @@ class CommunityPostReadOperations:
         if not posts:
             return posts
 
+        if expression is None:
+            expression, _ = self._visible_posts(current_user_id)
+
         with ThreadPoolExecutor(max_workers=3) as pool:
             stages = [
                 pool.submit(self._attach_engagement_fields, posts, current_user_id),
-                pool.submit(self._hydrate_quoted_posts, posts),
-                pool.submit(self._hydrate_quoted_comments, posts),
+                pool.submit(self._hydrate_quoted_posts, posts, expression),
+                pool.submit(self._hydrate_quoted_comments, posts, expression),
             ]
             for stage in stages:
                 stage.result()
@@ -142,8 +157,17 @@ class CommunityPostReadOperations:
             post["share_count"] = int(post.get("share_count", 0) or 0)
         return posts
 
-    def _hydrate_quoted_posts(self, posts: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        """Attach nested quoted_post preview for rows with quoted_post_id."""
+    def _hydrate_quoted_posts(
+        self,
+        posts: list[dict[str, Any]],
+        expression: str,
+    ) -> list[dict[str, Any]]:
+        """Attach nested quoted_post preview for rows with quoted_post_id.
+
+        The preview is filtered like any other post read. A public post that
+        quotes a followers-only one would otherwise hand its text to everybody,
+        and the leak would be authored by somebody other than its owner.
+        """
         if not posts:
             return posts
 
@@ -168,6 +192,7 @@ class CommunityPostReadOperations:
                         "user_info!posts_user_id_fkey(email, first_name, last_name)"
                     )
                     .in_("post_id", unique_ids)
+                    .or_(expression)
                     .execute()
                 )
                 rows = getattr(response, "data", None)
@@ -193,8 +218,42 @@ class CommunityPostReadOperations:
                 post["quoted_post"] = None
         return posts
 
-    def _hydrate_quoted_comments(self, posts: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        """Attach nested quoted_comment preview for rows with quoted_comment_id."""
+    def visible_post_ids(self, post_ids: list[str], expression: str) -> set[str]:
+        """Which of `post_ids` this viewer may read. One query.
+
+        For rows that are reached by something other than a post read -- a
+        comment, a quoted comment -- and therefore have to be gated by their
+        parent post rather than by themselves.
+        """
+        if not post_ids:
+            return set()
+        try:
+            response = (
+                self._client.table(POSTS)
+                .select("post_id")
+                .in_("post_id", list(dict.fromkeys(post_ids)))
+                .or_(expression)
+                .execute()
+            )
+            rows = getattr(response, "data", None)
+            if not isinstance(rows, list):
+                return set()
+            return {str(row.get("post_id", "")).strip() for row in rows if row.get("post_id")}
+        except Exception as exception:
+            logger.warning("Failed to resolve visible post ids: %s", exception)
+            # Deny on failure. A visibility check that fails open is not one.
+            return set()
+
+    def _hydrate_quoted_comments(
+        self,
+        posts: list[dict[str, Any]],
+        expression: str,
+    ) -> list[dict[str, Any]]:
+        """Attach nested quoted_comment preview for rows with quoted_comment_id.
+
+        A comment inherits the visibility of the post it sits under, so the
+        previews are gated by their parent rather than by themselves.
+        """
         if not posts:
             return posts
 
@@ -215,7 +274,7 @@ class CommunityPostReadOperations:
                 response = (
                     self._client.table("comments")
                     .select(
-                        "id, user_id, content, created_at, "
+                        "id, user_id, post_id, content, created_at, "
                         "user_info!comments_user_id_fkey(email, first_name, last_name)"
                     )
                     .in_("id", unique_ids)
@@ -223,8 +282,12 @@ class CommunityPostReadOperations:
                 )
                 rows = getattr(response, "data", None)
                 if isinstance(rows, list):
+                    parents = [str(row.get("post_id", "")).strip() for row in rows]
+                    allowed = self.visible_post_ids([p for p in parents if p], expression)
                     for row in rows:
                         if not isinstance(row, dict):
+                            continue
+                        if str(row.get("post_id", "")).strip() not in allowed:
                             continue
                         preview = dict(row)
                         cid = str(preview.get("id", "")).strip()
@@ -251,10 +314,12 @@ class CommunityPostReadOperations:
     ) -> dict[str, Any] | None:
         """Get post by identifier with author information."""
         try:
+            expression, _ = self._visible_posts(current_user_id)
             response = (
                 self._client.table("posts")
                 .select("*, user_info!posts_user_id_fkey(email, first_name, last_name)")
                 .eq("post_id", post_id)
+                .or_(expression)
                 .limit(1)
                 .execute()
             )
@@ -281,6 +346,7 @@ class CommunityPostReadOperations:
                 self._client.table("posts")
                 .select("*, user_info!posts_user_id_fkey(email, first_name, last_name)")
                 .eq("subthread_id", subthread_id)
+                .or_(self._visible_posts(current_user_id)[0])
                 .order("created_at", desc=True)
                 .range(offset, offset + limit - 1)
                 .execute()
@@ -308,6 +374,7 @@ class CommunityPostReadOperations:
                 self._client.table("posts")
                 .select("*, user_info!posts_user_id_fkey(email, first_name, last_name)")
                 .eq("user_id", user_id)
+                .or_(self._visible_posts(current_user_id)[0])
                 .order("created_at", desc=True)
                 .range(offset, offset + limit - 1)
                 .execute()
@@ -353,6 +420,7 @@ class CommunityPostReadOperations:
             response = (
                 self._client.table("posts")
                 .select("*, user_info!posts_user_id_fkey(email, first_name, last_name)")
+                .or_(self._visible_posts(current_user_id)[0])
                 .order("created_at", desc=True)
                 .range(offset, offset + limit - 1)
                 .execute()

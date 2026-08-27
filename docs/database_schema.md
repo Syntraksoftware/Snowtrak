@@ -180,6 +180,7 @@ defines them and no test asserts their shape.
 | `quoted_comment_id` | uuid | yes |  | FK → `comments.id` |
 | `repost_of_comment_id` | uuid | yes |  | FK → `comments.id` |
 | `media_urls` | jsonb | no |  |  |
+| `visibility` | text | no | `public` |  |
 
 ### `profiles`
 

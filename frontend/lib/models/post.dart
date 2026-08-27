@@ -30,6 +30,12 @@ class Post {
   final bool repostedByCurrentUser;
   final List<Post>? replies;
 
+  /// `public`, `followers` or `private`. Defaults to public so a payload from
+  /// a backend that predates the column reads as it always did.
+  final String visibility;
+
+  bool get isPublic => visibility == 'public';
+
   Post({
     required this.id,
     required this.author,
@@ -53,6 +59,7 @@ class Post {
     this.likedByCurrentUser = false,
     this.repostedByCurrentUser = false,
     this.replies,
+    this.visibility = 'public',
   });
 
   /// Title string to send on API create (repost duplicate / fallback).

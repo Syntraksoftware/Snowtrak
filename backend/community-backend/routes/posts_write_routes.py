@@ -120,6 +120,7 @@ async def create_post(
             quoted_comment_id=quoted_comment_id,
             repost_of_comment_id=repost_of_comment_id,
             media_urls=media_urls,
+            visibility=data.visibility,
         )
         if not created_post:
             raise HTTPException(
