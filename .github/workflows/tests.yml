@@ -78,9 +78,13 @@ jobs:
         timeout-minutes: 10
 
       - name: Run tests with coverage
+        # --exclude-tags preview: design_preview_test.dart compares against a
+        # golden PNG generated on macOS, and ubuntu rasterises text differently,
+        # so it fails here for the platform rather than for the code. See
+        # frontend/dart_test.yaml.
         run: |
           cd frontend
-          flutter test --coverage
+          flutter test --coverage --exclude-tags preview
         continue-on-error: false
         timeout-minutes: 10
       
