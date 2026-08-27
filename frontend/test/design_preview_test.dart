@@ -1,6 +1,3 @@
-@Tags(['preview'])
-library;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:snowtrak/core/theme.dart';
@@ -10,9 +7,18 @@ import 'package:snowtrak/screens/home/widgets/resort_conditions_card.dart';
 import 'package:snowtrak/screens/home/widgets/stats_carousel.dart';
 import 'package:snowtrak/ui/st/st.dart';
 
-/// Renders the Home tab's pieces without providers so the design can be eyeballed:
-/// `flutter test --update-goldens test/design_preview_test.dart` writes
-/// `test/goldens/home_preview.png`.
+/// Renders the Home tab's pieces without providers, so a layout that throws
+/// or overflows fails here rather than on a phone.
+///
+/// It used to compare against a checked-in PNG. That golden was generated on
+/// macOS and CI runs ubuntu, which rasterises text differently, so it failed
+/// for the platform rather than for the code -- and once excluded from CI it
+/// was only ever validated on one machine, where a second developer
+/// regenerating it would silently break the first. A screenshot wearing a
+/// test's clothes.
+///
+/// What is worth gating is that this tree builds and lays out. That is what
+/// pumpWidget and pumpAndSettle already assert.
 void main() {
   testWidgets('home preview', (tester) async {
     tester.view.physicalSize = const Size(402 * 3, 900 * 3);
@@ -41,8 +47,9 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: SnowtrakTheme.lightTheme,
+        // No backgroundColor: lightTheme already sets scaffoldBackgroundColor,
+        // and naming it here would preview a colour the app does not use.
         home: Scaffold(
-          backgroundColor: SnowtrakColors.background,
           body: SafeArea(
             child: Column(
               children: [
@@ -91,9 +98,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await expectLater(
-      find.byType(MaterialApp),
-      matchesGoldenFile('goldens/home_preview.png'),
-    );
+    expect(tester.takeException(), isNull);
   });
 }
