@@ -10,7 +10,6 @@ class DisplaySettingsScreen extends StatefulWidget {
 }
 
 class _DisplaySettingsScreenState extends State<DisplaySettingsScreen> {
-  String _theme = 'Light';
   String _language = 'English';
   String _dateFormat = 'MM/DD/YYYY';
   String _startOfWeek = 'Sunday';
@@ -42,18 +41,15 @@ class _DisplaySettingsScreenState extends State<DisplaySettingsScreen> {
           _buildSectionHeader('APPEARANCE'),
           _SettingsGroup(
             children: [
-              _SettingsSelectionRow(
+              // ponytail: offered Light/Dark/System and did nothing but toast.
+              // main.dart pins themeMode to light, and the screens are only
+              // part-way onto the palette, so a working picker would ship a
+              // half-broken dark mode. Restore the selection row here once
+              // docs/frontend_design_system.md Phase 4 is done.
+              _SettingsNavigationRow(
                 label: 'Theme',
-                value: _theme,
-                onTap: () => _showOptions(
-                  'Theme',
-                  ['Light', 'Dark', 'System'],
-                  _theme,
-                  (v) {
-                    setState(() => _theme = v);
-                    _showToast('Theme changed to $v');
-                  },
-                ),
+                value: 'Light',
+                onTap: () => _showToast('Dark mode is in progress'),
               ),
               _SettingsNavigationRow(
                 label: 'App Icon',
@@ -63,7 +59,7 @@ class _DisplaySettingsScreenState extends State<DisplaySettingsScreen> {
             ],
           ),
           _buildSectionFooter(
-            'Choose System to match your device settings.',
+            'Snowtrak is light for now. Dark mode is on the way.',
           ),
 
           const SizedBox(height: 24),
