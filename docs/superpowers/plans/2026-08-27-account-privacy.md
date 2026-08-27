@@ -154,6 +154,25 @@ The three excluded files are the request/response mapping, which reads the
 Pydantic field, never the column. If anything else appears, **stop and report
 it** — do not run `016`.
 
+**This was run on 2026-08-27 and it failed.** main-backend held a second,
+unmounted activities implementation — ~700 lines — that used
+`activities.is_public` as its access-control column while activity-backend
+used `visibility`. Production still shows the disagreement: one activity is
+stored `visibility = 'private'` with `is_public = true`. It was deleted in
+`1501b69`; see the "Migration Decision" section of `docs/service-ownership.md`.
+
+After that deletion the grep returns only three lines, all of which are the
+API-level boolean and none of which name the column:
+
+```
+backend/shared/track_pipeline_schemas.py:247   is_public: bool = True     # contract schema
+backend/shared/track_pipeline_schemas.py:275   is_public: bool            # contract schema
+backend/scripts/test_delete_orchestration.py:92  "is_public": True,       # an HTTP request body
+```
+
+Re-run it anyway before `016`. The point of a pre-flight is that it is run,
+not that somebody once ran it.
+
 - [ ] **Step 2: Write `014_follow_requests.sql`**
 
 ```sql
@@ -230,11 +249,21 @@ commit;
 -- ActivityCreate defaults to "private" and activities_upload_routes.py
 -- writes "private" -- the column simply never carried the same default.
 --
--- is_public is dropped because it lies. It is `not null default true` and
--- no write path has ever updated it: the API's is_public is derived from
--- visibility at routes/activity_transformers.py:175. Every private
--- activity in the database currently stores is_public = true beside
--- visibility = 'private'. Left in place, somebody eventually believes it.
+-- is_public is dropped because two services disagreed about it. The API's
+-- is_public is derived from visibility at
+-- routes/activity_transformers.py:175 and is unaffected by this; the
+-- column is a different thing wearing the same name.
+--
+-- activity-backend has never written the column, so it kept its `not null
+-- default true` on every row -- including the one activity stored
+-- visibility = 'private', which reads is_public = true to this day.
+--
+-- main-backend meanwhile had a whole unmounted activities implementation
+-- that did write it, filter on it, and use it for access control. That was
+-- deleted first; see docs/service-ownership.md, "Migration Decision".
+--
+-- One table, one privacy column. Left in place, somebody believes the
+-- wrong one.
 
 begin;
 
