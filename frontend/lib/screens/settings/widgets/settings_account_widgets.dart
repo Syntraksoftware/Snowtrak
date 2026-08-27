@@ -32,15 +32,15 @@ class SettingsAccountDetailRow extends StatelessWidget {
                   children: [
                     Text(
                       label,
-                      style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                      style: TextStyle(fontSize: 13, color: context.colors.textSecondary),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       value,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w400,
-                        color: Colors.black,
+                        color: context.colors.textPrimary,
                       ),
                     ),
                   ],
@@ -49,7 +49,7 @@ class SettingsAccountDetailRow extends StatelessWidget {
               if (trailing != null) trailing!,
               if (onTap != null) ...[
                 const SizedBox(width: 8),
-                Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+                Icon(Icons.chevron_right, color: context.colors.textTertiary, size: 20),
               ],
             ],
           ),
@@ -83,20 +83,20 @@ class SettingsAccountNavigationRow extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w400,
-                  color: Colors.black,
+                  color: context.colors.textPrimary,
                 ),
               ),
               const Spacer(),
               if (value != null)
                 Text(
                   value!,
-                  style: TextStyle(fontSize: 17, color: Colors.grey[500]),
+                  style: TextStyle(fontSize: 17, color: context.colors.textSecondary),
                 ),
               const SizedBox(width: 4),
-              Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+              Icon(Icons.chevron_right, color: context.colors.textTertiary, size: 20),
             ],
           ),
         ),
@@ -125,10 +125,10 @@ class SettingsAccountToggleRow extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w400,
-              color: Colors.black,
+              color: context.colors.textPrimary,
             ),
           ),
           const Spacer(),
@@ -167,14 +167,14 @@ class SettingsAccountConnectedRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              Icon(icon, size: 24, color: Colors.grey[700]),
+              Icon(icon, size: 24, color: context.colors.textSecondary),
               const SizedBox(width: 12),
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w400,
-                  color: Colors.black,
+                  color: context.colors.textPrimary,
                 ),
               ),
               const Spacer(),
@@ -183,7 +183,7 @@ class SettingsAccountConnectedRow extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: isConnected
-                      ? Colors.grey[200]
+                      ? context.colors.surfaceVariant
                       : context.colors.primary,
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -192,7 +192,9 @@ class SettingsAccountConnectedRow extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: isConnected ? Colors.grey[600] : Colors.white,
+                    color: isConnected
+                        ? context.colors.textSecondary
+                        : context.colors.textOnPrimary,
                   ),
                 ),
               ),

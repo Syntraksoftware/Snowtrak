@@ -113,12 +113,12 @@ class _NewThreadDraftScreenState extends State<NewThreadDraftScreen> {
     final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'M';
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        backgroundColor: context.colors.surface,
+        foregroundColor: context.colors.textPrimary,
         elevation: 0.5,
         leading: TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel', style: TextStyle(color: Colors.black87)),
+          child: Text('Cancel', style: TextStyle(color: context.colors.textPrimary)),
         ),
         leadingWidth: 72,
         title: const Text('New thread'),
@@ -138,16 +138,18 @@ class _NewThreadDraftScreenState extends State<NewThreadDraftScreen> {
               style: FilledButton.styleFrom(
                 shape: const StadiumBorder(),
                 minimumSize: const Size(64, 36),
-                backgroundColor: canPost ? Colors.black87 : Colors.black26,
-                foregroundColor: Colors.white,
+                backgroundColor: canPost
+                    ? context.colors.primary
+                    : context.colors.surfaceVariant,
+                foregroundColor: context.colors.textOnPrimary,
               ),
               child: _isPosting
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white,
+                        color: context.colors.textOnPrimary,
                       ),
                     )
                   : const Text('Post'),
@@ -166,7 +168,7 @@ class _NewThreadDraftScreenState extends State<NewThreadDraftScreen> {
                 children: [
                   CircleAvatar(
                     radius: 16,
-                    backgroundColor: Colors.grey.shade300,
+                    backgroundColor: context.colors.divider,
                     child: Text(initial),
                   ),
                   const SizedBox(width: 10),
@@ -178,27 +180,27 @@ class _NewThreadDraftScreenState extends State<NewThreadDraftScreen> {
                           children: [
                             Text(
                               displayName,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w600,
-                                color: Colors.black87,
+                                color: context.colors.textPrimary,
                               ),
                             ),
                             const SizedBox(width: 6),
-                            const Text(
+                            Text(
                               '>',
-                              style: TextStyle(color: Colors.black45),
+                              style: TextStyle(color: context.colors.textTertiary),
                             ),
                             const SizedBox(width: 6),
                             Expanded(
                               child: TextField(
                                 controller: _topicController,
-                                style: const TextStyle(
-                                  color: Colors.black54,
+                                style: TextStyle(
+                                  color: context.colors.textSecondary,
                                   fontSize: 15,
                                 ),
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   hintText: 'Community or topic',
-                                  hintStyle: TextStyle(color: Colors.black38),
+                                  hintStyle: TextStyle(color: context.colors.textTertiary),
                                   border: InputBorder.none,
                                   isDense: true,
                                   contentPadding: EdgeInsets.zero,
@@ -211,8 +213,8 @@ class _NewThreadDraftScreenState extends State<NewThreadDraftScreen> {
                           controller: _contentController,
                           maxLines: null,
                           onChanged: (_) => setState(() {}),
-                          style: const TextStyle(
-                            color: Colors.black87,
+                          style: TextStyle(
+                            color: context.colors.textPrimary,
                             fontSize: 20,
                             height: 1.35,
                           ),
@@ -220,7 +222,7 @@ class _NewThreadDraftScreenState extends State<NewThreadDraftScreen> {
                             hintText: isQuote
                                 ? 'Share your thoughts...'
                                 : "What's new?",
-                            hintStyle: const TextStyle(color: Colors.black38),
+                            hintStyle: TextStyle(color: context.colors.textTertiary),
                             border: InputBorder.none,
                           ),
                         ),
@@ -255,22 +257,22 @@ class _NewThreadDraftScreenState extends State<NewThreadDraftScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.add_circle_outline, color: Colors.black38, size: 18),
-                  SizedBox(width: 8),
+                  Icon(Icons.add_circle_outline, color: context.colors.textTertiary, size: 18),
+                  const SizedBox(width: 8),
                   Text(
                     'Add to thread',
-                    style: TextStyle(color: Colors.black38),
+                    style: TextStyle(color: context.colors.textTertiary),
                   ),
                 ],
               ),
               const Spacer(),
               Row(
                 children: [
-                  const Text(
+                  Text(
                     'Reply options',
-                    style: TextStyle(color: Colors.black54),
+                    style: TextStyle(color: context.colors.textSecondary),
                   ),
                   const Spacer(),
                   Switch(
@@ -282,16 +284,18 @@ class _NewThreadDraftScreenState extends State<NewThreadDraftScreen> {
                     onPressed: canPost ? () => _submit() : null,
                     style: FilledButton.styleFrom(
                       shape: const StadiumBorder(),
-                      backgroundColor: canPost ? Colors.black87 : Colors.black26,
-                      foregroundColor: Colors.white,
+                      backgroundColor: canPost
+                    ? context.colors.primary
+                    : context.colors.surfaceVariant,
+                      foregroundColor: context.colors.textOnPrimary,
                     ),
                     child: _isPosting
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 18,
                             height: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.white,
+                              color: context.colors.textOnPrimary,
                             ),
                           )
                         : const Text('Post'),

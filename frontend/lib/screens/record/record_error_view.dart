@@ -16,8 +16,8 @@ class RecordErrorView extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Record Activity'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: context.colors.surface,
+        foregroundColor: context.colors.textPrimary,
         elevation: 0,
       ),
       body: Center(
@@ -29,24 +29,24 @@ class RecordErrorView extends StatelessWidget {
               Icon(
                 Icons.map_outlined,
                 size: 80,
-                color: Colors.grey[400],
+                color: context.colors.textTertiary,
               ),
               const SizedBox(height: 24),
               Text(
                 message,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey,
+                  color: context.colors.textTertiary,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 32.0),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32.0),
                 child: Text(
                   'Map functionality is coming soon. You can still record activities without the map.',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                  style: TextStyle(fontSize: 14, color: context.colors.textTertiary),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -55,7 +55,7 @@ class RecordErrorView extends StatelessWidget {
                 onPressed: onRetry,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: context.colors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: context.colors.textOnPrimary,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 32,
                     vertical: 16,

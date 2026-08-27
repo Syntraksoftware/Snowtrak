@@ -260,9 +260,9 @@ class _NotificationItem extends StatelessWidget {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: SnowtrakSpacing.lg),
         color: context.colors.error,
-        child: const Icon(
+        child: Icon(
           Icons.delete_outline,
-          color: Colors.white,
+          color: context.colors.textOnPrimary,
         ),
       ),
       child: Material(
@@ -285,7 +285,7 @@ class _NotificationItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Icon or Avatar
-                _buildLeadingWidget(typeColor, typeIcon),
+                _buildLeadingWidget(context, typeColor, typeIcon),
                 const SizedBox(width: SnowtrakSpacing.md),
                 // Content
                 Expanded(
@@ -346,7 +346,8 @@ class _NotificationItem extends StatelessWidget {
     );
   }
 
-  Widget _buildLeadingWidget(Color typeColor, IconData typeIcon) {
+  Widget _buildLeadingWidget(
+      BuildContext context, Color typeColor, IconData typeIcon) {
     if (notification.avatarUrl != null) {
       return Stack(
         children: [
@@ -363,12 +364,12 @@ class _NotificationItem extends StatelessWidget {
               decoration: BoxDecoration(
                 color: typeColor,
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
+                border: Border.all(color: context.colors.surface, width: 2),
               ),
               child: Icon(
                 typeIcon,
                 size: 10,
-                color: Colors.white,
+                color: context.colors.textOnPrimary,
               ),
             ),
           ),

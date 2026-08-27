@@ -122,7 +122,7 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
       padding: const EdgeInsets.only(left: 32, bottom: 6),
       child: Text(
         title,
-        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+        style: TextStyle(fontSize: 13, color: context.colors.textSecondary),
       ),
     );
   }
@@ -132,7 +132,7 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
       padding: const EdgeInsets.only(left: 32, right: 32, top: 6),
       child: Text(
         text,
-        style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+        style: TextStyle(fontSize: 13, color: context.colors.textSecondary),
       ),
     );
   }
@@ -232,7 +232,7 @@ class _SettingsGroup extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -242,7 +242,7 @@ class _SettingsGroup extends StatelessWidget {
             if (i < children.length - 1)
               Padding(
                 padding: const EdgeInsets.only(left: 16),
-                child: Divider(height: 0.5, thickness: 0.5, color: Colors.grey[300]),
+                child: Divider(height: 0.5, thickness: 0.5, color: context.colors.divider),
               ),
           ],
         ],
@@ -263,9 +263,9 @@ class _StorageRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          Text(label, style: const TextStyle(fontSize: 17, color: Colors.black)),
+          Text(label, style: TextStyle(fontSize: 17, color: context.colors.textPrimary)),
           const Spacer(),
-          Text(value, style: TextStyle(fontSize: 17, color: Colors.grey[500])),
+          Text(value, style: TextStyle(fontSize: 17, color: context.colors.textSecondary)),
         ],
       ),
     );
@@ -300,20 +300,20 @@ class _SettingsNavigationRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(label,
-                        style: const TextStyle(fontSize: 17, color: Colors.black)),
+                        style: TextStyle(fontSize: 17, color: context.colors.textPrimary)),
                     if (subtitle != null) ...[
                       const SizedBox(height: 2),
                       Text(subtitle!,
-                          style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+                          style: TextStyle(fontSize: 13, color: context.colors.textSecondary)),
                     ],
                   ],
                 ),
               ),
               if (value != null)
                 Text(value!,
-                    style: TextStyle(fontSize: 17, color: Colors.grey[500])),
+                    style: TextStyle(fontSize: 17, color: context.colors.textSecondary)),
               const SizedBox(width: 4),
-              Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+              Icon(Icons.chevron_right, color: context.colors.textTertiary, size: 20),
             ],
           ),
         ),
@@ -359,7 +359,7 @@ class _SettingsActionRow extends StatelessWidget {
                     if (subtitle != null) ...[
                       const SizedBox(height: 2),
                       Text(subtitle!,
-                          style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+                          style: TextStyle(fontSize: 13, color: context.colors.textSecondary)),
                     ],
                   ],
                 ),
@@ -389,11 +389,11 @@ class _SyncStatusRow extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Last Synced',
-                  style: TextStyle(fontSize: 17, color: Colors.black)),
+              Text('Last Synced',
+                  style: TextStyle(fontSize: 17, color: context.colors.textPrimary)),
               const SizedBox(height: 2),
               Text(lastSynced,
-                  style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+                  style: TextStyle(fontSize: 13, color: context.colors.textSecondary)),
             ],
           ),
           const Spacer(),

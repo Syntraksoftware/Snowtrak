@@ -28,7 +28,7 @@ class HelpSupportScreen extends StatelessWidget {
           const SizedBox(height: 24),
 
           // Get Help
-          _buildSectionHeader('GET HELP'),
+          _buildSectionHeader(context, 'GET HELP'),
           _SettingsGroup(
             children: [
               _SettingsRow(
@@ -58,7 +58,7 @@ class HelpSupportScreen extends StatelessWidget {
           const SizedBox(height: 24),
 
           // Feedback
-          _buildSectionHeader('FEEDBACK'),
+          _buildSectionHeader(context, 'FEEDBACK'),
           _SettingsGroup(
             children: [
               _SettingsRow(
@@ -85,7 +85,7 @@ class HelpSupportScreen extends StatelessWidget {
           const SizedBox(height: 24),
 
           // Troubleshooting
-          _buildSectionHeader('TROUBLESHOOTING'),
+          _buildSectionHeader(context, 'TROUBLESHOOTING'),
           _SettingsGroup(
             children: [
               _SettingsRow(
@@ -115,12 +115,12 @@ class HelpSupportScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.only(left: 32, bottom: 6),
       child: Text(
         title,
-        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+        style: TextStyle(fontSize: 13, color: context.colors.textSecondary),
       ),
     );
   }
@@ -332,7 +332,7 @@ class _SettingsGroup extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -342,7 +342,7 @@ class _SettingsGroup extends StatelessWidget {
             if (i < children.length - 1)
               Padding(
                 padding: const EdgeInsets.only(left: 52),
-                child: Divider(height: 0.5, thickness: 0.5, color: Colors.grey[300]),
+                child: Divider(height: 0.5, thickness: 0.5, color: context.colors.divider),
               ),
           ],
         ],
@@ -383,7 +383,7 @@ class _SettingsRow extends StatelessWidget {
                   color: iconBackground,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Icon(icon, color: Colors.white, size: 18),
+                child: Icon(icon, color: context.colors.textOnPrimary, size: 18),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -391,16 +391,16 @@ class _SettingsRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(label,
-                        style: const TextStyle(fontSize: 17, color: Colors.black)),
+                        style: TextStyle(fontSize: 17, color: context.colors.textPrimary)),
                     if (subtitle != null) ...[
                       const SizedBox(height: 1),
                       Text(subtitle!,
-                          style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+                          style: TextStyle(fontSize: 13, color: context.colors.textSecondary)),
                     ],
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+              Icon(Icons.chevron_right, color: context.colors.textTertiary, size: 20),
             ],
           ),
         ),

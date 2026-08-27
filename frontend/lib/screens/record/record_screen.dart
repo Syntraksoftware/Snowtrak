@@ -283,9 +283,9 @@ class _RecordScreenState extends State<RecordScreen>
         padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom),
         child: Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          decoration: BoxDecoration(
+            color: context.colors.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
           padding: EdgeInsets.fromLTRB(
               24, 12, 24, MediaQuery.of(context).padding.bottom + 24),
@@ -297,7 +297,7 @@ class _RecordScreenState extends State<RecordScreen>
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.black12,
+                  color: context.colors.scrim.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -396,7 +396,7 @@ class _RecordScreenState extends State<RecordScreen>
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: context.colors.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: context.colors.textOnPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
@@ -837,12 +837,12 @@ class _RecentreButton extends StatelessWidget {
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.colors.surface,
           shape: BoxShape.circle,
           border: Border.all(color: context.colors.divider),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
+              color: context.colors.textPrimary.withValues(alpha: 0.12),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),

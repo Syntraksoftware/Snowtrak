@@ -172,7 +172,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               'Snowtrak v1.0.0 (Build 1)',
               style: TextStyle(
                 fontSize: 13,
-                color: Colors.grey[500],
+                color: context.colors.textSecondary,
               ),
             ),
           ),
@@ -208,7 +208,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               'A skiing-focused fitness tracking and social community app.',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[600],
+                color: context.colors.textSecondary,
               ),
             ),
             const SizedBox(height: 16),

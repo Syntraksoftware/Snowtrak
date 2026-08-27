@@ -70,12 +70,12 @@ class _RecordStatsCardState extends State<RecordStatsCard>
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeInOut,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.colors.surface,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: context.colors.divider),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
+              color: context.colors.textPrimary.withValues(alpha: 0.12),
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
@@ -182,7 +182,7 @@ class RecordControls extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: context.colors.textPrimary.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, -3),
           ),
@@ -368,7 +368,7 @@ class _BigFab extends StatelessWidget {
                 ),
               ],
             ),
-            child: Icon(icon, color: Colors.white, size: 34),
+            child: Icon(icon, color: context.colors.textOnPrimary, size: 34),
           ),
           const SizedBox(height: 6),
           Text(
@@ -431,7 +431,7 @@ class _ControlButton extends StatelessWidget {
                     color: context.colors.surface, width: 1.5),
               ),
               child:
-                  const Icon(Icons.check, color: Colors.white, size: 9),
+                  Icon(Icons.check, color: context.colors.textOnPrimary, size: 9),
             ),
           ),
       ],
@@ -472,9 +472,9 @@ class _GpsDeniedSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(
         24,
@@ -489,7 +489,7 @@ class _GpsDeniedSheet extends StatelessWidget {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.black12,
+              color: context.colors.scrim.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -526,7 +526,7 @@ class _GpsDeniedSheet extends StatelessWidget {
               onPressed: () => Navigator.pop(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: context.colors.primary,
-                foregroundColor: Colors.white,
+                foregroundColor: context.colors.textOnPrimary,
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14)),

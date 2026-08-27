@@ -814,7 +814,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
                 backgroundColor: context.colors.surface,
                 surfaceTintColor: Colors.transparent,
                 elevation: innerBoxIsScrolled ? 2 : 0,
-                shadowColor: Colors.black26,
+                shadowColor: context.colors.scrim,
                 toolbarHeight: 72,
                 flexibleSpace: ThreadsSearchBar(
                   controller: _searchController,

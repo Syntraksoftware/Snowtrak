@@ -168,7 +168,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
       padding: const EdgeInsets.only(left: 32, right: 32, top: 6),
       child: Text(
         text,
-        style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+        style: TextStyle(fontSize: 13, color: context.colors.textSecondary),
       ),
     );
   }

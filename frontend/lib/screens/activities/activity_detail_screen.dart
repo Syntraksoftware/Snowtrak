@@ -193,7 +193,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.black12,
+                color: context.colors.scrim.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -223,7 +223,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                 onPressed: () => Navigator.pop(context, true),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: context.colors.error,
-                  foregroundColor: Colors.white,
+                  foregroundColor: context.colors.textOnPrimary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
@@ -507,7 +507,7 @@ class _MapStyleToggle extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Text(label,
                 style: TextStyle(
-                  color: active ? Colors.white : context.colors.textSecondary,
+                  color: active ? context.colors.textOnPrimary : context.colors.textSecondary,
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
                 )),
@@ -522,7 +522,7 @@ class _MapStyleToggle extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
+              color: context.colors.textPrimary.withValues(alpha: 0.12),
               blurRadius: 8,
               offset: const Offset(0, 2))
         ],
@@ -552,7 +552,7 @@ class _MapZoomControls extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
+              color: context.colors.textPrimary.withValues(alpha: 0.12),
               blurRadius: 8,
               offset: const Offset(0, 2))
         ],

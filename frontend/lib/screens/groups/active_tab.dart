@@ -94,7 +94,7 @@ class _ActiveTabState extends State<ActiveTab> {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: context.colors.primary,
-                foregroundColor: Colors.white,
+                foregroundColor: context.colors.textOnPrimary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(SnowtrakRadius.round),
@@ -104,7 +104,7 @@ class _ActiveTabState extends State<ActiveTab> {
               child: Text(
                 'Start Your Free Trial',
                 style: SnowtrakTypography.labelLarge.copyWith(
-                  color: Colors.white,
+                  color: context.colors.textOnPrimary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -180,7 +180,7 @@ class _ActiveTabState extends State<ActiveTab> {
             child: Icon(
               Icons.downhill_skiing,
               size: 180,
-              color: Colors.white.withOpacity(0.1),
+              color: context.colors.textOnPrimary.withValues(alpha: 0.1),
             ),
           ),
           Padding(
@@ -195,13 +195,13 @@ class _ActiveTabState extends State<ActiveTab> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: context.colors.textOnPrimary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(SnowtrakRadius.sm),
                   ),
                   child: Text(
                     'Challenge',
                     style: SnowtrakTypography.labelSmall.copyWith(
-                      color: Colors.white,
+                      color: context.colors.textOnPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -212,7 +212,7 @@ class _ActiveTabState extends State<ActiveTab> {
                     Text(
                       'Snowtrak',
                       style: SnowtrakTypography.headlineLarge.copyWith(
-                        color: Colors.white,
+                        color: context.colors.textOnPrimary,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.5,
                       ),
@@ -221,7 +221,7 @@ class _ActiveTabState extends State<ActiveTab> {
                     Text(
                       'Winter Season 2026',
                       style: SnowtrakTypography.bodyMedium.copyWith(
-                        color: Colors.white.withOpacity(0.8),
+                        color: context.colors.textOnPrimary.withValues(alpha: 0.8),
                       ),
                     ),
                   ],
@@ -237,13 +237,13 @@ class _ActiveTabState extends State<ActiveTab> {
                 Icon(
                   Icons.ac_unit,
                   size: 20,
-                  color: Colors.white.withOpacity(0.6),
+                  color: context.colors.textOnPrimary.withValues(alpha: 0.6),
                 ),
                 const SizedBox(width: 8),
                 Icon(
                   Icons.landscape,
                   size: 20,
-                  color: Colors.white.withOpacity(0.6),
+                  color: context.colors.textOnPrimary.withValues(alpha: 0.6),
                 ),
               ],
             ),

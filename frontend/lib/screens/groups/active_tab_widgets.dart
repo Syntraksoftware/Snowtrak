@@ -169,7 +169,7 @@ class ActiveChallengeBadge extends StatelessWidget {
         children: [
           CustomPaint(
             size: const Size(70, 70),
-            painter: ActiveStarburstPainter(color: Colors.white.withOpacity(0.15)),
+            painter: ActiveStarburstPainter(color: context.colors.textOnPrimary.withValues(alpha: 0.15)),
           ),
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -177,14 +177,14 @@ class ActiveChallengeBadge extends StatelessWidget {
               Text(
                 text,
                 style: SnowtrakTypography.headlineSmall.copyWith(
-                  color: Colors.white,
+                  color: context.colors.textOnPrimary,
                   fontWeight: FontWeight.w800,
                   fontSize: 18,
                 ),
               ),
               Icon(
                 icon,
-                color: Colors.white.withOpacity(0.9),
+                color: context.colors.textOnPrimary.withValues(alpha: 0.9),
                 size: 16,
               ),
             ],

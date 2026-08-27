@@ -15,7 +15,7 @@ class LocationPermissionDialog extends StatelessWidget {
     return showModalBottomSheet<bool>(
       context: context,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black26,
+      barrierColor: context.colors.scrim.withValues(alpha: 0.26),
       isDismissible: false,
       builder: (_) =>
           LocationPermissionDialog(locationService: locationService),
@@ -43,9 +43,9 @@ class LocationPermissionDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 40),
       child: Column(
@@ -55,7 +55,7 @@ class LocationPermissionDialog extends StatelessWidget {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.black12,
+              color: context.colors.scrim.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -99,7 +99,7 @@ class LocationPermissionDialog extends StatelessWidget {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: context.colors.primary,
-                foregroundColor: Colors.white,
+                foregroundColor: context.colors.textOnPrimary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),

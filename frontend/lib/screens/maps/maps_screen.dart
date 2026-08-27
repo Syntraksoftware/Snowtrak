@@ -239,15 +239,15 @@ class _MapsScreenState extends State<MapsScreen> {
                 Icon(
                   Icons.map_outlined,
                   size: 80,
-                  color: Colors.grey[400],
+                  color: context.colors.textTertiary,
                 ),
                 const SizedBox(height: 24),
                 Text(
                   _errorMessage ?? 'Failed to load map',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey,
+                    color: context.colors.textTertiary,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -262,7 +262,7 @@ class _MapsScreenState extends State<MapsScreen> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: context.colors.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: context.colors.textOnPrimary,
                   ),
                   child: const Text('Retry'),
                 ),
@@ -320,10 +320,10 @@ class _MapsScreenState extends State<MapsScreen> {
                 // size the strip instead of hard-coding it.
                 height: 148,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.colors.surface,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
+                      color: context.colors.textPrimary.withValues(alpha: 0.1),
                       blurRadius: 10,
                       offset: const Offset(0, -5),
                     ),
@@ -410,11 +410,11 @@ class _StyleToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
+            color: context.colors.textPrimary.withValues(alpha: 0.12),
             blurRadius: 12,
             offset: const Offset(0, 3),
           ),
@@ -453,7 +453,7 @@ class _StyleToggleButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? context.colors.primary : Colors.white,
+      color: selected ? context.colors.primary : context.colors.surface,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -463,7 +463,7 @@ class _StyleToggleButton extends StatelessWidget {
           child: Text(
             label,
             style: TextStyle(
-              color: selected ? Colors.white : Colors.black87,
+              color: selected ? context.colors.textOnPrimary : context.colors.textPrimary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -486,11 +486,11 @@ class _ZoomControls extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
+            color: context.colors.textPrimary.withValues(alpha: 0.12),
             blurRadius: 12,
             offset: const Offset(0, 3),
           ),
@@ -508,7 +508,7 @@ class _ZoomControls extends StatelessWidget {
           Container(
             width: 30,
             height: 1,
-            color: Colors.black12,
+            color: context.colors.scrim.withValues(alpha: 0.12),
           ),
           IconButton(
             visualDensity: VisualDensity.compact,
@@ -539,9 +539,9 @@ class _ActivityCard extends StatelessWidget {
         width: 200,
         margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          color: context.colors.surfaceVariant,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(color: context.colors.divider!),
         ),
         child: Padding(
           padding: const EdgeInsets.all(12.0),
@@ -581,7 +581,7 @@ class _ActivityCard extends StatelessWidget {
                 activity.formattedDuration,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey[600],
+                  color: context.colors.textSecondary,
                 ),
               ),
             ],

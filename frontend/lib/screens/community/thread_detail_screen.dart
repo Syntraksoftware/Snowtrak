@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:snowtrak/core/errors/app_result.dart';
+import 'package:snowtrak/core/theme.dart';
 import 'package:snowtrak/models/post.dart';
 import 'package:snowtrak/screens/community/community_post_mapper.dart';
 import 'package:snowtrak/screens/community/thread_media_upload.dart';
@@ -167,10 +168,10 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
         ? '${post.replyCount} repl${post.replyCount == 1 ? 'y' : 'ies'}'
         : 'No replies yet';
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.colors.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        backgroundColor: context.colors.surface,
+        foregroundColor: context.colors.textPrimary,
         elevation: 0.5,
         surfaceTintColor: Colors.transparent,
         title: Column(
@@ -185,7 +186,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
               subtitle,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey.shade600,
+                color: context.colors.textSecondary,
                 fontWeight: FontWeight.w400,
               ),
             ),
@@ -194,12 +195,12 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
         actions: [
           IconButton(
             onPressed: () {},
-            icon: Icon(Icons.notifications_none, color: Colors.grey.shade700),
+            icon: Icon(Icons.notifications_none, color: context.colors.textSecondary),
             tooltip: 'Coming soon',
           ),
           IconButton(
             onPressed: () {},
-            icon: Icon(Icons.more_horiz, color: Colors.grey.shade700),
+            icon: Icon(Icons.more_horiz, color: context.colors.textSecondary),
             tooltip: 'Coming soon',
           ),
         ],
@@ -216,7 +217,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                   onRepost: () => widget.onRepost(post),
                   onShare: () => widget.onShare(post),
                 ),
-                Divider(height: 1, thickness: 1, color: Colors.grey.shade200),
+                Divider(height: 1, thickness: 1, color: context.colors.surfaceVariant),
                 Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -226,29 +227,29 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text(
+                          Text(
                             'Top',
                             style: TextStyle(
-                              color: Colors.black87,
+                              color: context.colors.textPrimary,
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
                             ),
                           ),
                           Icon(Icons.expand_more,
-                              size: 20, color: Colors.grey.shade700),
+                              size: 20, color: context.colors.textSecondary),
                         ],
                       ),
                       Text(
                         'View activity ›',
                         style: TextStyle(
-                          color: Colors.grey.shade600,
+                          color: context.colors.textSecondary,
                           fontSize: 13,
                         ),
                       ),
                     ],
                   ),
                 ),
-                Divider(height: 1, thickness: 1, color: Colors.grey.shade200),
+                Divider(height: 1, thickness: 1, color: context.colors.surfaceVariant),
                 ...comments.map(
                   (comment) => _ThreadCommentItem(
                     post: comment,
@@ -317,12 +318,12 @@ class _ThreadOriginalPostCard extends StatelessWidget {
             ),
                 child: CircleAvatar(
                   radius: 20,
-                  backgroundColor: Colors.grey.shade300,
+                  backgroundColor: context.colors.divider,
                   child: Text(
                     initial,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: context.colors.textPrimary,
                     ),
                   ),
                 ),
@@ -337,15 +338,15 @@ class _ThreadOriginalPostCard extends StatelessWidget {
                         children: [
                           Text(
                             post.author.displayName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: Colors.black87,
+                              color: context.colors.textPrimary,
                             ),
                           ),
                           Text(
                             ' · ',
-                            style: TextStyle(color: Colors.grey.shade400),
+                            style: TextStyle(color: context.colors.textTertiary),
                           ),
                           Flexible(
                             child: Text(
@@ -354,7 +355,7 @@ class _ThreadOriginalPostCard extends StatelessWidget {
                                   : '@${post.author.username}',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey.shade600,
+                                color: context.colors.textSecondary,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -366,7 +367,7 @@ class _ThreadOriginalPostCard extends StatelessWidget {
                       post.timestampLabel,
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.grey.shade500,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                   ],
@@ -379,8 +380,8 @@ class _ThreadOriginalPostCard extends StatelessWidget {
             padding: const EdgeInsets.only(left: 52),
             child: Text(
               post.text,
-              style: const TextStyle(
-                color: Colors.black87,
+              style: TextStyle(
+                color: context.colors.textPrimary,
                 fontSize: 17,
                 height: 1.35,
               ),
@@ -449,7 +450,7 @@ class _ThreadCommentItem extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: Colors.grey.shade200),
+          bottom: BorderSide(color: context.colors.surfaceVariant),
         ),
       ),
       child: Row(
@@ -464,13 +465,13 @@ class _ThreadCommentItem extends StatelessWidget {
             ),
             child: CircleAvatar(
               radius: 16,
-              backgroundColor: Colors.grey.shade300,
+              backgroundColor: context.colors.divider,
               child: Text(
                 initial,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: context.colors.textPrimary,
                 ),
               ),
             ),
@@ -484,8 +485,8 @@ class _ThreadCommentItem extends StatelessWidget {
                   children: [
                     Text(
                       post.author.displayName,
-                      style: const TextStyle(
-                        color: Colors.black87,
+                      style: TextStyle(
+                        color: context.colors.textPrimary,
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
                       ),
@@ -494,7 +495,7 @@ class _ThreadCommentItem extends StatelessWidget {
                     Text(
                       post.timestampLabel,
                       style: TextStyle(
-                        color: Colors.grey.shade500,
+                        color: context.colors.textSecondary,
                         fontSize: 13,
                       ),
                     ),
@@ -503,7 +504,7 @@ class _ThreadCommentItem extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   post.text,
-                  style: const TextStyle(color: Colors.black87, height: 1.3),
+                  style: TextStyle(color: context.colors.textPrimary, height: 1.3),
                 ),
                 if (post.media != null && post.media!.isNotEmpty) ...[
                   const SizedBox(height: 8),

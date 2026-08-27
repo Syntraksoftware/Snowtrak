@@ -16,7 +16,7 @@ class TrailListCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(10),
+            color: context.colors.textPrimary.withAlpha(10),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -72,8 +72,8 @@ class TrailListCard extends StatelessWidget {
                       child: Center(
                         child: Text(
                           trail.difficulty.icon,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: context.colors.textOnPrimary,
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),

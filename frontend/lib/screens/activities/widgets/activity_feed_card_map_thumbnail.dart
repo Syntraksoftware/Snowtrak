@@ -97,18 +97,18 @@ class ActivityFeedCardMapThumbnail extends StatelessWidget {
                   vertical: SnowtrakSpacing.xs,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
+                  color: context.colors.textPrimary.withOpacity(0.6),
                   borderRadius: BorderRadius.circular(SnowtrakRadius.sm),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.location_on, size: 14, color: Colors.white),
+                    Icon(Icons.location_on, size: 14, color: context.colors.textOnPrimary),
                     const SizedBox(width: SnowtrakSpacing.xs / 2),
                     Text(
                       'View on map',
                       style: SnowtrakTypography.labelSmall.copyWith(
-                        color: Colors.white,
+                        color: context.colors.textOnPrimary,
                       ),
                     ),
                   ],
@@ -164,18 +164,18 @@ class ActivityFeedCardMapThumbnail extends StatelessWidget {
                 vertical: SnowtrakSpacing.xs,
               ),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.6),
+                color: context.colors.textPrimary.withOpacity(0.6),
                 borderRadius: BorderRadius.circular(SnowtrakRadius.sm),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.location_on, size: 14, color: Colors.white),
+                  Icon(Icons.location_on, size: 14, color: context.colors.textOnPrimary),
                   const SizedBox(width: SnowtrakSpacing.xs / 2),
                   Text(
                     'View on map',
                     style: SnowtrakTypography.labelSmall.copyWith(
-                      color: Colors.white,
+                      color: context.colors.textOnPrimary,
                     ),
                   ),
                 ],

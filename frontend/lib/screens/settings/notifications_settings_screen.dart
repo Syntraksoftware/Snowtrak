@@ -207,7 +207,7 @@ class _NotificationsSettingsScreenState
         style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w400,
-          color: Colors.grey[600],
+          color: context.colors.textSecondary,
           letterSpacing: -0.1,
         ),
       ),
@@ -226,7 +226,7 @@ class _SettingsGroup extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -239,7 +239,7 @@ class _SettingsGroup extends StatelessWidget {
                 child: Divider(
                   height: 0.5,
                   thickness: 0.5,
-                  color: Colors.grey[300],
+                  color: context.colors.divider,
                 ),
               ),
           ],
@@ -275,10 +275,10 @@ class _SettingsToggleRow extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w400,
-                    color: Colors.black,
+                    color: context.colors.textPrimary,
                   ),
                 ),
                 if (subtitle != null) ...[
@@ -287,7 +287,7 @@ class _SettingsToggleRow extends StatelessWidget {
                     subtitle!,
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.grey[500],
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ],

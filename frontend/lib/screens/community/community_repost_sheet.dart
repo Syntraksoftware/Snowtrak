@@ -23,7 +23,7 @@ Future<void> showCommunityRepostSheet(
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: context.colors.divider,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -78,14 +78,14 @@ class _RepostSheetTile extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: context.colors.textPrimary,
                 ),
               ),
               const Spacer(),
-              Icon(icon, color: Colors.black87, size: 22),
+              Icon(icon, color: context.colors.textPrimary, size: 22),
             ],
           ),
         ),

@@ -17,7 +17,7 @@ class SettingsIosGroup extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -30,7 +30,7 @@ class SettingsIosGroup extends StatelessWidget {
                 child: Divider(
                   height: 0.5,
                   thickness: 0.5,
-                  color: Colors.grey[300],
+                  color: context.colors.divider,
                 ),
               ),
           ],
@@ -75,7 +75,7 @@ class SettingsIosRow extends StatelessWidget {
                 ),
                 child: Icon(
                   icon,
-                  color: Colors.white,
+                  color: context.colors.surface,
                   size: 18,
                 ),
               ),
@@ -86,10 +86,10 @@ class SettingsIosRow extends StatelessWidget {
                   children: [
                     Text(
                       label,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w400,
-                        color: Colors.black,
+                        color: context.colors.textPrimary,
                       ),
                     ),
                     if (subtitle != null) ...[
@@ -98,7 +98,7 @@ class SettingsIosRow extends StatelessWidget {
                         subtitle!,
                         style: TextStyle(
                           fontSize: 13,
-                          color: Colors.grey[500],
+                          color: context.colors.textSecondary,
                         ),
                       ),
                     ],
@@ -107,7 +107,7 @@ class SettingsIosRow extends StatelessWidget {
               ),
               Icon(
                 Icons.chevron_right,
-                color: Colors.grey[400],
+                color: context.colors.textTertiary,
                 size: 20,
               ),
             ],
@@ -169,7 +169,7 @@ class SettingsIosSectionHeader extends StatelessWidget {
         style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w400,
-          color: Colors.grey[600],
+          color: context.colors.textSecondary,
           letterSpacing: -0.1,
         ),
       ),
@@ -193,7 +193,7 @@ class SettingsIosProfileCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Material(
@@ -222,8 +222,8 @@ class SettingsIosProfileCard extends StatelessWidget {
                   child: Center(
                     child: Text(
                       initial,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: context.colors.surface,
                         fontSize: 24,
                         fontWeight: FontWeight.w500,
                       ),
@@ -237,10 +237,10 @@ class SettingsIosProfileCard extends StatelessWidget {
                     children: [
                       Text(
                         displayName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black,
+                          color: context.colors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -248,7 +248,7 @@ class SettingsIosProfileCard extends StatelessWidget {
                         email,
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey[600],
+                          color: context.colors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -256,7 +256,7 @@ class SettingsIosProfileCard extends StatelessWidget {
                         'Profile, Subscriptions & more',
                         style: TextStyle(
                           fontSize: 13,
-                          color: Colors.grey[500],
+                          color: context.colors.textSecondary,
                         ),
                       ),
                     ],
@@ -264,7 +264,7 @@ class SettingsIosProfileCard extends StatelessWidget {
                 ),
                 Icon(
                   Icons.chevron_right,
-                  color: Colors.grey[400],
+                  color: context.colors.textTertiary,
                   size: 22,
                 ),
               ],

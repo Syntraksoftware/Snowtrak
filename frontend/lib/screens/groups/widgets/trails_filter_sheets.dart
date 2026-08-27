@@ -54,7 +54,7 @@ Future<void> showTrailsDifficultyPicker(
                     child: Text(
                       d.icon,
                       style:
-                          const TextStyle(color: Colors.white, fontSize: 12),
+                          TextStyle(color: context.colors.textOnPrimary, fontSize: 12),
                     ),
                   ),
                 ),
