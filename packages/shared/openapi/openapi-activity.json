@@ -943,7 +943,7 @@
   "paths": {
     "/api/v1/activities/": {
       "get": {
-        "description": "List public activities in standardized response format.",
+        "description": "List the activities this viewer is allowed to see.",
         "operationId": "list_activities_api_v1_activities__get",
         "parameters": [
           {
@@ -967,6 +967,22 @@
               "minimum": 0,
               "title": "Offset",
               "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
             }
           }
         ],
@@ -1521,6 +1537,22 @@
               "minimum": 0,
               "title": "Offset",
               "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
             }
           }
         ],

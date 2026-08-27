@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.0.4] - 2026-08-27
+
+_Following a private account is now a request. Existing followers are kept
+when an account turns private; use "remove a follower" to drop them._
+
+### Changed
+
+- **Breaking:** answer `POST /api/v1/follows/{id}` with the state it reached, `following` or `requested`, instead of 204 ([`a0a0931`](https://github.com/Syntraksoftware/Snowtrak/commit/a0a0931))
+- Require approval before somebody can follow a private account ([`a0a0931`](https://github.com/Syntraksoftware/Snowtrak/commit/a0a0931))
+- Show a private account's follower and following lists only to its approved followers ([`d4e7301`](https://github.com/Syntraksoftware/Snowtrak/commit/d4e7301))
+- Order the activity list explicitly, as a paginated read of a growing table should be ([`515d52d`](https://github.com/Syntraksoftware/Snowtrak/commit/515d52d))
+- Default a new activity's visibility to private in the database, matching what the application already writes ([`9ea6009`](https://github.com/Syntraksoftware/Snowtrak/commit/9ea6009))
+- Run an activity's own read alongside the follow visibility lookup instead of one after the other ([`90038e4`](https://github.com/Syntraksoftware/Snowtrak/commit/90038e4))
+
+### Added
+
+- Turn follower approval on and off from Settings → Privacy ([`87443c7`](https://github.com/Syntraksoftware/Snowtrak/commit/87443c7), [`3e24c56`](https://github.com/Syntraksoftware/Snowtrak/commit/3e24c56))
+- Approve or deny follow requests from a screen reached off your profile ([`ccde8c8`](https://github.com/Syntraksoftware/Snowtrak/commit/ccde8c8), [`79239df`](https://github.com/Syntraksoftware/Snowtrak/commit/79239df))
+- Add a Requested state to the follow button, which withdraws when tapped ([`2deccdd`](https://github.com/Syntraksoftware/Snowtrak/commit/2deccdd))
+- Report `is_private` and `has_requested` from `/follows/{id}/stats`, so one call still fills the profile header ([`9ea6009`](https://github.com/Syntraksoftware/Snowtrak/commit/9ea6009))
+
+### Removed
+
+- Delete main-backend's unmounted duplicate implementation of activities, which used `is_public` while activity-backend used `visibility` and the two disagreed in production ([`1501b69`](https://github.com/Syntraksoftware/Snowtrak/commit/1501b69))
+- Drop `activities.is_public`, a column no write path ever updated ([`9ea6009`](https://github.com/Syntraksoftware/Snowtrak/commit/9ea6009))
+
+### Fixed
+
+- Stop `GET /api/v1/activities/` returning every private activity in the database to unauthenticated callers ([`515d52d`](https://github.com/Syntraksoftware/Snowtrak/commit/515d52d))
+- Stop an activity's comments, kudos and shares being reachable without being able to see the activity ([`f7437e5`](https://github.com/Syntraksoftware/Snowtrak/commit/f7437e5))
+- Move the follower and following list reads off the event loop ([`d4e7301`](https://github.com/Syntraksoftware/Snowtrak/commit/d4e7301), [`d46daad`](https://github.com/Syntraksoftware/Snowtrak/commit/d46daad))
+
+[0.0.4]: https://github.com/Syntraksoftware/Snowtrak/releases/tag/v0.0.4
+
 ## [0.0.3] - 2026-08-27
 
 _Following is public and instant: no requests, no approval queue. Posts can be
