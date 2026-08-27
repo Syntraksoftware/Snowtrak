@@ -41,11 +41,10 @@ defines them and no test asserts their shape.
 | `average_pace` | numeric | yes | `0` |  |
 | `max_pace` | numeric | yes | `0` |  |
 | `calories` | int32 | yes |  |  |
-| `is_public` | boolean | no | `true` |  |
 | `created_at` | timestamp with time zone | no | `now()` |  |
 | `updated_at` | timestamp with time zone | no | `now()` |  |
 | `gps_path` | json[] | no |  |  |
-| `visibility` | text | no |  |  |
+| `visibility` | text | no | `private` |  |
 | `map_activity_id` | uuid | yes |  |  |
 | `storage_key` | text | yes |  |  |
 | `processing_status` | text | no | `ready` |  |
@@ -137,6 +136,14 @@ defines them and no test asserts their shape.
 | `follower_count` | int32 | no | `0` |  |
 | `following_count` | int32 | no | `0` |  |
 
+### `follow_requests`
+
+| Column | Type | Null | Default | Key |
+|---|---|---|---|---|
+| `requester_id` | uuid | no |  | PK |
+| `target_id` | uuid | no |  | PK |
+| `created_at` | timestamp with time zone | no | `now()` |  |
+
 ### `follows`
 
 | Column | Type | Null | Default | Key |
@@ -219,6 +226,7 @@ defines them and no test asserts their shape.
 | `is_active` | boolean | no | `true` |  |
 | `last_login_at` | timestamp with time zone | yes |  |  |
 | `hashed_password` | text | no |  |  |
+| `is_private` | boolean | no | `false` |  |
 
 ### `user_stats`
 
