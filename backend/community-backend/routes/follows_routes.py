@@ -192,11 +192,13 @@ async def list_followers(
     user_id: UUID,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    current_user: str | None = Depends(get_optional_user),
 ):
     """People who follow this user, newest first."""
-    return _edge_page(
+    return await _edge_page(
         request=request,
         user_id=str(user_id),
+        viewer=current_user,
         direction="followers",
         limit=limit,
         offset=offset,
@@ -209,36 +211,62 @@ async def list_following(
     user_id: UUID,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    current_user: str | None = Depends(get_optional_user),
 ):
     """People this user follows, newest first."""
-    return _edge_page(
+    return await _edge_page(
         request=request,
         user_id=str(user_id),
+        viewer=current_user,
         direction="following",
         limit=limit,
         offset=offset,
     )
 
 
-def _edge_page(
+async def _may_see_edges(client, target: str, viewer: str | None) -> bool:
+    """Whether `viewer` may see who `target` follows, and who follows them.
+
+    A public account's lists stay public -- the two axes are independent and
+    a post tier does not govern this. A private account's do not: the list
+    is the social graph itself.
+    """
+    if not await offload(client.is_private_account, target):
+        return True
+    if viewer is None:
+        return False
+    if viewer == target:
+        return True
+    return await offload(client.is_following, viewer, target)
+
+
+async def _edge_page(
     *,
     request: Request,
     user_id: str,
+    viewer: str | None,
     direction: str,
     limit: int,
     offset: int,
 ) -> ListResponse:
     client = get_community_client()
-    rows = client.list_follow_edges(
+
+    if not await _may_see_edges(client, user_id, viewer):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This account is private",
+        ) from None
+
+    rows = await offload(
+        client.list_follow_edges,
         user_id=user_id,
         direction=direction,
         limit=limit,
         offset=offset,
     )
-    total = (
-        client.count_followers(user_id)
-        if direction == "followers"
-        else client.count_following(user_id)
+    total = await offload(
+        client.count_followers if direction == "followers" else client.count_following,
+        user_id,
     )
     return build_paginated_list_response(
         request=request,

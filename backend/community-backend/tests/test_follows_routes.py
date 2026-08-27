@@ -11,7 +11,7 @@ FastAPI's path converter (current_user, and the requester ids embedded in a
 response body).
 """
 
-from middleware.auth import get_current_user
+from middleware.auth import get_current_user, get_optional_user
 
 STUB_USER_2 = "22222222-2222-2222-2222-222222222222"
 STUB_USER_3 = "33333333-3333-3333-3333-333333333333"
@@ -79,3 +79,25 @@ def test_withdraw_request_is_not_shadowed_by_unfollow_route(client, stub_client)
     response = client.delete(f"/api/v1/follows/{STUB_USER_2}/request")
     assert response.status_code == 204
     assert ("user-1", STUB_USER_2) not in stub_client.requests
+
+
+def test_a_strangers_view_of_a_private_follower_list_is_refused(client, stub_client, app):
+    # `app` pins get_optional_user to "user-1" for every other test in this
+    # suite; an anonymous viewer needs a matching override just for itself.
+    stub_client.private_accounts = {STUB_USER_2}
+    app.dependency_overrides[get_optional_user] = lambda: None
+    response = client.get(f"/api/v1/follows/{STUB_USER_2}/followers")
+    assert response.status_code == 403
+
+
+def test_an_approved_follower_sees_the_list(client, stub_client):
+    stub_client.private_accounts = {STUB_USER_2}
+    stub_client.follows.add(("user-1", STUB_USER_2))
+    response = client.get(f"/api/v1/follows/{STUB_USER_2}/followers")
+    assert response.status_code == 200
+
+
+def test_a_public_accounts_list_stays_open(client, stub_client):
+    stub_client.private_accounts = set()
+    response = client.get(f"/api/v1/follows/{STUB_USER_2}/followers")
+    assert response.status_code == 200

@@ -83,13 +83,21 @@ class CommunityFollowOperations:
         The database is a continent away -- one trip measures ~440ms of pure
         distance -- so the four obvious queries cost about a second before
         Postgres does any work. `follow_stats` does all four server-side; see
-        backend/db/migrations/011_follow_stats_function.sql.
+        backend/db/migrations/017_follow_requests_function.sql.
         """
+        # Fail closed: an RPC error makes the account look private rather
+        # than public. This dict only ever labels a button (POST
+        # /follows/{id} makes its own independent fresh check before it acts),
+        # but every other privacy decision in this feature fails closed, and
+        # a mislabeled "Follow" button is a smaller cost than momentarily
+        # advertising a private account's list as public.
         empty = {
             "follower_count": 0,
             "following_count": 0,
             "is_following": False,
             "is_followed_by": False,
+            "is_private": True,
+            "has_requested": False,
         }
         try:
             response = self._client.rpc(

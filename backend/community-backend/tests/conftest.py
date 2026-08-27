@@ -271,6 +271,31 @@ class StubCommunityClient:
     def is_private_account(self, user_id):
         return user_id in self.private_accounts
 
+    def is_following(self, follower_id, followee_id):
+        return (follower_id, followee_id) in self.follows
+
+    def list_follow_edges(self, *, user_id, direction, limit=20, offset=0):
+        match_index = 1 if direction == "followers" else 0
+        other_index = 0 if direction == "followers" else 1
+        rows = [
+            {
+                "user_id": pair[other_index],
+                "email": None,
+                "first_name": None,
+                "last_name": None,
+                "created_at": "2026-01-01T00:00:00Z",
+            }
+            for pair in sorted(self.follows)
+            if pair[match_index] == user_id
+        ]
+        return rows[offset : offset + limit]
+
+    def count_followers(self, user_id):
+        return sum(1 for _follower_id, followee_id in self.follows if followee_id == user_id)
+
+    def count_following(self, user_id):
+        return sum(1 for follower_id, _followee_id in self.follows if follower_id == user_id)
+
     def follow(self, follower_id, followee_id):
         self.follows.add((follower_id, followee_id))
         return True
