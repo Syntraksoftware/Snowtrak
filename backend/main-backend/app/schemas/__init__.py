@@ -6,14 +6,6 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from app.schemas.activity import (
-    ActivityCreate as ActivityCreate,
-    ActivityResponse as ActivityResponse,
-    ActivityType as ActivityType,
-    ActivityUpdate as ActivityUpdate,
-    LocationCreate as LocationCreate,
-    LocationResponse as LocationResponse,
-)
 from app.schemas.weather import (
     WeatherLocation as WeatherLocation,
     WeatherSnapshot as WeatherSnapshot,

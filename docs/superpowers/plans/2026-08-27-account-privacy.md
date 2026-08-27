@@ -141,7 +141,7 @@ DB_URL="$(grep '^SYNTRAK_DATABASE_URL=' backend/map-backend/.env \
 `016` drops it and that cannot be undone. Both of these must come back empty:
 
 ```bash
-psql "$DB_URL" -c "select polname, tablename from pg_policies
+psql "$DB_URL" -c "select policyname, tablename from pg_policies
                     where qual::text like '%is_public%'
                        or with_check::text like '%is_public%';"
 
