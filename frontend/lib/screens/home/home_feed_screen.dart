@@ -91,7 +91,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SnowtrakColors.background,
+      backgroundColor: context.colors.background,
       body: SafeArea(
         bottom: false,
         child: Consumer2<ActivityProvider, AuthProvider>(
@@ -126,7 +126,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: _refresh,
-                    color: SnowtrakColors.ink,
+                    color: context.colors.primary,
                     child: ListView(
                       // Cards sit at 16pt gutters, section headers at 20pt —
                       // each block owns its own padding.

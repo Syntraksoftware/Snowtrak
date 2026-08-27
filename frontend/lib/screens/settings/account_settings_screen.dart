@@ -23,9 +23,9 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     final email = user?.email ?? 'Not set';
 
     return Scaffold(
-      backgroundColor: SnowtrakColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: SnowtrakColors.background,
+        backgroundColor: context.colors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -133,7 +133,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
             children: [
               SettingsIosActionRow(
                 label: 'Sign Out of All Devices',
-                textColor: SnowtrakColors.ink,
+                textColor: context.colors.primary,
                 onTap: () => _showLogoutAllConfirmation(),
               ),
             ],
@@ -149,15 +149,15 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: SnowtrakColors.success.withAlpha(30),
+        color: context.colors.success.withAlpha(30),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: const Text(
+      child: Text(
         'Verified',
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w500,
-          color: SnowtrakColors.success,
+          color: context.colors.success,
         ),
       ),
     );

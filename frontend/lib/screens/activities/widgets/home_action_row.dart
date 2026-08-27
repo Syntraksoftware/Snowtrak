@@ -20,7 +20,7 @@ class HomeActionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: SnowtrakColors.surfaceVariant,
+      color: context.colors.surfaceVariant,
       borderRadius: BorderRadius.circular(SnowtrakRadius.md),
       child: InkWell(
         onTap: onTap,
@@ -39,7 +39,7 @@ class HomeActionRow extends StatelessWidget {
                     Text(
                       title,
                       style: SnowtrakTypography.labelLarge.copyWith(
-                        color: SnowtrakColors.textPrimary,
+                        color: context.colors.textPrimary,
                       ),
                     ),
                     if (subtitle != null) ...[
@@ -47,7 +47,7 @@ class HomeActionRow extends StatelessWidget {
                       Text(
                         subtitle!,
                         style: SnowtrakTypography.bodySmall.copyWith(
-                          color: SnowtrakColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                       ),
                     ],

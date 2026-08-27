@@ -76,7 +76,7 @@ class _ClubsTabState extends State<ClubsTab> {
         // TODO: Implement refresh functionality
         await Future.delayed(const Duration(seconds: 1));
       },
-      color: SnowtrakColors.primary,
+      color: context.colors.primary,
       child: CustomScrollView(
         slivers: [
           // Customize Notifications section
@@ -85,9 +85,9 @@ class _ClubsTabState extends State<ClubsTab> {
               margin: const EdgeInsets.all(SnowtrakSpacing.md),
               padding: const EdgeInsets.all(SnowtrakSpacing.md),
               decoration: BoxDecoration(
-                color: SnowtrakColors.surfaceVariant,
+                color: context.colors.surfaceVariant,
                 borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
-                border: Border.all(color: SnowtrakColors.divider),
+                border: Border.all(color: context.colors.divider),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,14 +95,14 @@ class _ClubsTabState extends State<ClubsTab> {
                   Text(
                     'Customize Notifications',
                     style: SnowtrakTypography.headlineSmall.copyWith(
-                      color: SnowtrakColors.textPrimary,
+                      color: context.colors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: SnowtrakSpacing.sm),
                   Text(
                     'Stay up to date. Turn on push notifications for your favorite clubs and mute the rest.',
                     style: SnowtrakTypography.bodyMedium.copyWith(
-                      color: SnowtrakColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: SnowtrakSpacing.md),
@@ -113,8 +113,8 @@ class _ClubsTabState extends State<ClubsTab> {
                         // TODO: Implement learn more functionality
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: SnowtrakColors.primary,
-                        foregroundColor: SnowtrakColors.textOnPrimary,
+                        backgroundColor: context.colors.primary,
+                        foregroundColor: context.colors.textOnPrimary,
                       ),
                       child: const Text(
                         'Learn more',
@@ -135,9 +135,9 @@ class _ClubsTabState extends State<ClubsTab> {
               ),
               padding: const EdgeInsets.all(SnowtrakSpacing.md),
               decoration: BoxDecoration(
-                color: SnowtrakColors.surface,
+                color: context.colors.surface,
                 borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
-                border: Border.all(color: SnowtrakColors.divider),
+                border: Border.all(color: context.colors.divider),
                 boxShadow: SnowtrakElevation.sm,
               ),
               child: Row(
@@ -147,7 +147,7 @@ class _ClubsTabState extends State<ClubsTab> {
                     child: Text(
                       'Create your own Snowtrak club',
                       style: SnowtrakTypography.bodyLarge.copyWith(
-                        color: SnowtrakColors.textPrimary,
+                        color: context.colors.textPrimary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -159,8 +159,8 @@ class _ClubsTabState extends State<ClubsTab> {
                       // TODO: Implement create club functionality
                     },
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: SnowtrakColors.primary,
-                      side: const BorderSide(color: SnowtrakColors.primary),
+                      foregroundColor: context.colors.primary,
+                      side: BorderSide(color: context.colors.primary),
                       padding: const EdgeInsets.symmetric(
                         horizontal: SnowtrakSpacing.md,
                         vertical: SnowtrakSpacing.sm,
@@ -189,16 +189,16 @@ class _ClubsTabState extends State<ClubsTab> {
                 children: [
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.group,
                         size: 18,
-                        color: SnowtrakColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                       const SizedBox(width: SnowtrakSpacing.sm),
                       Text(
                         'Skiing Clubs',
                         style: SnowtrakTypography.headlineSmall.copyWith(
-                          color: SnowtrakColors.textPrimary,
+                          color: context.colors.textPrimary,
                         ),
                       ),
                     ],
@@ -210,7 +210,7 @@ class _ClubsTabState extends State<ClubsTab> {
                     child: Text(
                       'All clubs',
                       style: SnowtrakTypography.labelLarge.copyWith(
-                        color: SnowtrakColors.primary,
+                        color: context.colors.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -254,9 +254,9 @@ class _ClubsTabState extends State<ClubsTab> {
       ),
       padding: const EdgeInsets.all(SnowtrakSpacing.md),
       decoration: BoxDecoration(
-        color: SnowtrakColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
-        border: Border.all(color: SnowtrakColors.divider),
+        border: Border.all(color: context.colors.divider),
         boxShadow: SnowtrakElevation.sm,
       ),
       child: Row(
@@ -271,7 +271,7 @@ class _ClubsTabState extends State<ClubsTab> {
             ),
             child: Icon(
               icon,
-              color: SnowtrakColors.primary,
+              color: context.colors.primary,
               size: 30,
             ),
           ),
@@ -284,22 +284,22 @@ class _ClubsTabState extends State<ClubsTab> {
                 Text(
                   name,
                   style: SnowtrakTypography.headlineSmall.copyWith(
-                    color: SnowtrakColors.textPrimary,
+                    color: context.colors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: SnowtrakSpacing.xs),
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.people,
                       size: 14,
-                      color: SnowtrakColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                     const SizedBox(width: SnowtrakSpacing.xs),
                     Text(
                       _formatMemberCount(memberCount),
                       style: SnowtrakTypography.bodyMedium.copyWith(
-                        color: SnowtrakColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                   ],
@@ -308,14 +308,14 @@ class _ClubsTabState extends State<ClubsTab> {
                 Text(
                   location,
                   style: SnowtrakTypography.bodySmall.copyWith(
-                    color: SnowtrakColors.textTertiary,
+                    color: context.colors.textTertiary,
                   ),
                 ),
                 const SizedBox(height: SnowtrakSpacing.xs / 2),
                 Text(
                   '$postCount posts',
                   style: SnowtrakTypography.bodySmall.copyWith(
-                    color: SnowtrakColors.textTertiary,
+                    color: context.colors.textTertiary,
                   ),
                 ),
               ],
@@ -324,7 +324,7 @@ class _ClubsTabState extends State<ClubsTab> {
           // Join/Joined indicator
           IconButton(
             icon: const Icon(Icons.chevron_right),
-            color: SnowtrakColors.textTertiary,
+            color: context.colors.textTertiary,
             onPressed: () {
               // TODO: Navigate to club detail
             },

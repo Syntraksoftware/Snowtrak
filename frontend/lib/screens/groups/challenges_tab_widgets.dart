@@ -27,9 +27,9 @@ class ChallengesDetailCard extends StatelessWidget {
       ),
       padding: const EdgeInsets.all(SnowtrakSpacing.md),
       decoration: BoxDecoration(
-        color: SnowtrakColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
-        border: Border.all(color: SnowtrakColors.divider),
+        border: Border.all(color: context.colors.divider),
         boxShadow: SnowtrakElevation.sm,
       ),
       child: Row(
@@ -45,7 +45,7 @@ class ChallengesDetailCard extends StatelessWidget {
                 ),
                 child: Icon(
                   icon,
-                  color: SnowtrakColors.primary,
+                  color: context.colors.primary,
                   size: 30,
                 ),
               ),
@@ -54,13 +54,13 @@ class ChallengesDetailCard extends StatelessWidget {
                 right: -4,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: SnowtrakColors.accent,
+                  decoration: BoxDecoration(
+                    color: context.colors.primary,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_upward,
-                    color: SnowtrakColors.textOnPrimary,
+                    color: context.colors.textOnPrimary,
                     size: 12,
                   ),
                 ),
@@ -74,13 +74,13 @@ class ChallengesDetailCard extends StatelessWidget {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: SnowtrakColors.textPrimary,
+                    color: context.colors.textPrimary,
                     borderRadius: BorderRadius.circular(SnowtrakRadius.sm),
                   ),
                   child: Text(
                     badge,
                     style: SnowtrakTypography.labelSmall.copyWith(
-                      color: SnowtrakColors.textOnPrimary,
+                      color: context.colors.textOnPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -96,21 +96,21 @@ class ChallengesDetailCard extends StatelessWidget {
                 Text(
                   title,
                   style: SnowtrakTypography.headlineSmall.copyWith(
-                    color: SnowtrakColors.textPrimary,
+                    color: context.colors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: SnowtrakSpacing.xs),
                 Text(
                   description,
                   style: SnowtrakTypography.bodyMedium.copyWith(
-                    color: SnowtrakColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: SnowtrakSpacing.xs),
                 Text(
                   duration,
                   style: SnowtrakTypography.bodySmall.copyWith(
-                    color: SnowtrakColors.textTertiary,
+                    color: context.colors.textTertiary,
                   ),
                 ),
               ],
@@ -141,9 +141,9 @@ class ChallengesRecommendedCard extends StatelessWidget {
       width: 200,
       padding: const EdgeInsets.all(SnowtrakSpacing.md),
       decoration: BoxDecoration(
-        color: SnowtrakColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
-        border: Border.all(color: SnowtrakColors.divider),
+        border: Border.all(color: context.colors.divider),
         boxShadow: SnowtrakElevation.sm,
       ),
       child: Column(
@@ -160,7 +160,7 @@ class ChallengesRecommendedCard extends StatelessWidget {
                 ),
                 child: Icon(
                   icon,
-                  color: SnowtrakColors.primary,
+                  color: context.colors.primary,
                   size: 24,
                 ),
               ),
@@ -169,13 +169,13 @@ class ChallengesRecommendedCard extends StatelessWidget {
                 right: -4,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: SnowtrakColors.accent,
+                  decoration: BoxDecoration(
+                    color: context.colors.primary,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_upward,
-                    color: SnowtrakColors.textOnPrimary,
+                    color: context.colors.textOnPrimary,
                     size: 10,
                   ),
                 ),
@@ -189,13 +189,13 @@ class ChallengesRecommendedCard extends StatelessWidget {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: SnowtrakColors.textPrimary,
+                    color: context.colors.textPrimary,
                     borderRadius: BorderRadius.circular(SnowtrakRadius.sm),
                   ),
                   child: Text(
                     badge,
                     style: SnowtrakTypography.labelSmall.copyWith(
-                      color: SnowtrakColors.textOnPrimary,
+                      color: context.colors.textOnPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -207,7 +207,7 @@ class ChallengesRecommendedCard extends StatelessWidget {
           Text(
             title,
             style: SnowtrakTypography.bodyMedium.copyWith(
-              color: SnowtrakColors.textPrimary,
+              color: context.colors.textPrimary,
               fontWeight: FontWeight.w600,
             ),
             maxLines: 2,

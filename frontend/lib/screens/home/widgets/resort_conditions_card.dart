@@ -34,14 +34,14 @@ class ResortConditionsCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: _place()),
+                Expanded(child: _place(context)),
                 const SizedBox(width: SnowtrakSpacing.smd),
-                _temperature(),
+                _temperature(context),
               ],
             ),
           ),
           const StHairline(),
-          _conditionsStrip(),
+          _conditionsStrip(context),
           StInkButton(
             label: 'Start Session Here',
             onTap: onStartSession,
@@ -49,14 +49,14 @@ class ResortConditionsCard extends StatelessWidget {
               width: 16,
               height: 16,
               decoration: BoxDecoration(
-                color: SnowtrakColors.textOnPrimary,
+                color: context.colors.textOnPrimary,
                 borderRadius: BorderRadius.circular(3),
               ),
             ),
-            trailing: const Icon(
+            trailing: Icon(
               Icons.arrow_forward,
               size: 15,
-              color: SnowtrakColors.textOnPrimary,
+              color: context.colors.textOnPrimary,
             ),
           ),
         ],
@@ -64,7 +64,7 @@ class ResortConditionsCard extends StatelessWidget {
     );
   }
 
-  Widget _place() {
+  Widget _place(BuildContext context) {
     final condition = weather?.condition;
     final wind = weather == null
         ? null
@@ -83,8 +83,8 @@ class ResortConditionsCard extends StatelessWidget {
             Container(
               width: 7,
               height: 7,
-              decoration: const BoxDecoration(
-                color: SnowtrakColors.live,
+              decoration: BoxDecoration(
+                color: context.colors.live,
                 shape: BoxShape.circle,
               ),
             ),
@@ -92,7 +92,7 @@ class ResortConditionsCard extends StatelessWidget {
             Text(
               resortName == null ? "TODAY'S CONDITIONS" : 'NEARBY RESORT',
               style: SnowtrakTypography.eyebrow.copyWith(
-                color: SnowtrakColors.textTertiary,
+                color: context.colors.textTertiary,
               ),
             ),
           ],
@@ -103,7 +103,7 @@ class ResortConditionsCard extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: SnowtrakTypography.headlineMedium.copyWith(
-            color: SnowtrakColors.textPrimary,
+            color: context.colors.textPrimary,
           ),
         ),
         const SizedBox(height: 5),
@@ -116,14 +116,14 @@ class ResortConditionsCard extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: SnowtrakTypography.bodyMedium.copyWith(
-            color: SnowtrakColors.textTertiary,
+            color: context.colors.textTertiary,
           ),
         ),
       ],
     );
   }
 
-  Widget _temperature() {
+  Widget _temperature(BuildContext context) {
     final temp = weather?.temperature;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -132,13 +132,13 @@ class ResortConditionsCard extends StatelessWidget {
         StIcon(
           _weatherIcon(weather?.condition),
           size: 28,
-          color: SnowtrakColors.textSecondary,
+          color: context.colors.textSecondary,
         ),
         const SizedBox(height: 3),
         Text(
           temp == null ? '—' : '${Imperial.fahrenheit(temp).round()}°F',
           style: SnowtrakTypography.metricLarge.copyWith(
-            color: SnowtrakColors.textPrimary,
+            color: context.colors.textPrimary,
           ),
         ),
         const SizedBox(height: 3),
@@ -148,7 +148,7 @@ class ResortConditionsCard extends StatelessWidget {
               : 'Feels like ${Imperial.fahrenheit(temp).round()}°F',
           style: SnowtrakTypography.labelMedium.copyWith(
             fontSize: 11,
-            color: SnowtrakColors.textTertiary,
+            color: context.colors.textTertiary,
           ),
         ),
       ],
@@ -171,7 +171,7 @@ class ResortConditionsCard extends StatelessWidget {
   // ponytail: snow depth / lifts / slopes have no feed yet — the tiles hold
   // their place with an em dash rather than showing invented numbers. Wire them
   // when map-backend exposes resort conditions.
-  Widget _conditionsStrip() {
+  Widget _conditionsStrip(BuildContext context) {
     const tiles = [
       ('Snow Depth', StIcons.ski),
       ('New Snow', StIcons.lightning),
@@ -184,11 +184,11 @@ class ResortConditionsCard extends StatelessWidget {
         children: [
           for (var i = 0; i < tiles.length; i++) ...[
             if (i > 0)
-              const Center(
+              Center(
                 child: SizedBox(
                   width: 1,
                   height: 44,
-                  child: ColoredBox(color: SnowtrakColors.border),
+                  child: ColoredBox(color: context.colors.border),
                 ),
               ),
             Expanded(

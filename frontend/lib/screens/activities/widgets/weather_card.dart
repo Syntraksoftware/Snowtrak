@@ -57,7 +57,7 @@ class _WeatherCardState extends State<WeatherCard> {
       return Text(
         'Enable location or pull to refresh.',
         style: SnowtrakTypography.bodySmall.copyWith(
-          color: SnowtrakColors.textTertiary,
+          color: context.colors.textTertiary,
         ),
       );
     }
@@ -80,7 +80,7 @@ class _WeatherCardState extends State<WeatherCard> {
             Text(
               '${data.temperature.toStringAsFixed(0)}°',
               style: SnowtrakTypography.displaySmall.copyWith(
-                color: SnowtrakColors.textPrimary,
+                color: context.colors.textPrimary,
                 fontWeight: FontWeight.w700,
                 fontSize: 28,
                 height: 1,
@@ -91,7 +91,7 @@ class _WeatherCardState extends State<WeatherCard> {
               child: Text(
                 '${data.condition.description} · ${data.windSpeed.toStringAsFixed(0)} km/h wind',
                 style: SnowtrakTypography.bodySmall.copyWith(
-                  color: SnowtrakColors.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,

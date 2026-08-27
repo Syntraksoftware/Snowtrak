@@ -18,7 +18,7 @@ class QuotedPostEmbed extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(SnowtrakRadius.md),
-        border: Border.all(color: SnowtrakColors.divider),
+        border: Border.all(color: context.colors.divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -27,12 +27,12 @@ class QuotedPostEmbed extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 10,
-                backgroundColor: SnowtrakColors.primary.withValues(alpha: 0.12),
+                backgroundColor: context.colors.primary.withValues(alpha: 0.12),
                 child: Text(
                   initial,
                   style: SnowtrakTypography.labelSmall.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: SnowtrakColors.primary,
+                    color: context.colors.primary,
                     fontSize: 9,
                   ),
                 ),
@@ -42,13 +42,13 @@ class QuotedPostEmbed extends StatelessWidget {
                 post.author.username,
                 style: SnowtrakTypography.labelMedium.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: SnowtrakColors.textPrimary,
+                  color: context.colors.textPrimary,
                 ),
               ),
               Text(
                 '  ·  ${post.timestampLabel}',
                 style: SnowtrakTypography.bodySmall.copyWith(
-                  color: SnowtrakColors.textTertiary,
+                  color: context.colors.textTertiary,
                 ),
               ),
             ],
@@ -60,7 +60,7 @@ class QuotedPostEmbed extends StatelessWidget {
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
               style: SnowtrakTypography.bodyMedium.copyWith(
-                color: SnowtrakColors.textPrimary,
+                color: context.colors.textPrimary,
                 height: 1.35,
               ),
             ),

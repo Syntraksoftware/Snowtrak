@@ -22,9 +22,9 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SnowtrakColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: SnowtrakColors.background,
+        backgroundColor: context.colors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -208,10 +208,10 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                       Text(option),
                       if (option == currentValue) ...[
                         const SizedBox(width: 8),
-                        const Icon(
+                        Icon(
                           CupertinoIcons.checkmark,
                           size: 18,
-                          color: SnowtrakColors.ink,
+                          color: context.colors.primary,
                         ),
                       ],
                     ],
@@ -315,7 +315,7 @@ class _SettingsToggleRow extends StatelessWidget {
           CupertinoSwitch(
             value: value,
             onChanged: onChanged,
-            activeColor: SnowtrakColors.success,
+            activeColor: context.colors.success,
           ),
         ],
       ),

@@ -24,7 +24,7 @@ class _ActiveTabState extends State<ActiveTab> {
       onRefresh: () async {
         await Future.delayed(const Duration(seconds: 1));
       },
-      color: SnowtrakColors.primary,
+      color: context.colors.primary,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
@@ -50,7 +50,7 @@ class _ActiveTabState extends State<ActiveTab> {
           Text(
             'SYNTRAK SUBSCRIPTION',
             style: SnowtrakTypography.labelSmall.copyWith(
-              color: SnowtrakColors.textTertiary,
+              color: context.colors.textTertiary,
               letterSpacing: 1.2,
               fontWeight: FontWeight.w600,
             ),
@@ -60,7 +60,7 @@ class _ActiveTabState extends State<ActiveTab> {
             'Design Your',
             style: SnowtrakTypography.displaySmall.copyWith(
               fontWeight: FontWeight.w800,
-              color: SnowtrakColors.textPrimary,
+              color: context.colors.textPrimary,
               height: 1.1,
             ),
           ),
@@ -68,7 +68,7 @@ class _ActiveTabState extends State<ActiveTab> {
             'Own Challenge',
             style: SnowtrakTypography.displaySmall.copyWith(
               fontWeight: FontWeight.w800,
-              color: SnowtrakColors.textPrimary,
+              color: context.colors.textPrimary,
               height: 1.1,
             ),
           ),
@@ -76,7 +76,7 @@ class _ActiveTabState extends State<ActiveTab> {
           Text(
             'Rally your crew with a custom Group Challenge. Your game, your rules.',
             style: SnowtrakTypography.bodyLarge.copyWith(
-              color: SnowtrakColors.textSecondary,
+              color: context.colors.textSecondary,
               height: 1.4,
             ),
           ),
@@ -93,7 +93,7 @@ class _ActiveTabState extends State<ActiveTab> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: SnowtrakColors.primary,
+                backgroundColor: context.colors.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
@@ -139,7 +139,7 @@ class _ActiveTabState extends State<ActiveTab> {
               child: Text(
                 'See All Challenges',
                 style: SnowtrakTypography.labelLarge.copyWith(
-                  color: SnowtrakColors.primary,
+                  color: context.colors.primary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -156,17 +156,17 @@ class _ActiveTabState extends State<ActiveTab> {
       height: 180,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            SnowtrakColors.ink,
+            context.colors.primary,
             SnowtrakColors.primaryLight,
           ],
         ),
         boxShadow: [
           BoxShadow(
-            color: SnowtrakColors.ink.withOpacity(0.3),
+            color: context.colors.primary.withOpacity(0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),

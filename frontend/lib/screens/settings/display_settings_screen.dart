@@ -19,9 +19,9 @@ class _DisplaySettingsScreenState extends State<DisplaySettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SnowtrakColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: SnowtrakColors.background,
+        backgroundColor: context.colors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -175,8 +175,8 @@ class _DisplaySettingsScreenState extends State<DisplaySettingsScreen> {
                       Text(option),
                       if (option == currentValue) ...[
                         const SizedBox(width: 8),
-                        const Icon(CupertinoIcons.checkmark,
-                            size: 18, color: SnowtrakColors.ink),
+                        Icon(CupertinoIcons.checkmark,
+                            size: 18, color: context.colors.primary),
                       ],
                     ],
                   ),

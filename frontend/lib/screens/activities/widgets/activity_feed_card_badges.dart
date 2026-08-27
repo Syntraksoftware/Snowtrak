@@ -17,7 +17,7 @@ class ActivityFeedCardBadges extends StatelessWidget {
       child: Wrap(
         spacing: SnowtrakSpacing.sm,
         runSpacing: SnowtrakSpacing.xs,
-        children: _buildBadges(activity),
+        children: _buildBadges(context, activity),
       ),
     );
   }
@@ -26,32 +26,32 @@ class ActivityFeedCardBadges extends StatelessWidget {
     return activity.distance > 5000 || activity.elevationGain > 500;
   }
 
-  List<Widget> _buildBadges(Activity activity) {
+  List<Widget> _buildBadges(BuildContext context, Activity activity) {
     final badges = <Widget>[];
     if (activity.distance > 10000) {
       badges.add(
-        const _Badge(
+        _Badge(
           icon: Icons.emoji_events,
           label: 'Long',
-          color: SnowtrakColors.accent,
+          color: context.colors.primary,
         ),
       );
     }
     if (activity.elevationGain > 1000) {
       badges.add(
-        const _Badge(
+        _Badge(
           icon: Icons.trending_up,
           label: 'Elevation',
-          color: SnowtrakColors.secondary,
+          color: context.colors.textSecondary,
         ),
       );
     }
     if (activity.distance > 5000 && activity.elevationGain > 500) {
       badges.add(
-        const _Badge(
+        _Badge(
           icon: Icons.star,
           label: 'PR',
-          color: SnowtrakColors.accent,
+          color: context.colors.primary,
         ),
       );
     }

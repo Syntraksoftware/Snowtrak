@@ -38,7 +38,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: SnowtrakColors.background,
+      backgroundColor: context.colors.background,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -73,7 +73,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       child: Text(
                         'Not logged in',
                         style: SnowtrakTypography.bodyLarge.copyWith(
-                          color: SnowtrakColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                       ),
                     );
@@ -84,7 +84,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     controller: _tabController,
                     children: [
                       RefreshIndicator(
-                        color: SnowtrakColors.ink,
+                        color: context.colors.primary,
                         onRefresh: () => activityProvider.loadActivities(
                           refresh: true,
                           forceNetwork: true,

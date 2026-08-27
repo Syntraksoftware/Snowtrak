@@ -98,7 +98,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
       pinned: true,
       floating: false,
       automaticallyImplyLeading: false,
-      backgroundColor: SnowtrakColors.surface,
+      backgroundColor: context.colors.surface,
       surfaceTintColor: Colors.transparent,
       elevation: innerBoxIsScrolled ? 2 : 0,
       shadowColor: Colors.black26,
@@ -137,23 +137,23 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
+              Icon(
                 Icons.search_off,
                 size: 64,
-                color: SnowtrakColors.textTertiary,
+                color: context.colors.textTertiary,
               ),
               const SizedBox(height: SnowtrakSpacing.md),
               Text(
                 'No activities found',
                 style: SnowtrakTypography.headlineSmall.copyWith(
-                  color: SnowtrakColors.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
               ),
               const SizedBox(height: SnowtrakSpacing.sm),
               Text(
                 'Try a different search term',
                 style: SnowtrakTypography.bodyMedium.copyWith(
-                  color: SnowtrakColors.textTertiary,
+                  color: context.colors.textTertiary,
                 ),
               ),
             ],
@@ -173,23 +173,23 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
+                Icon(
                   Icons.downhill_skiing,
                   size: 80,
-                  color: SnowtrakColors.textTertiary,
+                  color: context.colors.textTertiary,
                 ),
                 const SizedBox(height: SnowtrakSpacing.lg),
                 Text(
                   'No activities yet',
                   style: SnowtrakTypography.headlineMedium.copyWith(
-                    color: SnowtrakColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: SnowtrakSpacing.sm),
                 Text(
                   'Start recording your first skiing activity!',
                   style: SnowtrakTypography.bodyMedium.copyWith(
-                    color: SnowtrakColors.textTertiary,
+                    color: context.colors.textTertiary,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -206,7 +206,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
       ],
       body: RefreshIndicator(
         onRefresh: _loadActivities,
-        color: SnowtrakColors.primary,
+        color: context.colors.primary,
         child: ListView.builder(
           padding: const EdgeInsets.all(SnowtrakSpacing.md),
           itemCount: _filteredActivities.length,

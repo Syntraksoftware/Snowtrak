@@ -88,7 +88,7 @@ class _ProfileHomeContentState extends State<ProfileHomeContent> {
                 ? 'Add a short bio to tell the community about your training.'
                 : 'No bio yet.',
             style: SnowtrakTypography.bodyMedium.copyWith(
-              color: SnowtrakColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
           const SizedBox(height: SnowtrakSpacing.md),
@@ -160,14 +160,14 @@ class _ProfileHomeContentState extends State<ProfileHomeContent> {
               label: 'Distance',
               value: dist,
               unit: 'km',
-              accentColor: SnowtrakColors.primary,
+              accentColor: context.colors.primary,
             ),
             right: ProfileMetricTile(
               icon: Icons.timer_outlined,
               label: 'Time',
               value: timeStr,
               unit: '',
-              accentColor: SnowtrakColors.primary,
+              accentColor: context.colors.primary,
             ),
           ),
           const SizedBox(height: SnowtrakSpacing.sm),
@@ -177,14 +177,14 @@ class _ProfileHomeContentState extends State<ProfileHomeContent> {
               label: 'Elevation',
               value: elev,
               unit: '',
-              accentColor: SnowtrakColors.primary,
+              accentColor: context.colors.primary,
             ),
             right: ProfileMetricTile(
               icon: Icons.directions_run_outlined,
               label: 'Sessions',
               value: sessions,
               unit: '',
-              accentColor: SnowtrakColors.primary,
+              accentColor: context.colors.primary,
             ),
           ),
           const SizedBox(height: SnowtrakSpacing.md),
@@ -309,10 +309,10 @@ class _RecentActivityRow extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: SnowtrakColors.primary.withValues(alpha: 0.1),
+              color: context.colors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(SnowtrakRadius.md),
             ),
-            child: const Icon(Icons.downhill_skiing, size: 18, color: SnowtrakColors.primary),
+            child: Icon(Icons.downhill_skiing, size: 18, color: context.colors.primary),
           ),
           const SizedBox(width: SnowtrakSpacing.sm),
           Expanded(
@@ -321,20 +321,20 @@ class _RecentActivityRow extends StatelessWidget {
               children: [
                 Text(
                   activity.name ?? 'Activity',
-                  style: SnowtrakTypography.labelMedium.copyWith(color: SnowtrakColors.textPrimary),
+                  style: SnowtrakTypography.labelMedium.copyWith(color: context.colors.textPrimary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   DateFormat('MMM d, yyyy').format(activity.startTime),
-                  style: SnowtrakTypography.bodySmall.copyWith(color: SnowtrakColors.textTertiary),
+                  style: SnowtrakTypography.bodySmall.copyWith(color: context.colors.textTertiary),
                 ),
               ],
             ),
           ),
           Text(
             activity.formattedDistance,
-            style: SnowtrakTypography.labelMedium.copyWith(color: SnowtrakColors.textPrimary),
+            style: SnowtrakTypography.labelMedium.copyWith(color: context.colors.textPrimary),
           ),
         ],
       ),
@@ -359,7 +359,7 @@ class _ChallengePreview extends StatelessWidget {
         Text(
           title,
           style: SnowtrakTypography.labelLarge.copyWith(
-            color: SnowtrakColors.textPrimary,
+            color: context.colors.textPrimary,
           ),
         ),
         const SizedBox(height: SnowtrakSpacing.xs),
@@ -368,7 +368,7 @@ class _ChallengePreview extends StatelessWidget {
           child: LinearProgressIndicator(
             value: progress,
             minHeight: 6,
-            backgroundColor: SnowtrakColors.surfaceVariant,
+            backgroundColor: context.colors.surfaceVariant,
             color: context.colors.primary,
           ),
         ),

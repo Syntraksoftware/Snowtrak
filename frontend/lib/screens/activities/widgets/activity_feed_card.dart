@@ -26,11 +26,11 @@ class ActivityFeedCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: SnowtrakSpacing.md),
       child: Material(
-        color: SnowtrakColors.surface,
+        color: context.colors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
-          side: const BorderSide(color: SnowtrakColors.divider),
+          side: BorderSide(color: context.colors.divider),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -61,7 +61,7 @@ class ActivityFeedCard extends StatelessWidget {
                       ? activity.name!
                       : '${activity.type.displayName} Activity',
                   style: SnowtrakTypography.headlineSmall.copyWith(
-                    color: SnowtrakColors.textPrimary,
+                    color: context.colors.textPrimary,
                   ),
                 ),
               ),

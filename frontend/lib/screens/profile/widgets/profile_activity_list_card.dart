@@ -33,7 +33,7 @@ class ProfileActivityListCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
-        side: const BorderSide(color: SnowtrakColors.divider),
+        side: BorderSide(color: context.colors.divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -45,19 +45,19 @@ class ProfileActivityListCard extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundColor: SnowtrakColors.surfaceVariant,
+                  backgroundColor: context.colors.surfaceVariant,
                   child: user?.firstName != null
                       ? Text(
                           user!.firstName![0].toUpperCase(),
                           style: SnowtrakTypography.bodyMedium.copyWith(
-                            color: SnowtrakColors.textPrimary,
+                            color: context.colors.textPrimary,
                             fontWeight: FontWeight.w600,
                           ),
                         )
-                      : const Icon(
+                      : Icon(
                           Icons.person,
                           size: 20,
-                          color: SnowtrakColors.textTertiary,
+                          color: context.colors.textTertiary,
                         ),
                 ),
                 const SizedBox(width: SnowtrakSpacing.md),
@@ -68,7 +68,7 @@ class ProfileActivityListCard extends StatelessWidget {
                       Text(
                         user?.fullName ?? 'User',
                         style: SnowtrakTypography.bodyMedium.copyWith(
-                          color: SnowtrakColors.textPrimary,
+                          color: context.colors.textPrimary,
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
                         ),
@@ -77,7 +77,7 @@ class ProfileActivityListCard extends StatelessWidget {
                       Text(
                         '${_formatDateTime(activity.startTime)} • Apple Watch SE',
                         style: SnowtrakTypography.labelSmall.copyWith(
-                          color: SnowtrakColors.textTertiary,
+                          color: context.colors.textTertiary,
                           fontSize: 10,
                         ),
                         maxLines: 1,
@@ -86,17 +86,17 @@ class ProfileActivityListCard extends StatelessWidget {
                       const SizedBox(height: SnowtrakSpacing.xs / 2),
                       Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.directions_walk,
                             size: 14,
-                            color: SnowtrakColors.textTertiary,
+                            color: context.colors.textTertiary,
                           ),
                           const SizedBox(width: SnowtrakSpacing.xs / 2),
                           Expanded(
                             child: Text(
                               'Finland, Tampere',
                               style: SnowtrakTypography.labelSmall.copyWith(
-                                color: SnowtrakColors.textTertiary,
+                                color: context.colors.textTertiary,
                                 fontSize: 11,
                               ),
                               maxLines: 1,
@@ -124,7 +124,7 @@ class ProfileActivityListCard extends StatelessWidget {
                 Text(
                   activity.name ?? activity.type.displayName,
                   style: SnowtrakTypography.headlineSmall.copyWith(
-                    color: SnowtrakColors.textPrimary,
+                    color: context.colors.textPrimary,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -133,15 +133,15 @@ class ProfileActivityListCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                      child: _metric('Distance', activity.formattedDistance),
+                      child: _metric(context, 'Distance', activity.formattedDistance),
                     ),
                     const SizedBox(width: SnowtrakSpacing.sm),
                     Expanded(
-                      child: _metric('Elev Gain', activity.formattedVerticalDrop),
+                      child: _metric(context, 'Elev Gain', activity.formattedVerticalDrop),
                     ),
                     const SizedBox(width: SnowtrakSpacing.sm),
                     Expanded(
-                      child: _metric('Time', activity.formattedDuration),
+                      child: _metric(context, 'Time', activity.formattedDuration),
                     ),
                   ],
                 ),
@@ -155,7 +155,7 @@ class ProfileActivityListCard extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(SnowtrakSpacing.md),
                 decoration: BoxDecoration(
-                  color: SnowtrakColors.accent.withOpacity(0.1),
+                  color: context.colors.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(SnowtrakRadius.md),
                 ),
                 child: Row(
@@ -163,11 +163,11 @@ class ProfileActivityListCard extends StatelessWidget {
                     Container(
                       width: 40,
                       height: 40,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            SnowtrakColors.primary,
-                            SnowtrakColors.accent,
+                            context.colors.primary,
+                            context.colors.primary,
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -178,7 +178,7 @@ class ProfileActivityListCard extends StatelessWidget {
                         child: Text(
                           '1',
                           style: SnowtrakTypography.labelLarge.copyWith(
-                            color: SnowtrakColors.textOnPrimary,
+                            color: context.colors.textOnPrimary,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -189,7 +189,7 @@ class ProfileActivityListCard extends StatelessWidget {
                       child: Text(
                         'Kudos on your first activity!',
                         style: SnowtrakTypography.bodyMedium.copyWith(
-                          color: SnowtrakColors.textPrimary,
+                          color: context.colors.textPrimary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -197,8 +197,8 @@ class ProfileActivityListCard extends StatelessWidget {
                     ElevatedButton(
                       onPressed: () {},
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: SnowtrakColors.accent,
-                        foregroundColor: SnowtrakColors.textOnPrimary,
+                        backgroundColor: context.colors.primary,
+                        foregroundColor: context.colors.textOnPrimary,
                         padding: const EdgeInsets.symmetric(
                           horizontal: SnowtrakSpacing.md,
                           vertical: SnowtrakSpacing.sm,
@@ -220,11 +220,11 @@ class ProfileActivityListCard extends StatelessWidget {
           Container(
             height: 200,
             width: double.infinity,
-            decoration: const BoxDecoration(
-              color: SnowtrakColors.surfaceVariant,
+            decoration: BoxDecoration(
+              color: context.colors.surfaceVariant,
             ),
             child: ClipRRect(
-              child: _mapPreview(),
+              child: _mapPreview(context),
             ),
           ),
           const SizedBox(height: SnowtrakSpacing.md),
@@ -233,21 +233,21 @@ class ProfileActivityListCard extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _actionButton(
+                _actionButton(context, 
                   icon: hasKudos ? Icons.favorite : Icons.favorite_border,
                   label: 'Like',
                   count: kudosCount,
                   color: hasKudos
-                      ? SnowtrakColors.primary
-                      : SnowtrakColors.textSecondary,
+                      ? context.colors.primary
+                      : context.colors.textSecondary,
                   onTap: onKudosToggle,
                 ),
-                _actionButton(
+                _actionButton(context, 
                   icon: Icons.comment_outlined,
                   label: 'Comment',
                   onTap: onComment,
                 ),
-                _actionButton(
+                _actionButton(context, 
                   icon: Icons.share,
                   label: 'Share',
                   onTap: onShare,
@@ -261,7 +261,7 @@ class ProfileActivityListCard extends StatelessWidget {
     );
   }
 
-  Widget _metric(String label, String value) {
+  Widget _metric(BuildContext context, String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -269,7 +269,7 @@ class ProfileActivityListCard extends StatelessWidget {
         Text(
           label,
           style: SnowtrakTypography.labelSmall.copyWith(
-            color: SnowtrakColors.textTertiary,
+            color: context.colors.textTertiary,
             fontSize: 11,
           ),
         ),
@@ -277,7 +277,7 @@ class ProfileActivityListCard extends StatelessWidget {
         Text(
           value,
           style: SnowtrakTypography.bodyMedium.copyWith(
-            color: SnowtrakColors.textPrimary,
+            color: context.colors.textPrimary,
             fontWeight: FontWeight.w600,
             fontSize: 15,
           ),
@@ -288,28 +288,28 @@ class ProfileActivityListCard extends StatelessWidget {
     );
   }
 
-  Widget _mapPreview() {
+  Widget _mapPreview(BuildContext context) {
     try {
       return Image.asset(
         'assets/images/activities_demo_1.jpg',
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
           return Container(
-            color: SnowtrakColors.surfaceVariant,
+            color: context.colors.surfaceVariant,
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.map,
-                    color: SnowtrakColors.textTertiary,
+                    color: context.colors.textTertiary,
                     size: 40,
                   ),
                   const SizedBox(height: SnowtrakSpacing.sm),
                   Text(
                     'Map preview',
                     style: SnowtrakTypography.bodySmall.copyWith(
-                      color: SnowtrakColors.textTertiary,
+                      color: context.colors.textTertiary,
                     ),
                   ),
                 ],
@@ -320,11 +320,11 @@ class ProfileActivityListCard extends StatelessWidget {
       );
     } catch (e) {
       return Container(
-        color: SnowtrakColors.surfaceVariant,
-        child: const Center(
+        color: context.colors.surfaceVariant,
+        child: Center(
           child: Icon(
             Icons.map,
-            color: SnowtrakColors.textTertiary,
+            color: context.colors.textTertiary,
             size: 40,
           ),
         ),
@@ -332,14 +332,14 @@ class ProfileActivityListCard extends StatelessWidget {
     }
   }
 
-  Widget _actionButton({
+  Widget _actionButton(BuildContext context, {
     required IconData icon,
     required String label,
     int? count,
     Color? color,
     required VoidCallback onTap,
   }) {
-    final buttonColor = color ?? SnowtrakColors.textSecondary;
+    final buttonColor = color ?? context.colors.textSecondary;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(SnowtrakRadius.md),

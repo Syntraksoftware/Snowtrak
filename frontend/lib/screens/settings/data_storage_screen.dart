@@ -15,9 +15,9 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SnowtrakColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: SnowtrakColors.background,
+        backgroundColor: context.colors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -351,9 +351,9 @@ class _SettingsActionRow extends StatelessWidget {
                   children: [
                     Text(
                       label,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 17,
-                        color: SnowtrakColors.ink,
+                        color: context.colors.primary,
                       ),
                     ),
                     if (subtitle != null) ...[
@@ -400,9 +400,9 @@ class _SyncStatusRow extends StatelessWidget {
           CupertinoButton(
             padding: EdgeInsets.zero,
             onPressed: onSync,
-            child: const Text(
+            child: Text(
               'Sync Now',
-              style: TextStyle(color: SnowtrakColors.ink),
+              style: TextStyle(color: context.colors.primary),
             ),
           ),
         ],

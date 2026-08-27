@@ -24,8 +24,8 @@ class GroupChallengeItem {
 }
 
 List<GroupChallengeItem> mockGroupChallenges() {
-  return const [
-    GroupChallengeItem(
+  return [
+    const GroupChallengeItem(
       id: '1',
       title: 'January Vertical Challenge',
       description: 'Accumulate 10,000m of vertical descent in January',
@@ -34,7 +34,7 @@ List<GroupChallengeItem> mockGroupChallenges() {
       badgeColor: SnowtrakColors.warning,
       icon: Icons.terrain,
     ),
-    GroupChallengeItem(
+    const GroupChallengeItem(
       id: '2',
       title: 'Winter Explorer Challenge',
       description: 'Visit 5 different ski resorts this season',
@@ -43,7 +43,7 @@ List<GroupChallengeItem> mockGroupChallenges() {
       badgeColor: SnowtrakColors.info,
       icon: Icons.explore,
     ),
-    GroupChallengeItem(
+    const GroupChallengeItem(
       id: '3',
       title: 'Speed Demon Challenge',
       description: 'Record a run with max speed over 80 km/h',
@@ -90,7 +90,7 @@ class ActiveGroupChallengeCard extends StatelessWidget {
                     challenge.title,
                     style: SnowtrakTypography.bodyLarge.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: SnowtrakColors.textPrimary,
+                      color: context.colors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -99,14 +99,14 @@ class ActiveGroupChallengeCard extends StatelessWidget {
                       Icon(
                         challenge.icon,
                         size: 14,
-                        color: SnowtrakColors.textTertiary,
+                        color: context.colors.textTertiary,
                       ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
                           challenge.description,
                           style: SnowtrakTypography.bodySmall.copyWith(
-                            color: SnowtrakColors.textSecondary,
+                            color: context.colors.textSecondary,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -118,7 +118,7 @@ class ActiveGroupChallengeCard extends StatelessWidget {
                   Text(
                     challenge.dateRange,
                     style: SnowtrakTypography.labelSmall.copyWith(
-                      color: SnowtrakColors.textTertiary,
+                      color: context.colors.textTertiary,
                     ),
                   ),
                 ],

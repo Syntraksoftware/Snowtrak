@@ -74,8 +74,8 @@ class _ActivityRow extends StatelessWidget {
             Container(
               width: 40,
               height: 40,
-              decoration: const BoxDecoration(
-                color: SnowtrakColors.surfaceVariant,
+              decoration: BoxDecoration(
+                color: context.colors.surfaceVariant,
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
@@ -83,7 +83,7 @@ class _ActivityRow extends StatelessWidget {
                 title.characters.first.toUpperCase(),
                 style: SnowtrakTypography.bodyLarge.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: SnowtrakColors.textTertiary,
+                  color: context.colors.textTertiary,
                 ),
               ),
             ),
@@ -98,7 +98,7 @@ class _ActivityRow extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: SnowtrakTypography.labelLarge.copyWith(
-                      color: SnowtrakColors.textPrimary,
+                      color: context.colors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -107,7 +107,7 @@ class _ActivityRow extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: SnowtrakTypography.labelMedium.copyWith(
-                      color: SnowtrakColors.textTertiary,
+                      color: context.colors.textTertiary,
                     ),
                   ),
                 ],
@@ -131,13 +131,13 @@ class _EmptyRow extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       child: Row(
         children: [
-          const StIcon(StIcons.ski, size: 18, color: SnowtrakColors.textTertiary),
+          StIcon(StIcons.ski, size: 18, color: context.colors.textTertiary),
           const SizedBox(width: SnowtrakSpacing.smd),
           Expanded(
             child: Text(
               'No sessions yet. Hit Record to log your first run.',
               style: SnowtrakTypography.bodyMedium.copyWith(
-                color: SnowtrakColors.textTertiary,
+                color: context.colors.textTertiary,
               ),
             ),
           ),

@@ -9,7 +9,7 @@ Future<void> showTrailsDifficultyPicker(
 }) {
   return showModalBottomSheet(
     context: context,
-    backgroundColor: SnowtrakColors.surface,
+    backgroundColor: context.colors.surface,
     shape: const RoundedRectangleBorder(
       borderRadius:
           BorderRadius.vertical(top: Radius.circular(SnowtrakRadius.xl)),
@@ -23,7 +23,7 @@ Future<void> showTrailsDifficultyPicker(
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: SnowtrakColors.divider,
+              color: context.colors.divider,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -80,7 +80,7 @@ Future<void> showTrailsCountryPicker(
 }) {
   return showModalBottomSheet(
     context: context,
-    backgroundColor: SnowtrakColors.surface,
+    backgroundColor: context.colors.surface,
     shape: const RoundedRectangleBorder(
       borderRadius:
           BorderRadius.vertical(top: Radius.circular(SnowtrakRadius.xl)),
@@ -94,7 +94,7 @@ Future<void> showTrailsCountryPicker(
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: SnowtrakColors.divider,
+              color: context.colors.divider,
               borderRadius: BorderRadius.circular(2),
             ),
           ),

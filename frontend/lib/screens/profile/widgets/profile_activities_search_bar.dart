@@ -14,7 +14,7 @@ class ProfileActivitiesSearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: SnowtrakColors.surface,
+      color: context.colors.surface,
       padding: const EdgeInsets.fromLTRB(
         SnowtrakSpacing.md,
         SnowtrakSpacing.md,
@@ -24,29 +24,29 @@ class ProfileActivitiesSearchBar extends StatelessWidget {
       child: Container(
         height: 44,
         decoration: BoxDecoration(
-          color: SnowtrakColors.surfaceVariant,
+          color: context.colors.surfaceVariant,
           borderRadius: BorderRadius.circular(12),
         ),
         child: TextField(
           controller: controller,
           style: SnowtrakTypography.bodyMedium.copyWith(
-            color: SnowtrakColors.textPrimary,
+            color: context.colors.textPrimary,
           ),
           decoration: InputDecoration(
             hintText: 'Search activities...',
             hintStyle: SnowtrakTypography.bodyMedium.copyWith(
-              color: SnowtrakColors.textTertiary,
+              color: context.colors.textTertiary,
             ),
-            prefixIcon: const Icon(
+            prefixIcon: Icon(
               Icons.search,
-              color: SnowtrakColors.textTertiary,
+              color: context.colors.textTertiary,
               size: 22,
             ),
             suffixIcon: controller.text.isNotEmpty
                 ? IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.close,
-                      color: SnowtrakColors.textSecondary,
+                      color: context.colors.textSecondary,
                       size: 20,
                     ),
                     onPressed: onClear,

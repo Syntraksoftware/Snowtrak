@@ -811,7 +811,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
                 pinned: true,
                 floating: false,
                 automaticallyImplyLeading: false,
-                backgroundColor: SnowtrakColors.surface,
+                backgroundColor: context.colors.surface,
                 surfaceTintColor: Colors.transparent,
                 elevation: innerBoxIsScrolled ? 2 : 0,
                 shadowColor: Colors.black26,
@@ -849,14 +849,14 @@ class _ThreadsTabState extends State<ThreadsTab> {
           ),
         ),
         if (_activeUploadOps > 0)
-          const Positioned(
+          Positioned(
             left: 0,
             right: 0,
             bottom: 0,
             child: LinearProgressIndicator(
               minHeight: 2.5,
               backgroundColor: Colors.transparent,
-              valueColor: AlwaysStoppedAnimation<Color>(SnowtrakColors.primary),
+              valueColor: AlwaysStoppedAnimation<Color>(context.colors.primary),
             ),
           ),
       ],

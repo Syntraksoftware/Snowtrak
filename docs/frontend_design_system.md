@@ -196,6 +196,15 @@ missing line of code.
   design decision, not a code fix: invert the button, introduce a real accent
   for dark, or switch to an outlined treatment. Deferred with the rest of dark
   mode; settle it before Phase 4, not during.
+- **Fifteen reads still sit on `SnowtrakColors` in `screens/`.** They are
+  on-system values, not stray hex, but they read layer 1 because the palette
+  has no role for what they do: the dark icon tiles behind the iOS-style
+  settings rows (`neutral600`), decorative tints (`primaryLight` at 20%
+  opacity), a gradient stop, an inactive indicator (`neutral300`), and the
+  record screen's deliberately dark map chrome (`darkBackground`). Inventing a
+  hex for these would be wrong and so would forcing them onto a role that means
+  something else. Each needs a design answer first -- is there a role for an
+  icon-tile background, and should decorative tints exist at all.
 - **Status colours are shared across modes.** `success`, `warning`, `error`,
   `info`, and `live` use the same value in `light` and `dark`. Saturated hues on
   a dark page usually want lightening. Tune the five in `SnowtrakPalette.dark`

@@ -31,10 +31,10 @@ class HomeSelectableChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: selected
                 ? accent.withValues(alpha: 0.12)
-                : SnowtrakColors.surfaceVariant,
+                : context.colors.surfaceVariant,
             borderRadius: BorderRadius.circular(SnowtrakRadius.round),
             border: Border.all(
-              color: selected ? accent : SnowtrakColors.divider,
+              color: selected ? accent : context.colors.divider,
               width: selected ? 1.5 : 1,
             ),
           ),
@@ -49,14 +49,14 @@ class HomeSelectableChip extends StatelessWidget {
                 Icon(
                   icon,
                   size: dense ? 14 : 16,
-                  color: selected ? accent : SnowtrakColors.textSecondary,
+                  color: selected ? accent : context.colors.textSecondary,
                 ),
                 SizedBox(width: dense ? 4 : 6),
               ],
               Text(
                 label,
                 style: SnowtrakTypography.labelMedium.copyWith(
-                  color: selected ? accent : SnowtrakColors.textSecondary,
+                  color: selected ? accent : context.colors.textSecondary,
                   fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                 ),
               ),

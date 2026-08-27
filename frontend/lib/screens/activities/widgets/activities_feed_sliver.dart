@@ -42,23 +42,23 @@ class ActivitiesFeedSliver extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.downhill_skiing,
                       size: 80,
-                      color: SnowtrakColors.textTertiary,
+                      color: context.colors.textTertiary,
                     ),
                     const SizedBox(height: SnowtrakSpacing.lg),
                     Text(
                       'No activities yet',
                       style: SnowtrakTypography.headlineMedium.copyWith(
-                        color: SnowtrakColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: SnowtrakSpacing.sm),
                     Text(
                       'Start recording your first skiing activity!',
                       style: SnowtrakTypography.bodyMedium.copyWith(
-                        color: SnowtrakColors.textTertiary,
+                        color: context.colors.textTertiary,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -100,7 +100,7 @@ class ActivitiesFeedSliver extends StatelessWidget {
                 Text(
                   'Your activities',
                   style: SnowtrakTypography.headlineSmall.copyWith(
-                    color: SnowtrakColors.textPrimary,
+                    color: context.colors.textPrimary,
                   ),
                 ),
               ],

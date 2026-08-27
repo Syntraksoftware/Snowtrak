@@ -33,9 +33,9 @@ class _NotificationsSettingsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SnowtrakColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: SnowtrakColors.background,
+        backgroundColor: context.colors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -297,7 +297,7 @@ class _SettingsToggleRow extends StatelessWidget {
           CupertinoSwitch(
             value: value,
             onChanged: onChanged,
-            activeColor: SnowtrakColors.success,
+            activeColor: context.colors.success,
           ),
         ],
       ),

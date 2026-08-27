@@ -84,7 +84,7 @@ class _StatsCarouselState extends State<StatsCarousel> {
                   height: 5,
                   decoration: BoxDecoration(
                     color: i == _page
-                        ? SnowtrakColors.ink
+                        ? context.colors.primary
                         : SnowtrakColors.neutral300,
                     borderRadius: BorderRadius.circular(SnowtrakRadius.round),
                   ),
@@ -126,14 +126,14 @@ class _SummaryCard extends StatelessWidget {
                             ? 'This Week'
                             : 'This Month',
                         style: SnowtrakTypography.headlineSmall.copyWith(
-                          color: SnowtrakColors.textPrimary,
+                          color: context.colors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 3),
                       Text(
                         range,
                         style: SnowtrakTypography.labelMedium.copyWith(
-                          color: SnowtrakColors.textTertiary,
+                          color: context.colors.textTertiary,
                         ),
                       ),
                     ],
@@ -144,7 +144,7 @@ class _SummaryCard extends StatelessWidget {
                   constraints: const BoxConstraints(minHeight: 44),
                   padding: const EdgeInsets.symmetric(vertical: 5),
                   decoration: BoxDecoration(
-                    color: SnowtrakColors.surfaceVariant,
+                    color: context.colors.surfaceVariant,
                     borderRadius: BorderRadius.circular(SnowtrakRadius.md),
                   ),
                   child: Column(
@@ -155,14 +155,14 @@ class _SummaryCard extends StatelessWidget {
                         '${stats.sessions}',
                         style: SnowtrakTypography.headlineSmall.copyWith(
                           fontSize: 16,
-                          color: SnowtrakColors.textPrimary,
+                          color: context.colors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 1),
                       Text(
                         'Sessions',
                         style: SnowtrakTypography.caption.copyWith(
-                          color: SnowtrakColors.textTertiary,
+                          color: context.colors.textTertiary,
                         ),
                       ),
                     ],
@@ -233,14 +233,14 @@ class _SessionCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: SnowtrakTypography.headlineSmall.copyWith(
-                          color: SnowtrakColors.textPrimary,
+                          color: context.colors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 3),
                       Text(
                         when,
                         style: SnowtrakTypography.labelMedium.copyWith(
-                          color: SnowtrakColors.textTertiary,
+                          color: context.colors.textTertiary,
                         ),
                       ),
                     ],

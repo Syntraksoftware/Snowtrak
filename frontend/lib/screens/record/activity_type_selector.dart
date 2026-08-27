@@ -56,7 +56,7 @@ class _ActivityTypePicker extends StatelessWidget {
           Text(
             'Select Activity',
             style: SnowtrakTypography.headlineSmall.copyWith(
-              color: SnowtrakColors.textPrimary,
+              color: context.colors.textPrimary,
             ),
           ),
           const SizedBox(height: 16),
@@ -94,9 +94,9 @@ class _TypeTile extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: SnowtrakColors.surfaceVariant,
+          color: context.colors.surfaceVariant,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: SnowtrakColors.divider),
+          border: Border.all(color: context.colors.divider),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -114,7 +114,7 @@ class _TypeTile extends StatelessWidget {
             Text(
               type.displayName,
               style: SnowtrakTypography.labelMedium.copyWith(
-                color: SnowtrakColors.textPrimary,
+                color: context.colors.textPrimary,
               ),
               textAlign: TextAlign.center,
             ),

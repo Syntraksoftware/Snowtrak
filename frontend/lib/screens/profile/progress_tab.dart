@@ -19,9 +19,9 @@ class ProgressTab extends StatelessWidget {
 
     return RefreshIndicator(
       onRefresh: () => provider.loadActivities(refresh: true, forceNetwork: true),
-      color: SnowtrakColors.primary,
+      color: context.colors.primary,
       child: ColoredBox(
-        color: SnowtrakColors.surface,
+        color: context.colors.surface,
         child: provider.isLoading && stats == null
           ? const SkeletonFeedList()
           : stats == null
@@ -94,23 +94,23 @@ class _EmptyProgressState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.downhill_skiing,
             size: 56,
-            color: SnowtrakColors.textTertiary,
+            color: context.colors.textTertiary,
           ),
           const SizedBox(height: SnowtrakSpacing.md),
           Text(
             'No activities yet',
             style: SnowtrakTypography.headlineSmall.copyWith(
-              color: SnowtrakColors.textPrimary,
+              color: context.colors.textPrimary,
             ),
           ),
           const SizedBox(height: SnowtrakSpacing.xs),
           Text(
             'Record your first run to see your progress here.',
             style: SnowtrakTypography.bodyMedium.copyWith(
-              color: SnowtrakColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
             textAlign: TextAlign.center,
           ),

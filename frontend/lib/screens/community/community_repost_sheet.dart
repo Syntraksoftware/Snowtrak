@@ -67,7 +67,7 @@ class _RepostSheetTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: SnowtrakColors.surfaceVariant,
+      color: context.colors.surfaceVariant,
       borderRadius: BorderRadius.circular(28),
       child: InkWell(
         onTap: onTap,

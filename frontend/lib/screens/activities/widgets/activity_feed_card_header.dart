@@ -25,11 +25,11 @@ class ActivityFeedCardHeader extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 20,
-            backgroundColor: SnowtrakColors.primary,
+            backgroundColor: context.colors.primary,
             child: Text(
               (athleteName ?? 'U')[0].toUpperCase(),
               style: SnowtrakTypography.headlineSmall.copyWith(
-                color: SnowtrakColors.textOnPrimary,
+                color: context.colors.textOnPrimary,
               ),
             ),
           ),
@@ -43,16 +43,16 @@ class ActivityFeedCardHeader extends StatelessWidget {
                     Text(
                       athleteName ?? 'You',
                       style: SnowtrakTypography.bodyMedium.copyWith(
-                        color: SnowtrakColors.textPrimary,
+                        color: context.colors.textPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(width: SnowtrakSpacing.xs),
                     if (!activity.isPublic)
-                      const Icon(
+                      Icon(
                         Icons.lock_outline,
                         size: 14,
-                        color: SnowtrakColors.textTertiary,
+                        color: context.colors.textTertiary,
                       ),
                   ],
                 ),
@@ -62,7 +62,7 @@ class ActivityFeedCardHeader extends StatelessWidget {
                     Text(
                       formatRelativeActivityTime(activity.startTime),
                       style: SnowtrakTypography.labelSmall.copyWith(
-                        color: SnowtrakColors.textTertiary,
+                        color: context.colors.textTertiary,
                       ),
                     ),
                     const SizedBox(width: SnowtrakSpacing.xs),
@@ -74,13 +74,13 @@ class ActivityFeedCardHeader extends StatelessWidget {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: SnowtrakColors.surfaceVariant,
+                        color: context.colors.surfaceVariant,
                         borderRadius: BorderRadius.circular(SnowtrakRadius.sm),
                       ),
                       child: Text(
                         'Phone',
                         style: SnowtrakTypography.labelSmall.copyWith(
-                          color: SnowtrakColors.textTertiary,
+                          color: context.colors.textTertiary,
                           fontSize: 10,
                         ),
                       ),

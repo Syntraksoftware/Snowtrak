@@ -39,7 +39,7 @@ class _Stat extends StatelessWidget {
           Text(
             value,
             style: SnowtrakTypography.bodyMedium.copyWith(
-              color: SnowtrakColors.textPrimary,
+              color: context.colors.textPrimary,
               fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
@@ -50,7 +50,7 @@ class _Stat extends StatelessWidget {
           Text(
             label,
             style: SnowtrakTypography.labelSmall.copyWith(
-              color: SnowtrakColors.textTertiary,
+              color: context.colors.textTertiary,
             ),
             textAlign: TextAlign.center,
           ),

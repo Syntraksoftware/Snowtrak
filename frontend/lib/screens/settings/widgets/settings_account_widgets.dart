@@ -135,7 +135,7 @@ class SettingsAccountToggleRow extends StatelessWidget {
           CupertinoSwitch(
             value: value,
             onChanged: onChanged,
-            activeColor: SnowtrakColors.success,
+            activeColor: context.colors.success,
           ),
         ],
       ),
@@ -184,7 +184,7 @@ class SettingsAccountConnectedRow extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isConnected
                       ? Colors.grey[200]
-                      : SnowtrakColors.ink,
+                      : context.colors.primary,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(

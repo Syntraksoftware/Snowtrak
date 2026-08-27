@@ -25,9 +25,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final user = authProvider.user;
 
     return Scaffold(
-      backgroundColor: SnowtrakColors.background, // iOS system background
+      backgroundColor: context.colors.background, // iOS system background
       appBar: AppBar(
-        backgroundColor: SnowtrakColors.background,
+        backgroundColor: context.colors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -57,13 +57,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               SettingsIosRow(
                 icon: Icons.notifications,
-                iconBackground: SnowtrakColors.error, // iOS Red
+                iconBackground: context.colors.error, // iOS Red
                 label: 'Notifications',
                 onTap: () => _navigateTo(const NotificationsSettingsScreen()),
               ),
               SettingsIosRow(
                 icon: Icons.lock,
-                iconBackground: SnowtrakColors.success, // iOS Green
+                iconBackground: context.colors.success, // iOS Green
                 label: 'Privacy & Security',
                 onTap: () => _navigateTo(const PrivacySettingsScreen()),
               ),
@@ -78,7 +78,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               SettingsIosRow(
                 icon: Icons.person,
-                iconBackground: SnowtrakColors.ink, // iOS Blue
+                iconBackground: context.colors.primary, // iOS Blue
                 label: 'Account',
                 subtitle: 'Password, email, security',
                 onTap: () => _navigateTo(const AccountSettingsScreen()),
@@ -94,7 +94,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               SettingsIosRow(
                 icon: Icons.downhill_skiing,
-                iconBackground: SnowtrakColors.warning, // iOS Orange
+                iconBackground: context.colors.warning, // iOS Orange
                 label: 'Activity & Recording',
                 subtitle: 'GPS, units, auto-pause',
                 onTap: () => _navigateTo(const ActivitySettingsScreen()),
@@ -108,7 +108,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               SettingsIosRow(
                 icon: Icons.storage,
-                iconBackground: SnowtrakColors.textTertiary, // iOS Gray
+                iconBackground: context.colors.textTertiary, // iOS Gray
                 label: 'Data & Storage',
                 subtitle: 'Cache, offline maps, export',
                 onTap: () => _navigateTo(const DataStorageScreen()),
@@ -124,13 +124,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               SettingsIosRow(
                 icon: Icons.help,
-                iconBackground: SnowtrakColors.ink, // iOS Blue
+                iconBackground: context.colors.primary, // iOS Blue
                 label: 'Help & Support',
                 onTap: () => _navigateTo(const HelpSupportScreen()),
               ),
               SettingsIosRow(
                 icon: Icons.info,
-                iconBackground: SnowtrakColors.textTertiary, // iOS Gray
+                iconBackground: context.colors.textTertiary, // iOS Gray
                 label: 'About Snowtrak',
                 subtitle: 'Version 1.0.0',
                 onTap: () => _showAboutDialog(),
@@ -145,7 +145,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               SettingsIosActionRow(
                 label: 'Sign Out',
-                textColor: SnowtrakColors.ink,
+                textColor: context.colors.primary,
                 onTap: () => _showLogoutConfirmation(),
               ),
             ],
@@ -158,7 +158,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               SettingsIosActionRow(
                 label: 'Delete Account',
-                textColor: SnowtrakColors.error,
+                textColor: context.colors.error,
                 onTap: () => _showDeleteAccountConfirmation(),
               ),
             ],
@@ -214,22 +214,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
             GestureDetector(
               onTap: () {},
-              child: const Text(
+              child: Text(
                 'Terms of Service',
                 style: TextStyle(
                   fontSize: 14,
-                  color: SnowtrakColors.ink,
+                  color: context.colors.primary,
                 ),
               ),
             ),
             const SizedBox(height: 8),
             GestureDetector(
               onTap: () {},
-              child: const Text(
+              child: Text(
                 'Privacy Policy',
                 style: TextStyle(
                   fontSize: 14,
-                  color: SnowtrakColors.ink,
+                  color: context.colors.primary,
                 ),
               ),
             ),
@@ -238,9 +238,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
+            child: Text(
               'Done',
-              style: TextStyle(color: SnowtrakColors.ink),
+              style: TextStyle(color: context.colors.primary),
             ),
           ),
         ],
@@ -258,9 +258,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text(
+            child: Text(
               'Cancel',
-              style: TextStyle(color: SnowtrakColors.ink),
+              style: TextStyle(color: context.colors.primary),
             ),
           ),
           TextButton(
@@ -280,9 +280,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     .popUntil((route) => route.isFirst);
               }
             },
-            child: const Text(
+            child: Text(
               'Sign Out',
-              style: TextStyle(color: SnowtrakColors.error),
+              style: TextStyle(color: context.colors.error),
             ),
           ),
         ],
@@ -302,9 +302,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
+            child: Text(
               'Cancel',
-              style: TextStyle(color: SnowtrakColors.ink),
+              style: TextStyle(color: context.colors.primary),
             ),
           ),
           TextButton(
@@ -317,9 +317,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               );
             },
-            child: const Text(
+            child: Text(
               'Delete',
-              style: TextStyle(color: SnowtrakColors.error),
+              style: TextStyle(color: context.colors.error),
             ),
           ),
         ],

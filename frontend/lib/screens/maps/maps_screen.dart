@@ -261,7 +261,7 @@ class _MapsScreenState extends State<MapsScreen> {
                     _initializeMap();
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: SnowtrakColors.ink,
+                    backgroundColor: context.colors.primary,
                     foregroundColor: Colors.white,
                   ),
                   child: const Text('Retry'),
@@ -274,11 +274,11 @@ class _MapsScreenState extends State<MapsScreen> {
     }
 
     if (_isLoading || _initialCameraPosition == null) {
-      return const Scaffold(
-        appBar: StPageHeader(title: 'Map'),
+      return Scaffold(
+        appBar: const StPageHeader(title: 'Map'),
         body: Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(SnowtrakColors.ink),
+            valueColor: AlwaysStoppedAnimation<Color>(context.colors.primary),
           ),
         ),
       );
@@ -384,8 +384,8 @@ class _MapsScreenState extends State<MapsScreen> {
             bottom: _activities.isNotEmpty ? 140 : 24,
             child: FloatingActionButton.small(
               heroTag: 'maps-center-location',
-              backgroundColor: SnowtrakColors.ink,
-              foregroundColor: SnowtrakColors.textOnPrimary,
+              backgroundColor: context.colors.primary,
+              foregroundColor: context.colors.textOnPrimary,
               onPressed: _centerOnMyLocation,
               tooltip: 'Center on my location',
               child: const Icon(Icons.my_location),
@@ -453,7 +453,7 @@ class _StyleToggleButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? SnowtrakColors.ink : Colors.white,
+      color: selected ? context.colors.primary : Colors.white,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),

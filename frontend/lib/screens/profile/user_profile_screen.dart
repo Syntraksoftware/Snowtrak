@@ -206,7 +206,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         isOwnProfile ? context.watch<ActivityProvider>().activities : null;
 
     return Scaffold(
-      backgroundColor: SnowtrakColors.background,
+      backgroundColor: context.colors.background,
       // StPageHeader is a plain container, not an AppBar -- it does not inset
       // itself for the status bar, so as `appBar:` it drew under the notch.
       // It belongs inside SafeArea, the way ProfileScreen uses it.
@@ -218,11 +218,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               // The handle up here, the full name on the card below. Putting
               // the name in both made the top of the page say it twice.
               title: _headerTitle(),
-              leading: const BackButton(color: SnowtrakColors.textPrimary),
+              leading: BackButton(color: context.colors.textPrimary),
             ),
             Expanded(
               child: RefreshIndicator(
-                color: SnowtrakColors.ink,
+                color: context.colors.primary,
                 onRefresh: _handleRefresh,
                 // Every section renders on every profile. A failed post load
                 // used to replace the whole page, so a working profile
@@ -281,7 +281,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 _error!,
                 textAlign: TextAlign.center,
                 style: SnowtrakTypography.bodyMedium.copyWith(
-                  color: SnowtrakColors.error,
+                  color: context.colors.error,
                 ),
               ),
               if (_errorRetryable) ...[
@@ -305,7 +305,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             child: Text(
               'No posts yet',
               style: SnowtrakTypography.bodyLarge.copyWith(
-                color: SnowtrakColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
           ),

@@ -22,16 +22,16 @@ class HomeSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = iconColor ?? SnowtrakColors.primary;
+    final accent = iconColor ?? context.colors.primary;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: SnowtrakSpacing.md),
       child: Material(
-        color: SnowtrakColors.surface,
+        color: context.colors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
-          side: const BorderSide(color: SnowtrakColors.divider),
+          side: BorderSide(color: context.colors.divider),
         ),
         clipBehavior: Clip.antiAlias,
         child: Padding(
@@ -58,7 +58,7 @@ class HomeSectionCard extends StatelessWidget {
                         Text(
                           title,
                           style: SnowtrakTypography.labelLarge.copyWith(
-                            color: SnowtrakColors.textPrimary,
+                            color: context.colors.textPrimary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -67,7 +67,7 @@ class HomeSectionCard extends StatelessWidget {
                           Text(
                             subtitle!,
                             style: SnowtrakTypography.bodySmall.copyWith(
-                              color: SnowtrakColors.textSecondary,
+                              color: context.colors.textSecondary,
                             ),
                           ),
                         ],

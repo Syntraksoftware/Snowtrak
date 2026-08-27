@@ -20,7 +20,7 @@ class TrailsSearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: SnowtrakColors.background,
+      color: context.colors.background,
       padding: const EdgeInsets.fromLTRB(
         SnowtrakSpacing.md,
         SnowtrakSpacing.sm,
@@ -31,17 +31,17 @@ class TrailsSearchBar extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
           color: isSearchFocused
-              ? SnowtrakColors.surface
-              : SnowtrakColors.surfaceVariant,
+              ? context.colors.surface
+              : context.colors.surfaceVariant,
           borderRadius: BorderRadius.circular(SnowtrakRadius.round),
           border: Border.all(
-            color: isSearchFocused ? SnowtrakColors.primary : Colors.transparent,
+            color: isSearchFocused ? context.colors.primary : Colors.transparent,
             width: 2,
           ),
           boxShadow: isSearchFocused
               ? [
                   BoxShadow(
-                    color: SnowtrakColors.primary.withAlpha(30),
+                    color: context.colors.primary.withAlpha(30),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -53,24 +53,24 @@ class TrailsSearchBar extends StatelessWidget {
           focusNode: focusNode,
           onChanged: (_) => onQueryChanged(),
           style: SnowtrakTypography.bodyMedium.copyWith(
-            color: SnowtrakColors.textPrimary,
+            color: context.colors.textPrimary,
           ),
           decoration: InputDecoration(
             hintText: 'Search trails, resorts...',
             hintStyle: SnowtrakTypography.bodyMedium.copyWith(
-              color: SnowtrakColors.textTertiary,
+              color: context.colors.textTertiary,
             ),
             prefixIcon: Icon(
               Icons.search,
               color: isSearchFocused
-                  ? SnowtrakColors.primary
-                  : SnowtrakColors.textTertiary,
+                  ? context.colors.primary
+                  : context.colors.textTertiary,
             ),
             suffixIcon: controller.text.isNotEmpty
                 ? IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.close,
-                      color: SnowtrakColors.textSecondary,
+                      color: context.colors.textSecondary,
                       size: 20,
                     ),
                     onPressed: onClear,

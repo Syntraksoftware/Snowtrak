@@ -23,9 +23,9 @@ class _ProfilePrivacyControlsState extends State<ProfilePrivacyControls> {
       children: [
         DecoratedBox(
           decoration: BoxDecoration(
-            color: SnowtrakColors.surfaceVariant,
+            color: context.colors.surfaceVariant,
             borderRadius: BorderRadius.circular(SnowtrakRadius.md),
-            border: Border.all(color: SnowtrakColors.divider),
+            border: Border.all(color: context.colors.divider),
           ),
           child: Column(
             children: [
@@ -126,14 +126,14 @@ class ProfilePrivacyToggleRow extends StatelessWidget {
                     Text(
                       title,
                       style: SnowtrakTypography.labelLarge.copyWith(
-                        color: SnowtrakColors.textPrimary,
+                        color: context.colors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
                       style: SnowtrakTypography.bodySmall.copyWith(
-                        color: SnowtrakColors.textSecondary,
+                        color: context.colors.textSecondary,
                         height: 1.35,
                       ),
                     ),
@@ -143,21 +143,21 @@ class ProfilePrivacyToggleRow extends StatelessWidget {
               Switch.adaptive(
                 value: value,
                 onChanged: onChanged,
-                activeThumbColor: SnowtrakColors.textOnPrimary,
+                activeThumbColor: context.colors.textOnPrimary,
                 activeTrackColor: context.colors.primary,
-                inactiveThumbColor: SnowtrakColors.surface,
-                inactiveTrackColor: SnowtrakColors.border,
+                inactiveThumbColor: context.colors.surface,
+                inactiveTrackColor: context.colors.border,
               ),
             ],
           ),
         ),
         if (showDivider)
-          const Padding(
-            padding: EdgeInsets.only(left: 48),
+          Padding(
+            padding: const EdgeInsets.only(left: 48),
             child: Divider(
               height: 1,
               thickness: 1,
-              color: SnowtrakColors.divider,
+              color: context.colors.divider,
             ),
           ),
       ],

@@ -34,9 +34,9 @@ class _ProgressActivityCalendarState extends State<ProgressActivityCalendar> {
       margin: const EdgeInsets.symmetric(horizontal: SnowtrakSpacing.md),
       padding: const EdgeInsets.all(SnowtrakSpacing.lg),
       decoration: BoxDecoration(
-        color: SnowtrakColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
-        border: Border.all(color: SnowtrakColors.divider),
+        border: Border.all(color: context.colors.divider),
         boxShadow: SnowtrakElevation.sm,
       ),
       child: TableCalendar(
@@ -50,15 +50,15 @@ class _ProgressActivityCalendarState extends State<ProgressActivityCalendar> {
           formatButtonVisible: false,
           titleCentered: true,
           titleTextStyle: SnowtrakTypography.headlineSmall.copyWith(
-            color: SnowtrakColors.textPrimary,
+            color: context.colors.textPrimary,
           ),
-          leftChevronIcon: const Icon(
+          leftChevronIcon: Icon(
             Icons.chevron_left,
-            color: SnowtrakColors.primary,
+            color: context.colors.primary,
           ),
-          rightChevronIcon: const Icon(
+          rightChevronIcon: Icon(
             Icons.chevron_right,
-            color: SnowtrakColors.primary,
+            color: context.colors.primary,
           ),
         ),
         daysOfWeekVisible: true,
@@ -66,18 +66,18 @@ class _ProgressActivityCalendarState extends State<ProgressActivityCalendar> {
         calendarStyle: CalendarStyle(
           outsideDaysVisible: false,
           defaultTextStyle: SnowtrakTypography.labelSmall.copyWith(
-            color: SnowtrakColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
           weekendTextStyle: SnowtrakTypography.labelSmall.copyWith(
-            color: SnowtrakColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
         daysOfWeekStyle: DaysOfWeekStyle(
           weekdayStyle: SnowtrakTypography.labelSmall.copyWith(
-            color: SnowtrakColors.textTertiary,
+            color: context.colors.textTertiary,
           ),
           weekendStyle: SnowtrakTypography.labelSmall.copyWith(
-            color: SnowtrakColors.textTertiary,
+            color: context.colors.textTertiary,
           ),
         ),
         selectedDayPredicate: (_) => false,
@@ -112,11 +112,11 @@ class _DayCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color bg = hasActivity
-        ? SnowtrakColors.primary
+        ? context.colors.primary
         : Colors.transparent;
     final Color textColor = hasActivity
-        ? SnowtrakColors.textOnPrimary
-        : (isToday ? SnowtrakColors.primary : SnowtrakColors.textSecondary);
+        ? context.colors.textOnPrimary
+        : (isToday ? context.colors.primary : context.colors.textSecondary);
 
     return Container(
       margin: const EdgeInsets.all(4),
@@ -124,7 +124,7 @@ class _DayCell extends StatelessWidget {
         color: bg,
         shape: BoxShape.circle,
         border:
-            isToday && !hasActivity ? Border.all(color: SnowtrakColors.primary, width: 2) : null,
+            isToday && !hasActivity ? Border.all(color: context.colors.primary, width: 2) : null,
       ),
       child: Center(
         child: Text(

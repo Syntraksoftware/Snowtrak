@@ -34,7 +34,7 @@ class ActivitiesHeader extends StatelessWidget {
                   TextSpan(
                     text: 'Welcome back, ',
                     style: SnowtrakTypography.bodyLarge.copyWith(
-                      color: SnowtrakColors.textSecondary,
+                      color: context.colors.textSecondary,
                       fontWeight: FontWeight.w500,
                       fontSize: 22,
                       height: 1.2,
@@ -72,13 +72,13 @@ class ActivitiesHeader extends StatelessWidget {
                           ? Text(
                               user!.firstName![0].toUpperCase(),
                               style: SnowtrakTypography.headlineSmall.copyWith(
-                                color: SnowtrakColors.textOnPrimary,
+                                color: context.colors.textOnPrimary,
                                 fontWeight: FontWeight.w700,
                               ),
                             )
-                          : const Icon(
+                          : Icon(
                               Icons.person,
-                              color: SnowtrakColors.textOnPrimary,
+                              color: context.colors.textOnPrimary,
                               size: 22,
                             ),
                     ),

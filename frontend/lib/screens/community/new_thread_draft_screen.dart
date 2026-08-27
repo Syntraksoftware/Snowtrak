@@ -304,7 +304,7 @@ class _NewThreadDraftScreenState extends State<NewThreadDraftScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(18),
-                  color: SnowtrakColors.surfaceVariant,
+                  color: context.colors.surfaceVariant,
                 ),
               ),
             ],

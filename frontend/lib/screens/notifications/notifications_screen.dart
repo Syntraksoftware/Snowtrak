@@ -25,9 +25,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SnowtrakColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: SnowtrakColors.surface,
+        backgroundColor: context.colors.surface,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -51,10 +51,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       'All notifications marked as read',
                     );
                   },
-                  child: const Text(
+                  child: Text(
                     'Mark all read',
                     style: TextStyle(
-                      color: SnowtrakColors.primary,
+                      color: context.colors.primary,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
@@ -115,7 +115,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               child: Text(
                 section,
                 style: SnowtrakTypography.labelMedium.copyWith(
-                  color: SnowtrakColors.textTertiary,
+                  color: context.colors.textTertiary,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.5,
                 ),
@@ -144,28 +144,28 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             Container(
               width: 80,
               height: 80,
-              decoration: const BoxDecoration(
-                color: SnowtrakColors.surfaceVariant,
+              decoration: BoxDecoration(
+                color: context.colors.surfaceVariant,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.notifications_off_outlined,
                 size: 40,
-                color: SnowtrakColors.textTertiary,
+                color: context.colors.textTertiary,
               ),
             ),
             const SizedBox(height: SnowtrakSpacing.lg),
             Text(
               'No Notifications',
               style: SnowtrakTypography.headlineSmall.copyWith(
-                color: SnowtrakColors.textPrimary,
+                color: context.colors.textPrimary,
               ),
             ),
             const SizedBox(height: SnowtrakSpacing.sm),
             Text(
               'When you get notifications, they\'ll show up here',
               style: SnowtrakTypography.bodyMedium.copyWith(
-                color: SnowtrakColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -182,16 +182,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.error_outline,
               size: 48,
-              color: SnowtrakColors.error,
+              color: context.colors.error,
             ),
             const SizedBox(height: SnowtrakSpacing.md),
             Text(
               provider.error ?? 'Something went wrong',
               style: SnowtrakTypography.bodyMedium.copyWith(
-                color: SnowtrakColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -259,7 +259,7 @@ class _NotificationItem extends StatelessWidget {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: SnowtrakSpacing.lg),
-        color: SnowtrakColors.error,
+        color: context.colors.error,
         child: const Icon(
           Icons.delete_outline,
           color: Colors.white,
@@ -267,16 +267,16 @@ class _NotificationItem extends StatelessWidget {
       ),
       child: Material(
         color: notification.isRead 
-            ? SnowtrakColors.surface 
-            : SnowtrakColors.primary.withOpacity(0.05),
+            ? context.colors.surface 
+            : context.colors.primary.withOpacity(0.05),
         child: InkWell(
           onTap: onTap,
           child: Container(
             padding: const EdgeInsets.all(SnowtrakSpacing.md),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                  color: SnowtrakColors.divider,
+                  color: context.colors.divider,
                   width: 0.5,
                 ),
               ),
@@ -301,7 +301,7 @@ class _NotificationItem extends StatelessWidget {
                                 fontWeight: notification.isRead 
                                     ? FontWeight.w500 
                                     : FontWeight.w600,
-                                color: SnowtrakColors.textPrimary,
+                                color: context.colors.textPrimary,
                               ),
                             ),
                           ),
@@ -309,7 +309,7 @@ class _NotificationItem extends StatelessWidget {
                           Text(
                             notification.timeAgo,
                             style: SnowtrakTypography.labelSmall.copyWith(
-                              color: SnowtrakColors.textTertiary,
+                              color: context.colors.textTertiary,
                             ),
                           ),
                         ],
@@ -318,7 +318,7 @@ class _NotificationItem extends StatelessWidget {
                       Text(
                         notification.message,
                         style: SnowtrakTypography.bodyMedium.copyWith(
-                          color: SnowtrakColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -332,8 +332,8 @@ class _NotificationItem extends StatelessWidget {
                   Container(
                     width: 8,
                     height: 8,
-                    decoration: const BoxDecoration(
-                      color: SnowtrakColors.primary,
+                    decoration: BoxDecoration(
+                      color: context.colors.primary,
                       shape: BoxShape.circle,
                     ),
                   ),

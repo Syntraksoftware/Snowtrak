@@ -8,9 +8,9 @@ class HelpSupportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SnowtrakColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: SnowtrakColors.background,
+        backgroundColor: context.colors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -33,21 +33,21 @@ class HelpSupportScreen extends StatelessWidget {
             children: [
               _SettingsRow(
                 icon: Icons.menu_book,
-                iconBackground: SnowtrakColors.ink,
+                iconBackground: context.colors.primary,
                 label: 'Help Center',
                 subtitle: 'FAQ, guides, tutorials',
                 onTap: () => _showToast(context, 'Opening Help Center...'),
               ),
               _SettingsRow(
                 icon: Icons.chat_bubble,
-                iconBackground: SnowtrakColors.success,
+                iconBackground: context.colors.success,
                 label: 'Contact Support',
                 subtitle: 'Get help from our team',
                 onTap: () => _showContactOptions(context),
               ),
               _SettingsRow(
                 icon: Icons.forum,
-                iconBackground: SnowtrakColors.warning,
+                iconBackground: context.colors.warning,
                 label: 'Community Forum',
                 subtitle: 'Ask questions, share tips',
                 onTap: () => _showToast(context, 'Opening Community...'),
@@ -63,7 +63,7 @@ class HelpSupportScreen extends StatelessWidget {
             children: [
               _SettingsRow(
                 icon: Icons.bug_report,
-                iconBackground: SnowtrakColors.error,
+                iconBackground: context.colors.error,
                 label: 'Report a Problem',
                 onTap: () => _showReportDialog(context),
               ),
@@ -90,19 +90,19 @@ class HelpSupportScreen extends StatelessWidget {
             children: [
               _SettingsRow(
                 icon: Icons.gps_fixed,
-                iconBackground: SnowtrakColors.textTertiary,
+                iconBackground: context.colors.textTertiary,
                 label: 'GPS Issues',
                 onTap: () => _showGPSHelp(context),
               ),
               _SettingsRow(
                 icon: Icons.sync_problem,
-                iconBackground: SnowtrakColors.textTertiary,
+                iconBackground: context.colors.textTertiary,
                 label: 'Sync Issues',
                 onTap: () => _showSyncHelp(context),
               ),
               _SettingsRow(
                 icon: Icons.battery_alert,
-                iconBackground: SnowtrakColors.textTertiary,
+                iconBackground: context.colors.textTertiary,
                 label: 'Battery Optimization',
                 onTap: () => _showBatteryHelp(context),
               ),

@@ -28,7 +28,7 @@ class ThreadsEmptyState extends StatelessWidget {
               message,
               textAlign: TextAlign.center,
               style: SnowtrakTypography.bodyMedium.copyWith(
-                color: SnowtrakColors.error,
+                color: context.colors.error,
               ),
             ),
             if (retryable) ...[
@@ -75,7 +75,7 @@ class ThreadsFeedBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return RefreshIndicator(
       onRefresh: onRefresh,
-      color: SnowtrakColors.primary,
+      color: context.colors.primary,
       child: ListView.builder(
         padding: const EdgeInsets.only(bottom: SnowtrakSpacing.md),
         itemCount: posts.length + 1,

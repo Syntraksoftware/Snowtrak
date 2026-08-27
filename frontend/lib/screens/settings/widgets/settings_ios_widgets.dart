@@ -209,11 +209,11 @@ class SettingsIosProfileCard extends StatelessWidget {
                   width: 60,
                   height: 60,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
+                    gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        SnowtrakColors.ink,
+                        context.colors.primary,
                         SnowtrakColors.neutral600,
                       ],
                     ),

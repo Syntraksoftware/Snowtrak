@@ -18,14 +18,14 @@ class ProgressStreaksBanner extends StatelessWidget {
       margin: const EdgeInsets.all(SnowtrakSpacing.md),
       padding: const EdgeInsets.all(SnowtrakSpacing.md),
       decoration: BoxDecoration(
-        color: SnowtrakColors.surfaceVariant,
+        color: context.colors.surfaceVariant,
         borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
       ),
       child: Row(
         children: [
           Icon(
             Icons.local_fire_department,
-            color: hasStreak ? SnowtrakColors.accent : SnowtrakColors.textTertiary,
+            color: hasStreak ? context.colors.primary : context.colors.textTertiary,
             size: 24,
           ),
           const SizedBox(width: SnowtrakSpacing.md),
@@ -38,7 +38,7 @@ class ProgressStreaksBanner extends StatelessWidget {
                       ? '$currentStreak-week streak'
                       : 'No active streak',
                   style: SnowtrakTypography.labelLarge.copyWith(
-                    color: SnowtrakColors.textPrimary,
+                    color: context.colors.textPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -48,7 +48,7 @@ class ProgressStreaksBanner extends StatelessWidget {
                       ? 'Best: $longestStreak ${longestStreak == 1 ? 'week' : 'weeks'} — log one activity a week to keep it alive'
                       : 'Log one activity a week to build your streak',
                   style: SnowtrakTypography.bodySmall.copyWith(
-                    color: SnowtrakColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
               ],
