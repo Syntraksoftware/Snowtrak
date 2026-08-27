@@ -35,9 +35,9 @@ class StBottomNav extends StatelessWidget {
     return Container(
       height: barHeight + bottomInset,
       padding: EdgeInsets.only(top: 6, bottom: bottomInset),
-      decoration: const BoxDecoration(
-        color: SnowtrakColors.surface,
-        border: Border(top: BorderSide(color: SnowtrakColors.border)),
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        border: Border(top: BorderSide(color: context.colors.border)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,7 +71,7 @@ class _Tab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? SnowtrakColors.ink : SnowtrakColors.textTertiary;
+    final color = active ? context.colors.primary : context.colors.textTertiary;
     return InkResponse(
       onTap: onTap,
       radius: 44,
@@ -113,8 +113,8 @@ class _RecordTab extends StatelessWidget {
           Container(
             width: 58,
             height: 58,
-            decoration: const BoxDecoration(
-              color: SnowtrakColors.ink,
+            decoration: BoxDecoration(
+              color: context.colors.primary,
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
@@ -122,7 +122,7 @@ class _RecordTab extends StatelessWidget {
               width: 19,
               height: 19,
               decoration: BoxDecoration(
-                color: SnowtrakColors.textOnPrimary,
+                color: context.colors.textOnPrimary,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -131,7 +131,7 @@ class _RecordTab extends StatelessWidget {
           Text(
             label,
             style: SnowtrakTypography.labelSmall.copyWith(
-              color: SnowtrakColors.textTertiary,
+              color: context.colors.textTertiary,
             ),
           ),
         ],

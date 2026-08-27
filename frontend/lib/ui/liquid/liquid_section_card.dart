@@ -22,16 +22,16 @@ class LiquidSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = iconColor ?? SnowtrakColors.primary;
+    final accent = iconColor ?? context.colors.primary;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: SnowtrakSpacing.md),
       child: Material(
-        color: SnowtrakColors.surface,
+        color: context.colors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
-          side: const BorderSide(color: SnowtrakColors.divider),
+          side: BorderSide(color: context.colors.divider),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -65,7 +65,7 @@ class LiquidSectionCard extends StatelessWidget {
                           Text(
                             title,
                             style: SnowtrakTypography.headlineSmall.copyWith(
-                              color: SnowtrakColors.textPrimary,
+                              color: context.colors.textPrimary,
                             ),
                           ),
                           if (subtitle != null) ...[
@@ -73,7 +73,7 @@ class LiquidSectionCard extends StatelessWidget {
                             Text(
                               subtitle!,
                               style: SnowtrakTypography.bodySmall.copyWith(
-                                color: SnowtrakColors.textSecondary,
+                                color: context.colors.textSecondary,
                               ),
                             ),
                           ],
@@ -83,7 +83,7 @@ class LiquidSectionCard extends StatelessWidget {
                     if (onTap != null)
                       Icon(
                         Icons.chevron_right,
-                        color: SnowtrakColors.textTertiary,
+                        color: context.colors.textTertiary,
                         size: 20,
                       ),
                   ],

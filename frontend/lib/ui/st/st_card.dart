@@ -8,7 +8,7 @@ class StCard extends StatelessWidget {
     required this.child,
     this.padding = EdgeInsets.zero,
     this.onTap,
-    this.color = SnowtrakColors.surface,
+    this.color,
     this.radius = SnowtrakRadius.lg,
     this.clip = true,
   });
@@ -16,7 +16,10 @@ class StCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
   final VoidCallback? onTap;
-  final Color color;
+
+  /// Defaults to `context.colors.surface`; a constructor default cannot
+  /// read the theme, so it is resolved in [build].
+  final Color? color;
   final double radius;
   final bool clip;
 
@@ -25,9 +28,9 @@ class StCard extends StatelessWidget {
     final borderRadius = BorderRadius.circular(radius);
     final body = Container(
       decoration: BoxDecoration(
-        color: color,
+        color: color ?? context.colors.surface,
         borderRadius: borderRadius,
-        border: Border.all(color: SnowtrakColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       clipBehavior: clip ? Clip.antiAlias : Clip.none,
       child: Padding(padding: padding, child: child),
@@ -55,9 +58,9 @@ class StHairline extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: indent),
-      child: const SizedBox(
+      child: SizedBox(
         height: 1,
-        child: ColoredBox(color: SnowtrakColors.border),
+        child: ColoredBox(color: context.colors.border),
       ),
     );
   }

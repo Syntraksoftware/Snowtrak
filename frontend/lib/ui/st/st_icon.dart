@@ -51,7 +51,7 @@ class StIcon extends StatelessWidget {
       width: size,
       height: size,
       colorFilter: ColorFilter.mode(
-        color ?? SnowtrakColors.textSecondary,
+        color ?? context.colors.textSecondary,
         BlendMode.srcIn,
       ),
     );

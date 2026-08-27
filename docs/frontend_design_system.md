@@ -189,6 +189,13 @@ and pick the role it wants.
 Tracked here rather than as TODOs, because each is a design decision, not a
 missing line of code.
 
+- **`primary` may not read as a CTA in dark mode.** Light mode puts near-black
+  ink on off-white, which is emphatic. Dark mode falls back to `primaryLight`
+  (`neutral700`) on `neutral950` -- a dark grey button on a darker page. A
+  one-colour system has nothing else to reach for on a dark ground, so this is a
+  design decision, not a code fix: invert the button, introduce a real accent
+  for dark, or switch to an outlined treatment. Deferred with the rest of dark
+  mode; settle it before Phase 4, not during.
 - **Status colours are shared across modes.** `success`, `warning`, `error`,
   `info`, and `live` use the same value in `light` and `dark`. Saturated hues on
   a dark page usually want lightening. Tune the five in `SnowtrakPalette.dark`

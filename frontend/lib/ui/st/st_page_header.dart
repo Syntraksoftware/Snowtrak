@@ -39,7 +39,7 @@ class StPageHeader extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: SnowtrakColors.surface,
+      color: context.colors.surface,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -65,7 +65,7 @@ class StPageHeader extends StatelessWidget implements PreferredSizeWidget {
                           Text(
                             eyebrow!,
                             style: SnowtrakTypography.bodyMedium.copyWith(
-                              color: SnowtrakColors.textTertiary,
+                              color: context.colors.textTertiary,
                             ),
                           ),
                           const SizedBox(height: SnowtrakSpacing.xxs),
@@ -75,7 +75,7 @@ class StPageHeader extends StatelessWidget implements PreferredSizeWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: SnowtrakTypography.headlineLarge.copyWith(
-                            color: SnowtrakColors.textPrimary,
+                            color: context.colors.textPrimary,
                           ),
                         ),
                       ],

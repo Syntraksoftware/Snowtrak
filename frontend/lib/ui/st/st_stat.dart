@@ -27,13 +27,13 @@ class StStatTile extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            StIcon(icon!, size: 18, color: SnowtrakColors.textSecondary),
+            StIcon(icon!, size: 18, color: context.colors.textSecondary),
             const SizedBox(height: 5),
           ],
           Text(
             value,
             style: SnowtrakTypography.metricSmall.copyWith(
-              color: SnowtrakColors.textPrimary,
+              color: context.colors.textPrimary,
             ),
           ),
           const SizedBox(height: 5),
@@ -43,7 +43,7 @@ class StStatTile extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: SnowtrakTypography.caption.copyWith(
-              color: SnowtrakColors.textTertiary,
+              color: context.colors.textTertiary,
             ),
           ),
         ],
@@ -62,7 +62,7 @@ class StStatCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: SnowtrakColors.surface,
+      color: context.colors.surface,
       padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -73,14 +73,14 @@ class StStatCell extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: SnowtrakTypography.metricMedium.copyWith(
-              color: SnowtrakColors.textPrimary,
+              color: context.colors.textPrimary,
             ),
           ),
           const SizedBox(height: SnowtrakSpacing.xs),
           Text(
             label,
             style: SnowtrakTypography.labelMedium.copyWith(
-              color: SnowtrakColors.textTertiary,
+              color: context.colors.textTertiary,
             ),
           ),
         ],
@@ -105,18 +105,18 @@ class StStatGrid extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(child: cells[i]),
-              const VerticalDivider(width: 1, color: SnowtrakColors.border),
+              VerticalDivider(width: 1, color: context.colors.border),
               Expanded(
                 child: i + 1 < cells.length
                     ? cells[i + 1]
-                    : const ColoredBox(color: SnowtrakColors.surface),
+                    : ColoredBox(color: context.colors.surface),
               ),
             ],
           ),
         ),
       );
       if (i + 2 < cells.length) {
-        rows.add(const Divider(height: 1, color: SnowtrakColors.border));
+        rows.add(Divider(height: 1, color: context.colors.border));
       }
     }
     return Column(mainAxisSize: MainAxisSize.min, children: rows);

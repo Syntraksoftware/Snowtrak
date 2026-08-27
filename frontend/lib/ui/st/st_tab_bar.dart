@@ -15,20 +15,20 @@ class StTabBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: SnowtrakColors.surface,
+      color: context.colors.surface,
       child: TabBar(
         controller: controller,
         isScrollable: false,
         tabAlignment: TabAlignment.fill,
         padding: EdgeInsets.zero,
         labelPadding: const EdgeInsets.symmetric(horizontal: 2),
-        indicatorColor: SnowtrakColors.ink,
+        indicatorColor: context.colors.primary,
         indicatorWeight: 2,
         indicatorSize: TabBarIndicatorSize.tab,
-        dividerColor: SnowtrakColors.border,
+        dividerColor: context.colors.border,
         dividerHeight: 1,
-        labelColor: SnowtrakColors.textPrimary,
-        unselectedLabelColor: SnowtrakColors.textQuaternary,
+        labelColor: context.colors.textPrimary,
+        unselectedLabelColor: context.colors.textQuaternary,
         labelStyle: SnowtrakTypography.labelLarge,
         unselectedLabelStyle: SnowtrakTypography.labelLarge.copyWith(
           fontWeight: FontWeight.w500,

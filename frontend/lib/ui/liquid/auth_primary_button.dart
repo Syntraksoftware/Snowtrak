@@ -26,8 +26,8 @@ class AuthPrimaryButton extends StatelessWidget {
         style: FilledButton.styleFrom(
           backgroundColor: SnowtrakAuthTheme.brand,
           disabledBackgroundColor: SnowtrakAuthTheme.brandMuted.withValues(alpha: 0.35),
-          foregroundColor: SnowtrakColors.textOnPrimary,
-          disabledForegroundColor: SnowtrakColors.textOnPrimary.withValues(alpha: 0.85),
+          foregroundColor: context.colors.textOnPrimary,
+          disabledForegroundColor: context.colors.textOnPrimary.withValues(alpha: 0.85),
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(SnowtrakAuthTheme.buttonRadius),
@@ -38,13 +38,13 @@ class AuthPrimaryButton extends StatelessWidget {
           ),
         ),
         child: isLoading
-            ? const SizedBox(
+            ? SizedBox(
                 height: 22,
                 width: 22,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    SnowtrakColors.textOnPrimary,
+                    context.colors.textOnPrimary,
                   ),
                 ),
               )

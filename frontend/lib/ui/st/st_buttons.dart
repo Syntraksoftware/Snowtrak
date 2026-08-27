@@ -20,7 +20,7 @@ class StRoundButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget button = Material(
-      color: SnowtrakColors.surfaceVariant,
+      color: context.colors.surfaceVariant,
       shape: const CircleBorder(),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -31,7 +31,7 @@ class StRoundButton extends StatelessWidget {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              StIcon(icon, size: 18, color: SnowtrakColors.ink),
+              StIcon(icon, size: 18, color: context.colors.primary),
               if (badge)
                 Positioned(
                   top: 9,
@@ -40,10 +40,10 @@ class StRoundButton extends StatelessWidget {
                     width: 8,
                     height: 8,
                     decoration: BoxDecoration(
-                      color: SnowtrakColors.ink,
+                      color: context.colors.primary,
                       shape: BoxShape.circle,
                       border:
-                          Border.all(color: SnowtrakColors.surfaceVariant, width: 1.5),
+                          Border.all(color: context.colors.surfaceVariant, width: 1.5),
                     ),
                   ),
                 ),
@@ -80,7 +80,7 @@ class StInkButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: SnowtrakColors.ink,
+      color: context.colors.primary,
       borderRadius: BorderRadius.circular(radius),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -98,7 +98,7 @@ class StInkButton extends StatelessWidget {
                 label,
                 style: SnowtrakTypography.bodyLarge.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: SnowtrakColors.textOnPrimary,
+                  color: context.colors.textOnPrimary,
                 ),
               ),
               if (trailing != null) ...[
@@ -134,7 +134,7 @@ class StSegmented extends StatelessWidget {
       height: 34,
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: SnowtrakColors.surfaceVariant,
+        color: context.colors.surfaceVariant,
         borderRadius: BorderRadius.circular(SnowtrakRadius.round),
       ),
       child: Row(
@@ -150,7 +150,7 @@ class StSegmented extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: i == selectedIndex
-                      ? SnowtrakColors.ink
+                      ? context.colors.primary
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(SnowtrakRadius.round),
                 ),
@@ -159,8 +159,8 @@ class StSegmented extends StatelessWidget {
                   style: SnowtrakTypography.eyebrow.copyWith(
                     letterSpacing: 0,
                     color: i == selectedIndex
-                        ? SnowtrakColors.textOnPrimary
-                        : SnowtrakColors.textTertiary,
+                        ? context.colors.textOnPrimary
+                        : context.colors.textTertiary,
                   ),
                 ),
               ),
@@ -181,7 +181,7 @@ class StChipButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: SnowtrakColors.surfaceVariant,
+      color: context.colors.surfaceVariant,
       borderRadius: BorderRadius.circular(SnowtrakRadius.round),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -195,7 +195,7 @@ class StChipButton extends StatelessWidget {
             label,
             style: SnowtrakTypography.labelMedium.copyWith(
               fontWeight: FontWeight.w700,
-              color: SnowtrakColors.ink,
+              color: context.colors.primary,
             ),
           ),
         ),

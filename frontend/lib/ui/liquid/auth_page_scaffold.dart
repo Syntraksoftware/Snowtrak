@@ -21,7 +21,7 @@ class AuthPageScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SnowtrakColors.surface,
+      backgroundColor: context.colors.surface,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -43,7 +43,7 @@ class AuthPageScaffold extends StatelessWidget {
                     IconButton(
                       onPressed: onClose,
                       style: IconButton.styleFrom(
-                        backgroundColor: SnowtrakColors.surfaceVariant,
+                        backgroundColor: context.colors.surfaceVariant,
                         shape: const CircleBorder(),
                       ),
                       icon: const Icon(Icons.close, size: 20),

@@ -33,15 +33,15 @@ class StSectionHeader extends StatelessWidget {
             Text(
               actionLabel!,
               style: SnowtrakTypography.labelMedium.copyWith(
-                color: SnowtrakColors.ink,
+                color: context.colors.primary,
                 fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(width: SnowtrakSpacing.xs),
-            const Icon(
+            Icon(
               Icons.arrow_forward,
               size: 13,
-              color: SnowtrakColors.ink,
+              color: context.colors.primary,
             ),
           ],
         ),
@@ -56,7 +56,7 @@ class StSectionHeader extends StatelessWidget {
             child: Text(
               title.toUpperCase(),
               style: SnowtrakTypography.eyebrow.copyWith(
-                color: SnowtrakColors.textTertiary,
+                color: context.colors.textTertiary,
               ),
             ),
           ),
