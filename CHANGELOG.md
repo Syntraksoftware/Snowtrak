@@ -8,6 +8,8 @@ public yet -- the composer picker is not built._
 
 ### Changed
 
+- Re-skin the app onto the design system in `Snowtrak_DesignSystem.fig`: a neutral ramp carries the interface, ink is the one action colour, and cards are separated by a hairline instead of a shadow ([`e46c371`](https://github.com/Syntraksoftware/Snowtrak/commit/e46c371), [`8cd189b`](https://github.com/Syntraksoftware/Snowtrak/commit/8cd189b))
+- Read every colour through the active theme rather than from a constant, so the interface can answer a theme change at all ([`44100e2`](https://github.com/Syntraksoftware/Snowtrak/commit/44100e2), [`f1c6cdb`](https://github.com/Syntraksoftware/Snowtrak/commit/f1c6cdb))
 - Filter every read path that can return a post by who is allowed to see it ([`db18561`](https://github.com/Syntraksoftware/Snowtrak/commit/db18561))
 - Store follower counts in `follow_counts`, maintained by a database trigger rather than by application code ([`8a24183`](https://github.com/Syntraksoftware/Snowtrak/commit/8a24183))
 - Move blocking Supabase calls off the event loop, so one slow read no longer stalls every request in flight ([`5d71da3`](https://github.com/Syntraksoftware/Snowtrak/commit/5d71da3))
@@ -35,6 +37,7 @@ public yet -- the composer picker is not built._
 
 ### Fixed
 
+- Show only Light under Display & Appearance. The picker offered Dark and System, and selecting either changed nothing but the toast ([`d31f262`](https://github.com/Syntraksoftware/Snowtrak/commit/d31f262))
 - Build a profile from `user_info` instead of returning 404, for the many users who have no `profiles` row ([`d8fa466`](https://github.com/Syntraksoftware/Snowtrak/commit/d8fa466))
 - Render the profile header while loading and after a failure, instead of collapsing it to nothing ([`d8fa466`](https://github.com/Syntraksoftware/Snowtrak/commit/d8fa466))
 - Reserve the follow button's height while its counts load, so it stops shoving the profile down when they arrive ([`8a24183`](https://github.com/Syntraksoftware/Snowtrak/commit/8a24183))
