@@ -163,7 +163,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
           child: Text(
             _error!,
             style: SnowtrakTypography.bodySmall
-                .copyWith(color: SnowtrakColors.error),
+                .copyWith(color: context.colors.error),
             textAlign: TextAlign.center,
           ),
         ),
@@ -188,9 +188,9 @@ class _ProfileHeaderState extends State<ProfileHeader> {
       ),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: SnowtrakColors.surface,
+          color: context.colors.surface,
           borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
-          border: Border.all(color: SnowtrakColors.divider),
+          border: Border.all(color: context.colors.divider),
         ),
         child: Padding(
           padding: const EdgeInsets.all(SnowtrakSpacing.md),
@@ -227,7 +227,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                           displayName,
                           style: SnowtrakTypography.headlineSmall.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: SnowtrakColors.textPrimary,
+                            color: context.colors.textPrimary,
                           ),
                         ),
                         if (username.isNotEmpty) ...[
@@ -235,7 +235,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                           Text(
                             '@$username',
                             style: SnowtrakTypography.bodyMedium.copyWith(
-                              color: SnowtrakColors.textSecondary,
+                              color: context.colors.textSecondary,
                             ),
                           ),
                         ],
@@ -249,7 +249,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                 Text(
                   bio,
                   style: SnowtrakTypography.bodyMedium.copyWith(
-                    color: SnowtrakColors.textPrimary,
+                    color: context.colors.textPrimary,
                     height: 1.4,
                   ),
                 ),
@@ -270,7 +270,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                       _InfoChip(
                         icon: Icons.location_on_outlined,
                         label: home,
-                        color: SnowtrakColors.secondary,
+                        color: context.colors.textSecondary,
                       ),
                   ],
                 ),

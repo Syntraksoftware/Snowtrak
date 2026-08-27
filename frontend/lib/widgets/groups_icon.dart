@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snowtrak/core/theme.dart';
 
 class GroupsIcon extends StatelessWidget {
   final Color? color;
@@ -12,7 +13,8 @@ class GroupsIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconColor = color ?? Theme.of(context).iconTheme.color ?? Colors.grey;
+    final iconColor =
+        color ?? Theme.of(context).iconTheme.color ?? context.colors.textTertiary;
 
     return CustomPaint(
       size: Size(size, size),

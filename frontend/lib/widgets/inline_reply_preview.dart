@@ -52,7 +52,7 @@ class InlineReplyPreview extends StatelessWidget {
               child: Text(
                 summary,
                 style: SnowtrakTypography.bodySmall.copyWith(
-                  color: SnowtrakColors.textSecondary,
+                  color: context.colors.textSecondary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -79,18 +79,18 @@ class _MiniAvatar extends StatelessWidget {
       height: 22,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: SnowtrakColors.surface,
-        border: Border.all(color: SnowtrakColors.divider, width: 1.5),
+        color: context.colors.surface,
+        border: Border.all(color: context.colors.divider, width: 1.5),
       ),
       child: CircleAvatar(
         radius: 9,
-        backgroundColor: SnowtrakColors.primary.withValues(alpha: 0.12),
+        backgroundColor: context.colors.primary.withValues(alpha: 0.12),
         child: Text(
           initial,
           style: SnowtrakTypography.labelSmall.copyWith(
             fontSize: 9,
             fontWeight: FontWeight.w700,
-            color: SnowtrakColors.primary,
+            color: context.colors.primary,
           ),
         ),
       ),

@@ -69,9 +69,9 @@ class _SkeletonFeedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
+    return Column(
       children: [
-        Padding(
+        const Padding(
           padding: EdgeInsets.fromLTRB(
             SnowtrakSpacing.md,
             SnowtrakSpacing.md,
@@ -108,7 +108,7 @@ class _SkeletonFeedCard extends StatelessWidget {
             ],
           ),
         ),
-        Divider(height: 1, thickness: 1, color: SnowtrakColors.divider),
+        Divider(height: 1, thickness: 1, color: context.colors.divider),
       ],
     );
   }
@@ -121,9 +121,9 @@ class _SkeletonNotificationRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(SnowtrakSpacing.md),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: SnowtrakColors.divider, width: 0.5),
+          bottom: BorderSide(color: context.colors.divider, width: 0.5),
         ),
       ),
       child: const Row(
@@ -164,7 +164,7 @@ class _SkeletonBox extends StatelessWidget {
         width: width ?? double.infinity,
         height: height,
         decoration: BoxDecoration(
-          color: SnowtrakColors.surfaceVariant,
+          color: context.colors.surfaceVariant,
           borderRadius: BorderRadius.circular(radius),
         ),
       );

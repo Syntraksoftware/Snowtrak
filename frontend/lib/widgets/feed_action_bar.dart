@@ -149,8 +149,8 @@ class _ActionSlot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const activeColor = SnowtrakColors.primary;
-    const idleColor = SnowtrakColors.textSecondary;
+    final activeColor = context.colors.primary;
+    final idleColor = context.colors.textSecondary;
 
     Widget iconWidget = Icon(
       icon,

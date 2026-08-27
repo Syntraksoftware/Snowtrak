@@ -20,10 +20,10 @@ class CommunityHeader extends StatelessWidget {
     return Container(
       height: 56,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         border: Border(
           bottom: BorderSide(
-            color: Colors.grey[200]!,
+            color: context.colors.divider,
             width: 0.5,
           ),
         ),
@@ -55,7 +55,7 @@ class CommunityHeader extends StatelessWidget {
                       return Icon(
                         Icons.home,
                         size: 24,
-                        color: Colors.grey[900],
+                        color: context.colors.textPrimary,
                       );
                     },
                   ),
@@ -63,24 +63,24 @@ class CommunityHeader extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               // Optional title
-              const Text(
+              Text(
                 'Home',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: context.colors.textPrimary,
                 ),
               ),
               const Spacer(),
               // Refresh indicator (when refreshing)
               if (isRefreshing)
-                const SizedBox(
+                SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     valueColor:
-                        AlwaysStoppedAnimation<Color>(SnowtrakColors.ink),
+                        AlwaysStoppedAnimation<Color>(context.colors.primary),
                   ),
                 ),
             ],

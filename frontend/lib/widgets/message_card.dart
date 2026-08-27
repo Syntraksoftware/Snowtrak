@@ -234,7 +234,7 @@ class _ThreadsPostCard extends StatelessWidget {
             ),
           ),
         ),
-        const Divider(height: 1, thickness: 1, color: SnowtrakColors.divider),
+        Divider(height: 1, thickness: 1, color: context.colors.divider),
       ],
     );
   }
@@ -316,7 +316,7 @@ class _AvatarColumn extends StatelessWidget {
               child: Container(
                 width: 2,
                 margin: const EdgeInsets.only(top: 6),
-                color: SnowtrakColors.divider,
+                color: context.colors.divider,
               ),
             ),
         ],
@@ -346,11 +346,11 @@ class _PostAvatar extends StatelessWidget {
       onTap: onTap,
       child: CircleAvatar(
         radius: radius,
-        backgroundColor: SnowtrakColors.primary.withValues(alpha: 0.12),
+        backgroundColor: context.colors.primary.withValues(alpha: 0.12),
         child: Text(
           initial,
           style: SnowtrakTypography.labelMedium.copyWith(
-            color: SnowtrakColors.primary,
+            color: context.colors.primary,
             fontWeight: FontWeight.w700,
             fontSize: radius * 0.55,
           ),
@@ -382,7 +382,7 @@ class _ThreadsMetaRow extends StatelessWidget {
                           : SnowtrakTypography.labelLarge)
                       .copyWith(
                     fontWeight: FontWeight.w700,
-                    color: SnowtrakColors.textPrimary,
+                    color: context.colors.textPrimary,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -390,13 +390,13 @@ class _ThreadsMetaRow extends StatelessWidget {
               Text(
                 '  ·  ',
                 style: SnowtrakTypography.bodySmall.copyWith(
-                  color: SnowtrakColors.textTertiary,
+                  color: context.colors.textTertiary,
                 ),
               ),
               Text(
                 post.timestampLabel,
                 style: SnowtrakTypography.bodySmall.copyWith(
-                  color: SnowtrakColors.textTertiary,
+                  color: context.colors.textTertiary,
                 ),
               ),
             ],
@@ -409,9 +409,9 @@ class _ThreadsMetaRow extends StatelessWidget {
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             onPressed: () {},
-            icon: const Icon(
+            icon: Icon(
               Icons.more_horiz_rounded,
-              color: SnowtrakColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
       ],
@@ -433,7 +433,7 @@ class _ThreadBodyText extends StatelessWidget {
               ? SnowtrakTypography.bodyMedium
               : SnowtrakTypography.bodyLarge)
           .copyWith(
-        color: SnowtrakColors.textPrimary,
+        color: context.colors.textPrimary,
         height: 1.4,
         letterSpacing: 0.1,
       ),

@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:snowtrak/core/theme.dart';
 import 'package:video_player/video_player.dart';
 
 /// Renders URLs from community `media_urls` (images / GIFs as image; mp4/mov/webm as inline video).
@@ -58,16 +59,16 @@ class PostMediaGallery extends StatelessWidget {
       fit: BoxFit.cover,
       width: double.infinity,
       height: height,
-      placeholder: (_, __) => AspectRatio(
+      placeholder: (context, __) => AspectRatio(
         aspectRatio: 4 / 3,
-        child: Container(color: Colors.grey.shade200),
+        child: Container(color: context.colors.surfaceVariant),
       ),
-      errorWidget: (_, __, ___) => AspectRatio(
+      errorWidget: (context, __, ___) => AspectRatio(
         aspectRatio: 4 / 3,
         child: Container(
-          color: Colors.grey.shade200,
+          color: context.colors.surfaceVariant,
           child: Icon(Icons.broken_image_outlined,
-              size: 40, color: Colors.grey.shade500),
+              size: 40, color: context.colors.textTertiary),
         ),
       ),
     );
@@ -124,10 +125,10 @@ class _PostInlineVideoState extends State<PostInlineVideo> {
       return AspectRatio(
         aspectRatio: 16 / 9,
         child: Container(
-          color: Colors.grey.shade900,
+          color: context.colors.scrim,
           child: Icon(
             Icons.videocam_off_outlined,
-            color: Colors.grey.shade400,
+            color: context.colors.textOnPrimary.withValues(alpha: 0.6),
             size: 40,
           ),
         ),
@@ -145,17 +146,20 @@ class _PostInlineVideoState extends State<PostInlineVideo> {
         child: AspectRatio(
           aspectRatio: 16 / 9,
           child: Container(
-            color: Colors.black87,
+            color: context.colors.scrim,
             child: Center(
               child: _tapped
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 28,
                       height: 28,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white70),
+                          strokeWidth: 2,
+                          color: context.colors.textOnPrimary
+                              .withValues(alpha: 0.7)),
                     )
-                  : const Icon(Icons.play_circle_outline,
-                      color: Colors.white70, size: 48),
+                  : Icon(Icons.play_circle_outline,
+                      color: context.colors.textOnPrimary.withValues(alpha: 0.7),
+                      size: 48),
             ),
           ),
         ),

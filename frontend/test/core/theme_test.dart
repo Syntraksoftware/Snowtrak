@@ -15,6 +15,7 @@ final Map<String, Color Function(SnowtrakPalette)> _roles = {
   'textOnPrimary': (p) => p.textOnPrimary,
   'divider': (p) => p.divider,
   'border': (p) => p.border,
+  'borderStrong': (p) => p.borderStrong,
   'primary': (p) => p.primary,
   'success': (p) => p.success,
   'warning': (p) => p.warning,

@@ -80,6 +80,7 @@ class SnowtrakColors {
   static const Color darkTextQuaternary = neutral500;
   static const Color darkDivider = darkSurfaceVariant;
   static const Color darkBorder = Color(0xFF2A3149);
+  static const Color darkBorderStrong = Color(0xFF3A4260);
 
   // Scrim — the wash behind sheets, dialogs, and image overlays. Apply alpha at
   // the call site; this is the base colour, not the finished value.
@@ -118,6 +119,7 @@ class SnowtrakPalette extends ThemeExtension<SnowtrakPalette> {
     required this.textOnPrimary,
     required this.divider,
     required this.border,
+    required this.borderStrong,
     required this.primary,
     required this.success,
     required this.warning,
@@ -145,6 +147,9 @@ class SnowtrakPalette extends ThemeExtension<SnowtrakPalette> {
   final Color divider;
   final Color border;
 
+  /// A heavier outline, for controls the faint [border] loses.
+  final Color borderStrong;
+
   /// The one dominant colour: CTAs, active nav, headings.
   final Color primary;
 
@@ -169,6 +174,7 @@ class SnowtrakPalette extends ThemeExtension<SnowtrakPalette> {
     textOnPrimary: SnowtrakColors.textOnPrimary,
     divider: SnowtrakColors.divider,
     border: SnowtrakColors.border,
+    borderStrong: SnowtrakColors.borderStrong,
     primary: SnowtrakColors.ink,
     success: SnowtrakColors.success,
     warning: SnowtrakColors.warning,
@@ -189,6 +195,7 @@ class SnowtrakPalette extends ThemeExtension<SnowtrakPalette> {
     textOnPrimary: SnowtrakColors.textOnPrimary,
     divider: SnowtrakColors.darkDivider,
     border: SnowtrakColors.darkBorder,
+    borderStrong: SnowtrakColors.darkBorderStrong,
     // Ink is the page in dark mode, so the CTA lifts instead of sinking.
     primary: SnowtrakColors.primaryLight,
     success: SnowtrakColors.success,
@@ -214,6 +221,7 @@ class SnowtrakPalette extends ThemeExtension<SnowtrakPalette> {
     Color? textOnPrimary,
     Color? divider,
     Color? border,
+    Color? borderStrong,
     Color? primary,
     Color? success,
     Color? warning,
@@ -233,6 +241,7 @@ class SnowtrakPalette extends ThemeExtension<SnowtrakPalette> {
       textOnPrimary: textOnPrimary ?? this.textOnPrimary,
       divider: divider ?? this.divider,
       border: border ?? this.border,
+      borderStrong: borderStrong ?? this.borderStrong,
       primary: primary ?? this.primary,
       success: success ?? this.success,
       warning: warning ?? this.warning,
@@ -259,6 +268,7 @@ class SnowtrakPalette extends ThemeExtension<SnowtrakPalette> {
       textOnPrimary: Color.lerp(textOnPrimary, other.textOnPrimary, t)!,
       divider: Color.lerp(divider, other.divider, t)!,
       border: Color.lerp(border, other.border, t)!,
+      borderStrong: Color.lerp(borderStrong, other.borderStrong, t)!,
       primary: Color.lerp(primary, other.primary, t)!,
       success: Color.lerp(success, other.success, t)!,
       warning: Color.lerp(warning, other.warning, t)!,

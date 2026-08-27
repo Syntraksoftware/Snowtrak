@@ -15,7 +15,8 @@ class LogoIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isSelected ? SnowtrakColors.ink : Colors.grey;
+    final color =
+        isSelected ? context.colors.primary : context.colors.textTertiary;
 
     // Determine which logo to use based on logoType
     String assetPath;

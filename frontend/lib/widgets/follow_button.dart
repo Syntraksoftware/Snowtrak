@@ -135,7 +135,7 @@ class _FollowButtonState extends State<FollowButton> {
               vertical: 2,
             ),
             decoration: BoxDecoration(
-              color: SnowtrakColors.surfaceVariant,
+              color: context.colors.surfaceVariant,
               borderRadius: BorderRadius.circular(SnowtrakRadius.round),
             ),
             child: Text(
@@ -143,7 +143,7 @@ class _FollowButtonState extends State<FollowButton> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: SnowtrakTypography.labelSmall.copyWith(
-                color: SnowtrakColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
           ),
@@ -178,11 +178,11 @@ class _FollowButtonState extends State<FollowButton> {
     return FilledButton(
       onPressed: _busy ? null : _toggle,
       style: FilledButton.styleFrom(
-        backgroundColor: SnowtrakColors.primary,
-        foregroundColor: SnowtrakColors.surface,
+        backgroundColor: context.colors.primary,
+        foregroundColor: context.colors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(SnowtrakRadius.md),
-          side: const BorderSide(color: SnowtrakColors.ink),
+          side: BorderSide(color: context.colors.primary),
         ),
       ),
       child: const Text('Follow'),
@@ -190,8 +190,8 @@ class _FollowButtonState extends State<FollowButton> {
   }
 
   ButtonStyle get _outlinedStyle => OutlinedButton.styleFrom(
-        foregroundColor: SnowtrakColors.textPrimary,
-        side: const BorderSide(color: SnowtrakColors.borderStrong),
+        foregroundColor: context.colors.textPrimary,
+        side: BorderSide(color: context.colors.borderStrong),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(SnowtrakRadius.md),
         ),
@@ -224,11 +224,11 @@ class _ButtonPlaceholder extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: SnowtrakColors.surfaceVariant,
+        color: context.colors.surfaceVariant,
         borderRadius: BorderRadius.circular(SnowtrakRadius.md),
         // The fill alone is neutral100 on white -- almost invisible, so the
         // slot read as empty space rather than as a button on its way.
-        border: Border.all(color: SnowtrakColors.borderStrong),
+        border: Border.all(color: context.colors.borderStrong),
       ),
     );
   }
@@ -245,9 +245,9 @@ class _PlaceholderBar extends StatelessWidget {
       width: width,
       height: 12,
       decoration: BoxDecoration(
-        color: SnowtrakColors.surfaceVariant,
+        color: context.colors.surfaceVariant,
         borderRadius: BorderRadius.circular(SnowtrakRadius.xs),
-        border: Border.all(color: SnowtrakColors.border),
+        border: Border.all(color: context.colors.border),
       ),
     );
   }
@@ -266,13 +266,13 @@ class _CountLabel extends StatelessWidget {
       overflow: TextOverflow.ellipsis,
       text: TextSpan(
         style: SnowtrakTypography.bodyMedium.copyWith(
-          color: SnowtrakColors.textSecondary,
+          color: context.colors.textSecondary,
         ),
         children: [
           TextSpan(
             text: '$value ',
             style: SnowtrakTypography.labelLarge.copyWith(
-              color: SnowtrakColors.textPrimary,
+              color: context.colors.textPrimary,
             ),
           ),
           TextSpan(text: label),
