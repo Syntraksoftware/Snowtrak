@@ -5,6 +5,7 @@ live under `/api/v1/users` because that belongs to main-backend, and
 docs/service-ownership.md allows exactly one owner per domain.
 """
 
+import asyncio
 import logging
 import os
 import sys
@@ -257,16 +258,21 @@ async def _edge_page(
             detail="This account is private",
         ) from None
 
-    rows = await offload(
-        client.list_follow_edges,
-        user_id=user_id,
-        direction=direction,
-        limit=limit,
-        offset=offset,
-    )
-    total = await offload(
-        client.count_followers if direction == "followers" else client.count_following,
-        user_id,
+    # Neither read depends on the other's result, and the database is a
+    # continent away (~440ms/hop) -- run them concurrently rather than
+    # paying for two sequential round trips.
+    rows, total = await asyncio.gather(
+        offload(
+            client.list_follow_edges,
+            user_id=user_id,
+            direction=direction,
+            limit=limit,
+            offset=offset,
+        ),
+        offload(
+            client.count_followers if direction == "followers" else client.count_following,
+            user_id,
+        ),
     )
     return build_paginated_list_response(
         request=request,

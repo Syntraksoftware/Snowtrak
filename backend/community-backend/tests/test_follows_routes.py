@@ -101,3 +101,32 @@ def test_a_public_accounts_list_stays_open(client, stub_client):
     stub_client.private_accounts = set()
     response = client.get(f"/api/v1/follows/{STUB_USER_2}/followers")
     assert response.status_code == 200
+
+
+def test_an_anonymous_caller_still_sees_a_public_accounts_list(client, stub_client, app):
+    # A public account's lists stay public even with no viewer at all -- the
+    # early return in _may_see_edges means an anonymous caller never reaches
+    # the viewer check, but that is a load-bearing design decision worth
+    # pinning on its own, separate from the signed-in case above.
+    stub_client.private_accounts = set()
+    app.dependency_overrides[get_optional_user] = lambda: None
+    response = client.get(f"/api/v1/follows/{STUB_USER_2}/followers")
+    assert response.status_code == 200
+
+
+def test_a_pending_requester_without_an_accepted_edge_is_still_refused(client, stub_client):
+    """A follow request is not a follow.
+
+    `stub_client.requests` holds a pending request from user-1 to a private
+    STUB_USER_2, but `stub_client.follows` has no matching edge. If a future
+    change made `is_following` also consult pending requests -- a
+    plausible-sounding "fix" -- this would start passing the follower list to
+    someone who was never approved. Assert on the status code, not on how
+    the gate is implemented.
+    """
+    stub_client.private_accounts = {STUB_USER_2}
+    stub_client.requests = {("user-1", STUB_USER_2)}
+    followers_response = client.get(f"/api/v1/follows/{STUB_USER_2}/followers")
+    following_response = client.get(f"/api/v1/follows/{STUB_USER_2}/following")
+    assert followers_response.status_code == 403
+    assert following_response.status_code == 403
