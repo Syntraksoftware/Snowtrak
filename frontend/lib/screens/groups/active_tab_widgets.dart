@@ -2,6 +2,24 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:snowtrak/core/theme.dart';
 
+/// Which status role paints a challenge badge.
+///
+/// The role is stored rather than the resolved [Color] because the list
+/// below is `const` and a `const` cannot read a `BuildContext`. Holding the
+/// value instead would freeze it at compile time, which is the one thing the
+/// palette exists to prevent.
+enum ChallengeAccent {
+  warning,
+  info,
+  error;
+
+  Color resolve(BuildContext context) => switch (this) {
+        ChallengeAccent.warning => context.colors.warning,
+        ChallengeAccent.info => context.colors.info,
+        ChallengeAccent.error => context.colors.error,
+      };
+}
+
 /// Mock challenge row for the Active tab.
 class GroupChallengeItem {
   const GroupChallengeItem({
@@ -10,7 +28,7 @@ class GroupChallengeItem {
     required this.description,
     required this.dateRange,
     required this.badgeText,
-    required this.badgeColor,
+    required this.accent,
     required this.icon,
   });
 
@@ -19,7 +37,7 @@ class GroupChallengeItem {
   final String description;
   final String dateRange;
   final String badgeText;
-  final Color badgeColor;
+  final ChallengeAccent accent;
   final IconData icon;
 }
 
@@ -31,7 +49,7 @@ List<GroupChallengeItem> mockGroupChallenges() {
       description: 'Accumulate 10,000m of vertical descent in January',
       dateRange: 'Jan 1, 2026 to Jan 31, 2026',
       badgeText: '10K',
-      badgeColor: SnowtrakColors.warning,
+      accent: ChallengeAccent.warning,
       icon: Icons.terrain,
     ),
     const GroupChallengeItem(
@@ -40,7 +58,7 @@ List<GroupChallengeItem> mockGroupChallenges() {
       description: 'Visit 5 different ski resorts this season',
       dateRange: 'Dec 1, 2025 to Mar 31, 2026',
       badgeText: '5',
-      badgeColor: SnowtrakColors.info,
+      accent: ChallengeAccent.info,
       icon: Icons.explore,
     ),
     const GroupChallengeItem(
@@ -49,7 +67,7 @@ List<GroupChallengeItem> mockGroupChallenges() {
       description: 'Record a run with max speed over 80 km/h',
       dateRange: 'Jan 1, 2026 to Jan 31, 2026',
       badgeText: '80',
-      badgeColor: SnowtrakColors.error,
+      accent: ChallengeAccent.error,
       icon: Icons.speed,
     ),
   ];
@@ -78,7 +96,7 @@ class ActiveGroupChallengeCard extends StatelessWidget {
           children: [
             ActiveChallengeBadge(
               text: challenge.badgeText,
-              color: challenge.badgeColor,
+              color: challenge.accent.resolve(context),
               icon: challenge.icon,
             ),
             const SizedBox(width: SnowtrakSpacing.md),
