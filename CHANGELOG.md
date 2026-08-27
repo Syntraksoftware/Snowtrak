@@ -2,13 +2,13 @@
 
 ## [0.0.3] - 2026-08-27
 
-_Following is public and instant: no requests, no approval queue. Post
-visibility (`public` / `followers` / `private`) is the other half of the
-[design](docs/superpowers/specs/2026-08-26-follower-mechanism-design.md) and is
-not in this release, so every post is still visible to everyone._
+_Following is public and instant: no requests, no approval queue. Posts can be
+public, followers-only or private, but nothing in the app writes anything but
+public yet -- the composer picker is not built._
 
 ### Changed
 
+- Filter every read path that can return a post by who is allowed to see it ([`db18561`](https://github.com/Syntraksoftware/Snowtrak/commit/db18561))
 - Store follower counts in `follow_counts`, maintained by a database trigger rather than by application code ([`8a24183`](https://github.com/Syntraksoftware/Snowtrak/commit/8a24183))
 - Move blocking Supabase calls off the event loop, so one slow read no longer stalls every request in flight ([`5d71da3`](https://github.com/Syntraksoftware/Snowtrak/commit/5d71da3))
 - Run the post hydration reads together instead of one after another, cutting a cold profile open from 4.07s to 1.19s ([`5d71da3`](https://github.com/Syntraksoftware/Snowtrak/commit/5d71da3))
@@ -19,6 +19,9 @@ not in this release, so every post is still visible to everyone._
 
 ### Added
 
+- Add a `visibility` tier to posts: public, followers-only, or private ([`db18561`](https://github.com/Syntraksoftware/Snowtrak/commit/db18561))
+- Send and read a post's visibility from the client ([`db18561`](https://github.com/Syntraksoftware/Snowtrak/commit/db18561))
+- Read a user's followers and following lists from the client ([`db18561`](https://github.com/Syntraksoftware/Snowtrak/commit/db18561))
 - Follow and unfollow people, from a toggle on any profile that is not your own ([`8a24183`](https://github.com/Syntraksoftware/Snowtrak/commit/8a24183))
 - Remove a follower, the escape hatch that open following needs ([`8a24183`](https://github.com/Syntraksoftware/Snowtrak/commit/8a24183))
 - Add `/api/v1/follows` to community-backend: follow, unfollow, remove-a-follower, followers, following, stats ([`8a24183`](https://github.com/Syntraksoftware/Snowtrak/commit/8a24183))
