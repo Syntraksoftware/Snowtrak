@@ -65,6 +65,13 @@ class SnowtrakColors {
   static const Color backcountry = Color(0xFF6A7282);
   static const Color snowboard = Color(0xFF7C3AED);
 
+  // Notification types — data, like the activity ramp above, so these read the
+  // same in either theme and stay off the palette.
+  static const Color notifyKudos = Color(0xFFE91E63);
+  static const Color notifyChallenge = Color(0xFFFFD700);
+  static const Color notifyWeather = Color(0xFF607D8B);
+  static const Color notifyPowderDay = Color(0xFF00BCD4);
+
   // Lines
   static const Color divider = neutral100;
   static const Color border = neutral200;

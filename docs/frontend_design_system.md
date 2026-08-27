@@ -212,8 +212,6 @@ missing line of code.
 - **`SnowtrakElevation` shadows are hardcoded to `ink`.** They should read
   `scrim` per mode. It is a `static` class, so this needs a small API change —
   worth doing during Phase 3.
-- **`services/notification_service.dart` holds five category colours.** They
-  belong in the token layer. Convert when that file is next touched.
 - **The Settings theme picker is inert.** Independent of everything above:
   either wire it or mark it "coming soon". Shipping a control that lies to the
   user is its own bug.

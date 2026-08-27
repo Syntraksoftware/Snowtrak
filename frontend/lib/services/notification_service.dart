@@ -106,13 +106,13 @@ class NotificationService {
     final snackBar = SnackBar(
       content: Row(
         children: [
-          Icon(icon, color: Colors.white, size: 20),
+          Icon(icon, color: context.colors.textOnPrimary, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: context.colors.textOnPrimary,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
@@ -213,7 +213,7 @@ class NotificationService {
   static Color getColorForType(NotificationType type) {
     switch (type) {
       case NotificationType.kudos:
-        return const Color(0xFFE91E63); // Pink
+        return SnowtrakColors.notifyKudos;
       case NotificationType.comment:
         return SnowtrakColors.primary;
       case NotificationType.follow:
@@ -221,15 +221,15 @@ class NotificationService {
       case NotificationType.friendActivity:
         return SnowtrakColors.accent;
       case NotificationType.challenge:
-        return const Color(0xFFFFD700); // Gold
+        return SnowtrakColors.notifyChallenge;
       case NotificationType.group:
         return SnowtrakColors.info;
       case NotificationType.weather:
-        return const Color(0xFF607D8B); // Blue grey
+        return SnowtrakColors.notifyWeather;
       case NotificationType.powderDay:
-        return const Color(0xFF00BCD4); // Cyan
+        return SnowtrakColors.notifyPowderDay;
       case NotificationType.achievement:
-        return const Color(0xFFFFD700); // Gold
+        return SnowtrakColors.notifyChallenge;
       case NotificationType.system:
         return SnowtrakColors.textSecondary;
     }
@@ -333,7 +333,7 @@ class _NotificationBannerState extends State<_NotificationBanner>
               child: Container(
                 padding: const EdgeInsets.all(SnowtrakSpacing.md),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.colors.surface,
                   borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
                   border: Border.all(
                     color: typeColor.withOpacity(0.3),
@@ -483,7 +483,7 @@ class _ToastMessageState extends State<_ToastMessage>
               child: Text(
                 widget.message,
                 style: SnowtrakTypography.bodyMedium.copyWith(
-                  color: Colors.white,
+                  color: context.colors.textOnPrimary,
                 ),
                 textAlign: TextAlign.center,
               ),
