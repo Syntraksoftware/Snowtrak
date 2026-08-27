@@ -264,3 +264,31 @@ def test_hidden_and_missing_activities_return_the_same_404(client, stub_client, 
     assert hidden.status_code == missing.status_code == 404
     for field in ("code", "message", "details"):
         assert hidden.json()[field] == missing.json()[field]
+
+
+def test_get_me_reaches_the_list_handler_not_the_detail_one(client, stub_client):
+    """GET /activities/me must resolve as "list my activities", not as a
+    detail lookup for an activity literally named "me".
+
+    Router registration order matters here: activities_management_router owns
+    GET /{activity_id}, a single-segment wildcard that matches the literal
+    string "me" just as readily as a real id. If activities_list_router (which
+    owns GET /me) is registered after it, this request never reaches the list
+    handler at all -- it is swallowed by the wildcard first. This test asserts
+    on the response shape, not on which router matched, so it stays valid
+    across a routing refactor.
+    """
+    stub_client.activities = [
+        {**BASE, "id": "activity-1", "user_id": "user-1", "visibility": "public"},
+    ]
+    response = client.get("/api/v1/activities/me")
+
+    assert response.status_code == 200
+    body = response.json()
+    # Only the list handler returns a paginated ListResponse envelope
+    # ("items" plus "meta.pagination"); the detail handler returns a single
+    # FrontendActivityResponse and would 404 here, since no activity is
+    # actually named "me".
+    assert "items" in body
+    assert body["meta"]["pagination"]["total"] == 1
+    assert body["items"][0]["id"] == "activity-1"
