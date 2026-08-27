@@ -23,7 +23,7 @@ def visible_rows_expression(
     viewer_id: str | None,
     following_ids: list[str] | None = None,
 ) -> str:
-    """A PostgREST `or` for "posts this viewer may read".
+    """A PostgREST `or` for "rows this viewer may read".
 
         visibility = 'public'
         OR user_id = viewer

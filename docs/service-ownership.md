@@ -56,6 +56,17 @@ the only reader that cannot afford a network hop is the feed's visibility
 filter, which runs inside community-backend on every request. main-backend has
 no reader for this data, so the table sits next to its hot reader.
 
+### activity-backend reads `follows` (2026-08-27)
+
+community-backend owns the follow graph and is the only service that writes
+it. activity-backend reads it directly, through
+`backend/shared/follow_graph.py`, to build the visibility filter for the
+activity list.
+
+An HTTP hop would put two more round trips — roughly 880ms — in front of
+every activity list, for one indexed read of a two-column table whose shape
+is settled. The read is allowed; a write from activity-backend is not.
+
 ## Future Direction
 
 If notification throughput or channel complexity grows, split notifications
