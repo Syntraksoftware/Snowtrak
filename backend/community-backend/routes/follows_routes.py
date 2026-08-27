@@ -178,12 +178,18 @@ async def follow_stats(
     if isinstance(cached, dict):
         return FollowStatsResponse(**cached)
 
-    snapshot = await offload(get_community_client().follow_snapshot, target, current_user)
-    await set_cached_json(
-        cache_key,
-        snapshot,
-        get_config().CACHE_FOLLOW_STATS_TTL_SECONDS,
-    )
+    snapshot, ok = await offload(get_community_client().follow_snapshot, target, current_user)
+    if ok:
+        # Only a real read is cacheable. The fail-closed fallback (0 counts,
+        # is_private: True) is meant to be momentary; writing it to Redis
+        # would pin it for CACHE_FOLLOW_STATS_TTL_SECONDS and mislabel a
+        # public account's header for every viewer who hits it in that
+        # window.
+        await set_cached_json(
+            cache_key,
+            snapshot,
+            get_config().CACHE_FOLLOW_STATS_TTL_SECONDS,
+        )
     return FollowStatsResponse(**snapshot)
 
 

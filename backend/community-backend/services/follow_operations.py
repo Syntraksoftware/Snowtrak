@@ -77,13 +77,20 @@ class CommunityFollowOperations:
             logger.exception("Failed to read follow edge: %s", exception)
             return False
 
-    def follow_snapshot(self, user_id: str, viewer_id: str | None) -> dict[str, Any]:
+    def follow_snapshot(self, user_id: str, viewer_id: str | None) -> tuple[dict[str, Any], bool]:
         """Counts and the viewer's relationship, in one round trip.
 
         The database is a continent away -- one trip measures ~440ms of pure
         distance -- so the four obvious queries cost about a second before
         Postgres does any work. `follow_stats` does all four server-side; see
         backend/db/migrations/017_follow_requests_function.sql.
+
+        Returns:
+            A `(snapshot, ok)` pair. `ok` is `False` whenever `snapshot` is the
+            fail-closed fallback rather than a real read, so the route can
+            tell the two apart -- a caller that caches `snapshot` regardless
+            of `ok` would pin the fallback's `0 followers / is_private: True`
+            for a viewer for `CACHE_FOLLOW_STATS_TTL_SECONDS`.
         """
         # Fail closed: an RPC error makes the account look private rather
         # than public. This dict only ever labels a button (POST
@@ -105,10 +112,12 @@ class CommunityFollowOperations:
                 {"target": user_id, "viewer": viewer_id},
             ).execute()
             data = getattr(response, "data", None)
-            return data if isinstance(data, dict) else empty
+            if isinstance(data, dict):
+                return data, True
+            return empty, False
         except Exception as exception:
             logger.exception("Failed to read follow stats for %s: %s", user_id, exception)
-            return empty
+            return empty, False
 
     def count_followers(self, user_id: str) -> int:
         return self._count(field="followee_id", user_id=user_id)

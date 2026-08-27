@@ -12,9 +12,24 @@ response body).
 """
 
 from middleware.auth import get_current_user, get_optional_user
+from routes import follows_routes
 
 STUB_USER_2 = "22222222-2222-2222-2222-222222222222"
 STUB_USER_3 = "33333333-3333-3333-3333-333333333333"
+
+
+def _recording_set_cached_json(calls):
+    """An async stand-in for services.community_cache.set_cached_json.
+
+    Records every call instead of touching Redis, so a test can assert on
+    whether the route wrote a snapshot to the cache -- not just on the
+    response it returned.
+    """
+
+    async def _set(key, value, ttl):
+        calls.append((key, value, ttl))
+
+    return _set
 
 
 def test_following_a_public_account_returns_following(client, stub_client):
@@ -130,3 +145,54 @@ def test_a_pending_requester_without_an_accepted_edge_is_still_refused(client, s
     following_response = client.get(f"/api/v1/follows/{STUB_USER_2}/following")
     assert followers_response.status_code == 403
     assert following_response.status_code == 403
+
+
+def test_a_failed_follow_stats_read_is_not_cached(client, stub_client, monkeypatch):
+    """A fail-closed follow_snapshot fallback must not be written to Redis.
+
+    It is only correct for the instant the RPC failed; persisting it would
+    mislabel the header -- e.g. a "Follow" button under a viewer who already
+    follows a public account -- for CACHE_FOLLOW_STATS_TTL_SECONDS, with no
+    way for the user to clear it.
+    """
+    stub_client.follow_snapshot_result = (
+        {
+            "follower_count": 0,
+            "following_count": 0,
+            "is_following": False,
+            "is_followed_by": False,
+            "is_private": True,
+            "has_requested": False,
+        },
+        False,
+    )
+    calls = []
+    monkeypatch.setattr(follows_routes, "set_cached_json", _recording_set_cached_json(calls))
+
+    response = client.get(f"/api/v1/follows/{STUB_USER_2}/stats")
+
+    assert response.status_code == 200
+    assert response.json()["is_private"] is True
+    assert calls == []
+
+
+def test_a_successful_follow_stats_read_is_still_cached(client, stub_client, monkeypatch):
+    """The happy path must keep being cached.
+
+    This endpoint sits on every profile open, and the whole point of the
+    cache is to spare the ~440ms round trip for repeat viewers.
+    """
+    stub_client.follows = {("user-1", STUB_USER_2)}
+    calls = []
+    monkeypatch.setattr(follows_routes, "set_cached_json", _recording_set_cached_json(calls))
+
+    response = client.get(f"/api/v1/follows/{STUB_USER_2}/stats")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["follower_count"] == 1
+    assert body["is_private"] is False
+    assert len(calls) == 1
+    _cached_key, cached_value, cached_ttl = calls[0]
+    assert cached_value == body
+    assert cached_ttl == 120

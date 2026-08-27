@@ -85,6 +85,9 @@ class StubCommunityClient:
         self.follows: set[tuple[str, str]] = set()
         self.requests: set[tuple[str, str]] = set()
         self.private_accounts: set[str] = set()
+        # Set by a test to force follow_snapshot's return value; see
+        # follow_snapshot below.
+        self.follow_snapshot_result: tuple[dict, bool] | None = None
 
     def upload_community_media(self, user_id, file_bytes, content_type, extension):
         if len(file_bytes) > _MEDIA_MAX:
@@ -273,6 +276,27 @@ class StubCommunityClient:
 
     def is_following(self, follower_id, followee_id):
         return (follower_id, followee_id) in self.follows
+
+    def follow_snapshot(self, user_id, viewer_id):
+        """Mirrors CommunityFollowOperations.follow_snapshot's (snapshot, ok) shape.
+
+        `follow_snapshot_result`, when set, lets a test force the fail-closed
+        path (`ok=False`) the way a real RPC error would, without stubbing an
+        exception through the whole client.
+        """
+        if self.follow_snapshot_result is not None:
+            return self.follow_snapshot_result
+        return (
+            {
+                "follower_count": self.count_followers(user_id),
+                "following_count": self.count_following(user_id),
+                "is_following": (viewer_id, user_id) in self.follows if viewer_id else False,
+                "is_followed_by": (user_id, viewer_id) in self.follows if viewer_id else False,
+                "is_private": user_id in self.private_accounts,
+                "has_requested": (viewer_id, user_id) in self.requests if viewer_id else False,
+            },
+            True,
+        )
 
     def list_follow_edges(self, *, user_id, direction, limit=20, offset=0):
         match_index = 1 if direction == "followers" else 0
