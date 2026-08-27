@@ -625,6 +625,7 @@ activity-backend can read the graph without importing community-backend."
   `is_private_account(user_id) -> bool`,
   `request_follow(requester_id, target_id) -> bool`,
   `withdraw_request(requester_id, target_id) -> bool`,
+  `deny_request(target_id, requester_id) -> bool`,
   `approve_request(target_id, requester_id) -> bool`,
   `list_requests(target_id, limit, offset) -> list[dict]`,
   `count_requests(target_id) -> int`.
@@ -2463,22 +2464,16 @@ endpoint is a round trip for a number that is almost always zero."
 
 **Interfaces:** none.
 
-- [ ] **Step 1: Record the cross-service read in service-ownership.md**
+- [ ] **Step 1: Confirm the cross-service read is recorded**
 
-Add under the follows section:
+**Already done in Task 2's fix round.** `backend/shared/follow_graph.py`
+cited `docs/service-ownership.md` for the exception before that document had
+an entry, so the entry moved forward rather than shipping a comment that
+pointed at nothing for eleven commits.
 
-```markdown
-### activity-backend reads `follows` (2026-08-27)
-
-community-backend owns the follow graph and is the only service that
-writes it. activity-backend reads it directly, through
-`backend/shared/follow_graph.py`, to build the visibility filter for the
-activity list.
-
-An HTTP hop would put two more round trips — roughly 880ms — in front of
-every activity list, for one indexed read of a two-column table whose shape
-is settled. The read is allowed; a write from activity-backend is not.
-```
+Confirm the section "activity-backend reads `follows` (2026-08-27)" is
+present in `docs/service-ownership.md` and still describes what the code
+does. Do not add a second copy.
 
 - [ ] **Step 2: Mark the old spec superseded**
 
