@@ -2,6 +2,24 @@ from fastapi import status
 
 from middleware.auth import get_current_user, get_optional_user
 
+# Shared shape for the visibility tests -- only id, user_id, and visibility
+# vary between rows, so those are set per-test.
+BASE = {
+    "activity_type": "ski",
+    "name": "Morning Run",
+    "description": "Fresh powder",
+    "distance_meters": 1200.0,
+    "duration_seconds": 600,
+    "elevation_gain_meters": 100.0,
+    "processing_status": "ready",
+    "map_activity_id": None,
+    "storage_key": None,
+    "created_at": "2026-01-01T00:00:00Z",
+    "start_time": "2026-01-01T00:00:00Z",
+    "end_time": "2026-01-01T00:10:00Z",
+    "gps_path": [],
+}
+
 
 def _activity_payload():
     return {
@@ -149,3 +167,34 @@ class TestActivityEndpoints:
         response = client.post("/api/v1/activities", json=_activity_payload())
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_anonymous_activity_list_returns_only_public(client, stub_client):
+    stub_client.activities = [
+        {**BASE, "id": "a-public", "user_id": "u-1", "visibility": "public"},
+        {**BASE, "id": "a-private", "user_id": "u-1", "visibility": "private"},
+        {**BASE, "id": "a-followers", "user_id": "u-1", "visibility": "followers"},
+    ]
+    ids = {i["id"] for i in client.get("/api/v1/activities/").json()["items"]}
+    assert ids == {"a-public"}
+
+
+def test_a_follower_sees_the_followers_tier(client, stub_client, as_user):
+    as_user("u-2")
+    stub_client.follows = {("u-2", "u-1")}
+    stub_client.activities = [
+        {**BASE, "id": "a-public", "user_id": "u-1", "visibility": "public"},
+        {**BASE, "id": "a-followers", "user_id": "u-1", "visibility": "followers"},
+        {**BASE, "id": "a-private", "user_id": "u-1", "visibility": "private"},
+    ]
+    ids = {i["id"] for i in client.get("/api/v1/activities/").json()["items"]}
+    assert ids == {"a-public", "a-followers"}
+
+
+def test_the_owner_sees_their_own_private_activity(client, stub_client, as_user):
+    as_user("u-1")
+    stub_client.activities = [
+        {**BASE, "id": "a-private", "user_id": "u-1", "visibility": "private"},
+    ]
+    ids = {i["id"] for i in client.get("/api/v1/activities/").json()["items"]}
+    assert ids == {"a-private"}

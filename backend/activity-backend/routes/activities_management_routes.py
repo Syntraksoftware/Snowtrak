@@ -4,6 +4,7 @@ import logging
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from shared.pipeline_enums import ProcessingStatus
+from shared.visibility import can_view
 
 from middleware.auth import get_current_user, get_optional_user
 from models import (
@@ -20,6 +21,7 @@ from routes.activity_transformers import (
 )
 from services.activity_deletion_service import ActivityDeletionService
 from services.map_backend_client import get_map_backend_client
+from services.offload import offload
 from services.supabase_client import get_activity_client
 from services.user_stats_service import get_stats_service
 
@@ -120,11 +122,9 @@ async def get_activity(
                 detail="Activity not found",
             ) from None
 
-        visibility = str(activity_record.get("visibility", "private")).lower()
-        owner_id = str(activity_record.get("user_id", ""))
-        can_view = visibility == "public" or (user_id is not None and user_id == owner_id)
-        if not can_view:
-            # Intentionally return 404 to avoid exposing private resource existence.
+        following = await offload(get_activity_client().following_ids, user_id) if user_id else []
+        if not can_view(activity_record, user_id, following):
+            # 404, not 403: a private activity's existence is itself private.
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Activity not found",

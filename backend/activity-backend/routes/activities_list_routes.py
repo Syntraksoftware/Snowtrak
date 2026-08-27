@@ -6,12 +6,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from shared import ListResponse
 from shared.query_migration import FILTER_MAPPING, check_deprecated_params
 
-from middleware.auth import get_current_user
+from middleware.auth import get_current_user, get_optional_user
 from models import FrontendActivityResponse
 from routes.activity_transformers import (
     build_activity_list_response,
     map_activity_to_frontend_payload,
 )
+from services.offload import offload
 from services.supabase_client import get_activity_client
 
 logger = logging.getLogger(__name__)
@@ -30,11 +31,19 @@ async def list_activities(
     request: Request,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    viewer_id: str | None = Depends(get_optional_user),
 ):
-    """List public activities in standardized response format."""
+    """List the activities this viewer is allowed to see."""
     activity_client = get_activity_client()
     try:
-        activity_list_response = activity_client.list_activities(limit=limit, offset=offset)
+        following = await offload(activity_client.following_ids, viewer_id) if viewer_id else []
+        activity_list_response = await offload(
+            activity_client.list_activities,
+            viewer_id=viewer_id,
+            following=following,
+            limit=limit,
+            offset=offset,
+        )
         if not isinstance(activity_list_response, dict):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
