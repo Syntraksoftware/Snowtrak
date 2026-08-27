@@ -144,4 +144,36 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets(
+      'a second tap before the tree rebuilds still acts on the row the '
+      'user tapped, not on whatever the list shifted into that slot',
+      (tester) async {
+    fakeService.requests = [
+      {'user_id': 'u-1', 'first_name': 'Ana', 'last_name': 'One'},
+      {'user_id': 'u-2', 'first_name': 'Bo', 'last_name': 'Two'},
+      {'user_id': 'u-3', 'first_name': 'Cy', 'last_name': 'Three'},
+    ];
+
+    await tester.pumpWidget(_host(const FollowRequestsScreen()));
+    await tester.pumpAndSettle();
+
+    // Approve row 0 (u-1). Its removal is spliced into `_requests`
+    // synchronously, inside setState, before this frame is ever rebuilt --
+    // so the tree on screen right now still shows the original three rows.
+    await tester.tap(find.text('Approve').at(0));
+
+    // Deliberately no pump here: the whole point is to tap again while the
+    // stale (pre-removal) tree is still what's on screen, landing on the
+    // row that displayed u-2. Position-keyed code reads `_requests[1]`
+    // *after* u-1 was already removed, which by then holds u-3 -- so a
+    // position-keyed implementation denies u-3 instead of the row the user
+    // actually touched.
+    await tester.tap(find.text('Deny').at(1));
+
+    await tester.pumpAndSettle();
+
+    expect(fakeService.approved, ['u-1']);
+    expect(fakeService.denied, ['u-2']);
+  });
 }

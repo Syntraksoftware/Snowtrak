@@ -42,6 +42,14 @@ class _FollowRequestsScreenState extends State<FollowRequestsScreen> {
   static const int _limit = 20;
   bool _hasMore = true;
 
+  /// User ids with an approve/deny in flight. Rows are addressed by this id,
+  /// never by list position -- the list can shift under a row (another
+  /// action landing, a refresh) between a tap and the response, and acting
+  /// on whatever is now at that index would approve or deny the wrong
+  /// person. This set also blocks a second tap on the same row while the
+  /// first is still in flight, the way FollowButton's `_busy` does.
+  final Set<String> _busy = {};
+
   @override
   void initState() {
     super.initState();
@@ -96,26 +104,32 @@ class _FollowRequestsScreenState extends State<FollowRequestsScreen> {
 
   Future<void> _handleRefresh() => _load(refresh: true);
 
-  Future<void> _approve(int index) async {
+  Future<void> _approve(String userId) async {
+    if (_busy.contains(userId)) return;
+    final index = _requests.indexWhere((r) => r['user_id'] == userId);
+    if (index == -1) return;
     final removed = _requests[index];
-    final userId = removed['user_id'] as String? ?? '';
 
     // Same reasoning as FollowButton: flip first, let the server's answer
     // correct a wrong guess a moment later.
-    setState(() => _requests.removeAt(index));
+    setState(() {
+      _requests.removeAt(index);
+      _busy.add(userId);
+    });
 
     final result = await _followService.approveRequest(userId);
     if (!mounted) return;
 
     switch (result) {
       case AppSuccess():
-        return;
+        setState(() => _busy.remove(userId));
       case AppFailure(:final error):
         if (_isNotFound(error)) {
           // 404 here means the requester withdrew between the list loading
           // and this tap -- the request the server knew about is already
           // gone. The row is already correctly absent; putting it back would
           // resurrect a request nobody can act on anymore.
+          setState(() => _busy.remove(userId));
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('That request is no longer pending.'),
@@ -123,18 +137,23 @@ class _FollowRequestsScreenState extends State<FollowRequestsScreen> {
           );
           return;
         }
-        _restore(index, removed);
+        _restore(index, removed, userId);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(error.userMessage)),
         );
     }
   }
 
-  Future<void> _deny(int index) async {
+  Future<void> _deny(String userId) async {
+    if (_busy.contains(userId)) return;
+    final index = _requests.indexWhere((r) => r['user_id'] == userId);
+    if (index == -1) return;
     final removed = _requests[index];
-    final userId = removed['user_id'] as String? ?? '';
 
-    setState(() => _requests.removeAt(index));
+    setState(() {
+      _requests.removeAt(index);
+      _busy.add(userId);
+    });
 
     // The endpoint succeeds even if there was nothing to deny, so a failure
     // here is a real network/server problem, not a stale row.
@@ -143,9 +162,9 @@ class _FollowRequestsScreenState extends State<FollowRequestsScreen> {
 
     switch (result) {
       case AppSuccess():
-        return;
+        setState(() => _busy.remove(userId));
       case AppFailure(:final error):
-        _restore(index, removed);
+        _restore(index, removed, userId);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(error.userMessage)),
         );
@@ -155,11 +174,12 @@ class _FollowRequestsScreenState extends State<FollowRequestsScreen> {
   /// Re-inserts at the original position, clamped to the current length --
   /// another row may have been approved or denied while this one was in
   /// flight.
-  void _restore(int index, Map<String, dynamic> removed) {
+  void _restore(int index, Map<String, dynamic> removed, String userId) {
     if (!mounted) return;
     setState(() {
       final at = index.clamp(0, _requests.length);
       _requests.insert(at, removed);
+      _busy.remove(userId);
     });
   }
 
@@ -270,10 +290,13 @@ class _FollowRequestsScreenState extends State<FollowRequestsScreen> {
           );
         }
 
+        final request = _requests[index];
+        final userId = request['user_id'] as String? ?? '';
         return _RequestRow(
-          request: _requests[index],
-          onApprove: () => _approve(index),
-          onDeny: () => _deny(index),
+          request: request,
+          busy: _busy.contains(userId),
+          onApprove: () => _approve(userId),
+          onDeny: () => _deny(userId),
         );
       },
     );
@@ -283,11 +306,17 @@ class _FollowRequestsScreenState extends State<FollowRequestsScreen> {
 class _RequestRow extends StatelessWidget {
   const _RequestRow({
     required this.request,
+    required this.busy,
     required this.onApprove,
     required this.onDeny,
   });
 
   final Map<String, dynamic> request;
+
+  /// True while this row's own approve/deny call is in flight -- disables
+  /// both buttons so a second tap cannot race the first or land on a row
+  /// that has since shifted under it.
+  final bool busy;
   final VoidCallback onApprove;
   final VoidCallback onDeny;
 
@@ -349,7 +378,7 @@ class _RequestRow extends StatelessWidget {
           ),
           const SizedBox(width: SnowtrakSpacing.sm),
           OutlinedButton(
-            onPressed: onDeny,
+            onPressed: busy ? null : onDeny,
             style: OutlinedButton.styleFrom(
               foregroundColor: context.colors.textPrimary,
               side: BorderSide(color: context.colors.borderStrong),
@@ -361,7 +390,7 @@ class _RequestRow extends StatelessWidget {
           ),
           const SizedBox(width: SnowtrakSpacing.sm),
           FilledButton(
-            onPressed: onApprove,
+            onPressed: busy ? null : onApprove,
             style: FilledButton.styleFrom(
               backgroundColor: context.colors.primary,
               foregroundColor: context.colors.textOnPrimary,
