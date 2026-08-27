@@ -112,7 +112,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
                     child: ActivitiesHeader(
                       username: username,
                       onAvatarTap: () {
-                        HomeTabScope.selectTabOrNull(context, 4);
+                        HomeTabScope.selectTabOrNull(context, HomeTab.profile);
                       },
                     ),
                   ),

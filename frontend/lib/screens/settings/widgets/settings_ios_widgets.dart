@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snowtrak/core/theme.dart';
 
 /// White rounded iOS-style group. [dividerLeadingPadding] matches row content (52 main, 16 account).
 class SettingsIosGroup extends StatelessWidget {
@@ -212,8 +213,8 @@ class SettingsIosProfileCard extends StatelessWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        Color(0xFF007AFF),
-                        Color(0xFF5856D6),
+                        SnowtrakColors.ink,
+                        SnowtrakColors.neutral600,
                       ],
                     ),
                     borderRadius: BorderRadius.circular(30),

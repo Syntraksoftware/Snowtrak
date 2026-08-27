@@ -160,13 +160,13 @@ class _ActiveTabState extends State<ActiveTab> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF1A237E),
-            Color(0xFF3949AB),
+            SnowtrakColors.ink,
+            SnowtrakColors.primaryLight,
           ],
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1A237E).withOpacity(0.3),
+            color: SnowtrakColors.ink.withOpacity(0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),

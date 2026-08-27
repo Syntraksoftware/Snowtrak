@@ -121,20 +121,20 @@ class TrailListCard extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.amber.withAlpha(30),
+                          color: SnowtrakColors.warning.withAlpha(30),
                           borderRadius: BorderRadius.circular(SnowtrakRadius.sm),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             const Icon(Icons.star,
-                                color: Colors.amber, size: 16),
+                                color: SnowtrakColors.warning, size: 16),
                             const SizedBox(width: 4),
                             Text(
                               trail.rating!.toStringAsFixed(1),
                               style: SnowtrakTypography.labelMedium.copyWith(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.amber.shade800,
+                                color: SnowtrakColors.warning,
                               ),
                             ),
                           ],

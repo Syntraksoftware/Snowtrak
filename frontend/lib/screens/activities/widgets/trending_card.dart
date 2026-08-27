@@ -53,7 +53,7 @@ class _TrendingCardState extends State<TrendingCard> {
             const SizedBox(height: SnowtrakSpacing.sm),
             AuthPrimaryButton(
               label: 'Explore community',
-              onPressed: () => HomeTabScope.selectTabOrNull(context, 1),
+              onPressed: () => HomeTabScope.selectTabOrNull(context, HomeTab.community),
             ),
           ],
         ),

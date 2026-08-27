@@ -122,7 +122,7 @@ class _ChallengesTabState extends State<ChallengesTab> {
                       width: 100,
                       height: 100,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFF4500).withOpacity(0.3),
+                        color: SnowtrakColors.ink.withOpacity(0.3),
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -134,7 +134,7 @@ class _ChallengesTabState extends State<ChallengesTab> {
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.2),
+                        color: SnowtrakColors.warning.withOpacity(0.2),
                         shape: BoxShape.circle,
                       ),
                     ),

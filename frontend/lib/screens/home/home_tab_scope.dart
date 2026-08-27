@@ -1,5 +1,15 @@
 import 'package:flutter/material.dart';
 
+/// Bottom-nav slots, in the order the design file lays them out
+/// (`12 layout now` → BottomNav). Record is the centre FAB.
+class HomeTab {
+  static const int home = 0;
+  static const int map = 1;
+  static const int record = 2;
+  static const int community = 3;
+  static const int profile = 4;
+}
+
 /// Lets nested home tabs (e.g. Home feed) switch the bottom navigation index.
 class HomeTabScope extends InheritedWidget {
   const HomeTabScope({

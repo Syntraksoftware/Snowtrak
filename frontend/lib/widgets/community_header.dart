@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snowtrak/core/theme.dart';
 
 class CommunityHeader extends StatelessWidget {
   final VoidCallback? onHomeTap;
@@ -79,7 +80,7 @@ class CommunityHeader extends StatelessWidget {
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     valueColor:
-                        AlwaysStoppedAnimation<Color>(Color(0xFFFF4500)),
+                        AlwaysStoppedAnimation<Color>(SnowtrakColors.ink),
                   ),
                 ),
             ],

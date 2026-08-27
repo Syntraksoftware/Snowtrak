@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snowtrak/core/theme.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:snowtrak/core/di/service_locator.dart';
@@ -303,7 +304,7 @@ class _NewThreadDraftScreenState extends State<NewThreadDraftScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(18),
-                  color: const Color(0xFFF4F5F7),
+                  color: SnowtrakColors.surfaceVariant,
                 ),
               ),
             ],

@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:snowtrak/core/theme.dart';
 
-/// Snowtrak auth screens — dark blue accent on a clean white canvas.
+/// Shared styling for the auth screens and the older "liquid" cards.
+///
+/// The brand accent is ink (`Core — Colour / action/primary`) — the same one the
+/// tabs use, so login and Home no longer show two different blues.
 abstract final class SnowtrakAuthTheme {
-  static const brand = Color(0xFF0D47A1);
-  static const brandMuted = Color(0xFF5C7FA8);
-  static const fieldBorder = Color(0xFFE0E0E0);
-  static const socialBorder = Color(0xFFD9D9D9);
+  static const brand = SnowtrakColors.ink;
+  static const brandMuted = SnowtrakColors.neutral500;
+  static const fieldBorder = SnowtrakColors.border;
+  static const socialBorder = SnowtrakColors.border;
 
-  static const fieldRadius = 14.0;
-  static const buttonRadius = 999.0;
+  static const fieldRadius = SnowtrakRadius.md;
+  static const buttonRadius = SnowtrakRadius.md;
 
   static TextStyle get pageTitle => SnowtrakTypography.displaySmall.copyWith(
         fontSize: 26,

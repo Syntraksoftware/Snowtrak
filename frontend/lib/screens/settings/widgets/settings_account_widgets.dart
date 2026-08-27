@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:snowtrak/core/theme.dart';
 import 'package:flutter/material.dart';
 
 class SettingsAccountDetailRow extends StatelessWidget {
@@ -134,7 +135,7 @@ class SettingsAccountToggleRow extends StatelessWidget {
           CupertinoSwitch(
             value: value,
             onChanged: onChanged,
-            activeColor: const Color(0xFF34C759),
+            activeColor: SnowtrakColors.success,
           ),
         ],
       ),
@@ -183,7 +184,7 @@ class SettingsAccountConnectedRow extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isConnected
                       ? Colors.grey[200]
-                      : const Color(0xFF007AFF),
+                      : SnowtrakColors.ink,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(

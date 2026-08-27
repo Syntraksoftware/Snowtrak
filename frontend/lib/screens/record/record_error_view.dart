@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snowtrak/core/theme.dart';
 
 class RecordErrorView extends StatelessWidget {
   const RecordErrorView({
@@ -53,7 +54,7 @@ class RecordErrorView extends StatelessWidget {
               ElevatedButton(
                 onPressed: onRetry,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF4500),
+                  backgroundColor: SnowtrakColors.ink,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 32,

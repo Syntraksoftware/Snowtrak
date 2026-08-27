@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snowtrak/core/theme.dart';
 import 'package:flutter/cupertino.dart';
 
 class DataStorageScreen extends StatefulWidget {
@@ -14,9 +15,9 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7),
+      backgroundColor: SnowtrakColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF2F2F7),
+        backgroundColor: SnowtrakColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -352,7 +353,7 @@ class _SettingsActionRow extends StatelessWidget {
                       label,
                       style: const TextStyle(
                         fontSize: 17,
-                        color: Color(0xFF007AFF),
+                        color: SnowtrakColors.ink,
                       ),
                     ),
                     if (subtitle != null) ...[
@@ -401,7 +402,7 @@ class _SyncStatusRow extends StatelessWidget {
             onPressed: onSync,
             child: const Text(
               'Sync Now',
-              style: TextStyle(color: Color(0xFF007AFF)),
+              style: TextStyle(color: SnowtrakColors.ink),
             ),
           ),
         ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snowtrak/core/theme.dart';
 import 'package:provider/provider.dart';
 import 'package:snowtrak/providers/auth_provider.dart';
 
@@ -174,7 +175,7 @@ class _ComposerWidgetState extends State<ComposerWidget> {
                     style: TextStyle(
                       fontSize: 12,
                       color: _characterCount > widget.maxCharacters
-                          ? Colors.red
+                          ? SnowtrakColors.error
                           : Colors.grey[600],
                     ),
                   ),
@@ -186,7 +187,7 @@ class _ComposerWidgetState extends State<ComposerWidget> {
                     ? _handlePost
                     : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF4500),
+                  backgroundColor: SnowtrakColors.ink,
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: Colors.grey[300],
                   disabledForegroundColor: Colors.grey[600],

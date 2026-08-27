@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snowtrak/core/theme.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:snowtrak/providers/auth_provider.dart';
@@ -22,9 +23,9 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     final email = user?.email ?? 'Not set';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7),
+      backgroundColor: SnowtrakColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF2F2F7),
+        backgroundColor: SnowtrakColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -132,7 +133,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
             children: [
               SettingsIosActionRow(
                 label: 'Sign Out of All Devices',
-                textColor: const Color(0xFF007AFF),
+                textColor: SnowtrakColors.ink,
                 onTap: () => _showLogoutAllConfirmation(),
               ),
             ],
@@ -148,7 +149,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: const Color(0xFF34C759).withAlpha(30),
+        color: SnowtrakColors.success.withAlpha(30),
         borderRadius: BorderRadius.circular(4),
       ),
       child: const Text(
@@ -156,7 +157,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w500,
-          color: Color(0xFF34C759),
+          color: SnowtrakColors.success,
         ),
       ),
     );

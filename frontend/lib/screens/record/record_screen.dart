@@ -457,7 +457,7 @@ class _RecordScreenState extends State<RecordScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to save activity'),
-            backgroundColor: Color(0xFFDC2626),
+            backgroundColor: SnowtrakColors.error,
           ),
         );
       }

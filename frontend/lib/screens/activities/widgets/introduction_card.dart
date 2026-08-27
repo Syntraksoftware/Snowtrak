@@ -22,9 +22,9 @@ class _IntroductionCardState extends State<IntroductionCard> {
   void _selectAction(_IntroAction action) {
     setState(() => _selected = action);
     HomeTabScope.selectTabOrNull(context, switch (action) {
-      _IntroAction.record => 0,
-      _IntroAction.community => 1,
-      _IntroAction.stats => 4,
+      _IntroAction.record => HomeTab.record,
+      _IntroAction.community => HomeTab.community,
+      _IntroAction.stats => HomeTab.profile,
     });
   }
 

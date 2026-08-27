@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snowtrak/core/theme.dart';
 import 'package:flutter/cupertino.dart';
 
 class DisplaySettingsScreen extends StatefulWidget {
@@ -18,9 +19,9 @@ class _DisplaySettingsScreenState extends State<DisplaySettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7),
+      backgroundColor: SnowtrakColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF2F2F7),
+        backgroundColor: SnowtrakColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -175,7 +176,7 @@ class _DisplaySettingsScreenState extends State<DisplaySettingsScreen> {
                       if (option == currentValue) ...[
                         const SizedBox(width: 8),
                         const Icon(CupertinoIcons.checkmark,
-                            size: 18, color: Color(0xFF007AFF)),
+                            size: 18, color: SnowtrakColors.ink),
                       ],
                     ],
                   ),

@@ -31,7 +31,7 @@ List<GroupChallengeItem> mockGroupChallenges() {
       description: 'Accumulate 10,000m of vertical descent in January',
       dateRange: 'Jan 1, 2026 to Jan 31, 2026',
       badgeText: '10K',
-      badgeColor: Color(0xFFE65100),
+      badgeColor: SnowtrakColors.warning,
       icon: Icons.terrain,
     ),
     GroupChallengeItem(
@@ -40,7 +40,7 @@ List<GroupChallengeItem> mockGroupChallenges() {
       description: 'Visit 5 different ski resorts this season',
       dateRange: 'Dec 1, 2025 to Mar 31, 2026',
       badgeText: '5',
-      badgeColor: Color(0xFF1565C0),
+      badgeColor: SnowtrakColors.info,
       icon: Icons.explore,
     ),
     GroupChallengeItem(
@@ -49,7 +49,7 @@ List<GroupChallengeItem> mockGroupChallenges() {
       description: 'Record a run with max speed over 80 km/h',
       dateRange: 'Jan 1, 2026 to Jan 31, 2026',
       badgeText: '80',
-      badgeColor: Color(0xFFC62828),
+      badgeColor: SnowtrakColors.error,
       icon: Icons.speed,
     ),
   ];

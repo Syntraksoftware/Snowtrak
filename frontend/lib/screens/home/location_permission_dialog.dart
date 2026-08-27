@@ -33,7 +33,7 @@ class LocationPermissionDialog extends StatelessWidget {
               'We need your GPS service to record activities and show local weather. You can enable it later in Settings.',
             ),
             duration: Duration(seconds: 5),
-            backgroundColor: Colors.orange,
+            backgroundColor: SnowtrakColors.warning,
           ),
         );
       }
