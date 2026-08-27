@@ -67,4 +67,17 @@ class FollowApi {
   /// Drop somebody who follows you.
   Future<void> removeFollower(String userId) =>
       _dio.delete<void>('/follows/me/followers/$userId');
+
+  /// People asking to follow you, newest first.
+  Future<List<Map<String, dynamic>>> getRequests({
+    int limit = 20,
+    int offset = 0,
+  }) =>
+      _list('/follows/me/requests', limit: limit, offset: offset);
+
+  Future<void> approveRequest(String userId) =>
+      _dio.post<void>('/follows/me/requests/$userId/approve');
+
+  Future<void> denyRequest(String userId) =>
+      _dio.delete<void>('/follows/me/requests/$userId');
 }

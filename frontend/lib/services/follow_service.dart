@@ -40,6 +40,18 @@ class FollowService {
   Future<AppResult<void>> removeFollower(String userId) =>
       _run(() => _followApi.removeFollower(userId));
 
+  Future<AppResult<List<Map<String, dynamic>>>> getRequests({
+    int limit = 20,
+    int offset = 0,
+  }) =>
+      _run(() => _followApi.getRequests(limit: limit, offset: offset));
+
+  Future<AppResult<void>> approveRequest(String userId) =>
+      _run(() => _followApi.approveRequest(userId));
+
+  Future<AppResult<void>> denyRequest(String userId) =>
+      _run(() => _followApi.denyRequest(userId));
+
   Future<AppResult<T>> _run<T>(Future<T> Function() fn) async {
     try {
       return AppSuccess(await fn());
