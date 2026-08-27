@@ -29,3 +29,17 @@ frontend/ios/fastlane/report.xml
 
 # editor settings
 .vscode/
+
+# design source files -- Snowtrak_DesignSystem.fig alone is over 100MB, and a
+# git blob is permanent. The fig file is the design source of truth; keep it in
+# shared storage, not in history. See docs/frontend_design_system.md.
+pencil_assets/
+
+# manual screenshots, ~10MB and regenerated whenever the UI moves
+screenshots/
+
+# golden-diff output, written on every failed golden test
+frontend/test/failures/
+
+# per-machine Claude Code settings; .claude/settings.json is the shared one
+.claude/settings.local.json
