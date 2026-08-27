@@ -1,5 +1,6 @@
 """Core create, read, update, and delete routes for activities."""
 
+import asyncio
 import logging
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
@@ -115,14 +116,25 @@ async def get_activity(
     """Get activity details formatted for frontend."""
     activity_client = get_activity_client()
     try:
-        activity_record = activity_client.get_activity_by_id(activity_id)
+        # The activity read and the follow lookup are independent -- the
+        # latter only needs user_id, not the row -- and the database is a
+        # continent away, so run them concurrently instead of back to back.
+        # Skip the follow lookup entirely for an anonymous caller.
+        if user_id:
+            activity_record, following = await asyncio.gather(
+                offload(activity_client.get_activity_by_id, activity_id),
+                offload(activity_client.following_ids, user_id),
+            )
+        else:
+            activity_record = await offload(activity_client.get_activity_by_id, activity_id)
+            following = []
+
         if not activity_record:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Activity not found",
             ) from None
 
-        following = await offload(get_activity_client().following_ids, user_id) if user_id else []
         if not can_view(activity_record, user_id, following):
             # 404, not 403: a private activity's existence is itself private.
             raise HTTPException(
