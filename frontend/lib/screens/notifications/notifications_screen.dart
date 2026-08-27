@@ -249,7 +249,7 @@ class _NotificationItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final typeColor = NotificationService.getColorForType(notification.type);
+    final typeColor = NotificationService.getColorForType(context, notification.type);
     final typeIcon = NotificationService.getIconForType(notification.type);
 
     return Dismissible(

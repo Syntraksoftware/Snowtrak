@@ -33,7 +33,7 @@ class NotificationService {
     _showSnackBar(
       context,
       message: message,
-      backgroundColor: SnowtrakColors.success,
+      backgroundColor: context.colors.success,
       icon: Icons.check_circle_outline,
       duration: duration,
       action: action,
@@ -50,7 +50,7 @@ class NotificationService {
     _showSnackBar(
       context,
       message: message,
-      backgroundColor: SnowtrakColors.error,
+      backgroundColor: context.colors.error,
       icon: Icons.error_outline,
       duration: duration,
       action: action,
@@ -67,7 +67,7 @@ class NotificationService {
     _showSnackBar(
       context,
       message: message,
-      backgroundColor: SnowtrakColors.info,
+      backgroundColor: context.colors.info,
       icon: Icons.info_outline,
       duration: duration,
       action: action,
@@ -84,7 +84,7 @@ class NotificationService {
     _showSnackBar(
       context,
       message: message,
-      backgroundColor: SnowtrakColors.warning,
+      backgroundColor: context.colors.warning,
       icon: Icons.warning_amber_outlined,
       duration: duration,
       action: action,
@@ -210,12 +210,12 @@ class NotificationService {
   }
 
   /// Get color for notification type
-  static Color getColorForType(NotificationType type) {
+  static Color getColorForType(BuildContext context, NotificationType type) {
     switch (type) {
       case NotificationType.kudos:
         return SnowtrakColors.notifyKudos;
       case NotificationType.comment:
-        return SnowtrakColors.primary;
+        return context.colors.primary;
       case NotificationType.follow:
         return SnowtrakColors.secondary;
       case NotificationType.friendActivity:
@@ -223,7 +223,7 @@ class NotificationService {
       case NotificationType.challenge:
         return SnowtrakColors.notifyChallenge;
       case NotificationType.group:
-        return SnowtrakColors.info;
+        return context.colors.info;
       case NotificationType.weather:
         return SnowtrakColors.notifyWeather;
       case NotificationType.powderDay:
@@ -231,7 +231,7 @@ class NotificationService {
       case NotificationType.achievement:
         return SnowtrakColors.notifyChallenge;
       case NotificationType.system:
-        return SnowtrakColors.textSecondary;
+        return context.colors.textSecondary;
     }
   }
 }
@@ -309,7 +309,7 @@ class _NotificationBannerState extends State<_NotificationBanner>
   @override
   Widget build(BuildContext context) {
     final notification = widget.notification;
-    final typeColor = NotificationService.getColorForType(notification.type);
+    final typeColor = NotificationService.getColorForType(context, notification.type);
     final typeIcon = NotificationService.getIconForType(notification.type);
 
     return Positioned(
@@ -373,7 +373,7 @@ class _NotificationBannerState extends State<_NotificationBanner>
                             notification.title,
                             style: SnowtrakTypography.labelLarge.copyWith(
                               fontWeight: FontWeight.w600,
-                              color: SnowtrakColors.textPrimary,
+                              color: context.colors.textPrimary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -382,7 +382,7 @@ class _NotificationBannerState extends State<_NotificationBanner>
                           Text(
                             notification.message,
                             style: SnowtrakTypography.bodySmall.copyWith(
-                              color: SnowtrakColors.textSecondary,
+                              color: context.colors.textSecondary,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -396,7 +396,7 @@ class _NotificationBannerState extends State<_NotificationBanner>
                       onPressed: _dismiss,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
-                      color: SnowtrakColors.textTertiary,
+                      color: context.colors.textTertiary,
                     ),
                   ],
                 ),
@@ -477,7 +477,7 @@ class _ToastMessageState extends State<_ToastMessage>
                 vertical: 12,
               ),
               decoration: BoxDecoration(
-                color: SnowtrakColors.textPrimary.withOpacity(0.9),
+                color: context.colors.textPrimary.withValues(alpha: 0.9),
                 borderRadius: BorderRadius.circular(SnowtrakRadius.round),
               ),
               child: Text(
