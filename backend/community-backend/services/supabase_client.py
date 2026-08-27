@@ -18,6 +18,7 @@ from services.community_post_read_operations import CommunityPostReadOperations
 from services.community_post_write_operations import CommunityPostWriteOperations
 from services.community_subthread_operations import CommunitySubthreadOperations
 from services.follow_operations import CommunityFollowOperations
+from services.follow_request_operations import CommunityFollowRequestOperations
 
 # Global client instance - initialized at app startup
 _community_client: Optional["CommunitySupabaseClient"] = None
@@ -74,6 +75,7 @@ class CommunitySupabaseClient(
     CommunityCommentWriteOperations,
     CommunityMediaOperations,
     CommunityFollowOperations,
+    CommunityFollowRequestOperations,
 ):
     """Handles all Supabase operations for the community feature."""
 

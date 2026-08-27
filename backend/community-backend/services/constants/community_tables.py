@@ -11,3 +11,8 @@ COMMENT_VOTES = "comment_votes"
 POST_REPOSTS = "post_reposts"
 # The follow graph. See backend/db/migrations/010_follows.sql.
 FOLLOWS = "follows"
+# Pending follows. Kept out of `follows` on purpose -- see
+# backend/db/migrations/014_follow_requests.sql.
+FOLLOW_REQUESTS = "follow_requests"
+# Read-only here: main-backend owns this table.
+USER_INFO = "user_info"
