@@ -198,27 +198,37 @@ class ProfilePlaceholderBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: height,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: SnowtrakColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(SnowtrakRadius.md),
-        border: Border.all(color: SnowtrakColors.divider),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 28, color: SnowtrakColors.textTertiary),
-          const SizedBox(height: SnowtrakSpacing.xs),
-          Text(
-            label,
-            style: SnowtrakTypography.bodySmall.copyWith(
-              color: SnowtrakColors.textTertiary,
+    return ConstrainedBox(
+      // A floor, not a fixed height. These labels wrap at narrow widths, and a
+      // hard height clipped them into a RenderFlex overflow instead of letting
+      // the block grow. Blocks whose label fits still render at `height`.
+      constraints: BoxConstraints(minHeight: height),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: SnowtrakColors.surfaceVariant,
+          borderRadius: BorderRadius.circular(SnowtrakRadius.md),
+          border: Border.all(color: SnowtrakColors.divider),
+        ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: SnowtrakSpacing.sm,
+          vertical: SnowtrakSpacing.sm,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 28, color: SnowtrakColors.textTertiary),
+            const SizedBox(height: SnowtrakSpacing.xs),
+            Text(
+              label,
+              style: SnowtrakTypography.bodySmall.copyWith(
+                color: SnowtrakColors.textTertiary,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -7,6 +7,7 @@ import 'package:snowtrak/screens/community/thread_media_upload.dart';
 import 'package:snowtrak/screens/community/widgets/thread_media_attachments_bar.dart';
 import 'package:snowtrak/screens/community/widgets/thread_expanded_reply_sheet.dart';
 import 'package:snowtrak/screens/community/widgets/thread_reply_composer_bar.dart';
+import 'package:snowtrak/screens/profile/user_profile_screen.dart';
 import 'package:snowtrak/services/community_service.dart';
 import 'package:snowtrak/screens/community/widgets/quoted_post_embed.dart';
 import 'package:snowtrak/widgets/message_actions.dart';
@@ -307,14 +308,22 @@ class _ThreadOriginalPostCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: Colors.grey.shade300,
-                child: Text(
-                  initial,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+              GestureDetector(
+                onTap: () => openUserProfile(
+              context,
+              post.author.id,
+              displayName: post.author.displayName,
+              username: post.author.username,
+            ),
+                child: CircleAvatar(
+                  radius: 20,
+                  backgroundColor: Colors.grey.shade300,
+                  child: Text(
+                    initial,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
                   ),
                 ),
               ),
@@ -446,15 +455,23 @@ class _ThreadCommentItem extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: Colors.grey.shade300,
-            child: Text(
-              initial,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
+          GestureDetector(
+            onTap: () => openUserProfile(
+              context,
+              post.author.id,
+              displayName: post.author.displayName,
+              username: post.author.username,
+            ),
+            child: CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.grey.shade300,
+              child: Text(
+                initial,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
               ),
             ),
           ),

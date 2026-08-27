@@ -13,7 +13,16 @@ import 'package:snowtrak/ui/liquid/liquid_section_card.dart';
 import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 class ProfileHomeContent extends StatefulWidget {
-  const ProfileHomeContent({super.key});
+  const ProfileHomeContent({super.key, this.isOwnProfile = true});
+
+  /// False when rendering somebody else's profile.
+  ///
+  /// ActivityProvider only ever holds the signed-in user's activities and
+  /// stats, so reading it for another person would print your numbers under
+  /// their name. Their sections render empty until a per-user stats endpoint
+  /// exists. The privacy card is dropped outright -- those toggles are your
+  /// own settings and do not belong on someone else's page.
+  final bool isOwnProfile;
 
   @override
   State<ProfileHomeContent> createState() => _ProfileHomeContentState();
@@ -25,8 +34,11 @@ class _ProfileHomeContentState extends State<ProfileHomeContent> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<ActivityProvider>();
-    final stats = provider.stats;
+    final provider =
+        widget.isOwnProfile ? context.watch<ActivityProvider>() : null;
+    final stats = provider?.stats;
+    final activities = provider?.activities ?? const <Activity>[];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -35,11 +47,13 @@ class _ProfileHomeContentState extends State<ProfileHomeContent> {
         const SizedBox(height: SnowtrakSpacing.md),
         _performanceSection(stats),
         const SizedBox(height: SnowtrakSpacing.md),
-        _trainingSection(provider.activities),
+        _trainingSection(activities),
         const SizedBox(height: SnowtrakSpacing.md),
         _socialSection(),
-        const SizedBox(height: SnowtrakSpacing.md),
-        _privacySection(),
+        if (widget.isOwnProfile) ...[
+          const SizedBox(height: SnowtrakSpacing.md),
+          _privacySection(),
+        ],
         const SizedBox(height: SnowtrakSpacing.xl),
       ],
     );
@@ -71,7 +85,9 @@ class _ProfileHomeContentState extends State<ProfileHomeContent> {
           ),
           const SizedBox(height: SnowtrakSpacing.md),
           Text(
-            'Add a short bio to tell the community about your training.',
+            widget.isOwnProfile
+                ? 'Add a short bio to tell the community about your training.'
+                : 'No bio yet.',
             style: SnowtrakTypography.bodyMedium.copyWith(
               color: SnowtrakColors.textSecondary,
             ),
@@ -200,9 +216,11 @@ class _ProfileHomeContentState extends State<ProfileHomeContent> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (recent.isEmpty)
-            const ProfilePlaceholderBlock(
+            ProfilePlaceholderBlock(
               icon: Icons.map_outlined,
-              label: 'No activities yet — record your first run!',
+              label: widget.isOwnProfile
+                  ? 'No activities yet — record your first run!'
+                  : 'Activities are not shared yet.',
               height: 72,
             )
           else

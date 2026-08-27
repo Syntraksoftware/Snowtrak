@@ -1,10 +1,13 @@
 """Profile routes for authenticated and public user profile access."""
 
 import logging
+from datetime import UTC, datetime
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.dependencies import get_current_user
+from app.core.profile_cache import get_profile, invalidate_profile, set_profile
 from app.core.storage import User
 from app.core.supabase import supabase_client
 from app.schemas import ProfileResponse, ProfileUpdate
@@ -19,6 +22,40 @@ def _ensure_database_configured() -> None:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Database not configured",
         ) from None
+
+
+def _profile_from_user_info(user_id: str) -> dict[str, Any] | None:
+    """Build a profile for a user who has no row in `profiles`.
+
+    Most users have none. `profiles.id` carries a foreign key to Supabase
+    auth's `users` table, but registration writes to `user_info`, so every
+    insert in `create_profile` fails with 23503 and the row is never made.
+
+    `user_info` is always present -- it is what `posts.user_id` and
+    `activities.user_id` reference -- so it is enough to render a profile
+    from. Nothing is written: this is a read-time fallback, not a repair.
+    """
+    user = supabase_client.get_user_info_by_id(user_id)
+    if user is None:
+        return None
+
+    first = (user.get("first_name") or "").strip()
+    last = (user.get("last_name") or "").strip()
+    email = (user.get("email") or "").strip()
+
+    return {
+        "id": user_id,
+        "full_name": " ".join(p for p in (first, last) if p) or None,
+        "username": email.split("@")[0] if "@" in email else None,
+        "bio": None,
+        "avatar_url": None,
+        "push_token": None,
+        "ski_level": None,
+        "home": None,
+        # user_info.created_at is nullable even though it defaults to now().
+        "created_at": user.get("created_at") or datetime.now(UTC),
+        "updated_at": user.get("updated_at"),
+    }
 
 
 def _build_default_full_name(current_user: User) -> str | None:
@@ -38,17 +75,22 @@ def get_current_user_profile_endpoint(
     """Get current authenticated user's profile."""
     _ensure_database_configured()
     try:
-        profile_data = supabase_client.get_profile_by_id(current_user.id)
+        profile_data = get_profile(current_user.id)
         if profile_data is None:
-            profile_data = supabase_client.create_profile(
-                user_id=current_user.id,
-                full_name=_build_default_full_name(current_user),
-            )
+            profile_data = supabase_client.get_profile_by_id(current_user.id)
+            if profile_data is None:
+                profile_data = supabase_client.create_profile(
+                    user_id=current_user.id,
+                    full_name=_build_default_full_name(current_user),
+                )
+            if profile_data is None:
+                profile_data = _profile_from_user_info(current_user.id)
             if profile_data is None:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="Failed to create profile",
                 ) from None
+            set_profile(current_user.id, profile_data)
 
         return ProfileResponse(**profile_data)
     except HTTPException:
@@ -100,6 +142,7 @@ def update_current_user_profile_endpoint(
                 detail="Failed to update profile",
             ) from None
 
+        invalidate_profile(current_user.id)
         logger.info(f"User {current_user.id} profile updated")
         return ProfileResponse(**updated_profile)
     except HTTPException:
@@ -120,12 +163,17 @@ def get_user_profile_by_id(
     """Get any user's profile by user identifier."""
     _ensure_database_configured()
     try:
-        profile_data = supabase_client.get_profile_by_id(user_id)
+        profile_data = get_profile(user_id)
         if profile_data is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Profile not found",
-            ) from None
+            profile_data = supabase_client.get_profile_by_id(user_id)
+            if profile_data is None:
+                profile_data = _profile_from_user_info(user_id)
+            if profile_data is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Profile not found",
+                ) from None
+            set_profile(user_id, profile_data)
 
         return ProfileResponse(**profile_data)
     except HTTPException:

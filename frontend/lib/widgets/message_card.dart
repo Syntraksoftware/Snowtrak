@@ -26,7 +26,7 @@ class MessageCard extends StatefulWidget {
   final bool isReply;
   final bool showInlineReplies;
   final VoidCallback? onTap;
-  final VoidCallback? onAvatarTap;
+  final Function(Post post)? onAvatarTap;
   final Function(Post post)? onLike;
   final Function(Post post)? onRepost;
   final Function(Post post)? onReply;
@@ -91,12 +91,17 @@ class _MessageCardState extends State<MessageCard> {
     );
   }
 
+  VoidCallback? get _avatarTap => widget.onAvatarTap != null
+      ? () => widget.onAvatarTap!(widget.post)
+      : null;
+
   @override
   Widget build(BuildContext context) {
     if (widget.isReply) {
       return _ThreadReplyRow(
         post: widget.post,
         onTap: widget.onTap,
+        onAvatarTap: _avatarTap,
         actionBar: _actionBar(dense: true),
       );
     }
@@ -107,7 +112,7 @@ class _MessageCardState extends State<MessageCard> {
       isExpanded: _isExpanded,
       showInlineReplies: widget.showInlineReplies,
       onTap: widget.onTap != null || _hasThreadPreview ? _onBodyTap : null,
-      onAvatarTap: widget.onAvatarTap,
+      onAvatarTap: _avatarTap,
       onToggleExpand: _toggleExpand,
       actionBar: _actionBar(),
       nestedReplies: _buildExpandedReplies(),
@@ -123,6 +128,7 @@ class _MessageCardState extends State<MessageCard> {
           post: reply,
           isReply: true,
           showInlineReplies: false,
+          onAvatarTap: widget.onAvatarTap,
           onLike: widget.onLike,
           onRepost: widget.onRepost,
           onReply: widget.onReply,
@@ -239,11 +245,13 @@ class _ThreadReplyRow extends StatelessWidget {
     required this.post,
     required this.actionBar,
     this.onTap,
+    this.onAvatarTap,
   });
 
   final Post post;
   final FeedActionBar actionBar;
   final VoidCallback? onTap;
+  final VoidCallback? onAvatarTap;
 
   @override
   Widget build(BuildContext context) {
@@ -254,7 +262,7 @@ class _ThreadReplyRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _PostAvatar(post: post, radius: 18),
+          _PostAvatar(post: post, radius: 18, onTap: onAvatarTap),
           const SizedBox(width: 10),
           Expanded(
             child: Column(

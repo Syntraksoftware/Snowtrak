@@ -53,6 +53,7 @@ class ThreadsFeedBody extends StatelessWidget {
     required this.onComposerSubmit,
     required this.onComposeTap,
     required this.onPostTap,
+    required this.onAuthorTap,
     required this.onLike,
     required this.onRepost,
     required this.onReply,
@@ -64,6 +65,7 @@ class ThreadsFeedBody extends StatelessWidget {
   final Future<void> Function(String text) onComposerSubmit;
   final VoidCallback onComposeTap;
   final void Function(Post post) onPostTap;
+  final void Function(Post post) onAuthorTap;
   final void Function(Post post) onLike;
   final void Function(Post post) onRepost;
   final void Function(Post post) onReply;
@@ -89,6 +91,7 @@ class ThreadsFeedBody extends StatelessWidget {
           return MessageCard(
             post: post,
             onTap: () => onPostTap(post),
+            onAvatarTap: onAuthorTap,
             onLike: onLike,
             onRepost: onRepost,
             onReply: onReply,
