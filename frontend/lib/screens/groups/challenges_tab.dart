@@ -30,7 +30,7 @@ class _ChallengesTabState extends State<ChallengesTab> {
         // TODO: Implement refresh functionality
         await Future.delayed(const Duration(seconds: 1));
       },
-      color: SnowtrakColors.primary,
+      color: context.colors.primary,
       child: CustomScrollView(
         slivers: [
           // Activity type filter chips - skiing focused
@@ -60,8 +60,8 @@ class _ChallengesTabState extends State<ChallengesTab> {
                             icon,
                             size: 18,
                             color: isSelected
-                                ? SnowtrakColors.textOnPrimary
-                                : SnowtrakColors.textSecondary,
+                                ? context.colors.textOnPrimary
+                                : context.colors.textSecondary,
                           ),
                           const SizedBox(width: SnowtrakSpacing.xs),
                           Text(
@@ -76,13 +76,13 @@ class _ChallengesTabState extends State<ChallengesTab> {
                               selected ? activityType : null;
                         });
                       },
-                      selectedColor: SnowtrakColors.primary,
-                      checkmarkColor: SnowtrakColors.textOnPrimary,
-                      backgroundColor: SnowtrakColors.surfaceVariant,
+                      selectedColor: context.colors.primary,
+                      checkmarkColor: context.colors.textOnPrimary,
+                      backgroundColor: context.colors.surfaceVariant,
                       labelStyle: SnowtrakTypography.labelMedium.copyWith(
                         color: isSelected
-                            ? SnowtrakColors.textOnPrimary
-                            : SnowtrakColors.textSecondary,
+                            ? context.colors.textOnPrimary
+                            : context.colors.textSecondary,
                         fontWeight:
                             isSelected ? FontWeight.w600 : FontWeight.normal,
                       ),
@@ -106,7 +106,7 @@ class _ChallengesTabState extends State<ChallengesTab> {
                   end: Alignment.bottomRight,
                   colors: [
                     SnowtrakColors.primaryDark,
-                    SnowtrakColors.primary,
+                    context.colors.primary,
                   ],
                 ),
                 borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
@@ -122,7 +122,7 @@ class _ChallengesTabState extends State<ChallengesTab> {
                       width: 100,
                       height: 100,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFF4500).withOpacity(0.3),
+                        color: context.colors.primary.withValues(alpha:0.3),
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -134,7 +134,7 @@ class _ChallengesTabState extends State<ChallengesTab> {
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.2),
+                        color: context.colors.warning.withValues(alpha:0.2),
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -152,13 +152,13 @@ class _ChallengesTabState extends State<ChallengesTab> {
                             vertical: SnowtrakSpacing.xs,
                           ),
                           decoration: BoxDecoration(
-                            color: SnowtrakColors.accent,
+                            color: context.colors.primary,
                             borderRadius: BorderRadius.circular(SnowtrakRadius.sm),
                           ),
                           child: Text(
                             'SYNTRAK',
                             style: SnowtrakTypography.labelSmall.copyWith(
-                              color: SnowtrakColors.textOnPrimary,
+                              color: context.colors.textOnPrimary,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -167,14 +167,14 @@ class _ChallengesTabState extends State<ChallengesTab> {
                         Text(
                           'December Vertical Challenge',
                           style: SnowtrakTypography.displaySmall.copyWith(
-                            color: SnowtrakColors.textOnPrimary,
+                            color: context.colors.textOnPrimary,
                           ),
                         ),
                         const SizedBox(height: SnowtrakSpacing.sm),
                         Text(
                           'Complete 5,000m of vertical drop',
                           style: SnowtrakTypography.bodyMedium.copyWith(
-                            color: SnowtrakColors.textOnPrimary.withOpacity(0.9),
+                            color: context.colors.textOnPrimary.withValues(alpha:0.9),
                           ),
                         ),
                       ],
@@ -205,13 +205,13 @@ class _ChallengesTabState extends State<ChallengesTab> {
                     // TODO: Implement join challenge functionality
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: SnowtrakColors.primary,
-                    foregroundColor: SnowtrakColors.textOnPrimary,
+                    backgroundColor: context.colors.primary,
+                    foregroundColor: context.colors.textOnPrimary,
                     padding: const EdgeInsets.symmetric(
                       vertical: SnowtrakSpacing.md,
                     ),
                   ),
-                  child: Text(
+                  child: const Text(
                     'Join Challenge',
                     style: SnowtrakTypography.labelLarge,
                   ),
@@ -233,13 +233,13 @@ class _ChallengesTabState extends State<ChallengesTab> {
                   Icon(
                     Icons.person,
                     size: 18,
-                    color: SnowtrakColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                   const SizedBox(width: SnowtrakSpacing.sm),
                   Text(
                     'Recommended For You',
                     style: SnowtrakTypography.headlineSmall.copyWith(
-                      color: SnowtrakColors.textPrimary,
+                      color: context.colors.textPrimary,
                     ),
                   ),
                 ],
@@ -252,7 +252,7 @@ class _ChallengesTabState extends State<ChallengesTab> {
               child: Text(
                 'Based on your skiing activities.',
                 style: SnowtrakTypography.bodySmall.copyWith(
-                  color: SnowtrakColors.textTertiary,
+                  color: context.colors.textTertiary,
                 ),
               ),
             ),
@@ -292,20 +292,20 @@ class _ChallengesTabState extends State<ChallengesTab> {
                     Icon(
                       Icons.emoji_events,
                       size: 80,
-                      color: SnowtrakColors.textTertiary,
+                      color: context.colors.textTertiary,
                     ),
                     const SizedBox(height: SnowtrakSpacing.lg),
                     Text(
                       'No challenges available',
                       style: SnowtrakTypography.headlineMedium.copyWith(
-                        color: SnowtrakColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: SnowtrakSpacing.sm),
                     Text(
                       'Check back later for new skiing challenges',
                       style: SnowtrakTypography.bodyMedium.copyWith(
-                        color: SnowtrakColors.textTertiary,
+                        color: context.colors.textTertiary,
                       ),
                       textAlign: TextAlign.center,
                     ),

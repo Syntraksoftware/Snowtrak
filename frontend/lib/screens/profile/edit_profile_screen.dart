@@ -170,13 +170,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       Container(
                         padding: const EdgeInsets.all(SnowtrakSpacing.md),
                         decoration: BoxDecoration(
-                          color: SnowtrakColors.error.withValues(alpha: 0.08),
+                          color: context.colors.error.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(SnowtrakRadius.md),
                         ),
                         child: Text(
                           _error!,
                           style: SnowtrakTypography.bodyMedium.copyWith(
-                            color: SnowtrakColors.error,
+                            color: context.colors.error,
                           ),
                         ),
                       ),

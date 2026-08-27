@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snowtrak/core/theme.dart';
 
 class LogoIcon extends StatelessWidget {
   final bool isSelected;
@@ -14,7 +15,8 @@ class LogoIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isSelected ? const Color(0xFFFF4500) : Colors.grey;
+    final color =
+        isSelected ? context.colors.primary : context.colors.textTertiary;
 
     // Determine which logo to use based on logoType
     String assetPath;

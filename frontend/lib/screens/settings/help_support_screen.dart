@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snowtrak/core/theme.dart';
 import 'package:flutter/cupertino.dart';
 
 class HelpSupportScreen extends StatelessWidget {
@@ -7,9 +8,9 @@ class HelpSupportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7),
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF2F2F7),
+        backgroundColor: context.colors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -27,26 +28,26 @@ class HelpSupportScreen extends StatelessWidget {
           const SizedBox(height: 24),
 
           // Get Help
-          _buildSectionHeader('GET HELP'),
+          _buildSectionHeader(context, 'GET HELP'),
           _SettingsGroup(
             children: [
               _SettingsRow(
                 icon: Icons.menu_book,
-                iconBackground: const Color(0xFF007AFF),
+                iconBackground: SnowtrakColors.tileInk,
                 label: 'Help Center',
                 subtitle: 'FAQ, guides, tutorials',
                 onTap: () => _showToast(context, 'Opening Help Center...'),
               ),
               _SettingsRow(
                 icon: Icons.chat_bubble,
-                iconBackground: const Color(0xFF34C759),
+                iconBackground: SnowtrakColors.tileGreen,
                 label: 'Contact Support',
                 subtitle: 'Get help from our team',
                 onTap: () => _showContactOptions(context),
               ),
               _SettingsRow(
                 icon: Icons.forum,
-                iconBackground: const Color(0xFFFF9500),
+                iconBackground: SnowtrakColors.tileOrange,
                 label: 'Community Forum',
                 subtitle: 'Ask questions, share tips',
                 onTap: () => _showToast(context, 'Opening Community...'),
@@ -57,24 +58,24 @@ class HelpSupportScreen extends StatelessWidget {
           const SizedBox(height: 24),
 
           // Feedback
-          _buildSectionHeader('FEEDBACK'),
+          _buildSectionHeader(context, 'FEEDBACK'),
           _SettingsGroup(
             children: [
               _SettingsRow(
                 icon: Icons.bug_report,
-                iconBackground: const Color(0xFFFF3B30),
+                iconBackground: SnowtrakColors.tileRed,
                 label: 'Report a Problem',
                 onTap: () => _showReportDialog(context),
               ),
               _SettingsRow(
                 icon: Icons.lightbulb,
-                iconBackground: const Color(0xFFFFCC00),
+                iconBackground: SnowtrakColors.tileSlate,
                 label: 'Feature Request',
                 onTap: () => _showFeatureRequestDialog(context),
               ),
               _SettingsRow(
                 icon: Icons.star,
-                iconBackground: const Color(0xFF5856D6),
+                iconBackground: SnowtrakColors.tileSlate,
                 label: 'Rate Snowtrak',
                 onTap: () => _showRateDialog(context),
               ),
@@ -84,24 +85,24 @@ class HelpSupportScreen extends StatelessWidget {
           const SizedBox(height: 24),
 
           // Troubleshooting
-          _buildSectionHeader('TROUBLESHOOTING'),
+          _buildSectionHeader(context, 'TROUBLESHOOTING'),
           _SettingsGroup(
             children: [
               _SettingsRow(
                 icon: Icons.gps_fixed,
-                iconBackground: const Color(0xFF8E8E93),
+                iconBackground: SnowtrakColors.tileGrey,
                 label: 'GPS Issues',
                 onTap: () => _showGPSHelp(context),
               ),
               _SettingsRow(
                 icon: Icons.sync_problem,
-                iconBackground: const Color(0xFF8E8E93),
+                iconBackground: SnowtrakColors.tileGrey,
                 label: 'Sync Issues',
                 onTap: () => _showSyncHelp(context),
               ),
               _SettingsRow(
                 icon: Icons.battery_alert,
-                iconBackground: const Color(0xFF8E8E93),
+                iconBackground: SnowtrakColors.tileGrey,
                 label: 'Battery Optimization',
                 onTap: () => _showBatteryHelp(context),
               ),
@@ -114,12 +115,12 @@ class HelpSupportScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.only(left: 32, bottom: 6),
       child: Text(
         title,
-        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+        style: TextStyle(fontSize: 13, color: context.colors.textSecondary),
       ),
     );
   }
@@ -165,8 +166,8 @@ class HelpSupportScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => CupertinoAlertDialog(
         title: const Text('Report a Problem'),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 16),
+        content: const Padding(
+          padding: EdgeInsets.only(top: 16),
           child: CupertinoTextField(
             placeholder: 'Describe the issue...',
             maxLines: 4,
@@ -194,8 +195,8 @@ class HelpSupportScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => CupertinoAlertDialog(
         title: const Text('Feature Request'),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 16),
+        content: const Padding(
+          padding: EdgeInsets.only(top: 16),
           child: CupertinoTextField(
             placeholder: 'Describe your idea...',
             maxLines: 4,
@@ -331,7 +332,7 @@ class _SettingsGroup extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -341,7 +342,7 @@ class _SettingsGroup extends StatelessWidget {
             if (i < children.length - 1)
               Padding(
                 padding: const EdgeInsets.only(left: 52),
-                child: Divider(height: 0.5, thickness: 0.5, color: Colors.grey[300]),
+                child: Divider(height: 0.5, thickness: 0.5, color: context.colors.divider),
               ),
           ],
         ],
@@ -382,7 +383,7 @@ class _SettingsRow extends StatelessWidget {
                   color: iconBackground,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Icon(icon, color: Colors.white, size: 18),
+                child: Icon(icon, color: context.colors.textOnPrimary, size: 18),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -390,16 +391,16 @@ class _SettingsRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(label,
-                        style: const TextStyle(fontSize: 17, color: Colors.black)),
+                        style: TextStyle(fontSize: 17, color: context.colors.textPrimary)),
                     if (subtitle != null) ...[
                       const SizedBox(height: 1),
                       Text(subtitle!,
-                          style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+                          style: TextStyle(fontSize: 13, color: context.colors.textSecondary)),
                     ],
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+              Icon(Icons.chevron_right, color: context.colors.textTertiary, size: 20),
             ],
           ),
         ),

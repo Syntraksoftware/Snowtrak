@@ -21,7 +21,7 @@ class ThreadsSearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: SnowtrakColors.background,
+      color: context.colors.background,
       padding: const EdgeInsets.fromLTRB(
         SnowtrakSpacing.md,
         SnowtrakSpacing.md,
@@ -30,7 +30,7 @@ class ThreadsSearchBar extends StatelessWidget {
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: SnowtrakColors.surfaceVariant,
+          color: context.colors.surfaceVariant,
           borderRadius: BorderRadius.circular(SnowtrakRadius.round),
         ),
         child: TextField(
@@ -38,22 +38,22 @@ class ThreadsSearchBar extends StatelessWidget {
           focusNode: focusNode,
           onChanged: onQueryChanged,
           style: SnowtrakTypography.bodyMedium.copyWith(
-            color: SnowtrakColors.textPrimary,
+            color: context.colors.textPrimary,
           ),
           decoration: InputDecoration(
             hintText: 'Search posts, users...',
             hintStyle: SnowtrakTypography.bodyMedium.copyWith(
-              color: SnowtrakColors.textTertiary,
+              color: context.colors.textTertiary,
             ),
             prefixIcon: Icon(
               Icons.search,
-              color: SnowtrakColors.textTertiary,
+              color: context.colors.textTertiary,
             ),
             suffixIcon: controller.text.isNotEmpty
                 ? IconButton(
                     icon: Icon(
                       Icons.close,
-                      color: SnowtrakColors.textSecondary,
+                      color: context.colors.textSecondary,
                       size: 20,
                     ),
                     onPressed: onClear,

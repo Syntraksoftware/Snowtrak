@@ -41,6 +41,12 @@ class Config(BaseSettings):
     CACHE_NAMESPACE: str = "community-backend-cache"
     CACHE_FEED_TTL_SECONDS: int = 15
     CACHE_POST_COMMENTS_TTL_SECONDS: int = 20
+    # A profile's post list, keyed per viewer. Same reasoning as the feed's
+    # TTL, a little longer: a profile is not watched for new posts.
+    CACHE_USER_POSTS_TTL_SECONDS: int = 60
+    # Longer than the feed's: follow counts move far less often than posts,
+    # and a write invalidates them outright.
+    CACHE_FOLLOW_STATS_TTL_SECONDS: int = 120
 
     @field_validator("RATE_LIMIT_POLICIES", mode="before")
     @classmethod

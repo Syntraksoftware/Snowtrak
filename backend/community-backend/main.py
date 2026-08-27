@@ -27,6 +27,7 @@ from shared.rate_limiter import add_redis_rate_limiter
 
 from config import get_config
 from routes.comments import router as comments_router
+from routes.follows_routes import router as follows_router
 from routes.media_routes import router as media_router
 from routes.posts_read_routes import list_feed_posts, router as posts_read_router
 from routes.posts_write_routes import router as posts_write_router
@@ -186,6 +187,7 @@ app.include_router(posts_read_router, prefix="/api/v1/posts", tags=["posts"])
 app.include_router(posts_write_router, prefix="/api/v1/posts", tags=["posts"])
 app.include_router(comments_router, prefix="/api/v1/comments", tags=["comments"])
 app.include_router(media_router, prefix="/api/v1/media", tags=["media"])
+app.include_router(follows_router, prefix="/api/v1/follows", tags=["follows"])
 
 
 @app.get("/")

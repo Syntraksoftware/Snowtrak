@@ -25,9 +25,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SnowtrakColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: SnowtrakColors.surface,
+        backgroundColor: context.colors.surface,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -54,7 +54,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   child: Text(
                     'Mark all read',
                     style: TextStyle(
-                      color: SnowtrakColors.primary,
+                      color: context.colors.primary,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
@@ -115,7 +115,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               child: Text(
                 section,
                 style: SnowtrakTypography.labelMedium.copyWith(
-                  color: SnowtrakColors.textTertiary,
+                  color: context.colors.textTertiary,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.5,
                 ),
@@ -145,27 +145,27 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: SnowtrakColors.surfaceVariant,
+                color: context.colors.surfaceVariant,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.notifications_off_outlined,
                 size: 40,
-                color: SnowtrakColors.textTertiary,
+                color: context.colors.textTertiary,
               ),
             ),
             const SizedBox(height: SnowtrakSpacing.lg),
             Text(
               'No Notifications',
               style: SnowtrakTypography.headlineSmall.copyWith(
-                color: SnowtrakColors.textPrimary,
+                color: context.colors.textPrimary,
               ),
             ),
             const SizedBox(height: SnowtrakSpacing.sm),
             Text(
               'When you get notifications, they\'ll show up here',
               style: SnowtrakTypography.bodyMedium.copyWith(
-                color: SnowtrakColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -185,13 +185,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             Icon(
               Icons.error_outline,
               size: 48,
-              color: SnowtrakColors.error,
+              color: context.colors.error,
             ),
             const SizedBox(height: SnowtrakSpacing.md),
             Text(
               provider.error ?? 'Something went wrong',
               style: SnowtrakTypography.bodyMedium.copyWith(
-                color: SnowtrakColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -249,7 +249,7 @@ class _NotificationItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final typeColor = NotificationService.getColorForType(notification.type);
+    final typeColor = NotificationService.getColorForType(context, notification.type);
     final typeIcon = NotificationService.getIconForType(notification.type);
 
     return Dismissible(
@@ -259,16 +259,16 @@ class _NotificationItem extends StatelessWidget {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: SnowtrakSpacing.lg),
-        color: SnowtrakColors.error,
-        child: const Icon(
+        color: context.colors.error,
+        child: Icon(
           Icons.delete_outline,
-          color: Colors.white,
+          color: context.colors.textOnPrimary,
         ),
       ),
       child: Material(
         color: notification.isRead 
-            ? SnowtrakColors.surface 
-            : SnowtrakColors.primary.withOpacity(0.05),
+            ? context.colors.surface 
+            : context.colors.primary.withValues(alpha:0.05),
         child: InkWell(
           onTap: onTap,
           child: Container(
@@ -276,7 +276,7 @@ class _NotificationItem extends StatelessWidget {
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                  color: SnowtrakColors.divider,
+                  color: context.colors.divider,
                   width: 0.5,
                 ),
               ),
@@ -285,7 +285,7 @@ class _NotificationItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Icon or Avatar
-                _buildLeadingWidget(typeColor, typeIcon),
+                _buildLeadingWidget(context, typeColor, typeIcon),
                 const SizedBox(width: SnowtrakSpacing.md),
                 // Content
                 Expanded(
@@ -301,7 +301,7 @@ class _NotificationItem extends StatelessWidget {
                                 fontWeight: notification.isRead 
                                     ? FontWeight.w500 
                                     : FontWeight.w600,
-                                color: SnowtrakColors.textPrimary,
+                                color: context.colors.textPrimary,
                               ),
                             ),
                           ),
@@ -309,7 +309,7 @@ class _NotificationItem extends StatelessWidget {
                           Text(
                             notification.timeAgo,
                             style: SnowtrakTypography.labelSmall.copyWith(
-                              color: SnowtrakColors.textTertiary,
+                              color: context.colors.textTertiary,
                             ),
                           ),
                         ],
@@ -318,7 +318,7 @@ class _NotificationItem extends StatelessWidget {
                       Text(
                         notification.message,
                         style: SnowtrakTypography.bodyMedium.copyWith(
-                          color: SnowtrakColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -333,7 +333,7 @@ class _NotificationItem extends StatelessWidget {
                     width: 8,
                     height: 8,
                     decoration: BoxDecoration(
-                      color: SnowtrakColors.primary,
+                      color: context.colors.primary,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -346,7 +346,8 @@ class _NotificationItem extends StatelessWidget {
     );
   }
 
-  Widget _buildLeadingWidget(Color typeColor, IconData typeIcon) {
+  Widget _buildLeadingWidget(
+      BuildContext context, Color typeColor, IconData typeIcon) {
     if (notification.avatarUrl != null) {
       return Stack(
         children: [
@@ -363,12 +364,12 @@ class _NotificationItem extends StatelessWidget {
               decoration: BoxDecoration(
                 color: typeColor,
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
+                border: Border.all(color: context.colors.surface, width: 2),
               ),
               child: Icon(
                 typeIcon,
                 size: 10,
-                color: Colors.white,
+                color: context.colors.textOnPrimary,
               ),
             ),
           ),
@@ -380,7 +381,7 @@ class _NotificationItem extends StatelessWidget {
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        color: typeColor.withOpacity(0.15),
+        color: typeColor.withValues(alpha:0.15),
         shape: BoxShape.circle,
       ),
       child: Icon(

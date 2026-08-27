@@ -31,6 +31,7 @@ services:
       - PORT=8080
       - RATE_LIMIT_REDIS_URL=redis://redis:6379/0
       - WEATHER_CACHE_REDIS_URL=redis://redis:6379/0
+      - PROFILE_CACHE_REDIS_URL=redis://redis:6379/0
     ports:
       - "127.0.0.1:8080:8080"
     depends_on:

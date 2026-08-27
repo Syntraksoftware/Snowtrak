@@ -28,9 +28,9 @@ class _ActivityTypePicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       padding: EdgeInsets.fromLTRB(
         20,
@@ -47,7 +47,7 @@ class _ActivityTypePicker extends StatelessWidget {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.black12,
+                color: context.colors.scrim.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -56,7 +56,7 @@ class _ActivityTypePicker extends StatelessWidget {
           Text(
             'Select Activity',
             style: SnowtrakTypography.headlineSmall.copyWith(
-              color: SnowtrakColors.textPrimary,
+              color: context.colors.textPrimary,
             ),
           ),
           const SizedBox(height: 16),
@@ -94,9 +94,9 @@ class _TypeTile extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: SnowtrakColors.surfaceVariant,
+          color: context.colors.surfaceVariant,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: SnowtrakColors.divider),
+          border: Border.all(color: context.colors.divider),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -114,7 +114,7 @@ class _TypeTile extends StatelessWidget {
             Text(
               type.displayName,
               style: SnowtrakTypography.labelMedium.copyWith(
-                color: SnowtrakColors.textPrimary,
+                color: context.colors.textPrimary,
               ),
               textAlign: TextAlign.center,
             ),

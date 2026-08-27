@@ -5,6 +5,7 @@ from typing import Any
 
 from services.constants.community_tables import POST_LIKES, POST_REPOSTS, POSTS
 from services.helpers.engagement_ops import set_like
+from services.visibility import PUBLIC, TIERS
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ class CommunityPostWriteOperations:
         quoted_comment_id: str | None = None,
         repost_of_comment_id: str | None = None,
         media_urls: list[str] | None = None,
+        visibility: str = PUBLIC,
     ) -> dict[str, Any] | None:
         """Create a new post."""
         try:
@@ -41,6 +43,7 @@ class CommunityPostWriteOperations:
                 "title": title,
                 "content": content,
                 "media_urls": list(media_urls or []),
+                "visibility": visibility if visibility in TIERS else PUBLIC,
             }
             if quoted_post_id:
                 payload["quoted_post_id"] = quoted_post_id

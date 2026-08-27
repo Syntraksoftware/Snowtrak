@@ -1,6 +1,6 @@
 # Supabase schema
 
-What the live database contains, as of 2026-08-25.
+What the live database contains, as of 2026-08-27.
 
 **This is a record, not a migration.** It is not runnable and must never
 be treated as something to apply. Changing the database means changing it
@@ -34,13 +34,13 @@ defines them and no test asserts their shape.
 | `name` | text | yes |  |  |
 | `description` | text | yes |  |  |
 | `distance_meters` | numeric | no | `0` |  |
-| `duration_seconds` | integer | no | `0` |  |
+| `duration_seconds` | int32 | no | `0` |  |
 | `elevation_gain_meters` | numeric | no | `0` |  |
 | `start_time` | timestamp with time zone | no |  |  |
 | `end_time` | timestamp with time zone | no |  |  |
 | `average_pace` | numeric | yes | `0` |  |
 | `max_pace` | numeric | yes | `0` |  |
-| `calories` | integer | yes |  |  |
+| `calories` | int32 | yes |  |  |
 | `is_public` | boolean | no | `true` |  |
 | `created_at` | timestamp with time zone | no | `now()` |  |
 | `updated_at` | timestamp with time zone | no | `now()` |  |
@@ -83,7 +83,7 @@ defines them and no test asserts their shape.
 | `accuracy` | numeric | yes |  |  |
 | `speed` | numeric | yes |  |  |
 | `timestamp` | timestamp with time zone | no |  |  |
-| `sequence_order` | integer | no |  |  |
+| `sequence_order` | int32 | no |  |  |
 | `created_at` | timestamp with time zone | no | `now()` |  |
 
 ### `activity_shares`
@@ -129,6 +129,22 @@ defines them and no test asserts their shape.
 | `created_at` | timestamp with time zone | no | `now()` |  |
 | `updated_at` | timestamp with time zone | no | `now()` |  |
 
+### `follow_counts`
+
+| Column | Type | Null | Default | Key |
+|---|---|---|---|---|
+| `user_id` | uuid | no |  | PK |
+| `follower_count` | int32 | no | `0` |  |
+| `following_count` | int32 | no | `0` |  |
+
+### `follows`
+
+| Column | Type | Null | Default | Key |
+|---|---|---|---|---|
+| `follower_id` | uuid | no |  | PK |
+| `followee_id` | uuid | no |  | PK |
+| `created_at` | timestamp with time zone | no | `now()` |  |
+
 ### `post_likes`
 
 **Unused.** Nothing in backend/ or frontend/ references it, and nothing ever did -- `git log -S post_likes` is empty. The community backend uses `post_votes` instead. Holds rows anyway, most recent 2026-01-29, so something wrote them outside this repository. Superseded, not reserved.
@@ -146,16 +162,7 @@ defines them and no test asserts their shape.
 |---|---|---|---|---|
 | `id` | uuid | no | `gen_random_uuid()` | PK |
 | `post_id` | uuid | no |  | FK → `posts.post_id` |
-| `user_id` | text | no |  |  |
-
-### `post_votes`
-
-| Column | Type | Null | Default | Key |
-|---|---|---|---|---|
-| `id` | uuid | no | `gen_random_uuid()` | PK |
-| `post_id` | uuid | no |  | FK → `posts.post_id` |
-| `user_id` | text | no |  |  |
-| `vote_value` | smallint | no |  |  |
+| `user_id` | uuid | no |  | FK → `user_info.id` |
 
 ### `posts`
 
@@ -168,13 +175,12 @@ defines them and no test asserts their shape.
 | `title` | text | no |  |  |
 | `content` | text | no |  |  |
 | `reposted_post_id` | uuid | yes |  | FK → `posts.post_id` |
-| `like_count` | integer | no | `0` |  |
-| `repost_count` | integer | no | `0` |  |
 | `quoted_post_id` | uuid | yes |  | FK → `posts.post_id` |
 | `repost_of_post_id` | uuid | yes |  | FK → `posts.post_id` |
 | `quoted_comment_id` | uuid | yes |  | FK → `comments.id` |
 | `repost_of_comment_id` | uuid | yes |  | FK → `comments.id` |
 | `media_urls` | jsonb | no |  |  |
+| `visibility` | text | no | `public` |  |
 
 ### `profiles`
 
@@ -221,20 +227,20 @@ defines them and no test asserts their shape.
 | `user_id` | uuid | no |  | PK |
 | `week_start` | date | no |  |  |
 | `weekly_distance_km` | double precision | no | `0` |  |
-| `weekly_time_min` | integer | no | `0` |  |
+| `weekly_time_min` | int32 | no | `0` |  |
 | `weekly_elev_gain_m` | double precision | no | `0` |  |
-| `weekly_session_count` | integer | no | `0` |  |
-| `last_week_session_count` | integer | no | `0` |  |
+| `weekly_session_count` | int32 | no | `0` |  |
+| `last_week_session_count` | int32 | no | `0` |  |
 | `yearly_distance_km` | double precision | no | `0` |  |
-| `yearly_time_min` | integer | no | `0` |  |
+| `yearly_time_min` | int32 | no | `0` |  |
 | `yearly_elev_gain_m` | double precision | no | `0` |  |
-| `yearly_session_count` | integer | no | `0` |  |
+| `yearly_session_count` | int32 | no | `0` |  |
 | `all_time_distance_km` | double precision | no | `0` |  |
-| `all_time_time_min` | integer | no | `0` |  |
+| `all_time_time_min` | int32 | no | `0` |  |
 | `all_time_elev_gain_m` | double precision | no | `0` |  |
-| `all_time_session_count` | integer | no | `0` |  |
-| `current_streak_weeks` | integer | no | `0` |  |
-| `longest_streak_weeks` | integer | no | `0` |  |
+| `all_time_session_count` | int32 | no | `0` |  |
+| `current_streak_weeks` | int32 | no | `0` |  |
+| `longest_streak_weeks` | int32 | no | `0` |  |
 | `activity_days` | text[] | no |  |  |
 | `best_efforts` | jsonb | no |  |  |
 | `updated_at` | timestamp with time zone | no | `now()` |  |
@@ -248,7 +254,7 @@ revision, not in the dashboard.
 
 | Column | Type | Null | Default | Key |
 |---|---|---|---|---|
-| `id` | bigint | no |  | PK |
+| `id` | int64 | no |  | PK |
 | `location` | public.geography(Point,4326) | no |  |  |
 | `elevation_meters` | double precision | no |  |  |
 | `source` | text | no | `google_elevation` |  |
@@ -258,12 +264,12 @@ revision, not in the dashboard.
 
 | Column | Type | Null | Default | Key |
 |---|---|---|---|---|
-| `id` | bigint | no |  | PK |
+| `id` | int64 | no |  | PK |
 | `cache_key` | text | no |  |  |
 | `center` | public.geography(Point,4326) | no |  |  |
-| `zoom` | integer | no |  |  |
-| `width` | integer | no |  |  |
-| `height` | integer | no |  |  |
+| `zoom` | int32 | no |  |  |
+| `width` | int32 | no |  |  |
+| `height` | int32 | no |  |  |
 | `provider` | text | no | `google_static_maps` |  |
 | `static_url` | text | no |  |  |
 | `expires_at` | timestamp with time zone | yes |  |  |

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snowtrak/core/theme.dart';
 import 'package:flutter/cupertino.dart';
 
 class DisplaySettingsScreen extends StatefulWidget {
@@ -9,7 +10,6 @@ class DisplaySettingsScreen extends StatefulWidget {
 }
 
 class _DisplaySettingsScreenState extends State<DisplaySettingsScreen> {
-  String _theme = 'Light';
   String _language = 'English';
   String _dateFormat = 'MM/DD/YYYY';
   String _startOfWeek = 'Sunday';
@@ -18,9 +18,9 @@ class _DisplaySettingsScreenState extends State<DisplaySettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7),
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF2F2F7),
+        backgroundColor: context.colors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -41,18 +41,15 @@ class _DisplaySettingsScreenState extends State<DisplaySettingsScreen> {
           _buildSectionHeader('APPEARANCE'),
           _SettingsGroup(
             children: [
-              _SettingsSelectionRow(
+              // ponytail: offered Light/Dark/System and did nothing but toast.
+              // main.dart pins themeMode to light, and the screens are only
+              // part-way onto the palette, so a working picker would ship a
+              // half-broken dark mode. Restore the selection row here once
+              // docs/frontend_design_system.md Phase 4 is done.
+              _SettingsNavigationRow(
                 label: 'Theme',
-                value: _theme,
-                onTap: () => _showOptions(
-                  'Theme',
-                  ['Light', 'Dark', 'System'],
-                  _theme,
-                  (v) {
-                    setState(() => _theme = v);
-                    _showToast('Theme changed to $v');
-                  },
-                ),
+                value: 'Light',
+                onTap: () => _showToast('Dark mode is in progress'),
               ),
               _SettingsNavigationRow(
                 label: 'App Icon',
@@ -62,7 +59,7 @@ class _DisplaySettingsScreenState extends State<DisplaySettingsScreen> {
             ],
           ),
           _buildSectionFooter(
-            'Choose System to match your device settings.',
+            'Snowtrak is light for now. Dark mode is on the way.',
           ),
 
           const SizedBox(height: 24),
@@ -137,7 +134,7 @@ class _DisplaySettingsScreenState extends State<DisplaySettingsScreen> {
       padding: const EdgeInsets.only(left: 32, bottom: 6),
       child: Text(
         title,
-        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+        style: TextStyle(fontSize: 13, color: context.colors.textSecondary),
       ),
     );
   }
@@ -147,7 +144,7 @@ class _DisplaySettingsScreenState extends State<DisplaySettingsScreen> {
       padding: const EdgeInsets.only(left: 32, right: 32, top: 6),
       child: Text(
         text,
-        style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+        style: TextStyle(fontSize: 13, color: context.colors.textSecondary),
       ),
     );
   }
@@ -174,8 +171,8 @@ class _DisplaySettingsScreenState extends State<DisplaySettingsScreen> {
                       Text(option),
                       if (option == currentValue) ...[
                         const SizedBox(width: 8),
-                        const Icon(CupertinoIcons.checkmark,
-                            size: 18, color: Color(0xFF007AFF)),
+                        Icon(CupertinoIcons.checkmark,
+                            size: 18, color: context.colors.primary),
                       ],
                     ],
                   ),
@@ -208,7 +205,7 @@ class _SettingsGroup extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -218,7 +215,7 @@ class _SettingsGroup extends StatelessWidget {
             if (i < children.length - 1)
               Padding(
                 padding: const EdgeInsets.only(left: 16),
-                child: Divider(height: 0.5, thickness: 0.5, color: Colors.grey[300]),
+                child: Divider(height: 0.5, thickness: 0.5, color: context.colors.divider),
               ),
           ],
         ],
@@ -249,12 +246,12 @@ class _SettingsSelectionRow extends StatelessWidget {
           child: Row(
             children: [
               Text(label,
-                  style: const TextStyle(fontSize: 17, color: Colors.black)),
+                  style: TextStyle(fontSize: 17, color: context.colors.textPrimary)),
               const Spacer(),
               Text(value,
-                  style: TextStyle(fontSize: 17, color: Colors.grey[500])),
+                  style: TextStyle(fontSize: 17, color: context.colors.textSecondary)),
               const SizedBox(width: 4),
-              Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+              Icon(Icons.chevron_right, color: context.colors.textTertiary, size: 20),
             ],
           ),
         ),
@@ -285,13 +282,13 @@ class _SettingsNavigationRow extends StatelessWidget {
           child: Row(
             children: [
               Text(label,
-                  style: const TextStyle(fontSize: 17, color: Colors.black)),
+                  style: TextStyle(fontSize: 17, color: context.colors.textPrimary)),
               const Spacer(),
               if (value != null)
                 Text(value!,
-                    style: TextStyle(fontSize: 17, color: Colors.grey[500])),
+                    style: TextStyle(fontSize: 17, color: context.colors.textSecondary)),
               const SizedBox(width: 4),
-              Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+              Icon(Icons.chevron_right, color: context.colors.textTertiary, size: 20),
             ],
           ),
         ),

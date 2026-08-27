@@ -104,7 +104,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
               onRefresh: () async {
                 await _loadWeather();
               },
-              color: SnowtrakColors.primary,
+              color: context.colors.primary,
               child: CustomScrollView(
                 slivers: [
                   // Custom header with bell and profile
@@ -112,7 +112,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
                     child: ActivitiesHeader(
                       username: username,
                       onAvatarTap: () {
-                        HomeTabScope.selectTabOrNull(context, 4);
+                        HomeTabScope.selectTabOrNull(context, HomeTab.profile);
                       },
                     ),
                   ),

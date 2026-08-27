@@ -66,10 +66,10 @@ class _LoginScreenState extends State<LoginScreen> {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, _) {
         if (authProvider.isAuthenticated) {
-          return const Scaffold(
+          return Scaffold(
             body: Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(SnowtrakAuthTheme.brand),
+                valueColor: AlwaysStoppedAnimation<Color>(context.colors.primary),
               ),
             ),
           );

@@ -5,7 +5,6 @@ import 'package:snowtrak/models/weather.dart';
 import 'package:snowtrak/screens/activities/widgets/home_section_card.dart';
 import 'package:snowtrak/screens/activities/widgets/home_section_spacing.dart';
 import 'package:snowtrak/screens/activities/widgets/home_selectable_chip.dart';
-import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 class WeatherCard extends StatefulWidget {
   const WeatherCard({
@@ -39,7 +38,7 @@ class _WeatherCardState extends State<WeatherCard> {
         icon: Icons.wb_cloudy_outlined,
         title: "Today's conditions",
         subtitle: 'Tap a day for the forecast',
-        iconColor: SnowtrakAuthTheme.brand,
+        iconColor: context.colors.primary,
         child: _buildBody(),
       ),
     );
@@ -57,7 +56,7 @@ class _WeatherCardState extends State<WeatherCard> {
       return Text(
         'Enable location or pull to refresh.',
         style: SnowtrakTypography.bodySmall.copyWith(
-          color: SnowtrakColors.textTertiary,
+          color: context.colors.textTertiary,
         ),
       );
     }
@@ -80,7 +79,7 @@ class _WeatherCardState extends State<WeatherCard> {
             Text(
               '${data.temperature.toStringAsFixed(0)}°',
               style: SnowtrakTypography.displaySmall.copyWith(
-                color: SnowtrakColors.textPrimary,
+                color: context.colors.textPrimary,
                 fontWeight: FontWeight.w700,
                 fontSize: 28,
                 height: 1,
@@ -91,7 +90,7 @@ class _WeatherCardState extends State<WeatherCard> {
               child: Text(
                 '${data.condition.description} · ${data.windSpeed.toStringAsFixed(0)} km/h wind',
                 style: SnowtrakTypography.bodySmall.copyWith(
-                  color: SnowtrakColors.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -128,7 +127,7 @@ class _WeatherCardState extends State<WeatherCard> {
               'Low ${selected.minTemp.toStringAsFixed(0)}° · '
               'Avg ${selected.avgTemp.toStringAsFixed(0)}°',
               style: SnowtrakTypography.labelSmall.copyWith(
-                color: SnowtrakAuthTheme.brand,
+                color: context.colors.primary,
                 fontWeight: FontWeight.w600,
               ),
             ),

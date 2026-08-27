@@ -130,6 +130,7 @@ class StubCommunityClient:
         quoted_comment_id=None,
         repost_of_comment_id=None,
         media_urls=None,
+        visibility="public",
     ):
         if subthread_id != "sub-1":
             return None
@@ -137,6 +138,7 @@ class StubCommunityClient:
         created["title"] = title
         created["content"] = content
         created["user_id"] = user_id
+        created["visibility"] = visibility
         if quoted_post_id:
             created["quoted_post_id"] = quoted_post_id
         else:

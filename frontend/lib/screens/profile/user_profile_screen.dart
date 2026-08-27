@@ -8,17 +8,53 @@ import 'package:snowtrak/core/logging/app_logger.dart';
 import 'package:snowtrak/core/theme.dart';
 import 'package:snowtrak/services/community_service.dart';
 import 'package:snowtrak/models/post.dart';
+import 'package:snowtrak/providers/activity_provider.dart';
 import 'package:snowtrak/providers/auth_provider.dart';
 import 'package:snowtrak/screens/community/community_post_mapper.dart';
+import 'package:snowtrak/screens/profile/widgets/profile_home_content.dart';
+import 'package:snowtrak/screens/profile/widgets/profile_totals.dart';
+import 'package:snowtrak/ui/st/st.dart';
 import 'package:snowtrak/widgets/profile_header.dart';
 import 'package:snowtrak/widgets/message_card.dart';
+
+/// Opens [userId]'s profile.
+///
+/// Pushing a profile needs nothing but a context, so call sites use this
+/// instead of threading a callback back up to whatever owns the state. An
+/// empty id is ignored: the feed mapper falls back to `''` when a post has no
+/// `user_id`, and a profile screen for nobody is worse than no reaction.
+Future<void> openUserProfile(
+  BuildContext context,
+  String userId, {
+  String? displayName,
+  String? username,
+}) async {
+  if (userId.trim().isEmpty) return;
+  await Navigator.of(context).push<void>(
+    MaterialPageRoute<void>(
+      builder: (_) => UserProfileScreen(
+        userId: userId,
+        displayName: displayName,
+        username: username,
+      ),
+    ),
+  );
+}
 
 class UserProfileScreen extends StatefulWidget {
   final String? userId; // If null, shows current user's profile
 
+  /// What the caller already knows about this person, from the post they
+  /// tapped. Used for the page title and until the profile request lands, so
+  /// the screen never opens on a placeholder name.
+  final String? displayName;
+  final String? username;
+
   const UserProfileScreen({
     super.key,
     this.userId,
+    this.displayName,
+    this.username,
   });
 
   @override
@@ -27,7 +63,7 @@ class UserProfileScreen extends StatefulWidget {
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
   final CommunityService _communityService = sl<CommunityService>();
-  List<Post> _posts = [];
+  final List<Post> _posts = [];
   bool _isLoading = false; // Start as false - will be set when loading starts
   bool _isLoadingMore = false;
   String? _error;
@@ -161,112 +197,150 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    AppLogger.instance.debug('[UserProfileScreen] Building screen. isLoading: $_isLoading, error: $_error, posts: ${_posts.length}');
-    
+    final authUser = context.watch<AuthProvider>().user;
+    // Tapping your own avatar in the feed lands here too, and then the
+    // provider's data really is this person's.
+    final isOwnProfile =
+        widget.userId == null || widget.userId == authUser?.id;
+    final activities =
+        isOwnProfile ? context.watch<ActivityProvider>().activities : null;
+
     return Scaffold(
-      backgroundColor: SnowtrakColors.background,
-      appBar: AppBar(
-        title: const Text('Profile'),
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: RefreshIndicator(
-        onRefresh: _handleRefresh,
-        child: _isLoading && _posts.isEmpty
-            ? const Center(child: CircularProgressIndicator())
-            : _error != null && _posts.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          _error!,
-                          textAlign: TextAlign.center,
-                          style: SnowtrakTypography.bodyMedium.copyWith(
-                            color: SnowtrakColors.error,
-                          ),
-                        ),
-                        if (_errorRetryable) ...[
-                          const SizedBox(height: SnowtrakSpacing.md),
-                          ElevatedButton(
-                            onPressed: () => _loadPosts(refresh: true),
-                            child: const Text('Retry'),
-                          ),
-                        ],
-                      ],
-                    ),
-                  )
-                : CustomScrollView(
-                    slivers: [
-                      // Profile header as list header component
-                      SliverToBoxAdapter(
-                        child: ProfileHeader(userId: widget.userId),
+      backgroundColor: context.colors.background,
+      // StPageHeader is a plain container, not an AppBar -- it does not inset
+      // itself for the status bar, so as `appBar:` it drew under the notch.
+      // It belongs inside SafeArea, the way ProfileScreen uses it.
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            StPageHeader(
+              // The handle up here, the full name on the card below. Putting
+              // the name in both made the top of the page say it twice.
+              title: _headerTitle(),
+              leading: BackButton(color: context.colors.textPrimary),
+            ),
+            Expanded(
+              child: RefreshIndicator(
+                color: context.colors.primary,
+                onRefresh: _handleRefresh,
+                // Every section renders on every profile. A failed post load
+                // used to replace the whole page, so a working profile
+                // disappeared behind the error of one list.
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: ProfileHeader(
+                        userId: widget.userId,
+                        fallbackName: widget.displayName,
+                        fallbackUsername: widget.username,
                       ),
-                      // Posts list
-                      if (_posts.isEmpty && !_isLoading)
-                        SliverToBoxAdapter(
-                          child: Container(
-                            padding: const EdgeInsets.all(SnowtrakSpacing.xl),
-                            child: Center(
-                              child: Text(
-                                'No posts yet',
-                                style: SnowtrakTypography.bodyLarge.copyWith(
-                                  color: SnowtrakColors.textSecondary,
-                                ),
-                              ),
-                            ),
-                          ),
-                        )
-                      else
-                        SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              // Load more when reaching the end
-                              if (index == _posts.length - 1 && _hasMore && !_isLoadingMore) {
-                                // Trigger load more after a small delay to avoid rapid calls
-                                Future.delayed(const Duration(milliseconds: 100), () {
-                                  if (mounted && _hasMore && !_isLoadingMore) {
-                                    _loadPosts();
-                                  }
-                                });
-                              }
-                              
-                              if (index == _posts.length && _hasMore) {
-                                // Load more indicator
-                                return const Center(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(SnowtrakSpacing.md),
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                );
-                              }
-                              
-                              if (index >= _posts.length) {
-                                return const SizedBox.shrink();
-                              }
-                              
-                              final post = _posts[index];
-                              
-                              return MessageCard(
-                                post: post,
-                                onAvatarTap: () {
-                                  // Navigate to user profile
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => UserProfileScreen(
-                                        userId: post.author.id,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                            childCount: _posts.length + (_hasMore ? 1 : 0),
-                          ),
-                        ),
-                    ],
-                  ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: ProfileTotals(activities: activities),
+                    ),
+                    SliverToBoxAdapter(
+                      child: ProfileHomeContent(isOwnProfile: isOwnProfile),
+                    ),
+                    _postsSliver(),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _headerTitle() {
+    final username = widget.username?.trim() ?? '';
+    if (username.isNotEmpty) return '@$username';
+    final name = widget.displayName?.trim() ?? '';
+    return name.isNotEmpty ? name : 'Profile';
+  }
+
+  Widget _postsSliver() {
+    if (_isLoading && _posts.isEmpty) {
+      return const SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.all(SnowtrakSpacing.xl),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
+    if (_error != null && _posts.isEmpty) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.all(SnowtrakSpacing.xl),
+          child: Column(
+            children: [
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: SnowtrakTypography.bodyMedium.copyWith(
+                  color: context.colors.error,
+                ),
+              ),
+              if (_errorRetryable) ...[
+                const SizedBox(height: SnowtrakSpacing.md),
+                ElevatedButton(
+                  onPressed: () => _loadPosts(refresh: true),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_posts.isEmpty) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.all(SnowtrakSpacing.xl),
+          child: Center(
+            child: Text(
+              'No posts yet',
+              style: SnowtrakTypography.bodyLarge.copyWith(
+                color: context.colors.textSecondary,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          if (index == _posts.length) {
+            if (_hasMore && !_isLoadingMore) {
+              // Reached the tail: pull the next page in after this frame.
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted && _hasMore && !_isLoadingMore) _loadPosts();
+              });
+            }
+            return const Padding(
+              padding: EdgeInsets.all(SnowtrakSpacing.md),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          final post = _posts[index];
+          return MessageCard(
+            post: post,
+            onAvatarTap: (tapped) => openUserProfile(
+              context,
+              tapped.author.id,
+              displayName: tapped.author.displayName,
+              username: tapped.author.username,
+            ),
+          );
+        },
+        childCount: _posts.length + (_hasMore ? 1 : 0),
       ),
     );
   }

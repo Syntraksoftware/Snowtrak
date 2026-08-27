@@ -28,7 +28,7 @@ class AuthLabeledField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: SnowtrakAuthTheme.fieldLabel),
+        Text(label, style: SnowtrakAuthTheme.fieldLabel(context)),
         const SizedBox(height: SnowtrakSpacing.sm),
         TextFormField(
           controller: controller,
@@ -38,37 +38,38 @@ class AuthLabeledField extends StatelessWidget {
           validator: validator,
           onFieldSubmitted: onFieldSubmitted,
           style: SnowtrakTypography.bodyLarge.copyWith(
-            color: SnowtrakColors.textPrimary,
+            color: context.colors.textPrimary,
           ),
           decoration: InputDecoration(
             hintText: label,
             filled: true,
-            fillColor: SnowtrakColors.surface,
+            fillColor: context.colors.surface,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: SnowtrakSpacing.md,
               vertical: SnowtrakSpacing.md,
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(SnowtrakAuthTheme.fieldRadius),
-              borderSide: const BorderSide(color: SnowtrakAuthTheme.fieldBorder),
+              borderSide: BorderSide(color: context.colors.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(SnowtrakAuthTheme.fieldRadius),
-              borderSide: const BorderSide(
-                color: SnowtrakAuthTheme.brand,
+              borderSide: BorderSide(
+                color: context.colors.primary,
                 width: 1.5,
               ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(SnowtrakAuthTheme.fieldRadius),
-              borderSide: const BorderSide(color: SnowtrakColors.error),
+              borderSide: BorderSide(color: context.colors.error),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(SnowtrakAuthTheme.fieldRadius),
-              borderSide: const BorderSide(color: SnowtrakColors.error, width: 1.5),
+              borderSide:
+                  BorderSide(color: context.colors.error, width: 1.5),
             ),
             hintStyle: SnowtrakTypography.bodyLarge.copyWith(
-              color: SnowtrakColors.textTertiary,
+              color: context.colors.textTertiary,
             ),
           ),
         ),

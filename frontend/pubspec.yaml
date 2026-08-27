@@ -49,6 +49,8 @@ dependencies:
 
   # UI
   cupertino_icons: ^1.0.6
+  # Brand icon suite ships as SVG (assets/icons, from the Snowtrak Icon Set)
+  flutter_svg: ^2.0.9
   intl: ^0.20.2
   table_calendar: ^3.1.2
   http_parser: ^4.1.2
@@ -70,6 +72,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/icons/
     - assets/images/
     - assets/logos/
     - .env.local.json

@@ -56,10 +56,10 @@ class NotificationBellIcon extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    color: SnowtrakColors.error,
+                    color: context.colors.error,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: SnowtrakColors.surface,
+                      color: context.colors.surface,
                       width: 1.5,
                     ),
                   ),
@@ -72,8 +72,8 @@ class NotificationBellIcon extends StatelessWidget {
                       provider.unreadCount > 9 
                           ? '9+' 
                           : provider.unreadCount.toString(),
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: context.colors.textOnPrimary,
                         fontSize: 9,
                         fontWeight: FontWeight.bold,
                       ),

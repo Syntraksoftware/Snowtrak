@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:snowtrak/core/theme.dart';
 import 'package:snowtrak/screens/community/widgets/thread_media_attachments_bar.dart';
 import 'package:snowtrak/screens/community/widgets/thread_reply_toolbar_glyphs.dart';
 
@@ -28,8 +29,8 @@ class ThreadReplyComposerBar extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey.shade200)),
+        color: context.colors.surface,
+        border: Border(top: BorderSide(color: context.colors.surfaceVariant)),
       ),
       padding: EdgeInsets.fromLTRB(
         12,
@@ -51,13 +52,13 @@ class ThreadReplyComposerBar extends StatelessWidget {
             ),
           Material(
             elevation: 1,
-            shadowColor: Colors.black.withValues(alpha: 0.05),
+            shadowColor: context.colors.textPrimary.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(28),
-            color: Colors.white,
+            color: context.colors.textOnPrimary,
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(color: context.colors.divider),
               ),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(8, 6, 4, 6),
@@ -66,11 +67,11 @@ class ThreadReplyComposerBar extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 18,
-                      backgroundColor: Colors.grey.shade400,
-                      child: const Icon(
+                      backgroundColor: context.colors.textTertiary,
+                      child: Icon(
                         Icons.person_outline,
                         size: 22,
-                        color: Colors.white,
+                        color: context.colors.textOnPrimary,
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -82,15 +83,15 @@ class ThreadReplyComposerBar extends StatelessWidget {
                         maxLines: 4,
                         textInputAction: TextInputAction.send,
                         onSubmitted: (_) => onSubmit(),
-                        style: const TextStyle(
-                          color: Colors.black87,
+                        style: TextStyle(
+                          color: context.colors.textPrimary,
                           fontSize: 16,
                           height: 1.3,
                         ),
-                        cursorColor: Colors.black87,
+                        cursorColor: context.colors.textPrimary,
                         decoration: InputDecoration(
                           hintText: 'Add your reply...',
-                          hintStyle: TextStyle(color: Colors.grey.shade500),
+                          hintStyle: TextStyle(color: context.colors.textSecondary),
                           border: InputBorder.none,
                           isDense: true,
                           contentPadding: const EdgeInsets.symmetric(vertical: 10),
@@ -103,7 +104,7 @@ class ThreadReplyComposerBar extends StatelessWidget {
                       constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                       tooltip: 'Photo',
                       onPressed: onPickImages,
-                      icon: ReplyToolbarPhotoGlyph(color: Colors.grey.shade900),
+                      icon: ReplyToolbarPhotoGlyph(color: context.colors.textPrimary),
                     ),
                     IconButton(
                       visualDensity: VisualDensity.compact,
@@ -111,7 +112,7 @@ class ThreadReplyComposerBar extends StatelessWidget {
                       constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                       tooltip: 'GIF or image',
                       onPressed: onPickImages,
-                      icon: ReplyToolbarGifGlyph(color: Colors.grey.shade900),
+                      icon: ReplyToolbarGifGlyph(color: context.colors.textPrimary),
                     ),
                     IconButton(
                       visualDensity: VisualDensity.compact,
@@ -122,7 +123,7 @@ class ThreadReplyComposerBar extends StatelessWidget {
                       icon: Icon(
                         Icons.open_in_full,
                         size: 21,
-                        color: Colors.grey.shade900,
+                        color: context.colors.textPrimary,
                       ),
                     ),
                   ],

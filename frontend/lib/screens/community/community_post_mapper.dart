@@ -82,6 +82,9 @@ class CommunityPostMapper {
       likedByCurrentUser: likedByCurrentUser,
       repostedByCurrentUser: repostedByCurrentUser,
       media: parseMediaUrls(rawPost['media_urls']),
+      visibility: (rawPost['visibility'] as String?)?.trim().isNotEmpty == true
+          ? rawPost['visibility'] as String
+          : 'public',
       replies: replies,
     );
   }

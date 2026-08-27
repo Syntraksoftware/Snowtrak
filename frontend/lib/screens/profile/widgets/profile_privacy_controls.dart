@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:snowtrak/core/theme.dart';
 import 'package:snowtrak/screens/settings/settings_screen.dart';
-import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 /// Interactive privacy toggles with visible switch styling (layout preview).
 class ProfilePrivacyControls extends StatefulWidget {
@@ -23,9 +22,9 @@ class _ProfilePrivacyControlsState extends State<ProfilePrivacyControls> {
       children: [
         DecoratedBox(
           decoration: BoxDecoration(
-            color: SnowtrakColors.surfaceVariant,
+            color: context.colors.surfaceVariant,
             borderRadius: BorderRadius.circular(SnowtrakRadius.md),
-            border: Border.all(color: SnowtrakColors.divider),
+            border: Border.all(color: context.colors.divider),
           ),
           child: Column(
             children: [
@@ -66,8 +65,8 @@ class _ProfilePrivacyControlsState extends State<ProfilePrivacyControls> {
           icon: const Icon(Icons.settings_outlined, size: 18),
           label: const Text('Manage in settings'),
           style: OutlinedButton.styleFrom(
-            foregroundColor: SnowtrakAuthTheme.brand,
-            side: const BorderSide(color: SnowtrakAuthTheme.brand),
+            foregroundColor: context.colors.primary,
+            side: BorderSide(color: context.colors.primary),
             padding: const EdgeInsets.symmetric(vertical: SnowtrakSpacing.sm),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(SnowtrakRadius.round),
@@ -113,10 +112,10 @@ class ProfilePrivacyToggleRow extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: SnowtrakAuthTheme.brand.withValues(alpha: 0.12),
+                  color: context.colors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(SnowtrakRadius.sm),
                 ),
-                child: Icon(icon, size: 18, color: SnowtrakAuthTheme.brand),
+                child: Icon(icon, size: 18, color: context.colors.primary),
               ),
               const SizedBox(width: SnowtrakSpacing.sm),
               Expanded(
@@ -126,14 +125,14 @@ class ProfilePrivacyToggleRow extends StatelessWidget {
                     Text(
                       title,
                       style: SnowtrakTypography.labelLarge.copyWith(
-                        color: SnowtrakColors.textPrimary,
+                        color: context.colors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
                       style: SnowtrakTypography.bodySmall.copyWith(
-                        color: SnowtrakColors.textSecondary,
+                        color: context.colors.textSecondary,
                         height: 1.35,
                       ),
                     ),
@@ -143,10 +142,10 @@ class ProfilePrivacyToggleRow extends StatelessWidget {
               Switch.adaptive(
                 value: value,
                 onChanged: onChanged,
-                activeThumbColor: SnowtrakColors.textOnPrimary,
-                activeTrackColor: SnowtrakAuthTheme.brand,
-                inactiveThumbColor: SnowtrakColors.surface,
-                inactiveTrackColor: SnowtrakColors.border,
+                activeThumbColor: context.colors.textOnPrimary,
+                activeTrackColor: context.colors.primary,
+                inactiveThumbColor: context.colors.surface,
+                inactiveTrackColor: context.colors.border,
               ),
             ],
           ),
@@ -157,7 +156,7 @@ class ProfilePrivacyToggleRow extends StatelessWidget {
             child: Divider(
               height: 1,
               thickness: 1,
-              color: SnowtrakColors.divider,
+              color: context.colors.divider,
             ),
           ),
       ],

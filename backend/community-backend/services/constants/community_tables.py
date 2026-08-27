@@ -9,3 +9,5 @@ POST_LIKES = "post_likes"
 POST_VOTES = "post_votes"
 COMMENT_VOTES = "comment_votes"
 POST_REPOSTS = "post_reposts"
+# The follow graph. See backend/db/migrations/010_follows.sql.
+FOLLOWS = "follows"

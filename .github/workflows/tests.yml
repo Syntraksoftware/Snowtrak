@@ -63,10 +63,28 @@ jobs:
           cd frontend
           flutter pub get
       
-      - name: Run tests with coverage
+      - name: Analyze
+        # analysis_options.yaml turns on unawaited_futures, close_sinks,
+        # cancel_subscriptions and friends. They were honour-system until now:
+        # only flutter test was gated, so a green PR proved nothing about them.
+        #
+        # dart analyze, not flutter analyze: on 3.38.6 -- the version pinned
+        # above -- flutter analyze crashes with "analysis server exited with
+        # code 64". Same analyzer, same analysis_options.yaml, and it exits
+        # non-zero on any issue including lints, so this gate is strict.
         run: |
           cd frontend
-          flutter test --coverage
+          dart analyze
+        timeout-minutes: 10
+
+      - name: Run tests with coverage
+        # --exclude-tags preview: design_preview_test.dart compares against a
+        # golden PNG generated on macOS, and ubuntu rasterises text differently,
+        # so it fails here for the platform rather than for the code. See
+        # frontend/dart_test.yaml.
+        run: |
+          cd frontend
+          flutter test --coverage --exclude-tags preview
         continue-on-error: false
         timeout-minutes: 10
       

@@ -67,6 +67,7 @@ class CommunityRepository {
     String? quotedCommentId,
     String? repostOfCommentId,
     List<String>? mediaUrls,
+    String visibility = 'public',
   }) {
     return _api.createPost(
       subthreadId: subthreadId,
@@ -77,6 +78,7 @@ class CommunityRepository {
       quotedCommentId: quotedCommentId,
       repostOfCommentId: repostOfCommentId,
       mediaUrls: mediaUrls,
+      visibility: visibility,
     );
   }
 

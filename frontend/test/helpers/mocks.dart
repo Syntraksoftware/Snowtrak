@@ -1,4 +1,5 @@
 /// Mock classes for testing.
+library;
 import 'package:snowtrak/services/storage_service.dart';
 import 'package:snowtrak/services/location_service.dart';
 
@@ -7,7 +8,7 @@ class MockStorageService extends StorageService {
   String? _mockToken;
   String? _mockUserId;
   bool _mockLocationPermissionAsked = false;
-  bool _shouldFailInit = false;
+  final bool _shouldFailInit;
   
   MockStorageService({
     String? token,
@@ -57,7 +58,7 @@ class MockStorageService extends StorageService {
 /// Mock LocationService for testing
 class MockLocationService extends LocationService {
   bool _hasPermission = false;
-  bool _shouldFail = false;
+  final bool _shouldFail;
   
   MockLocationService({
     bool hasPermission = false,

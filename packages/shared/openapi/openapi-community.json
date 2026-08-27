@@ -455,6 +455,11 @@
           "user_id": {
             "title": "User Id",
             "type": "string"
+          },
+          "visibility": {
+            "default": "public",
+            "title": "Visibility",
+            "type": "string"
           }
         },
         "required": [
@@ -655,6 +660,33 @@
           "created_at"
         ],
         "title": "CommunitySubthreadResponse",
+        "type": "object"
+      },
+      "FollowStatsResponse": {
+        "description": "Counts plus the viewing user's relationship to this profile.",
+        "properties": {
+          "follower_count": {
+            "default": 0,
+            "title": "Follower Count",
+            "type": "integer"
+          },
+          "following_count": {
+            "default": 0,
+            "title": "Following Count",
+            "type": "integer"
+          },
+          "is_followed_by": {
+            "default": false,
+            "title": "Is Followed By",
+            "type": "boolean"
+          },
+          "is_following": {
+            "default": false,
+            "title": "Is Following",
+            "type": "boolean"
+          }
+        },
+        "title": "FollowStatsResponse",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -906,6 +938,11 @@
           },
           "title": {
             "title": "Title",
+            "type": "string"
+          },
+          "visibility": {
+            "default": "public",
+            "title": "Visibility",
             "type": "string"
           }
         },
@@ -1462,6 +1499,357 @@
         ]
       }
     },
+    "/api/v1/follows/me/followers/{user_id}": {
+      "delete": {
+        "description": "Drop somebody who follows you.\n\nThe escape hatch that makes open following bearable: the same edge delete\nas unfollow, with the pair reversed.",
+        "operationId": "remove_follower_api_v1_follows_me_followers__user_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Remove Follower",
+        "tags": [
+          "follows"
+        ]
+      }
+    },
+    "/api/v1/follows/{user_id}": {
+      "delete": {
+        "description": "Unfollow somebody. Succeeds even if you were not following them.",
+        "operationId": "unfollow_user_api_v1_follows__user_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Unfollow User",
+        "tags": [
+          "follows"
+        ]
+      },
+      "post": {
+        "description": "Follow somebody. Idempotent.",
+        "operationId": "follow_user_api_v1_follows__user_id__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Follow User",
+        "tags": [
+          "follows"
+        ]
+      }
+    },
+    "/api/v1/follows/{user_id}/followers": {
+      "get": {
+        "description": "People who follow this user, newest first.",
+        "operationId": "list_followers_api_v1_follows__user_id__followers_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Followers",
+        "tags": [
+          "follows"
+        ]
+      }
+    },
+    "/api/v1/follows/{user_id}/following": {
+      "get": {
+        "description": "People this user follows, newest first.",
+        "operationId": "list_following_api_v1_follows__user_id__following_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Following",
+        "tags": [
+          "follows"
+        ]
+      }
+    },
+    "/api/v1/follows/{user_id}/stats": {
+      "get": {
+        "description": "Counts plus this viewer's relationship, in one call for a profile header.\n\nCached, because this is on the path of every profile open and the database\nis ~440ms away. A follow or unfollow invalidates it, so your own action\nstill shows up immediately.",
+        "operationId": "follow_stats_api_v1_follows__user_id__stats_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowStatsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Follow Stats",
+        "tags": [
+          "follows"
+        ]
+      }
+    },
     "/api/v1/media/upload": {
       "post": {
         "description": "Single-file upload; returns public URL for use in post/comment create.",
@@ -1644,7 +2032,7 @@
     },
     "/api/v1/posts/user/{user_id}": {
       "get": {
-        "description": "List posts by user identifier.",
+        "description": "List posts by user identifier.\n\nCached like the feed. This runs on every profile open and the database is\na continent away, so an uncached hit costs a round trip that the reader\nfeels.",
         "operationId": "list_posts_by_user_api_v1_posts_user__user_id__get",
         "parameters": [
           {

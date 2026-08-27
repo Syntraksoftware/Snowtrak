@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snowtrak/core/theme.dart';
 import 'package:flutter/cupertino.dart';
 
 class PrivacySettingsScreen extends StatefulWidget {
@@ -21,9 +22,9 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7),
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF2F2F7),
+        backgroundColor: context.colors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -165,7 +166,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
         style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w400,
-          color: Colors.grey[600],
+          color: context.colors.textSecondary,
           letterSpacing: -0.1,
         ),
       ),
@@ -179,7 +180,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
         text,
         style: TextStyle(
           fontSize: 13,
-          color: Colors.grey[500],
+          color: context.colors.textSecondary,
         ),
       ),
     );
@@ -207,10 +208,10 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                       Text(option),
                       if (option == currentValue) ...[
                         const SizedBox(width: 8),
-                        const Icon(
+                        Icon(
                           CupertinoIcons.checkmark,
                           size: 18,
-                          color: Color(0xFF007AFF),
+                          color: context.colors.primary,
                         ),
                       ],
                     ],
@@ -247,7 +248,7 @@ class _SettingsGroup extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -260,7 +261,7 @@ class _SettingsGroup extends StatelessWidget {
                 child: Divider(
                   height: 0.5,
                   thickness: 0.5,
-                  color: Colors.grey[300],
+                  color: context.colors.divider,
                 ),
               ),
           ],
@@ -295,17 +296,17 @@ class _SettingsToggleRow extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w400,
-                    color: Colors.black,
+                    color: context.colors.textPrimary,
                   ),
                 ),
                 if (subtitle != null) ...[
                   const SizedBox(height: 2),
                   Text(
                     subtitle!,
-                    style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                    style: TextStyle(fontSize: 13, color: context.colors.textSecondary),
                   ),
                 ],
               ],
@@ -314,7 +315,7 @@ class _SettingsToggleRow extends StatelessWidget {
           CupertinoSwitch(
             value: value,
             onChanged: onChanged,
-            activeColor: const Color(0xFF34C759),
+            activeTrackColor: context.colors.success,
           ),
         ],
       ),
@@ -345,19 +346,19 @@ class _SettingsSelectionRow extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w400,
-                  color: Colors.black,
+                  color: context.colors.textPrimary,
                 ),
               ),
               const Spacer(),
               Text(
                 value,
-                style: TextStyle(fontSize: 17, color: Colors.grey[500]),
+                style: TextStyle(fontSize: 17, color: context.colors.textSecondary),
               ),
               const SizedBox(width: 4),
-              Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+              Icon(Icons.chevron_right, color: context.colors.textTertiary, size: 20),
             ],
           ),
         ),
@@ -389,20 +390,20 @@ class _SettingsNavigationRow extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w400,
-                  color: Colors.black,
+                  color: context.colors.textPrimary,
                 ),
               ),
               const Spacer(),
               if (value != null)
                 Text(
                   value!,
-                  style: TextStyle(fontSize: 17, color: Colors.grey[500]),
+                  style: TextStyle(fontSize: 17, color: context.colors.textSecondary),
                 ),
               const SizedBox(width: 4),
-              Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+              Icon(Icons.chevron_right, color: context.colors.textTertiary, size: 20),
             ],
           ),
         ),

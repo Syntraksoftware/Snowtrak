@@ -188,8 +188,8 @@ class MockActivities {
     // Create a winding route
     double lat = startLat;
     double lng = startLng;
-    final latStep = 0.001; // ~111 meters per step
-    final lngStep = 0.001;
+    const latStep = 0.001; // ~111 meters per step
+    const lngStep = 0.001;
     
     for (int i = 0; i < count; i++) {
       // Create a winding path with variation

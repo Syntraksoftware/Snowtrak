@@ -1,4 +1,5 @@
 /// Test data factories for creating test objects
+library;
 import 'package:snowtrak/models/user.dart';
 import 'package:snowtrak/models/activity.dart';
 import 'package:snowtrak/models/auth_session.dart';

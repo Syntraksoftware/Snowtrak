@@ -76,6 +76,14 @@ class Settings(BaseSettings):
         alias="WEATHER_CACHE_DISTANCE_THRESHOLD",
     )
 
+    # Redis-backed profile cache
+    profile_cache_enabled: bool = Field(default=True, alias="PROFILE_CACHE_ENABLED")
+    profile_cache_redis_url: str = Field(
+        default="redis://localhost:6379/0", alias="PROFILE_CACHE_REDIS_URL"
+    )
+    profile_cache_namespace: str = Field(default="main-backend", alias="PROFILE_CACHE_NAMESPACE")
+    profile_cache_ttl_seconds: int = Field(default=120, gt=0, alias="PROFILE_CACHE_TTL_SECONDS")
+
     # Redis-backed rate limiter
     rate_limit_enabled: bool = Field(default=True, alias="RATE_LIMIT_ENABLED")
     rate_limit_redis_url: str = Field(default="redis://localhost:6379/0", alias="RATE_LIMIT_REDIS_URL")

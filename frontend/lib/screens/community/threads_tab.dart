@@ -24,6 +24,7 @@ import 'package:snowtrak/screens/community/threads_tab_post_state.dart';
 import 'package:snowtrak/screens/community/threads_tab_sync_coordinator.dart';
 import 'package:snowtrak/screens/community/widgets/threads_search_bar.dart';
 import 'package:snowtrak/screens/community/widgets/threads_tab_sections.dart';
+import 'package:snowtrak/screens/profile/user_profile_screen.dart';
 import 'package:snowtrak/services/feed/community_feed_cache.dart';
 import 'package:snowtrak/services/feed/feed_post_sort.dart';
 import 'package:snowtrak/services/feed/feed_rebase.dart';
@@ -626,6 +627,15 @@ class _ThreadsTabState extends State<ThreadsTab> {
     await _openThreadDetail(post);
   }
 
+  void _handleAuthorTap(Post post) {
+    openUserProfile(
+      context,
+      post.author.id,
+      displayName: post.author.displayName,
+      username: post.author.username,
+    );
+  }
+
   Future<void> _openThreadDetail(Post post) async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -801,10 +811,10 @@ class _ThreadsTabState extends State<ThreadsTab> {
                 pinned: true,
                 floating: false,
                 automaticallyImplyLeading: false,
-                backgroundColor: SnowtrakColors.surface,
+                backgroundColor: context.colors.surface,
                 surfaceTintColor: Colors.transparent,
                 elevation: innerBoxIsScrolled ? 2 : 0,
-                shadowColor: Colors.black26,
+                shadowColor: context.colors.scrim,
                 toolbarHeight: 72,
                 flexibleSpace: ThreadsSearchBar(
                   controller: _searchController,
@@ -831,6 +841,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
             onComposerSubmit: (text) => _handlePost(text),
             onComposeTap: _openDraftComposer,
             onPostTap: _handlePostTap,
+            onAuthorTap: _handleAuthorTap,
             onLike: _handleLike,
             onRepost: _showRepostOptions,
             onReply: _handleReply,
@@ -838,14 +849,14 @@ class _ThreadsTabState extends State<ThreadsTab> {
           ),
         ),
         if (_activeUploadOps > 0)
-          const Positioned(
+          Positioned(
             left: 0,
             right: 0,
             bottom: 0,
             child: LinearProgressIndicator(
               minHeight: 2.5,
               backgroundColor: Colors.transparent,
-              valueColor: AlwaysStoppedAnimation<Color>(SnowtrakColors.primary),
+              valueColor: AlwaysStoppedAnimation<Color>(context.colors.primary),
             ),
           ),
       ],

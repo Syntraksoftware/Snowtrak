@@ -70,12 +70,12 @@ class _RecordStatsCardState extends State<RecordStatsCard>
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeInOut,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.colors.surface,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: SnowtrakColors.divider),
+          border: Border.all(color: context.colors.divider),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
+              color: context.colors.textPrimary.withValues(alpha: 0.12),
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
@@ -91,13 +91,13 @@ class _RecordStatsCardState extends State<RecordStatsCard>
                 children: [
                   if (icon != null) ...[
                     Icon(icon,
-                        color: SnowtrakColors.primary, size: 15),
+                        color: context.colors.primary, size: 15),
                     const SizedBox(width: 7),
                   ],
                   Text(
                     label,
                     style: SnowtrakTypography.labelLarge.copyWith(
-                      color: SnowtrakColors.textPrimary,
+                      color: context.colors.textPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -106,7 +106,7 @@ class _RecordStatsCardState extends State<RecordStatsCard>
                     _isExpanded
                         ? Icons.keyboard_arrow_down_rounded
                         : Icons.keyboard_arrow_up_rounded,
-                    color: SnowtrakColors.textTertiary,
+                    color: context.colors.textTertiary,
                     size: 22,
                   ),
                 ],
@@ -122,7 +122,7 @@ class _RecordStatsCardState extends State<RecordStatsCard>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Divider(height: 1, color: SnowtrakColors.divider),
+                    Divider(height: 1, color: context.colors.divider),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(8, 16, 8, 18),
                       child: ValueListenableBuilder<Duration>(
@@ -176,13 +176,13 @@ class RecordControls extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: SnowtrakColors.surface,
+        color: context.colors.surface,
         border: Border(
-          top: BorderSide(color: SnowtrakColors.divider),
+          top: BorderSide(color: context.colors.divider),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: context.colors.textPrimary.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, -3),
           ),
@@ -192,12 +192,12 @@ class RecordControls extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
-        children: isRecording ? _recordingButtons() : _idleButtons(),
+        children: isRecording ? _recordingButtons(context) : _idleButtons(context),
       ),
     );
   }
 
-  List<Widget> _idleButtons() {
+  List<Widget> _idleButtons(BuildContext context) {
     return [
       _ControlButton(
         icon: activityType != null
@@ -209,12 +209,12 @@ class RecordControls extends StatelessWidget {
       ),
       _BigFab(
         icon: Icons.play_arrow_rounded,
-        color: SnowtrakColors.primary,
+        color: context.colors.primary,
         label: 'Start',
-        labelColor: SnowtrakColors.primary,
+        labelColor: context.colors.primary,
         onTap: onStart,
       ),
-      _ControlButton(
+      const _ControlButton(
         icon: Icons.route_outlined,
         label: 'Add Route',
         onTap: null,
@@ -223,7 +223,7 @@ class RecordControls extends StatelessWidget {
     ];
   }
 
-  List<Widget> _recordingButtons() {
+  List<Widget> _recordingButtons(BuildContext context) {
     return [
       _ControlButton(
         icon: isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
@@ -232,12 +232,12 @@ class RecordControls extends StatelessWidget {
       ),
       _BigFab(
         icon: Icons.stop_rounded,
-        color: SnowtrakColors.error,
+        color: context.colors.error,
         label: 'Stop',
-        labelColor: SnowtrakColors.textSecondary,
+        labelColor: context.colors.textSecondary,
         onTap: onStop,
       ),
-      _ControlButton(
+      const _ControlButton(
         icon: Icons.more_horiz,
         label: 'More',
         onTap: null,
@@ -301,7 +301,7 @@ class _StatCell extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              color: SnowtrakColors.textPrimary,
+              color: context.colors.textPrimary,
               fontSize: large ? 28 : 22,
               fontWeight: FontWeight.w700,
               letterSpacing: -1,
@@ -313,7 +313,7 @@ class _StatCell extends StatelessWidget {
           Text(
             label,
             style: SnowtrakTypography.labelSmall.copyWith(
-              color: SnowtrakColors.textTertiary,
+              color: context.colors.textTertiary,
             ),
             textAlign: TextAlign.center,
           ),
@@ -328,7 +328,7 @@ class _VertDivider extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         width: 1,
         height: 40,
-        color: SnowtrakColors.divider,
+        color: context.colors.divider,
       );
 }
 
@@ -368,7 +368,7 @@ class _BigFab extends StatelessWidget {
                 ),
               ],
             ),
-            child: Icon(icon, color: Colors.white, size: 34),
+            child: Icon(icon, color: context.colors.textOnPrimary, size: 34),
           ),
           const SizedBox(height: 6),
           Text(
@@ -401,8 +401,8 @@ class _ControlButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconColor = disabled ? SnowtrakColors.textTertiary : SnowtrakColors.textSecondary;
-    final labelColor = disabled ? SnowtrakColors.textTertiary : SnowtrakColors.textSecondary;
+    final iconColor = disabled ? context.colors.textTertiary : context.colors.textSecondary;
+    final labelColor = disabled ? context.colors.textTertiary : context.colors.textSecondary;
 
     final circle = Stack(
       clipBehavior: Clip.none,
@@ -411,9 +411,9 @@ class _ControlButton extends StatelessWidget {
           width: 52,
           height: 52,
           decoration: BoxDecoration(
-            color: SnowtrakColors.surfaceVariant,
+            color: context.colors.surfaceVariant,
             shape: BoxShape.circle,
-            border: Border.all(color: SnowtrakColors.divider),
+            border: Border.all(color: context.colors.divider),
           ),
           child: Icon(icon, color: iconColor, size: 24),
         ),
@@ -425,13 +425,13 @@ class _ControlButton extends StatelessWidget {
               width: 16,
               height: 16,
               decoration: BoxDecoration(
-                color: SnowtrakColors.primary,
+                color: context.colors.primary,
                 shape: BoxShape.circle,
                 border: Border.all(
-                    color: SnowtrakColors.surface, width: 1.5),
+                    color: context.colors.surface, width: 1.5),
               ),
               child:
-                  const Icon(Icons.check, color: Colors.white, size: 9),
+                  Icon(Icons.check, color: context.colors.textOnPrimary, size: 9),
             ),
           ),
       ],
@@ -472,9 +472,9 @@ class _GpsDeniedSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(
         24,
@@ -489,7 +489,7 @@ class _GpsDeniedSheet extends StatelessWidget {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.black12,
+              color: context.colors.scrim.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -498,17 +498,17 @@ class _GpsDeniedSheet extends StatelessWidget {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: SnowtrakColors.error.withValues(alpha: 0.1),
+              color: context.colors.error.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child:
-                Icon(Icons.location_off, color: SnowtrakColors.error, size: 30),
+                Icon(Icons.location_off, color: context.colors.error, size: 30),
           ),
           const SizedBox(height: 16),
           Text(
             'Location Access Required',
             style: SnowtrakTypography.headlineSmall.copyWith(
-              color: SnowtrakColors.textPrimary,
+              color: context.colors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
@@ -516,7 +516,7 @@ class _GpsDeniedSheet extends StatelessWidget {
             'Enable location in Settings to record your activity.',
             textAlign: TextAlign.center,
             style: SnowtrakTypography.bodyMedium.copyWith(
-              color: SnowtrakColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
           const SizedBox(height: 28),
@@ -525,8 +525,8 @@ class _GpsDeniedSheet extends StatelessWidget {
             child: ElevatedButton(
               onPressed: () => Navigator.pop(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: SnowtrakColors.primary,
-                foregroundColor: Colors.white,
+                backgroundColor: context.colors.primary,
+                foregroundColor: context.colors.textOnPrimary,
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14)),
@@ -542,7 +542,7 @@ class _GpsDeniedSheet extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             child: Text('Cancel',
                 style: SnowtrakTypography.bodyMedium.copyWith(
-                  color: SnowtrakColors.textTertiary,
+                  color: context.colors.textTertiary,
                 )),
           ),
         ],

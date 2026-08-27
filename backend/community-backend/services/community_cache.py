@@ -84,6 +84,22 @@ def post_comments_cache_key(post_id: str, current_user_id: str | None, version: 
     )
 
 
+def user_posts_cache_key(
+    user_id: str, limit: int, offset: int, current_user_id: str | None, version: int
+) -> str:
+    return (
+        f"{_namespace()}:user-posts:user:{user_id}:limit:{limit}:offset:{offset}"
+        f":viewer:{_user_scope(current_user_id)}:v:{version}"
+    )
+
+
+def follow_stats_cache_key(user_id: str, current_user_id: str | None, version: int) -> str:
+    return (
+        f"{_namespace()}:follow-stats:user:{user_id}"
+        f":viewer:{_user_scope(current_user_id)}:v:{version}"
+    )
+
+
 async def _get_client() -> redis.Redis | None:
     if not _cache_initialized:
         initialize_community_cache()
@@ -124,10 +140,14 @@ async def get_cache_version(scope: str) -> int:
 
     try:
         raw = await client.get(_version_key(scope))
-        return int(raw) if raw is not None else 1
+        # Absent means 0, not 1. bump_cache_version INCRs a missing key to 1,
+        # so a default of 1 made the very first invalidation a no-op: keys
+        # written at v:1 stayed readable after the bump. The feed hid this
+        # behind a 15s TTL; anything with a longer one served stale data.
+        return int(raw) if raw is not None else 0
     except Exception as exception:
         logger.warning("Failed to read cache version for %s: %s", scope, exception)
-        return 1
+        return 0
 
 
 async def bump_cache_version(scope: str) -> int:
@@ -142,9 +162,29 @@ async def bump_cache_version(scope: str) -> int:
         return 1
 
 
-async def invalidate_feed_cache() -> None:
+async def invalidate_post_caches() -> None:
+    """Drop both views of the same posts.
+
+    Every write that changes the feed also changes some author's profile list
+    -- a repost or a delete can even change a different author's. Keeping them
+    in one call is what stops the two from drifting apart the next time
+    somebody adds a write path and remembers only one of them.
+    """
     await bump_cache_version("feed")
+    await bump_cache_version("user-posts")
 
 
 async def invalidate_post_comments_cache(post_id: str) -> None:
     await bump_cache_version(f"post-comments:{post_id}")
+
+
+async def invalidate_follow_stats_cache() -> None:
+    """One global version for the whole follow graph.
+
+    A follow changes the numbers on both profiles involved, and whether the
+    other person sees a "Follows you" badge. Bumping one counter drops every
+    cached snapshot, which costs a re-fetch on profiles nobody was looking at
+    and keeps the invalidation impossible to get subtly wrong. Follows are
+    rare compared to profile views.
+    """
+    await bump_cache_version("follow-stats")

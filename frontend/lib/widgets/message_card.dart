@@ -26,7 +26,7 @@ class MessageCard extends StatefulWidget {
   final bool isReply;
   final bool showInlineReplies;
   final VoidCallback? onTap;
-  final VoidCallback? onAvatarTap;
+  final Function(Post post)? onAvatarTap;
   final Function(Post post)? onLike;
   final Function(Post post)? onRepost;
   final Function(Post post)? onReply;
@@ -91,12 +91,17 @@ class _MessageCardState extends State<MessageCard> {
     );
   }
 
+  VoidCallback? get _avatarTap => widget.onAvatarTap != null
+      ? () => widget.onAvatarTap!(widget.post)
+      : null;
+
   @override
   Widget build(BuildContext context) {
     if (widget.isReply) {
       return _ThreadReplyRow(
         post: widget.post,
         onTap: widget.onTap,
+        onAvatarTap: _avatarTap,
         actionBar: _actionBar(dense: true),
       );
     }
@@ -107,7 +112,7 @@ class _MessageCardState extends State<MessageCard> {
       isExpanded: _isExpanded,
       showInlineReplies: widget.showInlineReplies,
       onTap: widget.onTap != null || _hasThreadPreview ? _onBodyTap : null,
-      onAvatarTap: widget.onAvatarTap,
+      onAvatarTap: _avatarTap,
       onToggleExpand: _toggleExpand,
       actionBar: _actionBar(),
       nestedReplies: _buildExpandedReplies(),
@@ -123,6 +128,7 @@ class _MessageCardState extends State<MessageCard> {
           post: reply,
           isReply: true,
           showInlineReplies: false,
+          onAvatarTap: widget.onAvatarTap,
           onLike: widget.onLike,
           onRepost: widget.onRepost,
           onReply: widget.onReply,
@@ -228,7 +234,7 @@ class _ThreadsPostCard extends StatelessWidget {
             ),
           ),
         ),
-        const Divider(height: 1, thickness: 1, color: SnowtrakColors.divider),
+        Divider(height: 1, thickness: 1, color: context.colors.divider),
       ],
     );
   }
@@ -239,11 +245,13 @@ class _ThreadReplyRow extends StatelessWidget {
     required this.post,
     required this.actionBar,
     this.onTap,
+    this.onAvatarTap,
   });
 
   final Post post;
   final FeedActionBar actionBar;
   final VoidCallback? onTap;
+  final VoidCallback? onAvatarTap;
 
   @override
   Widget build(BuildContext context) {
@@ -254,7 +262,7 @@ class _ThreadReplyRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _PostAvatar(post: post, radius: 18),
+          _PostAvatar(post: post, radius: 18, onTap: onAvatarTap),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -308,7 +316,7 @@ class _AvatarColumn extends StatelessWidget {
               child: Container(
                 width: 2,
                 margin: const EdgeInsets.only(top: 6),
-                color: SnowtrakColors.divider,
+                color: context.colors.divider,
               ),
             ),
         ],
@@ -338,11 +346,11 @@ class _PostAvatar extends StatelessWidget {
       onTap: onTap,
       child: CircleAvatar(
         radius: radius,
-        backgroundColor: SnowtrakColors.primary.withValues(alpha: 0.12),
+        backgroundColor: context.colors.primary.withValues(alpha: 0.12),
         child: Text(
           initial,
           style: SnowtrakTypography.labelMedium.copyWith(
-            color: SnowtrakColors.primary,
+            color: context.colors.primary,
             fontWeight: FontWeight.w700,
             fontSize: radius * 0.55,
           ),
@@ -374,7 +382,7 @@ class _ThreadsMetaRow extends StatelessWidget {
                           : SnowtrakTypography.labelLarge)
                       .copyWith(
                     fontWeight: FontWeight.w700,
-                    color: SnowtrakColors.textPrimary,
+                    color: context.colors.textPrimary,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -382,13 +390,13 @@ class _ThreadsMetaRow extends StatelessWidget {
               Text(
                 '  ·  ',
                 style: SnowtrakTypography.bodySmall.copyWith(
-                  color: SnowtrakColors.textTertiary,
+                  color: context.colors.textTertiary,
                 ),
               ),
               Text(
                 post.timestampLabel,
                 style: SnowtrakTypography.bodySmall.copyWith(
-                  color: SnowtrakColors.textTertiary,
+                  color: context.colors.textTertiary,
                 ),
               ),
             ],
@@ -401,9 +409,9 @@ class _ThreadsMetaRow extends StatelessWidget {
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             onPressed: () {},
-            icon: const Icon(
+            icon: Icon(
               Icons.more_horiz_rounded,
-              color: SnowtrakColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
       ],
@@ -425,7 +433,7 @@ class _ThreadBodyText extends StatelessWidget {
               ? SnowtrakTypography.bodyMedium
               : SnowtrakTypography.bodyLarge)
           .copyWith(
-        color: SnowtrakColors.textPrimary,
+        color: context.colors.textPrimary,
         height: 1.4,
         letterSpacing: 0.1,
       ),

@@ -24,7 +24,7 @@ from routes.validators.community_write_validators import (
     ensure_text_or_media,
     ensure_vote_type,
 )
-from services.community_cache import invalidate_feed_cache
+from services.community_cache import invalidate_post_caches
 from services.media_validation import normalize_media_urls
 from services.supabase_client import get_community_client
 
@@ -120,6 +120,7 @@ async def create_post(
             quoted_comment_id=quoted_comment_id,
             repost_of_comment_id=repost_of_comment_id,
             media_urls=media_urls,
+            visibility=data.visibility,
         )
         if not created_post:
             raise HTTPException(
@@ -127,7 +128,7 @@ async def create_post(
                 detail="Failed to create post",
             ) from None
 
-        await invalidate_feed_cache()
+        await invalidate_post_caches()
 
         return created_post
     except HTTPException:
@@ -164,7 +165,7 @@ async def repost_post(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Post not found",
             ) from None
-        await invalidate_feed_cache()
+        await invalidate_post_caches()
         return result
     except HTTPException:
         raise
@@ -200,7 +201,7 @@ async def undo_repost_post(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Post not found",
             ) from None
-        await invalidate_feed_cache()
+        await invalidate_post_caches()
         return result
     except HTTPException:
         raise
@@ -233,7 +234,7 @@ async def update_post(
                 detail="Post not found or unauthorized",
             ) from None
 
-        await invalidate_feed_cache()
+        await invalidate_post_caches()
 
         return updated_post
     except HTTPException:
@@ -274,7 +275,7 @@ async def vote_post(
                 detail="Post not found",
             ) from None
 
-        await invalidate_feed_cache()
+        await invalidate_post_caches()
 
         return vote_result
     except HTTPException:
@@ -302,7 +303,7 @@ async def delete_post(
                 detail="Post not found or unauthorized",
             ) from None
 
-        await invalidate_feed_cache()
+        await invalidate_post_caches()
 
         return CommunityDeletePostResponse(
             message="Post and all comments deleted successfully",
