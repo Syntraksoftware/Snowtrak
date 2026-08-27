@@ -57,13 +57,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               SettingsIosRow(
                 icon: Icons.notifications,
-                iconBackground: context.colors.error, // iOS Red
+                iconBackground: SnowtrakColors.tileRed,
                 label: 'Notifications',
                 onTap: () => _navigateTo(const NotificationsSettingsScreen()),
               ),
               SettingsIosRow(
                 icon: Icons.lock,
-                iconBackground: context.colors.success, // iOS Green
+                iconBackground: SnowtrakColors.tileGreen,
                 label: 'Privacy & Security',
                 onTap: () => _navigateTo(const PrivacySettingsScreen()),
               ),
@@ -78,7 +78,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               SettingsIosRow(
                 icon: Icons.person,
-                iconBackground: context.colors.primary, // iOS Blue
+                iconBackground: SnowtrakColors.tileInk,
                 label: 'Account',
                 subtitle: 'Password, email, security',
                 onTap: () => _navigateTo(const AccountSettingsScreen()),
@@ -94,21 +94,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               SettingsIosRow(
                 icon: Icons.downhill_skiing,
-                iconBackground: context.colors.warning, // iOS Orange
+                iconBackground: SnowtrakColors.tileOrange,
                 label: 'Activity & Recording',
                 subtitle: 'GPS, units, auto-pause',
                 onTap: () => _navigateTo(const ActivitySettingsScreen()),
               ),
               SettingsIosRow(
                 icon: Icons.display_settings,
-                iconBackground: SnowtrakColors.neutral600, // iOS Purple
+                iconBackground: SnowtrakColors.tileSlate,
                 label: 'Display & Appearance',
                 subtitle: 'Theme, language, date format',
                 onTap: () => _navigateTo(const DisplaySettingsScreen()),
               ),
               SettingsIosRow(
                 icon: Icons.storage,
-                iconBackground: context.colors.textTertiary, // iOS Gray
+                iconBackground: SnowtrakColors.tileGrey,
                 label: 'Data & Storage',
                 subtitle: 'Cache, offline maps, export',
                 onTap: () => _navigateTo(const DataStorageScreen()),
@@ -124,13 +124,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               SettingsIosRow(
                 icon: Icons.help,
-                iconBackground: context.colors.primary, // iOS Blue
+                iconBackground: SnowtrakColors.tileInk,
                 label: 'Help & Support',
                 onTap: () => _navigateTo(const HelpSupportScreen()),
               ),
               SettingsIosRow(
                 icon: Icons.info,
-                iconBackground: context.colors.textTertiary, // iOS Gray
+                iconBackground: SnowtrakColors.tileGrey,
                 label: 'About Snowtrak',
                 subtitle: 'Version 1.0.0',
                 onTap: () => _showAboutDialog(),
@@ -275,7 +275,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               
               // Pop all routes to return to root - the main Consumer will
               // automatically show LoginScreen when isAuthenticated is false
-              if (context.mounted) {
+              // State.context, so the State's own mounted is the right
+              // guard -- context.mounted answers a different question.
+              if (mounted) {
                 Navigator.of(context, rootNavigator: true)
                     .popUntil((route) => route.isFirst);
               }

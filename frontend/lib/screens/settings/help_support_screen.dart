@@ -33,21 +33,21 @@ class HelpSupportScreen extends StatelessWidget {
             children: [
               _SettingsRow(
                 icon: Icons.menu_book,
-                iconBackground: context.colors.primary,
+                iconBackground: SnowtrakColors.tileInk,
                 label: 'Help Center',
                 subtitle: 'FAQ, guides, tutorials',
                 onTap: () => _showToast(context, 'Opening Help Center...'),
               ),
               _SettingsRow(
                 icon: Icons.chat_bubble,
-                iconBackground: context.colors.success,
+                iconBackground: SnowtrakColors.tileGreen,
                 label: 'Contact Support',
                 subtitle: 'Get help from our team',
                 onTap: () => _showContactOptions(context),
               ),
               _SettingsRow(
                 icon: Icons.forum,
-                iconBackground: context.colors.warning,
+                iconBackground: SnowtrakColors.tileOrange,
                 label: 'Community Forum',
                 subtitle: 'Ask questions, share tips',
                 onTap: () => _showToast(context, 'Opening Community...'),
@@ -63,19 +63,19 @@ class HelpSupportScreen extends StatelessWidget {
             children: [
               _SettingsRow(
                 icon: Icons.bug_report,
-                iconBackground: context.colors.error,
+                iconBackground: SnowtrakColors.tileRed,
                 label: 'Report a Problem',
                 onTap: () => _showReportDialog(context),
               ),
               _SettingsRow(
                 icon: Icons.lightbulb,
-                iconBackground: SnowtrakColors.neutral600,
+                iconBackground: SnowtrakColors.tileSlate,
                 label: 'Feature Request',
                 onTap: () => _showFeatureRequestDialog(context),
               ),
               _SettingsRow(
                 icon: Icons.star,
-                iconBackground: SnowtrakColors.neutral600,
+                iconBackground: SnowtrakColors.tileSlate,
                 label: 'Rate Snowtrak',
                 onTap: () => _showRateDialog(context),
               ),
@@ -90,19 +90,19 @@ class HelpSupportScreen extends StatelessWidget {
             children: [
               _SettingsRow(
                 icon: Icons.gps_fixed,
-                iconBackground: context.colors.textTertiary,
+                iconBackground: SnowtrakColors.tileGrey,
                 label: 'GPS Issues',
                 onTap: () => _showGPSHelp(context),
               ),
               _SettingsRow(
                 icon: Icons.sync_problem,
-                iconBackground: context.colors.textTertiary,
+                iconBackground: SnowtrakColors.tileGrey,
                 label: 'Sync Issues',
                 onTap: () => _showSyncHelp(context),
               ),
               _SettingsRow(
                 icon: Icons.battery_alert,
-                iconBackground: context.colors.textTertiary,
+                iconBackground: SnowtrakColors.tileGrey,
                 label: 'Battery Optimization',
                 onTap: () => _showBatteryHelp(context),
               ),

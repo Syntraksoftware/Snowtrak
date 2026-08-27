@@ -65,6 +65,21 @@ class SnowtrakColors {
   static const Color backcountry = Color(0xFF6A7282);
   static const Color snowboard = Color(0xFF7C3AED);
 
+  // Settings row icon tiles. iOS-style category colours: they identify a row at
+  // a glance, the way the activity ramp identifies a sport. Data, not status —
+  // a red bell does not mean something failed, so these must not borrow
+  // `error`, `success` or `warning`. Tuning a status colour would otherwise
+  // repaint half the settings list.
+  //
+  // Values match what shipped. `tileSlate` stands where iOS uses purple; the
+  // ramp has no purple, and inventing one is a design change, not a rename.
+  static const Color tileRed = Color(0xFFFB2C36);
+  static const Color tileGreen = Color(0xFF00A63E);
+  static const Color tileOrange = Color(0xFFB45309);
+  static const Color tileInk = ink;
+  static const Color tileSlate = neutral600;
+  static const Color tileGrey = neutral500;
+
   // Notification types — data, like the activity ramp above, so these read the
   // same in either theme and stay off the palette.
   static const Color notifyKudos = Color(0xFFE91E63);
@@ -488,7 +503,7 @@ class SnowtrakElevation {
 
   static List<BoxShadow> get md => [
     BoxShadow(
-      color: SnowtrakColors.ink.withOpacity(0.06),
+      color: SnowtrakColors.ink.withValues(alpha:0.06),
       blurRadius: 6,
       offset: const Offset(0, 4),
     ),
@@ -496,12 +511,12 @@ class SnowtrakElevation {
 
   static List<BoxShadow> get lg => [
     BoxShadow(
-      color: SnowtrakColors.ink.withOpacity(0.10),
+      color: SnowtrakColors.ink.withValues(alpha:0.10),
       blurRadius: 15,
       offset: const Offset(0, 10),
     ),
     BoxShadow(
-      color: SnowtrakColors.ink.withOpacity(0.10),
+      color: SnowtrakColors.ink.withValues(alpha:0.10),
       blurRadius: 6,
       offset: const Offset(0, 4),
     ),
@@ -509,7 +524,7 @@ class SnowtrakElevation {
 
   static List<BoxShadow> get xl => [
     BoxShadow(
-      color: SnowtrakColors.ink.withOpacity(0.12),
+      color: SnowtrakColors.ink.withValues(alpha:0.12),
       blurRadius: 32,
       offset: const Offset(0, 16),
     ),
@@ -528,15 +543,13 @@ class SnowtrakTheme {
         secondaryContainer: SnowtrakColors.secondaryLight,
         tertiary: SnowtrakColors.accent,
         surface: SnowtrakColors.surface,
-        surfaceVariant: SnowtrakColors.surfaceVariant,
-        background: SnowtrakColors.background,
+        surfaceContainerHighest: SnowtrakColors.surfaceVariant,
         error: SnowtrakColors.error,
         onPrimary: SnowtrakColors.textOnPrimary,
         onSecondary: SnowtrakColors.textOnPrimary,
         onTertiary: SnowtrakColors.textOnPrimary,
         onSurface: SnowtrakColors.textPrimary,
         onSurfaceVariant: SnowtrakColors.textSecondary,
-        onBackground: SnowtrakColors.textPrimary,
         onError: SnowtrakColors.textOnPrimary,
       ),
       extensions: const [SnowtrakPalette.light],
@@ -631,15 +644,13 @@ class SnowtrakTheme {
         secondaryContainer: SnowtrakColors.secondary,
         tertiary: SnowtrakColors.accentLight,
         surface: SnowtrakColors.darkSurface,
-        surfaceVariant: SnowtrakColors.darkSurfaceVariant,
-        background: SnowtrakColors.darkBackground,
+        surfaceContainerHighest: SnowtrakColors.darkSurfaceVariant,
         error: SnowtrakColors.error,
         onPrimary: SnowtrakColors.textOnPrimary,
         onSecondary: SnowtrakColors.textOnPrimary,
         onTertiary: SnowtrakColors.textOnPrimary,
         onSurface: SnowtrakColors.darkTextPrimary,
         onSurfaceVariant: SnowtrakColors.darkTextSecondary,
-        onBackground: SnowtrakColors.darkTextPrimary,
         onError: SnowtrakColors.textOnPrimary,
       ),
       extensions: const [SnowtrakPalette.dark],
