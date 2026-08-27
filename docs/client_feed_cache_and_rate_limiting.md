@@ -157,3 +157,68 @@ Frontend
 - Updated `ActivityProvider`, `ActivitiesScreen`, `ActivitiesScreenController`
 - Updated `ThreadsTab`, `ThreadsFeedLoader`
 - Registered caches in `service_locator.dart`
+
+---
+
+## Read latency on the community read paths (2026-08-27)
+
+The Supabase project is in `ap-south-1`. From the west coast of the US, one
+round trip to it measures **~440ms of pure distance** — before Postgres does
+any work at all. Everything below follows from that number, and any future
+tuning should start by re-measuring it rather than assuming.
+
+Measured with the cache flushed each time, against the real database:
+
+| Endpoint | Before | Cold | Cached |
+|---|---|---|---|
+| `GET /api/v1/follows/{id}/stats` | 1.03s every time | 0.46s | 0.008s |
+| `GET /api/v1/posts/user/{id}` | 4.07s every time | 1.19s | 0.008s |
+| `GET /api/v1/feed` | 3.13s | 1.54s | 0.008s |
+| `GET /api/v1/users/{id}/profile` | one round trip every time | one round trip | ~0.2ms |
+
+### The four causes, largest first
+
+**1. Blocking calls on the event loop.** `supabase-py` is synchronous and the
+handlers were `async def`, so FastAPI ran them on the event loop and each
+440ms call stalled *every other request in flight*. Five concurrent requests
+each took 8.1–8.6s when any one alone took 0.5–1.4s.
+
+`backend/community-backend/services/offload.py` moves them to a threadpool.
+**Anything that reaches Supabase from an `async def` handler belongs in
+`offload()`.** Handlers declared plain `def` do not need it — FastAPI already
+runs those in a threadpool, which is why main-backend was unaffected.
+
+**2. Sequential reads with no dependency between them.**
+`list_posts_by_user_id` made five round trips one after another. One was
+redundant: the duplicate-repost query run twice, the second time only to add a
+`user_id` filter that selecting `user_id` in the first one answers. The rest —
+likes, reposts, duplicates, and the two quoted-preview hydrations — are
+independent and now run together in `_hydrate()`.
+
+**3. Four queries where one would do.** `/follows/{id}/stats` counted
+followers, counted following, and checked both edge directions as separate
+requests. `follow_stats(target, viewer)` (migration 011, superseded by 012)
+answers all four server-side in one trip.
+
+**4. No cache on the profile path.** Follow stats, a user's post list, and
+profiles now use the same Redis cache the feed already had. Writes invalidate,
+so your own edits and follows appear immediately rather than after a TTL.
+
+### Known and deliberately unfixed
+
+A cold profile open is still **two sequential hops**: the post list, then the
+quoted-post previews. Collapsing that to one means a Postgres function that
+returns fully hydrated posts, which duplicates the Python row mapping in SQL
+and has to be kept in step with it forever.
+
+At 1.19s cold and 8ms warm, that trade is not worth making. Revisit if the
+cold path starts mattering — cache hit rates dropping, or the region moving
+and changing the arithmetic.
+
+### A cache bug worth remembering
+
+`get_cache_version` returned `1` for an absent key while `bump_cache_version`
+INCRs an absent key *to* `1`. The first invalidation of any scope was therefore
+a no-op. The feed's 15s TTL hid this for as long as the feed was the only
+caller; the first cache with a longer TTL exposed it immediately. The default
+is now `0`.

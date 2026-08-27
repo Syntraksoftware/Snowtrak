@@ -2,9 +2,10 @@
 
 import logging
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
-from services.constants.community_tables import POST_LIKES
+from services.constants.community_tables import POST_LIKES, POSTS
 from services.mappers.community_row_mappers import flatten_user_info
 
 logger = logging.getLogger(__name__)
@@ -12,6 +13,53 @@ logger = logging.getLogger(__name__)
 
 class CommunityPostReadOperations:
     """Mixin containing read and count operations for posts."""
+
+    def _hydrate(
+        self,
+        posts: list[dict[str, Any]],
+        current_user_id: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Attach engagement counts and quoted previews to `posts` in place.
+
+        The three stages are independent -- each reads the same post list and
+        writes its own keys -- so they run together rather than one after
+        another. Chained, they cost three round trips to a database on another
+        continent before the first byte reaches the client.
+        """
+        if not posts:
+            return posts
+
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            stages = [
+                pool.submit(self._attach_engagement_fields, posts, current_user_id),
+                pool.submit(self._hydrate_quoted_posts, posts),
+                pool.submit(self._hydrate_quoted_comments, posts),
+            ]
+            for stage in stages:
+                stage.result()
+
+        return posts
+
+    def _engagement_rows(
+        self,
+        table_name: str,
+        columns: str,
+        match_column: str,
+        post_ids: list[str],
+    ) -> list[dict[str, Any]]:
+        """One engagement read. A failure degrades the counts, never the posts."""
+        try:
+            response = (
+                self._client.table(table_name)
+                .select(columns)
+                .in_(match_column, post_ids)
+                .execute()
+            )
+            rows = getattr(response, "data", None)
+            return rows if isinstance(rows, list) else []
+        except Exception as exception:
+            logger.warning("Failed to read %s engagement rows: %s", table_name, exception)
+            return []
 
     def _attach_engagement_fields(
         self,
@@ -31,82 +79,56 @@ class CommunityPostReadOperations:
         liked_by_current_user: dict[str, bool] = defaultdict(bool)
         repost_counts: dict[str, int] = defaultdict(int)
         reposted_by_current_user: dict[str, bool] = defaultdict(bool)
+        duplicate_repost_counts: dict[str, int] = defaultdict(int)
 
-        try:
+        # Three independent reads, run together.
+        #
+        # They used to be four, one after another. Each is a round trip to a
+        # database on another continent (~440ms), and none of them depends on
+        # another's result, so the sequence was four times the latency for no
+        # reason. The fourth was the duplicate-repost query repeated with a
+        # user_id filter -- selecting user_id in the first one answers both.
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            likes = pool.submit(
+                self._engagement_rows, POST_LIKES, "post_id, user_id", "post_id", post_ids
+            )
+            reposts = pool.submit(
+                self._engagement_rows, "post_reposts", "post_id, user_id", "post_id", post_ids
+            )
+            duplicates = pool.submit(
+                self._engagement_rows,
+                POSTS,
+                "repost_of_post_id, user_id",
+                "repost_of_post_id",
+                post_ids,
+            )
+
             # A row in post_likes is a like; there is no value to weigh. This
             # read used to count post_votes rows with vote_value > 0, which was
             # a second implementation of the same feature over a second table.
-            like_response = (
-                self._client.table(POST_LIKES)
-                .select("post_id, user_id")
-                .in_("post_id", post_ids)
-                .execute()
-            )
-            like_rows = getattr(like_response, "data", None)
-            if isinstance(like_rows, list):
-                for row in like_rows:
-                    post_id = str(row.get("post_id", ""))
-                    if not post_id:
-                        continue
-                    like_counts[post_id] += 1
-                    if current_user_id and str(row.get("user_id", "")) == current_user_id:
-                        liked_by_current_user[post_id] = True
-        except Exception as exception:
-            logger.warning("Failed to hydrate post_likes engagement fields: %s", exception)
+            for row in likes.result():
+                post_id = str(row.get("post_id", ""))
+                if not post_id:
+                    continue
+                like_counts[post_id] += 1
+                if current_user_id and str(row.get("user_id", "")) == current_user_id:
+                    liked_by_current_user[post_id] = True
 
-        try:
-            repost_response = (
-                self._client.table("post_reposts")
-                .select("post_id, user_id")
-                .in_("post_id", post_ids)
-                .execute()
-            )
-            repost_rows = getattr(repost_response, "data", None)
-            if isinstance(repost_rows, list):
-                for row in repost_rows:
-                    post_id = str(row.get("post_id", ""))
-                    if not post_id:
-                        continue
-                    repost_counts[post_id] += 1
-                    if current_user_id and str(row.get("user_id", "")) == current_user_id:
-                        reposted_by_current_user[post_id] = True
-        except Exception as exception:
-            logger.warning("Failed to hydrate post_reposts engagement fields: %s", exception)
+            for row in reposts.result():
+                post_id = str(row.get("post_id", ""))
+                if not post_id:
+                    continue
+                repost_counts[post_id] += 1
+                if current_user_id and str(row.get("user_id", "")) == current_user_id:
+                    reposted_by_current_user[post_id] = True
 
-        duplicate_repost_counts: dict[str, int] = defaultdict(int)
-        try:
-            dup_response = (
-                self._client.table("posts")
-                .select("repost_of_post_id")
-                .in_("repost_of_post_id", post_ids)
-                .execute()
-            )
-            dup_rows = getattr(dup_response, "data", None)
-            if isinstance(dup_rows, list):
-                for row in dup_rows:
-                    pid = str(row.get("repost_of_post_id", "")).strip()
-                    if pid:
-                        duplicate_repost_counts[pid] += 1
-        except Exception as exception:
-            logger.warning("Failed to hydrate post duplicate repost counts: %s", exception)
-
-        try:
-            if current_user_id:
-                dup_user = (
-                    self._client.table("posts")
-                    .select("repost_of_post_id")
-                    .in_("repost_of_post_id", post_ids)
-                    .eq("user_id", current_user_id)
-                    .execute()
-                )
-                dup_user_rows = getattr(dup_user, "data", None)
-                if isinstance(dup_user_rows, list):
-                    for row in dup_user_rows:
-                        pid = str(row.get("repost_of_post_id", "")).strip()
-                        if pid:
-                            reposted_by_current_user[pid] = True
-        except Exception as exception:
-            logger.warning("Failed to hydrate user duplicate repost flags: %s", exception)
+            for row in duplicates.result():
+                post_id = str(row.get("repost_of_post_id", "")).strip()
+                if not post_id:
+                    continue
+                duplicate_repost_counts[post_id] += 1
+                if current_user_id and str(row.get("user_id", "")) == current_user_id:
+                    reposted_by_current_user[post_id] = True
 
         for post in posts:
             post_id = str(post.get("post_id", ""))
@@ -240,8 +262,7 @@ class CommunityPostReadOperations:
             if isinstance(response_data, list) and response_data:
                 post = response_data[0]
                 flatten_user_info(post)
-                enriched = self._attach_engagement_fields([post], current_user_id=current_user_id)
-                return self._hydrate_quoted_comments(self._hydrate_quoted_posts(enriched))[0]
+                return self._hydrate([post], current_user_id=current_user_id)[0]
             return None
         except Exception as exception:
             logger.exception("Failed to get post %s: %s", post_id, exception)
@@ -268,14 +289,7 @@ class CommunityPostReadOperations:
             if isinstance(response_data, list):
                 for post in response_data:
                     flatten_user_info(post)
-                return self._hydrate_quoted_comments(
-                    self._hydrate_quoted_posts(
-                        self._attach_engagement_fields(
-                            response_data,
-                            current_user_id=current_user_id,
-                        )
-                    )
-                )
+                return self._hydrate(response_data, current_user_id=current_user_id)
             return []
         except Exception as exception:
             logger.exception("Failed to list posts for subthread %s: %s", subthread_id, exception)
@@ -306,14 +320,7 @@ class CommunityPostReadOperations:
                         post["author_email"] = author.get("email")
                         post["author_first_name"] = author.get("first_name")
                         post["author_last_name"] = author.get("last_name")
-                return self._hydrate_quoted_comments(
-                    self._hydrate_quoted_posts(
-                        self._attach_engagement_fields(
-                            response_data,
-                            current_user_id=current_user_id,
-                        )
-                    )
-                )
+                return self._hydrate(response_data, current_user_id=current_user_id)
             return []
         except Exception as exception:
             logger.exception("Failed to list posts for user %s: %s", user_id, exception)
@@ -358,14 +365,7 @@ class CommunityPostReadOperations:
                         post["author_email"] = author.get("email")
                         post["author_first_name"] = author.get("first_name")
                         post["author_last_name"] = author.get("last_name")
-                return self._hydrate_quoted_comments(
-                    self._hydrate_quoted_posts(
-                        self._attach_engagement_fields(
-                            response_data,
-                            current_user_id=current_user_id,
-                        )
-                    )
-                )
+                return self._hydrate(response_data, current_user_id=current_user_id)
             return []
         except Exception as exception:
             logger.exception("Failed to list recent posts: %s", exception)
