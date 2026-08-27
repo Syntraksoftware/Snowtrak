@@ -4,7 +4,6 @@ import 'package:snowtrak/models/user.dart';
 import 'package:snowtrak/providers/activity_provider.dart';
 import 'package:snowtrak/screens/activities/widgets/activity_feed_card.dart';
 import 'package:snowtrak/widgets/skeleton.dart';
-import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 class ActivitiesFeedSliver extends StatelessWidget {
   const ActivitiesFeedSliver({

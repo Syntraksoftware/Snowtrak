@@ -155,7 +155,7 @@ class ProfileActivityListCard extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(SnowtrakSpacing.md),
                 decoration: BoxDecoration(
-                  color: context.colors.primary.withOpacity(0.1),
+                  color: context.colors.primary.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(SnowtrakRadius.md),
                 ),
                 child: Row(

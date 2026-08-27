@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:snowtrak/core/theme.dart';
 import 'package:snowtrak/screens/settings/settings_screen.dart';
-import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 /// Interactive privacy toggles with visible switch styling (layout preview).
 class ProfilePrivacyControls extends StatefulWidget {

@@ -63,7 +63,7 @@ class UserProfileScreen extends StatefulWidget {
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
   final CommunityService _communityService = sl<CommunityService>();
-  List<Post> _posts = [];
+  final List<Post> _posts = [];
   bool _isLoading = false; // Start as false - will be set when loading starts
   bool _isLoadingMore = false;
   String? _error;

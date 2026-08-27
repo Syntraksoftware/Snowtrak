@@ -8,7 +8,6 @@ import 'package:snowtrak/models/profile.dart';
 import 'package:snowtrak/providers/auth_provider.dart';
 import 'package:snowtrak/widgets/follow_button.dart';
 import 'package:snowtrak/services/profile_service.dart';
-import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 /// Profile identity block at the top of the profile screen.
 class ProfileHeader extends StatefulWidget {

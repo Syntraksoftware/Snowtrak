@@ -5,7 +5,6 @@ import 'package:snowtrak/models/weather.dart';
 import 'package:snowtrak/screens/activities/widgets/home_section_card.dart';
 import 'package:snowtrak/screens/activities/widgets/home_section_spacing.dart';
 import 'package:snowtrak/screens/activities/widgets/home_selectable_chip.dart';
-import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 class WeatherCard extends StatefulWidget {
   const WeatherCard({

@@ -103,8 +103,8 @@ class _BestEffortRow extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               color: isPR
-                  ? context.colors.primary.withOpacity(0.2)
-                  : context.colors.textTertiary.withOpacity(0.2),
+                  ? context.colors.primary.withValues(alpha:0.2)
+                  : context.colors.textTertiary.withValues(alpha:0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -290,7 +290,7 @@ class _RelativeEffortRow extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha:0.2),
               borderRadius: BorderRadius.circular(SnowtrakRadius.md),
             ),
             child: Center(

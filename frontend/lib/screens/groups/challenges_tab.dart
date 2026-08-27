@@ -122,7 +122,7 @@ class _ChallengesTabState extends State<ChallengesTab> {
                       width: 100,
                       height: 100,
                       decoration: BoxDecoration(
-                        color: context.colors.primary.withOpacity(0.3),
+                        color: context.colors.primary.withValues(alpha:0.3),
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -134,7 +134,7 @@ class _ChallengesTabState extends State<ChallengesTab> {
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
-                        color: context.colors.warning.withOpacity(0.2),
+                        color: context.colors.warning.withValues(alpha:0.2),
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -174,7 +174,7 @@ class _ChallengesTabState extends State<ChallengesTab> {
                         Text(
                           'Complete 5,000m of vertical drop',
                           style: SnowtrakTypography.bodyMedium.copyWith(
-                            color: context.colors.textOnPrimary.withOpacity(0.9),
+                            color: context.colors.textOnPrimary.withValues(alpha:0.9),
                           ),
                         ),
                       ],

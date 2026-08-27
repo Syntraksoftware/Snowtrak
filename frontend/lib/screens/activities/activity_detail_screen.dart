@@ -128,7 +128,9 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
   String _normalizeMapBaseUrl(String value) {
     var v = value.trim();
-    while (v.endsWith('/')) v = v.substring(0, v.length - 1);
+    while (v.endsWith('/')) {
+      v = v.substring(0, v.length - 1);
+    }
     if (v.toLowerCase().endsWith('/api')) v = v.substring(0, v.length - 4);
     return v;
   }

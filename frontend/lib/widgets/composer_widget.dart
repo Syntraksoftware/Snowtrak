@@ -171,7 +171,7 @@ class _ComposerWidgetState extends State<ComposerWidget> {
                 Padding(
                   padding: const EdgeInsets.only(right: 12.0),
                   child: Text(
-                    '${_characterCount}/${widget.maxCharacters}',
+                    '$_characterCount/${widget.maxCharacters}',
                     style: TextStyle(
                       fontSize: 12,
                       color: _characterCount > widget.maxCharacters

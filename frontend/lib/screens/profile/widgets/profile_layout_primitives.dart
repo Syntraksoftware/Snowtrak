@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:snowtrak/core/theme.dart';
-import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 /// Compact label + value row used in profile section placeholders.
 class ProfileInfoRow extends StatelessWidget {

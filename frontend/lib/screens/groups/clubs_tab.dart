@@ -266,7 +266,7 @@ class _ClubsTabState extends State<ClubsTab> {
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: SnowtrakColors.primaryLight.withOpacity(0.2),
+              color: SnowtrakColors.primaryLight.withValues(alpha:0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(

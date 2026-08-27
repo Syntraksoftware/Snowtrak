@@ -78,9 +78,9 @@ class _Badge extends StatelessWidget {
         vertical: SnowtrakSpacing.xs,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(SnowtrakRadius.md),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
+        border: Border.all(color: color.withValues(alpha:0.3), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

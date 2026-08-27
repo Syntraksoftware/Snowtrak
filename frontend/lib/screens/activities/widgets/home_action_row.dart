@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:snowtrak/core/theme.dart';
-import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 /// Compact tappable row for home section previews.
 class HomeActionRow extends StatelessWidget {

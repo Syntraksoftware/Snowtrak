@@ -268,7 +268,7 @@ class _NotificationItem extends StatelessWidget {
       child: Material(
         color: notification.isRead 
             ? context.colors.surface 
-            : context.colors.primary.withOpacity(0.05),
+            : context.colors.primary.withValues(alpha:0.05),
         child: InkWell(
           onTap: onTap,
           child: Container(
@@ -381,7 +381,7 @@ class _NotificationItem extends StatelessWidget {
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        color: typeColor.withOpacity(0.15),
+        color: typeColor.withValues(alpha:0.15),
         shape: BoxShape.circle,
       ),
       child: Icon(

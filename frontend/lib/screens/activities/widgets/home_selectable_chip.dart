@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:snowtrak/core/theme.dart';
-import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 class HomeSelectableChip extends StatelessWidget {
   const HomeSelectableChip({

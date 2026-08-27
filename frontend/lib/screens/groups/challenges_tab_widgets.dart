@@ -40,7 +40,7 @@ class ChallengesDetailCard extends StatelessWidget {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: SnowtrakColors.primaryLight.withOpacity(0.2),
+                  color: SnowtrakColors.primaryLight.withValues(alpha:0.2),
                   borderRadius: BorderRadius.circular(SnowtrakRadius.md),
                 ),
                 child: Icon(
@@ -155,7 +155,7 @@ class ChallengesRecommendedCard extends StatelessWidget {
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: SnowtrakColors.primaryLight.withOpacity(0.2),
+                  color: SnowtrakColors.primaryLight.withValues(alpha:0.2),
                   borderRadius: BorderRadius.circular(SnowtrakRadius.md),
                 ),
                 child: Icon(

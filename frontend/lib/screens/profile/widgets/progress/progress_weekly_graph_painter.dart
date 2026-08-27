@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:snowtrak/core/theme.dart';
 
 /// Line chart for weekly distance buckets (12 weeks).
 class ProgressWeeklyGraphPainter extends CustomPainter {

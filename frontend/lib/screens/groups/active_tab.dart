@@ -166,7 +166,7 @@ class _ActiveTabState extends State<ActiveTab> {
         ),
         boxShadow: [
           BoxShadow(
-            color: context.colors.primary.withOpacity(0.3),
+            color: context.colors.primary.withValues(alpha:0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),

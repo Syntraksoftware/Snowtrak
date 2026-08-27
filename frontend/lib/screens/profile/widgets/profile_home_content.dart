@@ -10,7 +10,6 @@ import 'package:snowtrak/screens/profile/widgets/profile_layout_primitives.dart'
 import 'package:snowtrak/screens/profile/widgets/progress/progress_weekly_overview.dart';
 import 'package:snowtrak/screens/profile/widgets/profile_privacy_controls.dart';
 import 'package:snowtrak/ui/liquid/liquid_section_card.dart';
-import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 class ProfileHomeContent extends StatefulWidget {
   const ProfileHomeContent({super.key, this.isOwnProfile = true});

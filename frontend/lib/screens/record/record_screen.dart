@@ -75,7 +75,7 @@ class _RecordScreenState extends State<RecordScreen>
   @override
   void dispose() {
     _timer?.cancel();
-    _positionSubscription?.cancel();
+    unawaited(_positionSubscription?.cancel());
     _locationService.stopTracking();
     _elapsedNotifier.dispose();
     super.dispose();
@@ -228,7 +228,7 @@ class _RecordScreenState extends State<RecordScreen>
 
   Future<void> _stopRecording() async {
     _timer?.cancel();
-    _positionSubscription?.cancel();
+    unawaited(_positionSubscription?.cancel());
     _locationService.stopTracking();
 
     if (_locationService.locations.isEmpty) {
@@ -480,7 +480,7 @@ class _RecordScreenState extends State<RecordScreen>
       _rawElevationGain = rawElevationGain;
       _rawDuration = rawDuration;
     });
-    _pollPipelineStatus(saved.id);
+    unawaited(_pollPipelineStatus(saved.id));
   }
 
   Future<void> _pollPipelineStatus(String activityId) async {
@@ -607,9 +607,9 @@ class _RecordScreenState extends State<RecordScreen>
     //   controls bar  ≈ 120px
     //   stats card gap ≈ 12px
     //   stats card     ≈ 130px expanded / 56px collapsed
-    const _controlsHeight = 120.0;
-    const _statsCardBottom = _controlsHeight + 12.0;
-    const _recentreBottom = _statsCardBottom + 140.0; // always above stats card
+    const controlsHeight = 120.0;
+    const statsCardBottom = controlsHeight + 12.0;
+    const recentreBottom = statsCardBottom + 140.0; // always above stats card
 
     return Scaffold(
       backgroundColor: SnowtrakColors.darkBackground,
@@ -628,7 +628,7 @@ class _RecordScreenState extends State<RecordScreen>
           // 2 — Re-centre button (right side, above stats card)
           Positioned(
             right: 16,
-            bottom: _recentreBottom,
+            bottom: recentreBottom,
             child: _RecentreButton(onTap: _recentre),
           ),
 
@@ -636,7 +636,7 @@ class _RecordScreenState extends State<RecordScreen>
           Positioned(
             left: 16,
             right: 16,
-            bottom: _statsCardBottom,
+            bottom: statsCardBottom,
             child: RecordStatsCard(
               isRecording: _isRecording,
               selectedActivityType: _selectedActivityType,

@@ -5,7 +5,6 @@ import 'package:snowtrak/screens/activities/widgets/home_section_card.dart';
 import 'package:snowtrak/screens/activities/widgets/home_section_spacing.dart';
 import 'package:snowtrak/screens/activities/widgets/home_selectable_chip.dart';
 import 'package:snowtrak/screens/home/home_tab_scope.dart';
-import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 enum _IntroAction { record, community, stats }
 

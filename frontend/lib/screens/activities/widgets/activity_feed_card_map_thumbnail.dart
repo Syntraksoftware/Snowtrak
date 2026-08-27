@@ -71,8 +71,8 @@ class ActivityFeedCardMapThumbnail extends StatelessWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          context.colors.primary.withOpacity(0.1),
-                          context.colors.textSecondary.withOpacity(0.1),
+                          context.colors.primary.withValues(alpha:0.1),
+                          context.colors.textSecondary.withValues(alpha:0.1),
                         ],
                       ),
                     ),
@@ -97,7 +97,7 @@ class ActivityFeedCardMapThumbnail extends StatelessWidget {
                   vertical: SnowtrakSpacing.xs,
                 ),
                 decoration: BoxDecoration(
-                  color: context.colors.textPrimary.withOpacity(0.6),
+                  color: context.colors.textPrimary.withValues(alpha:0.6),
                   borderRadius: BorderRadius.circular(SnowtrakRadius.sm),
                 ),
                 child: Row(
@@ -133,8 +133,8 @@ class ActivityFeedCardMapThumbnail extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  context.colors.primary.withOpacity(0.1),
-                  context.colors.textSecondary.withOpacity(0.1),
+                  context.colors.primary.withValues(alpha:0.1),
+                  context.colors.textSecondary.withValues(alpha:0.1),
                 ],
               ),
             ),
@@ -142,7 +142,7 @@ class ActivityFeedCardMapThumbnail extends StatelessWidget {
               child: Icon(
                 Icons.map,
                 size: 60,
-                color: context.colors.textTertiary.withOpacity(0.3),
+                color: context.colors.textTertiary.withValues(alpha:0.3),
               ),
             ),
           ),
@@ -164,7 +164,7 @@ class ActivityFeedCardMapThumbnail extends StatelessWidget {
                 vertical: SnowtrakSpacing.xs,
               ),
               decoration: BoxDecoration(
-                color: context.colors.textPrimary.withOpacity(0.6),
+                color: context.colors.textPrimary.withValues(alpha:0.6),
                 borderRadius: BorderRadius.circular(SnowtrakRadius.sm),
               ),
               child: Row(
