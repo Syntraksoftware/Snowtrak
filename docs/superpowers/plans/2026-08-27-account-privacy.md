@@ -30,9 +30,21 @@ via Supabase / Redis / Flutter / Dart / GetIt.
   `docs/database_changes.md`.
 - **Do not change the Supabase region.** Standing instruction from the user.
   Every latency decision in this plan assumes ~440ms per round trip.
-- Backend checks, from `backend/`:
-  `../.venv/bin/ruff check .`, `../.venv/bin/ruff format --check .`,
-  and `pytest` from each service directory.
+- Backend checks, from `backend/`: `../.venv/bin/ruff check .` and
+  `../.venv/bin/ruff format --check .`. Tests run per service, and two of
+  them need a workaround in this checkout:
+
+  ```bash
+  # community-backend and activity-backend: the console script does not put
+  # cwd on sys.path, so conftest cannot import `main`. Use -m.
+  (cd community-backend && ../../.venv/bin/python -m pytest -q)
+  (cd activity-backend  && ../../.venv/bin/python -m pytest -q)
+
+  # main-backend: pytest.ini passes --cov flags and pytest-cov is not
+  # installed in .venv. Override addopts, or install pytest-cov and drop
+  # the flag.
+  (cd main-backend && ../../.venv/bin/python -m pytest -q -o addopts="")
+  ```
 - Frontend checks, from `frontend/`: `dart analyze lib test` and
   `flutter test`. Do **not** run `flutter analyze` with multiple paths — it
   crashes the analysis server with exit 64 in this repo.
@@ -49,14 +61,21 @@ via Supabase / Redis / Flutter / Dart / GetIt.
 - `CHANGELOG.md` is written last, from the commits, per
   `docs/changelog_style.md`.
 
-## Working tree hazard
+## Branch state (updated 2026-08-27)
 
-Roughly 33 files are modified in the working tree by a third party's
-in-flight design work, including
-`frontend/lib/screens/settings/privacy_settings_screen.dart`, which Task 10
-edits. Run `git status` before Task 10 and coordinate rather than
-overwriting. The `home preview` golden test already fails for the same
-reason — it is not caused by anything in this plan.
+The design-system work that was dirtying the tree has landed: PR #39 merged
+into `develop`, and `feat/follower-mechansim` was fast-forwarded onto it at
+`909125e`. The tree is clean and all three backend suites plus 33 Flutter
+tests pass.
+
+Two consequences for this plan:
+
+- `frontend/lib/screens/settings/privacy_settings_screen.dart` (Task 10) and
+  every other screen now read colours through `context.colors`. There is a
+  test, `frontend/test/core/design_system_guard_test.dart`, that **fails the
+  build when UI code names a colour**. Task 10 and Task 11 must not
+  introduce a literal `Color(0xFF…)` or a Material `Colors.*`.
+- The `home preview` golden no longer fails; it was un-gated in `3e3517f`.
 
 ---
 
@@ -2087,8 +2106,9 @@ and, in `_action`, before the `isFollowing` branch:
 cd frontend && dart analyze lib test && flutter test
 ```
 
-Expected: 0 errors, 0 warnings. The `home preview` golden still fails — that
-is the third party's in-flight design work, not this task.
+Expected: 0 errors, 0 warnings, 33 tests passing. The `home preview` golden
+that used to fail was un-gated in `3e3517f`; if it fails again, that is a
+regression worth reporting rather than the known-bad it used to be.
 
 - [ ] **Step 8: Commit**
 
