@@ -1,5 +1,6 @@
 /// Notification model for Snowtrak app
 /// Represents different types of in-app notifications
+library;
 
 enum NotificationType {
   kudos,
