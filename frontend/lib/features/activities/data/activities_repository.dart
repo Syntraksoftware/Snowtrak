@@ -1,5 +1,6 @@
-import 'package:syntrak/models/activity.dart';
-import 'package:syntrak/services/apis/activities_api.dart';
+import 'package:snowtrak/models/activity.dart';
+import 'package:snowtrak/models/user_stats.dart';
+import 'package:snowtrak/services/apis/activities_api.dart';
 
 class ActivitiesRepository {
   ActivitiesRepository(this._api);
@@ -34,5 +35,25 @@ class ActivitiesRepository {
 
   Future<void> deleteActivity(String id) {
     return _api.deleteActivity(id);
+  }
+
+  Future<UserStats> getMyStats() => _api.getMyStats();
+
+  Future<List<Activity>> getMyActivities({
+    String? search,
+    String? activityType,
+    String? startDate,
+    String? endDate,
+    int limit = 100,
+    int offset = 0,
+  }) {
+    return _api.getMyActivities(
+      search: search,
+      activityType: activityType,
+      startDate: startDate,
+      endDate: endDate,
+      limit: limit,
+      offset: offset,
+    );
   }
 }

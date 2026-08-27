@@ -9,15 +9,15 @@ class AppConfig {
     required this.activityApiBaseUrl,
     required this.communityApiBaseUrl,
     required this.mapApiBaseUrl,
-    required this.enableMapFeatures,
   });
 
   final AppEnvironment environment;
   final String mainApiBaseUrl;
   final String activityApiBaseUrl;
   final String communityApiBaseUrl;
+
+  /// map-backend — DEM elevation, map_trail persistence, resort GeoJSON.
   final String mapApiBaseUrl;
-  final bool enableMapFeatures;
 
   static const _mainOverrideKey = 'override_main_api_base_url';
   static const _activityOverrideKey = 'override_activity_api_base_url';
@@ -32,7 +32,6 @@ class AppConfig {
     AppEnvironment? environmentOverride,
   }) async {
     final env = environmentOverride ??
-    // obtain config from env 
         AppEnvironmentX.fromString(
           const String.fromEnvironment('APP_ENV', defaultValue: 'dev'),
         );
@@ -49,14 +48,10 @@ class AppConfig {
     const defineActivity = String.fromEnvironment('ACTIVITY_API_BASE_URL');
     const defineCommunity = String.fromEnvironment('COMMUNITY_API_BASE_URL');
     const defineMap = String.fromEnvironment('MAP_API_BASE_URL');
-    const defineMapFeatures = String.fromEnvironment('ENABLE_MAP_FEATURES');
 
     return AppConfig(
       environment: env,
-      mainApiBaseUrl:
-      //first non empty value from runtime override, compile time define, then default, 
-      // flexible configuration for different environments and testing scenarios, with the ability to easily switch between different API endpoints without changing the codebase, simply by setting environment variables or using shared preferences for runtime overrides.
-          _firstNonEmpty(runtimeMain, defineMain, defaults.mainApiBaseUrl),
+      mainApiBaseUrl: _firstNonEmpty(runtimeMain, defineMain, defaults.mainApiBaseUrl),
       activityApiBaseUrl: _firstNonEmpty(
         runtimeActivity,
         defineActivity,
@@ -68,10 +63,6 @@ class AppConfig {
         defaults.communityApiBaseUrl,
       ),
       mapApiBaseUrl: _firstNonEmpty(runtimeMap, defineMap, defaults.mapApiBaseUrl),
-      enableMapFeatures: _firstNonEmptyBool(
-        defineMapFeatures,
-        defaults.enableMapFeatures,
-      ),
     );
   }
 
@@ -113,26 +104,23 @@ class AppConfig {
           mainApiBaseUrl: 'http://localhost:8080/api/v1',
           activityApiBaseUrl: 'http://localhost:5100/api/v1',
           communityApiBaseUrl: 'http://localhost:5001/api/v1',
-          mapApiBaseUrl: 'http://localhost:5200',
-          enableMapFeatures: true,
+          mapApiBaseUrl: 'http://localhost:5200/api/v1/map',
         );
       case AppEnvironment.staging:
         return AppConfig(
           environment: environment,
-          mainApiBaseUrl: 'https://staging-main.syntrak.app/api/v1',
-          activityApiBaseUrl: 'https://staging-activity.syntrak.app/api/v1',
-          communityApiBaseUrl: 'https://staging-community.syntrak.app/api/v1',
-          mapApiBaseUrl: 'https://staging-map.syntrak.app',
-          enableMapFeatures: false,
+          mainApiBaseUrl: 'https://staging-main.syntrak.io/api/v1',
+          activityApiBaseUrl: 'https://staging-activity.syntrak.io/api/v1',
+          communityApiBaseUrl: 'https://staging-community.syntrak.io/api/v1',
+          mapApiBaseUrl: 'https://staging-map.syntrak.io/api/v1/map',
         );
       case AppEnvironment.prod:
         return AppConfig(
           environment: environment,
-          mainApiBaseUrl: 'https://main.syntrak.app/api/v1',
-          activityApiBaseUrl: 'https://activity.syntrak.app/api/v1',
-          communityApiBaseUrl: 'https://community.syntrak.app/api/v1',
-          mapApiBaseUrl: 'https://map.syntrak.app',
-          enableMapFeatures: true,
+          mainApiBaseUrl: 'https://main.syntrak.io/api/v1',
+          activityApiBaseUrl: 'https://activity.syntrak.io/api/v1',
+          communityApiBaseUrl: 'https://community.syntrak.io/api/v1',
+          mapApiBaseUrl: 'https://map.syntrak.io/api/v1/map',
         );
     }
   }
@@ -142,26 +130,4 @@ class AppConfig {
     if (v2 != null && v2.trim().isNotEmpty) return v2.trim();
     return fallback;
   }
-
-  static bool _firstNonEmptyBool(String? raw, bool fallback) {
-    if (raw == null || raw.trim().isEmpty) {
-      return fallback;
-    }
-
-    switch (raw.trim().toLowerCase()) {
-      case 'true':
-      case '1':
-      case 'yes':
-      case 'on':
-        return true;
-      case 'false':
-      case '0':
-      case 'no':
-      case 'off':
-        return false;
-      default:
-        return fallback;
-    }
-  }
 }
-

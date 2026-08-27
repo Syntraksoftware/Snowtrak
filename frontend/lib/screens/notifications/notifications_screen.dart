@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/models/notification.dart';
-import 'package:syntrak/providers/notification_provider.dart';
-import 'package:syntrak/services/notification_service.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/models/notification.dart';
+import 'package:snowtrak/providers/notification_provider.dart';
+import 'package:snowtrak/services/notification_service.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -25,9 +25,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SyntrakColors.background,
+      backgroundColor: SnowtrakColors.background,
       appBar: AppBar(
-        backgroundColor: SyntrakColors.surface,
+        backgroundColor: SnowtrakColors.surface,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -54,7 +54,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   child: Text(
                     'Mark all read',
                     style: TextStyle(
-                      color: SyntrakColors.primary,
+                      color: SnowtrakColors.primary,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
@@ -93,7 +93,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final sections = ['Today', 'Yesterday', 'This Week', 'Earlier'];
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: SyntrakSpacing.md),
+      padding: const EdgeInsets.symmetric(vertical: SnowtrakSpacing.md),
       itemCount: sections.length,
       itemBuilder: (context, index) {
         final section = sections[index];
@@ -109,13 +109,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             // Section header
             Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: SyntrakSpacing.md,
-                vertical: SyntrakSpacing.sm,
+                horizontal: SnowtrakSpacing.md,
+                vertical: SnowtrakSpacing.sm,
               ),
               child: Text(
                 section,
-                style: SyntrakTypography.labelMedium.copyWith(
-                  color: SyntrakColors.textTertiary,
+                style: SnowtrakTypography.labelMedium.copyWith(
+                  color: SnowtrakColors.textTertiary,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.5,
                 ),
@@ -127,7 +127,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   onTap: () => _handleNotificationTap(notification),
                   onDismiss: () => _handleNotificationDismiss(notification),
                 )),
-            const SizedBox(height: SyntrakSpacing.sm),
+            const SizedBox(height: SnowtrakSpacing.sm),
           ],
         );
       },
@@ -137,7 +137,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget _buildEmptyState() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(SyntrakSpacing.xl),
+        padding: const EdgeInsets.all(SnowtrakSpacing.xl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -145,27 +145,27 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: SyntrakColors.surfaceVariant,
+                color: SnowtrakColors.surfaceVariant,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.notifications_off_outlined,
                 size: 40,
-                color: SyntrakColors.textTertiary,
+                color: SnowtrakColors.textTertiary,
               ),
             ),
-            const SizedBox(height: SyntrakSpacing.lg),
+            const SizedBox(height: SnowtrakSpacing.lg),
             Text(
               'No Notifications',
-              style: SyntrakTypography.headlineSmall.copyWith(
-                color: SyntrakColors.textPrimary,
+              style: SnowtrakTypography.headlineSmall.copyWith(
+                color: SnowtrakColors.textPrimary,
               ),
             ),
-            const SizedBox(height: SyntrakSpacing.sm),
+            const SizedBox(height: SnowtrakSpacing.sm),
             Text(
               'When you get notifications, they\'ll show up here',
-              style: SyntrakTypography.bodyMedium.copyWith(
-                color: SyntrakColors.textSecondary,
+              style: SnowtrakTypography.bodyMedium.copyWith(
+                color: SnowtrakColors.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -178,24 +178,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget _buildErrorState(NotificationProvider provider) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(SyntrakSpacing.xl),
+        padding: const EdgeInsets.all(SnowtrakSpacing.xl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.error_outline,
               size: 48,
-              color: SyntrakColors.error,
+              color: SnowtrakColors.error,
             ),
-            const SizedBox(height: SyntrakSpacing.md),
+            const SizedBox(height: SnowtrakSpacing.md),
             Text(
               provider.error ?? 'Something went wrong',
-              style: SyntrakTypography.bodyMedium.copyWith(
-                color: SyntrakColors.textSecondary,
+              style: SnowtrakTypography.bodyMedium.copyWith(
+                color: SnowtrakColors.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: SyntrakSpacing.lg),
+            const SizedBox(height: SnowtrakSpacing.lg),
             ElevatedButton(
               onPressed: () => provider.loadNotifications(),
               child: const Text('Retry'),
@@ -258,8 +258,8 @@ class _NotificationItem extends StatelessWidget {
       onDismissed: (_) => onDismiss(),
       background: Container(
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: SyntrakSpacing.lg),
-        color: SyntrakColors.error,
+        padding: const EdgeInsets.only(right: SnowtrakSpacing.lg),
+        color: SnowtrakColors.error,
         child: const Icon(
           Icons.delete_outline,
           color: Colors.white,
@@ -267,16 +267,16 @@ class _NotificationItem extends StatelessWidget {
       ),
       child: Material(
         color: notification.isRead 
-            ? SyntrakColors.surface 
-            : SyntrakColors.primary.withOpacity(0.05),
+            ? SnowtrakColors.surface 
+            : SnowtrakColors.primary.withOpacity(0.05),
         child: InkWell(
           onTap: onTap,
           child: Container(
-            padding: const EdgeInsets.all(SyntrakSpacing.md),
+            padding: const EdgeInsets.all(SnowtrakSpacing.md),
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                  color: SyntrakColors.divider,
+                  color: SnowtrakColors.divider,
                   width: 0.5,
                 ),
               ),
@@ -286,7 +286,7 @@ class _NotificationItem extends StatelessWidget {
               children: [
                 // Icon or Avatar
                 _buildLeadingWidget(typeColor, typeIcon),
-                const SizedBox(width: SyntrakSpacing.md),
+                const SizedBox(width: SnowtrakSpacing.md),
                 // Content
                 Expanded(
                   child: Column(
@@ -297,19 +297,19 @@ class _NotificationItem extends StatelessWidget {
                           Expanded(
                             child: Text(
                               notification.title,
-                              style: SyntrakTypography.labelLarge.copyWith(
+                              style: SnowtrakTypography.labelLarge.copyWith(
                                 fontWeight: notification.isRead 
                                     ? FontWeight.w500 
                                     : FontWeight.w600,
-                                color: SyntrakColors.textPrimary,
+                                color: SnowtrakColors.textPrimary,
                               ),
                             ),
                           ),
                           const SizedBox(width: 8),
                           Text(
                             notification.timeAgo,
-                            style: SyntrakTypography.labelSmall.copyWith(
-                              color: SyntrakColors.textTertiary,
+                            style: SnowtrakTypography.labelSmall.copyWith(
+                              color: SnowtrakColors.textTertiary,
                             ),
                           ),
                         ],
@@ -317,8 +317,8 @@ class _NotificationItem extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         notification.message,
-                        style: SyntrakTypography.bodyMedium.copyWith(
-                          color: SyntrakColors.textSecondary,
+                        style: SnowtrakTypography.bodyMedium.copyWith(
+                          color: SnowtrakColors.textSecondary,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -333,7 +333,7 @@ class _NotificationItem extends StatelessWidget {
                     width: 8,
                     height: 8,
                     decoration: BoxDecoration(
-                      color: SyntrakColors.primary,
+                      color: SnowtrakColors.primary,
                       shape: BoxShape.circle,
                     ),
                   ),

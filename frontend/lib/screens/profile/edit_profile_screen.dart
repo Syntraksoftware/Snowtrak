@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/auth/authenticated_session.dart';
-import 'package:syntrak/core/di/service_locator.dart';
-import 'package:syntrak/core/errors/app_result.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/providers/auth_provider.dart';
-import 'package:syntrak/services/profile_service.dart';
+import 'package:snowtrak/core/auth/authenticated_session.dart';
+import 'package:snowtrak/core/di/service_locator.dart';
+import 'package:snowtrak/core/errors/app_result.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/providers/auth_provider.dart';
+import 'package:snowtrak/services/profile_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -164,51 +164,51 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               child: Form(
                 key: _formKey,
                 child: ListView(
-                  padding: const EdgeInsets.all(SyntrakSpacing.lg),
+                  padding: const EdgeInsets.all(SnowtrakSpacing.lg),
                   children: [
                     if (_error != null) ...[
                       Container(
-                        padding: const EdgeInsets.all(SyntrakSpacing.md),
+                        padding: const EdgeInsets.all(SnowtrakSpacing.md),
                         decoration: BoxDecoration(
-                          color: SyntrakColors.error.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(SyntrakRadius.md),
+                          color: SnowtrakColors.error.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(SnowtrakRadius.md),
                         ),
                         child: Text(
                           _error!,
-                          style: SyntrakTypography.bodyMedium.copyWith(
-                            color: SyntrakColors.error,
+                          style: SnowtrakTypography.bodyMedium.copyWith(
+                            color: SnowtrakColors.error,
                           ),
                         ),
                       ),
-                      const SizedBox(height: SyntrakSpacing.md),
+                      const SizedBox(height: SnowtrakSpacing.md),
                     ],
                     TextFormField(
                       controller: _fullNameController,
                       decoration: const InputDecoration(labelText: 'Full name'),
                     ),
-                    const SizedBox(height: SyntrakSpacing.md),
+                    const SizedBox(height: SnowtrakSpacing.md),
                     TextFormField(
                       controller: _usernameController,
                       decoration: const InputDecoration(labelText: 'Username'),
                     ),
-                    const SizedBox(height: SyntrakSpacing.md),
+                    const SizedBox(height: SnowtrakSpacing.md),
                     TextFormField(
                       controller: _bioController,
                       decoration: const InputDecoration(labelText: 'Bio'),
                       minLines: 3,
                       maxLines: 5,
                     ),
-                    const SizedBox(height: SyntrakSpacing.md),
+                    const SizedBox(height: SnowtrakSpacing.md),
                     TextFormField(
                       controller: _skiLevelController,
                       decoration: const InputDecoration(labelText: 'Ski level'),
                     ),
-                    const SizedBox(height: SyntrakSpacing.md),
+                    const SizedBox(height: SnowtrakSpacing.md),
                     TextFormField(
                       controller: _homeController,
                       decoration: const InputDecoration(labelText: 'Home mountain'),
                     ),
-                    const SizedBox(height: SyntrakSpacing.lg),
+                    const SizedBox(height: SnowtrakSpacing.lg),
                     ElevatedButton(
                       onPressed: _isSaving ? null : _saveProfile,
                       child: _isSaving

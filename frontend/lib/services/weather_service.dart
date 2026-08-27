@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:syntrak/core/logging/app_logger.dart';
-import 'package:syntrak/models/weather.dart';
+import 'package:snowtrak/core/logging/app_logger.dart';
+import 'package:snowtrak/models/weather.dart';
 
 class WeatherService {
   static const String _baseUrl = 'https://api.open-meteo.com/v1/forecast';

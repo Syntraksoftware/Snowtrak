@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/activity_helpers.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/models/activity.dart';
-import 'package:syntrak/screens/activities/activity_detail_screen.dart';
-import 'package:syntrak/screens/activities/widgets/activity_feed_card_badges.dart';
-import 'package:syntrak/screens/activities/widgets/activity_feed_card_header.dart';
-import 'package:syntrak/screens/activities/widgets/activity_feed_card_map_thumbnail.dart';
-import 'package:syntrak/screens/activities/widgets/activity_feed_card_stats_row.dart';
+import 'package:snowtrak/core/activity_helpers.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/models/activity.dart';
+import 'package:snowtrak/screens/activities/activity_detail_screen.dart';
+import 'package:snowtrak/screens/activities/widgets/activity_feed_card_badges.dart';
+import 'package:snowtrak/screens/activities/widgets/activity_feed_card_header.dart';
+import 'package:snowtrak/screens/activities/widgets/activity_feed_card_map_thumbnail.dart';
+import 'package:snowtrak/screens/activities/widgets/activity_feed_card_stats_row.dart';
 
 /// Single activity row in the home feed (card with stats and route preview).
 class ActivityFeedCard extends StatelessWidget {
@@ -24,13 +24,13 @@ class ActivityFeedCard extends StatelessWidget {
     final activityColor = ActivityHelpers.getActivityColor(activity.type);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: SyntrakSpacing.md),
+      padding: const EdgeInsets.only(bottom: SnowtrakSpacing.md),
       child: Material(
-        color: SyntrakColors.surface,
+        color: SnowtrakColors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-          side: const BorderSide(color: SyntrakColors.divider),
+          borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
+          side: const BorderSide(color: SnowtrakColors.divider),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -51,26 +51,26 @@ class ActivityFeedCard extends StatelessWidget {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                  SyntrakSpacing.md,
+                  SnowtrakSpacing.md,
                   0,
-                  SyntrakSpacing.md,
-                  SyntrakSpacing.sm,
+                  SnowtrakSpacing.md,
+                  SnowtrakSpacing.sm,
                 ),
                 child: Text(
                   activity.name?.isNotEmpty == true
                       ? activity.name!
                       : '${activity.type.displayName} Activity',
-                  style: SyntrakTypography.headlineSmall.copyWith(
-                    color: SyntrakColors.textPrimary,
+                  style: SnowtrakTypography.headlineSmall.copyWith(
+                    color: SnowtrakColors.textPrimary,
                   ),
                 ),
               ),
               Padding(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+                    const EdgeInsets.symmetric(horizontal: SnowtrakSpacing.md),
                 child: ActivityFeedCardStatsRow(activity: activity),
               ),
-              const SizedBox(height: SyntrakSpacing.md),
+              const SizedBox(height: SnowtrakSpacing.md),
               ActivityFeedCardMapThumbnail(
                 locations: activity.locations,
                 routeColor: activityColor,

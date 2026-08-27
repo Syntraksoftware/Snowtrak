@@ -75,7 +75,7 @@ class HelpSupportScreen extends StatelessWidget {
               _SettingsRow(
                 icon: Icons.star,
                 iconBackground: const Color(0xFF5856D6),
-                label: 'Rate Syntrak',
+                label: 'Rate Snowtrak',
                 onTap: () => _showRateDialog(context),
               ),
             ],
@@ -222,8 +222,8 @@ class HelpSupportScreen extends StatelessWidget {
     showCupertinoDialog(
       context: context,
       builder: (ctx) => CupertinoAlertDialog(
-        title: const Text('Rate Syntrak'),
-        content: const Text('Enjoying Syntrak? Please rate us on the App Store!'),
+        title: const Text('Rate Snowtrak'),
+        content: const Text('Enjoying Snowtrak? Please rate us on the App Store!'),
         actions: [
           CupertinoDialogAction(
             onPressed: () => Navigator.pop(ctx),

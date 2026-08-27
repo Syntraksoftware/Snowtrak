@@ -1,36 +1,27 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math';
 
 import 'package:dio/dio.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/config/app_config.dart';
-import 'package:syntrak/core/di/service_locator.dart';
-import 'package:syntrak/engines/ingestion/gps_ingestion_engine.dart';
-import 'package:syntrak/engines/ingestion/processors/elevation_corrector.dart';
-import 'package:syntrak/engines/map/color_mode_styler.dart';
-import 'package:syntrak/engines/map/map_rendering_engine.dart';
-import 'package:syntrak/engines/map/ski_map_layer_loader.dart';
-import 'package:syntrak/engines/segmentation/segment_detection_engine.dart';
-import 'package:syntrak/engines/segmentation/trail_matcher.dart';
-import 'package:syntrak/engines/stats/stats_engine.dart';
-import 'package:syntrak/models/activity.dart';
-import 'package:syntrak/models/activity_stats.dart';
-import 'package:syntrak/models/location.dart';
-import 'package:syntrak/models/processed_track.dart';
-import 'package:syntrak/models/run_summary.dart';
-import 'package:syntrak/models/segment.dart';
-import 'package:syntrak/models/track_point.dart';
-import 'package:syntrak/providers/activity_provider.dart';
-import 'package:syntrak/services/map_config.dart';
-import 'package:intl/intl.dart';
+import 'package:snowtrak/core/config/app_config.dart';
+import 'package:snowtrak/core/di/service_locator.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/engines/map/color_mode_styler.dart';
+import 'package:snowtrak/engines/map/map_rendering_engine.dart';
+import 'package:snowtrak/engines/map/ski_map_layer_loader.dart';
+import 'package:snowtrak/models/activity.dart';
+import 'package:snowtrak/models/location.dart';
+import 'package:snowtrak/models/processed_track.dart';
+import 'package:snowtrak/models/segment.dart';
+import 'package:snowtrak/models/track_point.dart';
+import 'package:snowtrak/providers/activity_provider.dart';
+import 'package:snowtrak/services/map_config.dart';
 
 class ActivityDetailScreen extends StatefulWidget {
   final String activityId;
-
   const ActivityDetailScreen({super.key, required this.activityId});
 
   @override
@@ -38,66 +29,31 @@ class ActivityDetailScreen extends StatefulWidget {
 }
 
 class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
-
   Activity? _activity;
   bool _isLoading = true;
-  bool _isPreparingRoute = false;
 
   ProcessedTrack? _track;
   List<Segment> _segments = const <Segment>[];
-  List<Segment> _descentSegments = const <Segment>[];
-  List<RunSummary> _runSummaries = const <RunSummary>[];
-  ActivityStats? _activityStats;
-  String? _routeError;
 
-  final StatsEngine _statsEngine = const StatsEngine();
   Dio? _mapDio;
-  GpsIngestionEngine? _gpsIngestionEngine;
-  SegmentDetectionEngine? _segmentDetectionEngine;
   MapRenderingEngine? _mapRenderingEngine;
   MapLibreMapController? _mapController;
   bool _mapReady = false;
-  bool _mapFeaturesEnabled = true;
-  int? _selectedRunIndex;
-  MapColorMode _selectedColorMode = MapColorMode.segment;
   MapVisualStyle _selectedMapStyle = MapVisualStyle.terrain;
 
   @override
   void initState() {
     super.initState();
-    final appConfig = sl<AppConfig>();
-    _mapFeaturesEnabled = appConfig.enableMapFeatures;
-    if (!_mapFeaturesEnabled) {
-      _loadActivity();
-      return;
-    }
-    final mapBaseUrl = _normalizeMapBaseUrl(appConfig.mapApiBaseUrl);
-    _mapDio = Dio(
-      BaseOptions(
-        baseUrl: mapBaseUrl,
-        connectTimeout: const Duration(seconds: 8),
-        receiveTimeout: const Duration(seconds: 15),
-      ),
-    );
-
-    _segmentDetectionEngine = SegmentDetectionEngine(
-      trailMatcher: TrailMatcher(
-        apiClient: DioTrailMatchApiClient(_mapDio!),
-      ),
-    );
-
-    _gpsIngestionEngine = GpsIngestionEngine(
-      elevationCorrector: ElevationCorrector(
-        apiClient: DioApiClient(_mapDio!),
-      ),
-    );
-
+    final mapBaseUrl = _normalizeMapBaseUrl(sl<AppConfig>().mapApiBaseUrl);
+    _mapDio = Dio(BaseOptions(
+      baseUrl: mapBaseUrl,
+      connectTimeout: const Duration(seconds: 8),
+      receiveTimeout: const Duration(seconds: 15),
+    ));
     _mapRenderingEngine = MapRenderingEngine(
-      skiTrailLoader: SkiMapLayerLoader(
-        apiClient: DioSkiMapApiClient(_mapDio!),
-      ),
+      skiTrailLoader:
+          SkiMapLayerLoader(apiClient: DioSkiMapApiClient(_mapDio!)),
     );
-
     _loadActivity();
   }
 
@@ -110,199 +66,44 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   Future<void> _loadActivity() async {
     final provider = Provider.of<ActivityProvider>(context, listen: false);
     final activity = await provider.getActivity(widget.activityId);
-
-    if (!mounted) {
-      return;
-    }
-
+    if (!mounted) return;
     setState(() {
       _activity = activity;
       _isLoading = false;
     });
-
-    if (activity != null) {
-      await _prepareRouteData(activity);
-    }
+    if (activity != null) await _prepareRouteData(activity);
   }
 
   Future<void> _prepareRouteData(Activity activity) async {
     if (activity.locations.length < 2) {
-      final track = _toProcessedTrack(activity);
-      setState(() {
-        _track = track;
-      });
+      setState(() => _track = _toProcessedTrack(activity));
       return;
     }
-
-    setState(() {
-      _isPreparingRoute = true;
-      _routeError = null;
-    });
-
-    try {
-      final track = _toProcessedTrack(activity);
-      await _applyTrack(track);
-    } catch (_) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _routeError = 'Unable to build route analytics from this activity.';
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isPreparingRoute = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _uploadGpx() async {
-    if (!_mapFeaturesEnabled) {
-      setState(() {
-        _routeError = 'Map features are disabled in staging for this beta build.';
-      });
-      return;
-    }
-
-    final pick = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: const <String>['gpx'],
-      allowMultiple: false,
-    );
-
-    if (pick == null || pick.files.isEmpty) {
-      return;
-    }
-
-    final selected = pick.files.first;
-    final path = selected.path;
-    if (path == null || path.isEmpty) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _routeError = 'Selected GPX file is not accessible from this platform.';
-      });
-      return;
-    }
-
-    setState(() {
-      _isPreparingRoute = true;
-      _routeError = null;
-    });
-
-    try {
-      final gpsIngestionEngine = _gpsIngestionEngine;
-      if (gpsIngestionEngine == null) {
-        setState(() {
-          _routeError = 'Map features are not available in this lane.';
-        });
-        return;
-      }
-
-      final track = await gpsIngestionEngine.processGpxFile(File(path));
-      await _applyTrack(track);
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Loaded GPX route: ${selected.name}')),
-      );
-    } catch (_) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _routeError = 'Failed to import GPX route. Please try another file.';
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isPreparingRoute = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _applyTrack(ProcessedTrack track) async {
+    final track = _toProcessedTrack(activity);
+    final segments = _localFallbackSegments(track.points);
+    if (!mounted) return;
     setState(() {
       _track = track;
-    });
-
-    if (!_mapFeaturesEnabled) {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _segments = const <Segment>[];
-        _descentSegments = const <Segment>[];
-        _runSummaries = const <RunSummary>[];
-        _activityStats = null;
-        _selectedRunIndex = null;
-      });
-      return;
-    }
-
-    List<Segment> segments;
-    try {
-      segments = await _segmentDetectionEngine!.detect(track);
-    } catch (_) {
-      segments = _localFallbackSegments(track.points);
-      if (segments.isNotEmpty && mounted) {
-        setState(() {
-          _routeError = 'Trail matching is unavailable right now. Showing local route only.';
-        });
-      }
-    }
-
-    if (segments.isEmpty && track.points.length > 1) {
-      segments = _localFallbackSegments(track.points);
-    }
-
-    final stats = _statsEngine.compute(segments);
-    final runSummaries = _statsEngine.buildRunSummaries(segments);
-    final descentSegments =
-        segments.where((s) => s.type == SegmentType.descent).toList(growable: false);
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
       _segments = segments;
-      _descentSegments = descentSegments;
-      _runSummaries = runSummaries;
-      _activityStats = stats;
-      _selectedRunIndex = null;
     });
-
     await _initialiseMapIfReady();
   }
 
   ProcessedTrack _toProcessedTrack(Activity activity) {
     final sorted = List<Location>.from(activity.locations)
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
-
     final points = <TrackPoint>[];
     for (var i = 0; i < sorted.length; i++) {
-      final current = sorted[i];
-      final previous = i > 0 ? sorted[i - 1] : null;
-      final computedSpeed = _speedKmh(current, previous);
-
-      points.add(
-        TrackPoint(
-          lat: current.latitude,
-          lon: current.longitude,
-          elevationM: current.altitude ?? 0,
-          timestamp: current.timestamp.toUtc(),
-          speedKmh: computedSpeed,
-        ),
-      );
+      final cur = sorted[i];
+      final prev = i > 0 ? sorted[i - 1] : null;
+      points.add(TrackPoint(
+        lat: cur.latitude,
+        lon: cur.longitude,
+        elevationM: cur.altitude ?? 0,
+        timestamp: cur.timestamp.toUtc(),
+        speedKmh: _speedKmh(cur, prev),
+      ));
     }
-
     return ProcessedTrack(
       id: activity.id,
       points: points,
@@ -311,562 +112,435 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     );
   }
 
-  Segment _fallbackSegment(List<TrackPoint> points) {
-    return Segment(
-      type: SegmentType.descent,
-      points: points,
-      startIndex: 0,
-      endIndex: points.length - 1,
-      trailName: 'Detected run',
-      difficulty: null,
-    );
-  }
-
   List<Segment> _localFallbackSegments(List<TrackPoint> points) {
-    if (points.length < 2) {
-      return const <Segment>[];
-    }
-    return <Segment>[_fallbackSegment(points)];
+    if (points.length < 2) return const <Segment>[];
+    return <Segment>[
+      Segment(
+        type: SegmentType.descent,
+        points: points,
+        startIndex: 0,
+        endIndex: points.length - 1,
+        trailName: 'Detected run',
+        difficulty: null,
+      )
+    ];
   }
 
   String _normalizeMapBaseUrl(String value) {
-    var trimmed = value.trim();
-    while (trimmed.endsWith('/')) {
-      trimmed = trimmed.substring(0, trimmed.length - 1);
-    }
-    if (trimmed.toLowerCase().endsWith('/api')) {
-      return trimmed.substring(0, trimmed.length - 4);
-    }
-    return trimmed;
+    var v = value.trim();
+    while (v.endsWith('/')) v = v.substring(0, v.length - 1);
+    if (v.toLowerCase().endsWith('/api')) v = v.substring(0, v.length - 4);
+    return v;
   }
 
-  double _speedKmh(Location current, Location? previous) {
-    final rawSpeedMps = current.speed;
-    if (previous == null) {
-      return rawSpeedMps == null ? 0 : rawSpeedMps * 3.6;
-    }
-
-    final deltaSeconds = current.timestamp
-        .difference(previous.timestamp)
-        .inMilliseconds /
-        1000.0;
-
-    if (deltaSeconds <= 0) {
-      return rawSpeedMps == null ? 0 : rawSpeedMps * 3.6;
-    }
-
-    final distanceMeters = _haversineMeters(
-      previous.latitude,
-      previous.longitude,
-      current.latitude,
-      current.longitude,
-    );
-    return (distanceMeters / deltaSeconds) * 3.6;
+  double _speedKmh(Location cur, Location? prev) {
+    final raw = cur.speed;
+    if (prev == null) return raw == null ? 0 : raw * 3.6;
+    final dt = cur.timestamp.difference(prev.timestamp).inMilliseconds / 1000.0;
+    if (dt <= 0) return raw == null ? 0 : raw * 3.6;
+    return (_haversineMeters(prev.latitude, prev.longitude, cur.latitude, cur.longitude) / dt) * 3.6;
   }
 
   double _haversineMeters(double lat1, double lon1, double lat2, double lon2) {
-    const earthRadiusM = 6371000.0;
-    final dLat = _degToRad(lat2 - lat1);
-    final dLon = _degToRad(lon2 - lon1);
-    final a =
-        (sin(dLat / 2) * sin(dLat / 2)) +
-        cos(_degToRad(lat1)) * cos(_degToRad(lat2)) * (sin(dLon / 2) * sin(dLon / 2));
-    final c = 2 * atan2(sqrt(a), sqrt(1 - a));
-    return earthRadiusM * c;
+    const r = 6371000.0;
+    final dLat = _rad(lat2 - lat1);
+    final dLon = _rad(lon2 - lon1);
+    final a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(_rad(lat1)) * cos(_rad(lat2)) * sin(dLon / 2) * sin(dLon / 2);
+    return r * 2 * atan2(sqrt(a), sqrt(1 - a));
   }
 
-  double _degToRad(double value) => value * (pi / 180);
+  double _rad(double v) => v * (pi / 180);
 
   Future<void> _initialiseMapIfReady() async {
-    if (!_mapFeaturesEnabled) {
-      return;
-    }
-
-    final controller = _mapController;
-    final track = _track;
-    if (!_mapReady || controller == null || track == null || _segments.isEmpty) {
-      return;
-    }
-
-    await _mapRenderingEngine!.initialise(
-      controller,
-      track: track,
-      segments: _segments,
-      initialColorMode: _selectedColorMode,
-    );
-    await _mapRenderingEngine!.fitToTrack(track);
+    final c = _mapController;
+    final t = _track;
+    if (!_mapReady || c == null || t == null || _segments.isEmpty) return;
+    await _mapRenderingEngine!.initialise(c,
+        track: t, segments: _segments, initialColorMode: MapColorMode.segment);
+    await _mapRenderingEngine!.fitToTrack(t);
   }
 
-  Future<void> _onRunTap(int index) async {
-    if (index < 0 || index >= _descentSegments.length) {
-      return;
-    }
-
-    setState(() {
-      _selectedRunIndex = index;
-    });
-
-    if (!_mapFeaturesEnabled) {
-      return;
-    }
-
-    final segment = _descentSegments[index];
-    await _mapRenderingEngine!.highlightSegment(segment);
-    await _mapRenderingEngine!.zoomToSegment(segment);
-  }
-
-  Future<void> _onColorModeSelected(MapColorMode mode) async {
-    if (_selectedColorMode == mode) {
-      return;
-    }
-
-    setState(() {
-      _selectedColorMode = mode;
-    });
-
-    if (!_mapFeaturesEnabled) {
-      return;
-    }
-
-    unawaited(_mapRenderingEngine!.setColorMode(mode));
-  }
-
-  Future<void> _zoomIn() async {
-    if (_mapController == null) {
-      return;
-    }
-    await _mapController!.animateCamera(CameraUpdate.zoomIn());
-  }
-
-  Future<void> _zoomOut() async {
-    if (_mapController == null) {
-      return;
-    }
-    await _mapController!.animateCamera(CameraUpdate.zoomOut());
-  }
+  Future<void> _zoomIn() async =>
+      _mapController?.animateCamera(CameraUpdate.zoomIn());
+  Future<void> _zoomOut() async =>
+      _mapController?.animateCamera(CameraUpdate.zoomOut());
 
   void _setMapStyle(MapVisualStyle style) {
-    if (_selectedMapStyle == style) {
-      return;
-    }
-
+    if (_selectedMapStyle == style) return;
     setState(() {
       _selectedMapStyle = style;
       _mapReady = false;
       _mapController = null;
     });
+  }
 
-    final source = MapConfig.resolvedSourceLabel(style);
-    final needsMapTiler = style == MapVisualStyle.terrain;
-    final suffix = needsMapTiler && !MapConfig.hasMapTilerApiKey
-        ? ' (MAPTILER_API_KEY not set)'
-        : '';
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Map style: $source$suffix'),
-        duration: const Duration(seconds: 2),
+  Future<void> _confirmDelete(Activity activity) async {
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: BoxDecoration(
+          color: SnowtrakColors.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: EdgeInsets.fromLTRB(
+            24, 12, 24, MediaQuery.of(context).padding.bottom + 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.black12,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: SnowtrakColors.error.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.delete_outline_rounded,
+                  color: SnowtrakColors.error, size: 28),
+            ),
+            const SizedBox(height: 16),
+            Text('Delete Activity?',
+                style: SnowtrakTypography.headlineMedium
+                    .copyWith(color: SnowtrakColors.textPrimary)),
+            const SizedBox(height: 8),
+            Text('This cannot be undone.',
+                style: SnowtrakTypography.bodyMedium
+                    .copyWith(color: SnowtrakColors.textSecondary)),
+            const SizedBox(height: 28),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: SnowtrakColors.error,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
+                child: const Text('Delete',
+                    style:
+                        TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+              ),
+            ),
+            const SizedBox(height: 4),
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text('Cancel',
+                  style: SnowtrakTypography.bodyMedium
+                      .copyWith(color: SnowtrakColors.textSecondary)),
+            ),
+          ],
+        ),
       ),
     );
+
+    if (confirmed == true && mounted) {
+      final provider = Provider.of<ActivityProvider>(context, listen: false);
+      await provider.deleteActivity(activity.id);
+      if (mounted) Navigator.of(context).pop();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Activity Details')),
-        body: const Center(child: CircularProgressIndicator()),
+        backgroundColor: SnowtrakColors.background,
+        appBar: _buildAppBar(null),
+        body: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(SnowtrakColors.primary),
+          ),
+        ),
       );
     }
 
     if (_activity == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Activity Details')),
-        body: const Center(child: Text('Activity not found')),
+        backgroundColor: SnowtrakColors.background,
+        appBar: _buildAppBar(null),
+        body: Center(
+          child: Text('Activity not found',
+              style: SnowtrakTypography.bodyLarge
+                  .copyWith(color: SnowtrakColors.textSecondary)),
+        ),
       );
     }
 
     final activity = _activity!;
     final track = _track;
     final mapCenter = track != null && track.points.isNotEmpty
-      ? LatLng(track.points.first.lat, track.points.first.lon)
-      : (activity.locations.isNotEmpty
-        ? LatLng(activity.locations.first.latitude, activity.locations.first.longitude)
-        : const LatLng(46.8, 8.2));
+        ? LatLng(track.points.first.lat, track.points.first.lon)
+        : (activity.locations.isNotEmpty
+            ? LatLng(activity.locations.first.latitude,
+                activity.locations.first.longitude)
+            : const LatLng(46.8, 8.2));
     final hasRenderableTrack = track != null && track.points.length > 1;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(activity.type.displayName),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.upload_file),
-            tooltip: 'Upload GPX',
-            onPressed: _isPreparingRoute || !_mapFeaturesEnabled ? null : _uploadGpx,
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: () => _showDeleteDialog(context, activity),
-          ),
-        ],
-      ),
+      backgroundColor: SnowtrakColors.background,
+      appBar: _buildAppBar(activity),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(
-              height: 300,
-              child: Stack(
-                children: [
-                  if (_mapFeaturesEnabled)
-                    MapLibreMap(
-                      key: ValueKey<String>('activity-${_selectedMapStyle.name}'),
-                      styleString: MapConfig.styleForMode(_selectedMapStyle),
-                      initialCameraPosition: CameraPosition(
-                        target: mapCenter,
-                        zoom: hasRenderableTrack ? 13 : 10,
-                      ),
-                      onMapCreated: (controller) {
-                        _mapController = controller;
-                      },
-                      onStyleLoadedCallback: () async {
-                        _mapReady = true;
-                        await _initialiseMapIfReady();
-                      },
-                    )
-                  else
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      padding: const EdgeInsets.all(16),
-                      child: const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Map features disabled in staging',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'This lane keeps the beta focused on thread and activity flows while avoiding the unstable map backend.',
-                          ),
-                        ],
-                      ),
-                    ),
-                  if (_mapFeaturesEnabled)
-                    Positioned(
-                      top: 10,
-                      right: 10,
-                      child: _MapStyleToggle(
-                        selectedStyle: _selectedMapStyle,
-                        onSelected: _setMapStyle,
-                      ),
-                    ),
-                  if (_mapFeaturesEnabled)
-                    Positioned(
-                      right: 10,
-                      bottom: 10,
-                      child: _MapZoomControls(
-                        onZoomIn: _zoomIn,
-                        onZoomOut: _zoomOut,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-
-            if (!_mapFeaturesEnabled)
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: Text(
-                  'Map is disabled in this lane. Thread, activity, and notification features remain available.',
-                ),
-              ),
-
-            if (_mapFeaturesEnabled && !hasRenderableTrack && !_isPreparingRoute)
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: Text(
-                  'Map is available. Start recording or upload a GPX route to render your track.',
-                ),
-              ),
-
-            if (_isPreparingRoute)
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: LinearProgressIndicator(),
-              ),
-
-            if (_routeError != null)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: Text(
-                  _routeError!,
-                  style: const TextStyle(color: Colors.redAccent),
-                ),
-              ),
-
-            if (hasRenderableTrack)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: _ColorModeBar(
-                  selected: _selectedColorMode,
-                  onSelected: _onColorModeSelected,
-                ),
-              ),
-
-            // Metrics
+            // ── Activity name + date ────────────────────────────────
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Metrics',
-                    style: TextStyle(
-                      fontSize: 20,
+                  Text(
+                    activity.name?.isNotEmpty == true
+                        ? activity.name!
+                        : activity.type.displayName,
+                    style: SnowtrakTypography.displaySmall.copyWith(
+                      color: SnowtrakColors.textPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _MetricCard(
-                          label: 'Distance',
-                          value: _activityStats == null
-                              ? activity.formattedDistance
-                              : '${_activityStats!.totalDistanceKm.toStringAsFixed(2)} km',
-                          icon: Icons.straighten,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _MetricCard(
-                          label: 'Duration',
-                          value: _activityStats == null
-                              ? activity.formattedDuration
-                              : _formatDuration(_activityStats!.movingTime),
-                          icon: Icons.timer,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _MetricCard(
-                          label: 'Pace',
-                          value: _activityStats == null
-                              ? activity.formattedPace
-                              : '${_activityStats!.avgSpeedKmh.toStringAsFixed(1)} km/h',
-                          icon: Icons.speed,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _MetricCard(
-                          label: 'Elevation',
-                          value: _activityStats == null
-                              ? '${activity.elevationGain.toStringAsFixed(0)} m'
-                              : '${_activityStats!.totalVerticalDropM.toStringAsFixed(0)} m',
-                          icon: Icons.terrain,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (_runSummaries.isNotEmpty) ...[
-                    const SizedBox(height: 24),
-                    const Text(
-                      'Runs',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    ..._runSummaries.asMap().entries.map(
-                      (entry) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: _RunCard(
-                          summary: entry.value,
-                          selected: _selectedRunIndex == entry.key,
-                          onTap: () => _onRunTap(entry.key),
-                        ),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Details',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                  const SizedBox(height: 4),
+                  Text(
+                    DateFormat('EEEE, MMM d, y · h:mm a')
+                        .format(activity.startTime),
+                    style: SnowtrakTypography.bodySmall.copyWith(
+                      color: SnowtrakColors.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  _DetailRow(
-                    label: 'Start Time',
-                    value: DateFormat('MMM d, y • h:mm a').format(activity.startTime),
-                  ),
-                  _DetailRow(
-                    label: 'End Time',
-                    value: DateFormat('MMM d, y • h:mm a').format(activity.endTime),
-                  ),
-                  if (activity.name != null && activity.name!.isNotEmpty)
-                    _DetailRow(
-                      label: 'Name',
-                      value: activity.name!,
-                    ),
-                  if (activity.description != null && activity.description!.isNotEmpty)
-                    _DetailRow(
-                      label: 'Description',
-                      value: activity.description!,
-                    ),
                 ],
               ),
             ),
+
+            // ── Map ─────────────────────────────────────────────────
+            SizedBox(
+              height: 240,
+              child: Stack(
+                children: [
+                  MapLibreMap(
+                    key: ValueKey<String>(
+                        'activity-${_selectedMapStyle.name}'),
+                    styleString: MapConfig.styleForMode(_selectedMapStyle),
+                    initialCameraPosition: CameraPosition(
+                      target: mapCenter,
+                      zoom: hasRenderableTrack ? 13 : 10,
+                    ),
+                    onMapCreated: (c) => _mapController = c,
+                    onStyleLoadedCallback: () async {
+                      _mapReady = true;
+                      await _initialiseMapIfReady();
+                    },
+                  ),
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: _MapStyleToggle(
+                      selectedStyle: _selectedMapStyle,
+                      onSelected: _setMapStyle,
+                    ),
+                  ),
+                  Positioned(
+                    right: 12,
+                    bottom: 12,
+                    child: _MapZoomControls(
+                        onZoomIn: _zoomIn, onZoomOut: _zoomOut),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ── Stats grid ───────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: SnowtrakColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  children: [
+                    IntrinsicHeight(
+                      child: Row(
+                        children: [
+                          Expanded(
+                              child: _StatCell(
+                                  label: 'Distance',
+                                  value: activity.formattedDistance)),
+                          VerticalDivider(
+                              width: 1,
+                              thickness: 1,
+                              color: SnowtrakColors.surfaceVariant),
+                          Expanded(
+                              child: _StatCell(
+                                  label: 'Avg Speed',
+                                  value: activity.formattedSpeed)),
+                        ],
+                      ),
+                    ),
+                    Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: SnowtrakColors.surfaceVariant),
+                    IntrinsicHeight(
+                      child: Row(
+                        children: [
+                          Expanded(
+                              child: _StatCell(
+                                  label: 'Moving Time',
+                                  value: activity.formattedDuration)),
+                          VerticalDivider(
+                              width: 1,
+                              thickness: 1,
+                              color: SnowtrakColors.surfaceVariant),
+                          Expanded(
+                              child: _StatCell(
+                                  label: 'Elevation Gain',
+                                  value:
+                                      '+${activity.elevationGain.toStringAsFixed(0)} m')),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // ── Details ──────────────────────────────────────────────
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: SnowtrakColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  children: [
+                    _DetailTile(
+                        icon: Icons.calendar_today_outlined,
+                        label: 'Start',
+                        value: DateFormat('MMM d, y · h:mm a')
+                            .format(activity.startTime)),
+                    Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: SnowtrakColors.surfaceVariant),
+                    _DetailTile(
+                        icon: Icons.flag_outlined,
+                        label: 'End',
+                        value: DateFormat('MMM d, y · h:mm a')
+                            .format(activity.endTime)),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 32),
           ],
         ),
       ),
     );
   }
 
-  String _formatDuration(Duration duration) {
-    final totalSeconds = duration.inSeconds;
-    final hours = totalSeconds ~/ 3600;
-    final minutes = (totalSeconds % 3600) ~/ 60;
-    final seconds = totalSeconds % 60;
-
-    if (hours > 0) {
-      return '${hours}h ${minutes}m ${seconds}s';
-    }
-    if (minutes > 0) {
-      return '${minutes}m ${seconds}s';
-    }
-    return '${seconds}s';
-  }
-
-  Future<void> _showDeleteDialog(BuildContext context, Activity activity) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Activity?'),
-        content: const Text('This action cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
+  AppBar _buildAppBar(Activity? activity) {
+    return AppBar(
+      backgroundColor: SnowtrakColors.background,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+        color: SnowtrakColors.textPrimary,
+        onPressed: () => Navigator.of(context).pop(),
       ),
+      title: Text(
+        activity?.type.displayName ?? '',
+        style: SnowtrakTypography.headlineSmall.copyWith(
+          color: SnowtrakColors.textPrimary,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      actions: [
+        if (activity != null)
+          IconButton(
+            icon: const Icon(Icons.more_vert_rounded, size: 22),
+            color: SnowtrakColors.textPrimary,
+            onPressed: () => _confirmDelete(activity),
+          ),
+      ],
     );
-
-    if (confirmed == true && context.mounted) {
-      final provider = Provider.of<ActivityProvider>(context, listen: false);
-      await provider.deleteActivity(activity.id);
-      if (context.mounted) {
-        Navigator.of(context).pop();
-      }
-    }
   }
 }
 
-class _MapStyleToggle extends StatelessWidget {
-  const _MapStyleToggle({
-    required this.selectedStyle,
-    required this.onSelected,
-  });
+// ─── Map controls ─────────────────────────────────────────────────────────────
 
+class _MapStyleToggle extends StatelessWidget {
+  const _MapStyleToggle(
+      {required this.selectedStyle, required this.onSelected});
   final MapVisualStyle selectedStyle;
-  final void Function(MapVisualStyle style) onSelected;
+  final void Function(MapVisualStyle) onSelected;
 
   @override
   Widget build(BuildContext context) {
+    Widget btn(String label, MapVisualStyle style) {
+      final active = selectedStyle == style;
+      return Material(
+        color: active ? SnowtrakColors.primary : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: () => onSelected(style),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Text(label,
+                style: TextStyle(
+                  color: active ? Colors.white : SnowtrakColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                )),
+          ),
+        ),
+      );
+    }
+
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: SnowtrakColors.surface,
+        borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 8,
+              offset: const Offset(0, 2))
         ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _MapStyleButton(
-            label: '2D',
-            selected: selectedStyle == MapVisualStyle.clean2d,
-            onTap: () => onSelected(MapVisualStyle.clean2d),
-          ),
-          _MapStyleButton(
-            label: 'Terrain',
-            selected: selectedStyle == MapVisualStyle.terrain,
-            onTap: () => onSelected(MapVisualStyle.terrain),
-          ),
+          btn('2D', MapVisualStyle.clean2d),
+          btn('Terrain', MapVisualStyle.terrain),
         ],
-      ),
-    );
-  }
-}
-
-class _MapStyleButton extends StatelessWidget {
-  const _MapStyleButton({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: selected ? const Color(0xFFFF5A1F) : Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: selected ? Colors.white : Colors.black87,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
       ),
     );
   }
 }
 
 class _MapZoomControls extends StatelessWidget {
-  const _MapZoomControls({
-    required this.onZoomIn,
-    required this.onZoomOut,
-  });
-
+  const _MapZoomControls(
+      {required this.onZoomIn, required this.onZoomOut});
   final Future<void> Function() onZoomIn;
   final Future<void> Function() onZoomOut;
 
@@ -874,14 +548,13 @@ class _MapZoomControls extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: SnowtrakColors.surface,
+        borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 8,
+              offset: const Offset(0, 2))
         ],
       ),
       child: Column(
@@ -889,20 +562,19 @@ class _MapZoomControls extends StatelessWidget {
         children: [
           IconButton(
             visualDensity: VisualDensity.compact,
-            icon: const Icon(Icons.add),
+            icon: Icon(Icons.add,
+                color: SnowtrakColors.textPrimary, size: 20),
             onPressed: () => onZoomIn(),
-            tooltip: 'Zoom in',
           ),
           Container(
-            width: 30,
-            height: 1,
-            color: Colors.black12,
-          ),
+              width: 24,
+              height: 1,
+              color: SnowtrakColors.surfaceVariant),
           IconButton(
             visualDensity: VisualDensity.compact,
-            icon: const Icon(Icons.remove),
+            icon: Icon(Icons.remove,
+                color: SnowtrakColors.textPrimary, size: 20),
             onPressed: () => onZoomOut(),
-            tooltip: 'Zoom out',
           ),
         ],
       ),
@@ -910,183 +582,34 @@ class _MapZoomControls extends StatelessWidget {
   }
 }
 
-class _ColorModeBar extends StatelessWidget {
-  const _ColorModeBar({
-    required this.selected,
-    required this.onSelected,
-  });
+// ─── Stats ────────────────────────────────────────────────────────────────────
 
-  final MapColorMode selected;
-  final Future<void> Function(MapColorMode mode) onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        _ColorModeChip(
-          mode: MapColorMode.segment,
-          label: 'Segment',
-          selected: selected == MapColorMode.segment,
-          onSelected: onSelected,
-        ),
-        _ColorModeChip(
-          mode: MapColorMode.speed,
-          label: 'Speed',
-          selected: selected == MapColorMode.speed,
-          onSelected: onSelected,
-        ),
-        _ColorModeChip(
-          mode: MapColorMode.elevation,
-          label: 'Elevation',
-          selected: selected == MapColorMode.elevation,
-          onSelected: onSelected,
-        ),
-      ],
-    );
-  }
-}
-
-class _ColorModeChip extends StatelessWidget {
-  const _ColorModeChip({
-    required this.mode,
-    required this.label,
-    required this.selected,
-    required this.onSelected,
-  });
-
-  final MapColorMode mode;
-  final String label;
-  final bool selected;
-  final Future<void> Function(MapColorMode mode) onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return ChoiceChip(
-      selected: selected,
-      label: Text(label),
-      onSelected: (value) {
-        if (value) {
-          unawaited(onSelected(mode));
-        }
-      },
-    );
-  }
-}
-
-class _RunCard extends StatelessWidget {
-  const _RunCard({
-    required this.summary,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final RunSummary summary;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      color: selected ? const Color(0xFFFFF7E1) : null,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                summary.runNumber,
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-              ),
-              const SizedBox(height: 4),
-              Text(summary.trailName?.isNotEmpty == true ? summary.trailName! : 'Unmatched trail'),
-              const SizedBox(height: 6),
-              Text(
-                '${summary.distanceKm.toStringAsFixed(2)} km • '
-                '${summary.verticalDropM.toStringAsFixed(0)} m drop • '
-                '${summary.avgSpeedKmh.toStringAsFixed(1)} km/h avg',
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MetricCard extends StatelessWidget {
+class _StatCell extends StatelessWidget {
+  const _StatCell({required this.label, required this.value});
   final String label;
   final String value;
-  final IconData icon;
-
-  const _MetricCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Icon(icon, color: const Color(0xFFFF4500)),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _DetailRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: Colors.grey,
-                fontSize: 14,
-              ),
+          Text(
+            label,
+            style: SnowtrakTypography.labelSmall.copyWith(
+              color: SnowtrakColors.textSecondary,
+              letterSpacing: 0.3,
             ),
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-              ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: SnowtrakTypography.headlineMedium.copyWith(
+              color: SnowtrakColors.textPrimary,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],
@@ -1095,3 +618,36 @@ class _DetailRow extends StatelessWidget {
   }
 }
 
+// ─── Details ──────────────────────────────────────────────────────────────────
+
+class _DetailTile extends StatelessWidget {
+  const _DetailTile(
+      {required this.icon, required this.label, required this.value});
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: SnowtrakColors.textSecondary),
+          const SizedBox(width: 12),
+          SizedBox(
+            width: 48,
+            child: Text(label,
+                style: SnowtrakTypography.bodySmall
+                    .copyWith(color: SnowtrakColors.textSecondary)),
+          ),
+          Expanded(
+            child: Text(value,
+                style: SnowtrakTypography.bodyMedium
+                    .copyWith(color: SnowtrakColors.textPrimary)),
+          ),
+        ],
+      ),
+    );
+  }
+}

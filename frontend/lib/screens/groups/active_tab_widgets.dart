@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
+import 'package:snowtrak/core/theme.dart';
 
 /// Mock challenge row for the Active tab.
 class GroupChallengeItem {
@@ -72,7 +72,7 @@ class ActiveGroupChallengeCard extends StatelessWidget {
         );
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: SyntrakSpacing.md),
+        padding: const EdgeInsets.symmetric(vertical: SnowtrakSpacing.md),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -81,16 +81,16 @@ class ActiveGroupChallengeCard extends StatelessWidget {
               color: challenge.badgeColor,
               icon: challenge.icon,
             ),
-            const SizedBox(width: SyntrakSpacing.md),
+            const SizedBox(width: SnowtrakSpacing.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     challenge.title,
-                    style: SyntrakTypography.bodyLarge.copyWith(
+                    style: SnowtrakTypography.bodyLarge.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: SyntrakColors.textPrimary,
+                      color: SnowtrakColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -99,14 +99,14 @@ class ActiveGroupChallengeCard extends StatelessWidget {
                       Icon(
                         challenge.icon,
                         size: 14,
-                        color: SyntrakColors.textTertiary,
+                        color: SnowtrakColors.textTertiary,
                       ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
                           challenge.description,
-                          style: SyntrakTypography.bodySmall.copyWith(
-                            color: SyntrakColors.textSecondary,
+                          style: SnowtrakTypography.bodySmall.copyWith(
+                            color: SnowtrakColors.textSecondary,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -117,8 +117,8 @@ class ActiveGroupChallengeCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     challenge.dateRange,
-                    style: SyntrakTypography.labelSmall.copyWith(
-                      color: SyntrakColors.textTertiary,
+                    style: SnowtrakTypography.labelSmall.copyWith(
+                      color: SnowtrakColors.textTertiary,
                     ),
                   ),
                 ],
@@ -176,7 +176,7 @@ class ActiveChallengeBadge extends StatelessWidget {
             children: [
               Text(
                 text,
-                style: SyntrakTypography.headlineSmall.copyWith(
+                style: SnowtrakTypography.headlineSmall.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
                   fontSize: 18,

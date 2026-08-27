@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/auth/authenticated_session.dart';
-import 'package:syntrak/core/di/service_locator.dart';
-import 'package:syntrak/core/errors/app_result.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/models/profile.dart';
-import 'package:syntrak/providers/auth_provider.dart';
-import 'package:syntrak/services/profile_service.dart';
-import 'package:syntrak/ui/liquid/snowtrak_auth_theme.dart';
+import 'package:snowtrak/core/auth/authenticated_session.dart';
+import 'package:snowtrak/core/di/service_locator.dart';
+import 'package:snowtrak/core/errors/app_result.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/models/profile.dart';
+import 'package:snowtrak/providers/auth_provider.dart';
+import 'package:snowtrak/services/profile_service.dart';
+import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 /// Profile identity block at the top of the profile screen.
 class ProfileHeader extends StatefulWidget {
@@ -113,10 +113,10 @@ class _ProfileHeaderState extends State<ProfileHeader> {
 
     if (_error != null) {
       return Padding(
-        padding: const EdgeInsets.all(SyntrakSpacing.md),
+        padding: const EdgeInsets.all(SnowtrakSpacing.md),
         child: Text(
           _error!,
-          style: SyntrakTypography.bodyMedium.copyWith(color: SyntrakColors.error),
+          style: SnowtrakTypography.bodyMedium.copyWith(color: SnowtrakColors.error),
           textAlign: TextAlign.center,
         ),
       );
@@ -145,19 +145,19 @@ class _ProfileHeaderState extends State<ProfileHeader> {
   }) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        SyntrakSpacing.md,
-        SyntrakSpacing.md,
-        SyntrakSpacing.md,
+        SnowtrakSpacing.md,
+        SnowtrakSpacing.md,
+        SnowtrakSpacing.md,
         0,
       ),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: SyntrakColors.surface,
-          borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-          border: Border.all(color: SyntrakColors.divider),
+          color: SnowtrakColors.surface,
+          borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
+          border: Border.all(color: SnowtrakColors.divider),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(SyntrakSpacing.md),
+          padding: const EdgeInsets.all(SnowtrakSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -175,31 +175,31 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                             displayName.isNotEmpty
                                 ? displayName[0].toUpperCase()
                                 : 'U',
-                            style: SyntrakTypography.headlineMedium.copyWith(
+                            style: SnowtrakTypography.headlineMedium.copyWith(
                               color: SnowtrakAuthTheme.brand,
                               fontWeight: FontWeight.bold,
                             ),
                           )
                         : null,
                   ),
-                  const SizedBox(width: SyntrakSpacing.md),
+                  const SizedBox(width: SnowtrakSpacing.md),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           displayName,
-                          style: SyntrakTypography.headlineSmall.copyWith(
+                          style: SnowtrakTypography.headlineSmall.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: SyntrakColors.textPrimary,
+                            color: SnowtrakColors.textPrimary,
                           ),
                         ),
                         if (username.isNotEmpty) ...[
                           const SizedBox(height: 2),
                           Text(
                             '@$username',
-                            style: SyntrakTypography.bodyMedium.copyWith(
-                              color: SyntrakColors.textSecondary,
+                            style: SnowtrakTypography.bodyMedium.copyWith(
+                              color: SnowtrakColors.textSecondary,
                             ),
                           ),
                         ],
@@ -209,20 +209,20 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                 ],
               ),
               if (bio != null && bio.isNotEmpty) ...[
-                const SizedBox(height: SyntrakSpacing.md),
+                const SizedBox(height: SnowtrakSpacing.md),
                 Text(
                   bio,
-                  style: SyntrakTypography.bodyMedium.copyWith(
-                    color: SyntrakColors.textPrimary,
+                  style: SnowtrakTypography.bodyMedium.copyWith(
+                    color: SnowtrakColors.textPrimary,
                     height: 1.4,
                   ),
                 ),
               ],
               if (skiLevel != null || home != null) ...[
-                const SizedBox(height: SyntrakSpacing.md),
+                const SizedBox(height: SnowtrakSpacing.md),
                 Wrap(
-                  spacing: SyntrakSpacing.sm,
-                  runSpacing: SyntrakSpacing.sm,
+                  spacing: SnowtrakSpacing.sm,
+                  runSpacing: SnowtrakSpacing.sm,
                   children: [
                     if (skiLevel != null)
                       _InfoChip(
@@ -234,7 +234,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                       _InfoChip(
                         icon: Icons.location_on_outlined,
                         label: home,
-                        color: SyntrakColors.secondary,
+                        color: SnowtrakColors.secondary,
                       ),
                   ],
                 ),
@@ -262,12 +262,12 @@ class _InfoChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: SyntrakSpacing.sm,
-        vertical: SyntrakSpacing.xs,
+        horizontal: SnowtrakSpacing.sm,
+        vertical: SnowtrakSpacing.xs,
       ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(SyntrakRadius.round),
+        borderRadius: BorderRadius.circular(SnowtrakRadius.round),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -276,7 +276,7 @@ class _InfoChip extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: SyntrakTypography.labelSmall.copyWith(color: color),
+            style: SnowtrakTypography.labelSmall.copyWith(color: color),
           ),
         ],
       ),

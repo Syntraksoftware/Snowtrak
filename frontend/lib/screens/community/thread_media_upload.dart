@@ -1,6 +1,6 @@
 import 'package:image_picker/image_picker.dart';
-import 'package:syntrak/core/errors/app_result.dart';
-import 'package:syntrak/services/community_service.dart';
+import 'package:snowtrak/core/errors/app_result.dart';
+import 'package:snowtrak/services/community_service.dart';
 
 /// Uploads local picks sequentially; stops on first failure.
 Future<AppResult<List<String>>> uploadThreadMediaFiles(

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/providers/notification_provider.dart';
-import 'package:syntrak/screens/notifications/notifications_screen.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/providers/notification_provider.dart';
+import 'package:snowtrak/screens/notifications/notifications_screen.dart';
 
 /// A reusable notification bell icon with unread badge
 /// 
@@ -56,10 +56,10 @@ class NotificationBellIcon extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    color: SyntrakColors.error,
+                    color: SnowtrakColors.error,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: SyntrakColors.surface,
+                      color: SnowtrakColors.surface,
                       width: 1.5,
                     ),
                   ),

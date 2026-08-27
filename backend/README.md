@@ -1,12 +1,12 @@
 # Backend Services
 
-Syntrak backend consists of 4 microservices, all using a unified Python environment and standardized entry points.
+Snowtrak backend consists of 4 microservices, all using a unified Python environment and standardized entry points.
 
 ## Service Overview
 
 | Service                     | Port | Host      | Purpose                                        |
 | --------------------------- | ---- | --------- | ---------------------------------------------- |
-| **main-backend**      | 8080 | 0.0.0.0   | Authentication, users, notifications, activity |
+| **main-backend**      | 8080 | 0.0.0.0   | Authentication, users, notifications, weather   |
 | **community-backend** | 5001 | 0.0.0.0   | Posts, threads, comments (Reddit-like)         |
 | **activity-backend**  | 5100 | 127.0.0.1 | GPS tracking, kudos tracking                   |
 | **map-backend**       | 5200 | 127.0.0.1 | Static maps, elevation API (Google Maps)       |
@@ -18,7 +18,7 @@ Use the **repository-root** virtual environment (`.venv/` next to `backend/`), n
 **Activate the venv** (each new shell), from the repository root:
 
 ```bash
-cd /path/to/syntrak-application   # repository root
+cd /path/to/Snowtrak   # repository root
 source .venv/bin/activate
 ```
 

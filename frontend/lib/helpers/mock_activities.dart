@@ -1,5 +1,5 @@
-import 'package:syntrak/models/activity.dart';
-import 'package:syntrak/models/location.dart';
+import 'package:snowtrak/models/activity.dart';
+import 'package:snowtrak/models/location.dart';
 
 class MockActivities {
   static List<Activity> generateMockActivities() {

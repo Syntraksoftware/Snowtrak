@@ -1,3 +1,11 @@
 source "https://rubygems.org"
 
-gem "fastlane", "2.211.0"
+gem "fastlane", ">= 2.220.0"
+gem "abbrev"
+
+# CocoaPods belongs in the bundle, not on the runner's default gem path.
+# `gem install bundler` in CI switches the active Ruby, and the preinstalled
+# CocoaPods was built against a different one -- flutter then reports
+# "CocoaPods is installed but broken", skips pod install, and the iOS build
+# fails. Bundling it makes `pod` resolve under the same Ruby as fastlane.
+gem "cocoapods", "~> 1.16.2"  # matches COCOAPODS: 1.16.2 in Podfile.lock

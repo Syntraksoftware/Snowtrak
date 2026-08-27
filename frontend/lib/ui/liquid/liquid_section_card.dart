@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
+import 'package:snowtrak/core/theme.dart';
 
 /// Full-width section card with icon header for profile and settings layouts.
 class LiquidSectionCard extends StatelessWidget {
@@ -22,16 +22,16 @@ class LiquidSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = iconColor ?? SyntrakColors.primary;
+    final accent = iconColor ?? SnowtrakColors.primary;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+      padding: const EdgeInsets.symmetric(horizontal: SnowtrakSpacing.md),
       child: Material(
-        color: SyntrakColors.surface,
+        color: SnowtrakColors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-          side: const BorderSide(color: SyntrakColors.divider),
+          borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
+          side: const BorderSide(color: SnowtrakColors.divider),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -41,10 +41,10 @@ class LiquidSectionCard extends StatelessWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                  SyntrakSpacing.md,
-                  SyntrakSpacing.md,
-                  SyntrakSpacing.md,
-                  SyntrakSpacing.sm,
+                  SnowtrakSpacing.md,
+                  SnowtrakSpacing.md,
+                  SnowtrakSpacing.md,
+                  SnowtrakSpacing.sm,
                 ),
                 child: Row(
                   children: [
@@ -53,27 +53,27 @@ class LiquidSectionCard extends StatelessWidget {
                       height: 36,
                       decoration: BoxDecoration(
                         color: accent.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(SyntrakRadius.md),
+                        borderRadius: BorderRadius.circular(SnowtrakRadius.md),
                       ),
                       child: Icon(icon, size: 20, color: accent),
                     ),
-                    const SizedBox(width: SyntrakSpacing.sm),
+                    const SizedBox(width: SnowtrakSpacing.sm),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             title,
-                            style: SyntrakTypography.headlineSmall.copyWith(
-                              color: SyntrakColors.textPrimary,
+                            style: SnowtrakTypography.headlineSmall.copyWith(
+                              color: SnowtrakColors.textPrimary,
                             ),
                           ),
                           if (subtitle != null) ...[
                             const SizedBox(height: 2),
                             Text(
                               subtitle!,
-                              style: SyntrakTypography.bodySmall.copyWith(
-                                color: SyntrakColors.textSecondary,
+                              style: SnowtrakTypography.bodySmall.copyWith(
+                                color: SnowtrakColors.textSecondary,
                               ),
                             ),
                           ],
@@ -83,7 +83,7 @@ class LiquidSectionCard extends StatelessWidget {
                     if (onTap != null)
                       Icon(
                         Icons.chevron_right,
-                        color: SyntrakColors.textTertiary,
+                        color: SnowtrakColors.textTertiary,
                         size: 20,
                       ),
                   ],
@@ -91,10 +91,10 @@ class LiquidSectionCard extends StatelessWidget {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                  SyntrakSpacing.md,
+                  SnowtrakSpacing.md,
                   0,
-                  SyntrakSpacing.md,
-                  SyntrakSpacing.md,
+                  SnowtrakSpacing.md,
+                  SnowtrakSpacing.md,
                 ),
                 child: child,
               ),

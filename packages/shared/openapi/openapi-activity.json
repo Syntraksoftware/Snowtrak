@@ -1,1 +1,1800 @@
-{"openapi":"3.1.0","info":{"title":"Activity Backend API","description":"Minimal backend for skiing activity records","version":"1.0.0"},"paths":{"/api/v1/activities/":{"post":{"tags":["activities"],"summary":"Create Activity","description":"Create a new activity and return frontend response shape.","operationId":"create_activity_api_v1_activities__post","parameters":[{"name":"authorization","in":"header","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Authorization"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/FrontendActivityCreate"}}}},"responses":{"201":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/FrontendActivityResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"get":{"tags":["activities"],"summary":"List Activities","description":"List public activities in standardized response format.","operationId":"list_activities_api_v1_activities__get","parameters":[{"name":"limit","in":"query","required":false,"schema":{"type":"integer","maximum":100,"minimum":1,"default":20,"title":"Limit"}},{"name":"offset","in":"query","required":false,"schema":{"type":"integer","minimum":0,"default":0,"title":"Offset"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ListResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/activities/{activity_id}":{"get":{"tags":["activities"],"summary":"Get Activity","description":"Get activity details formatted for frontend.","operationId":"get_activity_api_v1_activities__activity_id__get","parameters":[{"name":"activity_id","in":"path","required":true,"schema":{"type":"string","title":"Activity Id"}},{"name":"authorization","in":"header","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Authorization"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/FrontendActivityResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"put":{"tags":["activities"],"summary":"Update Activity","description":"Update an activity and return frontend response shape.","operationId":"update_activity_api_v1_activities__activity_id__put","parameters":[{"name":"activity_id","in":"path","required":true,"schema":{"type":"string","title":"Activity Id"}},{"name":"authorization","in":"header","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Authorization"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/FrontendActivityUpdate"}}}},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/FrontendActivityResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"delete":{"tags":["activities"],"summary":"Delete Activity","description":"Delete an activity owned by the authenticated user.","operationId":"delete_activity_api_v1_activities__activity_id__delete","parameters":[{"name":"activity_id","in":"path","required":true,"schema":{"type":"string","title":"Activity Id"}},{"name":"authorization","in":"header","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Authorization"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/DeleteResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/activities/me":{"get":{"tags":["activities"],"summary":"List My Activities","description":"List activities for the authenticated user with optional filters.","operationId":"list_my_activities_api_v1_activities_me_get","parameters":[{"name":"search","in":"query","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Search"}},{"name":"activity_type","in":"query","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Activity Type"}},{"name":"start_date","in":"query","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Start Date"}},{"name":"end_date","in":"query","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"End Date"}},{"name":"limit","in":"query","required":false,"schema":{"type":"integer","maximum":100,"minimum":1,"default":20,"title":"Limit"}},{"name":"offset","in":"query","required":false,"schema":{"type":"integer","minimum":0,"default":0,"title":"Offset"}},{"name":"authorization","in":"header","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Authorization"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ListResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/activities/{activity_id}/kudos":{"post":{"tags":["activities"],"summary":"Toggle Kudos","description":"Like or unlike an activity.","operationId":"toggle_kudos_api_v1_activities__activity_id__kudos_post","parameters":[{"name":"activity_id","in":"path","required":true,"schema":{"type":"string","title":"Activity Id"}},{"name":"authorization","in":"header","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Authorization"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ToggleKudosResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/activities/{activity_id}/comments":{"get":{"tags":["activities"],"summary":"List Comments","description":"Get comments for an activity.","operationId":"list_comments_api_v1_activities__activity_id__comments_get","parameters":[{"name":"activity_id","in":"path","required":true,"schema":{"type":"string","title":"Activity Id"}},{"name":"limit","in":"query","required":false,"schema":{"type":"integer","maximum":200,"minimum":1,"default":50,"title":"Limit"}},{"name":"offset","in":"query","required":false,"schema":{"type":"integer","minimum":0,"default":0,"title":"Offset"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/CommentsListResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"post":{"tags":["activities"],"summary":"Add Comment","description":"Add a comment to an activity.","operationId":"add_comment_api_v1_activities__activity_id__comments_post","parameters":[{"name":"activity_id","in":"path","required":true,"schema":{"type":"string","title":"Activity Id"}},{"name":"authorization","in":"header","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Authorization"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/CommentCreate"}}}},"responses":{"201":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/CommentResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/activities/{activity_id}/share":{"post":{"tags":["activities"],"summary":"Create Share Link","description":"Generate a shareable link for an activity.","operationId":"create_share_link_api_v1_activities__activity_id__share_post","parameters":[{"name":"activity_id","in":"path","required":true,"schema":{"type":"string","title":"Activity Id"}},{"name":"authorization","in":"header","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Authorization"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ShareLinkResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/":{"get":{"summary":"Root","operationId":"root__get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}}}},"/health":{"get":{"summary":"Health","operationId":"health_health_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}}}}},"components":{"schemas":{"CommentCreate":{"properties":{"content":{"type":"string","title":"Content"}},"type":"object","required":["content"],"title":"CommentCreate","description":"Schema for creating a comment."},"CommentResponse":{"properties":{"id":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Id"},"activity_id":{"type":"string","title":"Activity Id"},"user_id":{"type":"string","title":"User Id"},"content":{"type":"string","title":"Content"},"created_at":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Created At"}},"type":"object","required":["activity_id","user_id","content"],"title":"CommentResponse","description":"Schema for comment response."},"CommentsListResponse":{"properties":{"items":{"items":{"$ref":"#/components/schemas/CommentResponse"},"type":"array","title":"Items"},"total":{"type":"integer","title":"Total"}},"type":"object","required":["items","total"],"title":"CommentsListResponse","description":"Schema for comments list response."},"DeleteResponse":{"properties":{"message":{"type":"string","title":"Message"},"deleted_activity_id":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Deleted Activity Id"}},"type":"object","required":["message"],"title":"DeleteResponse","description":"Schema for delete response."},"FrontendActivityCreate":{"properties":{"type":{"type":"string","title":"Type"},"name":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Name"},"description":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Description"},"start_time":{"type":"string","title":"Start Time"},"end_time":{"type":"string","title":"End Time"},"locations":{"items":{"$ref":"#/components/schemas/FrontendLocation"},"type":"array","title":"Locations"},"is_public":{"type":"boolean","title":"Is Public","default":true}},"type":"object","required":["type","start_time","end_time"],"title":"FrontendActivityCreate","description":"Schema for creating an activity as sent by the frontend app."},"FrontendActivityResponse":{"properties":{"id":{"type":"string","title":"Id"},"user_id":{"type":"string","title":"User Id"},"type":{"type":"string","title":"Type"},"name":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Name"},"description":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Description"},"distance":{"type":"number","title":"Distance"},"duration":{"type":"integer","title":"Duration"},"elevation_gain":{"type":"number","title":"Elevation Gain"},"start_time":{"type":"string","title":"Start Time"},"end_time":{"type":"string","title":"End Time"},"average_pace":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Average Pace"},"max_pace":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Max Pace"},"calories":{"anyOf":[{"type":"integer"},{"type":"null"}],"title":"Calories"},"is_public":{"type":"boolean","title":"Is Public"},"created_at":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Created At"},"locations":{"items":{"$ref":"#/components/schemas/FrontendLocation"},"type":"array","title":"Locations"}},"type":"object","required":["id","user_id","type","distance","duration","elevation_gain","start_time","end_time","is_public"],"title":"FrontendActivityResponse","description":"Activity response formatted for the frontend app expectations."},"FrontendActivityUpdate":{"properties":{"name":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Name"},"description":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Description"},"is_public":{"anyOf":[{"type":"boolean"},{"type":"null"}],"title":"Is Public"}},"type":"object","title":"FrontendActivityUpdate","description":"Frontend update payload (maps is_public -> visibility)."},"FrontendLocation":{"properties":{"id":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Id"},"activity_id":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Activity Id"},"latitude":{"type":"number","title":"Latitude"},"longitude":{"type":"number","title":"Longitude"},"altitude":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Altitude"},"accuracy":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Accuracy"},"speed":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Speed"},"timestamp":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Timestamp"}},"type":"object","required":["latitude","longitude"],"title":"FrontendLocation","description":"Frontend location schema (as sent/expected by the Flutter app)."},"HTTPValidationError":{"properties":{"detail":{"items":{"$ref":"#/components/schemas/ValidationError"},"type":"array","title":"Detail"}},"type":"object","title":"HTTPValidationError"},"ListMeta":{"properties":{"request_id":{"type":"string","title":"Request Id","description":"Request identifier for correlation"},"timestamp":{"anyOf":[{"type":"string","format":"date-time"},{"type":"null"}],"title":"Timestamp","description":"Response timestamp"},"deprecated_params":{"anyOf":[{"items":{"type":"string"},"type":"array"},{"type":"null"}],"title":"Deprecated Params","description":"Deprecated parameters used (soft-accept migration indication)"},"deprecation_info":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Deprecation Info","description":"Deprecation message or link to migration guide"},"pagination":{"$ref":"#/components/schemas/PaginationMeta","description":"Pagination metadata"}},"type":"object","required":["request_id","pagination"],"title":"ListMeta","description":"Metadata for paginated list responses (extends ResponseMeta with pagination).\n\nAttributes:\n    pagination: PaginationMeta with limit, offset, total, next_cursor, has_next"},"ListResponse":{"properties":{"items":{"items":{},"type":"array","title":"Items","description":"List of items"},"meta":{"$ref":"#/components/schemas/ListMeta","description":"Pagination and metadata"}},"type":"object","required":["items","meta"],"title":"ListResponse","description":"Standardized paginated list response.\n\nAll list endpoints must return items in this envelope with pagination metadata.\n\nAttributes:\n    items: List of actual items\n    meta: ListMeta with pagination and request tracking"},"PaginationMeta":{"properties":{"limit":{"type":"integer","maximum":200.0,"minimum":1.0,"title":"Limit","description":"Items per page"},"offset":{"type":"integer","minimum":0.0,"title":"Offset","description":"Starting position"},"total":{"type":"integer","minimum":0.0,"title":"Total","description":"Total items available"},"next_cursor":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Next Cursor","description":"Cursor for next page"},"has_next":{"type":"boolean","title":"Has Next","description":"More items available after this page"}},"type":"object","required":["limit","offset","total","has_next"],"title":"PaginationMeta","description":"Standardized pagination metadata for list responses.\n\nAttributes:\n    limit: Number of items returned per page (query parameter)\n    offset: Starting position in the result set (query parameter)\n    total: Total number of items available\n    next_cursor: Opaque cursor for cursor-based pagination (next page start)\n    has_next: Whether more items exist after current page"},"ShareLinkResponse":{"properties":{"share_token":{"type":"string","title":"Share Token"},"share_url":{"type":"string","title":"Share Url"}},"type":"object","required":["share_token","share_url"],"title":"ShareLinkResponse","description":"Schema for activity share link response."},"ToggleKudosResponse":{"properties":{"liked":{"type":"boolean","title":"Liked"}},"type":"object","required":["liked"],"title":"ToggleKudosResponse","description":"Schema for kudos toggle response."},"ValidationError":{"properties":{"loc":{"items":{"anyOf":[{"type":"string"},{"type":"integer"}]},"type":"array","title":"Location"},"msg":{"type":"string","title":"Message"},"type":{"type":"string","title":"Error Type"}},"type":"object","required":["loc","msg","type"],"title":"ValidationError"}}}}
+{
+  "components": {
+    "schemas": {
+      "BestEffort": {
+        "description": "A single best-effort entry (longest, most elevation, fastest pace).",
+        "properties": {
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "is_pr": {
+            "default": false,
+            "title": "Is Pr",
+            "type": "boolean"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "value",
+          "date"
+        ],
+        "title": "BestEffort",
+        "type": "object"
+      },
+      "CommentCreate": {
+        "description": "Schema for creating a comment.",
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "title": "CommentCreate",
+        "type": "object"
+      },
+      "CommentResponse": {
+        "description": "Schema for comment response.",
+        "properties": {
+          "activity_id": {
+            "title": "Activity Id",
+            "type": "string"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "activity_id",
+          "user_id",
+          "content"
+        ],
+        "title": "CommentResponse",
+        "type": "object"
+      },
+      "CommentsListResponse": {
+        "description": "Schema for comments list response.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CommentResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "CommentsListResponse",
+        "type": "object"
+      },
+      "DeleteResponse": {
+        "description": "Schema for delete response.",
+        "properties": {
+          "deleted_activity_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted Activity Id"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "DeleteResponse",
+        "type": "object"
+      },
+      "FrontendActivityCreate": {
+        "description": "Schema for creating an activity as sent by the frontend app.",
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "end_time": {
+            "title": "End Time",
+            "type": "string"
+          },
+          "is_public": {
+            "default": true,
+            "title": "Is Public",
+            "type": "boolean"
+          },
+          "locations": {
+            "items": {
+              "$ref": "#/components/schemas/FrontendLocation"
+            },
+            "title": "Locations",
+            "type": "array"
+          },
+          "map_activity_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "UUID of map_trail.activities row when pipeline persisted server-side",
+            "title": "Map Activity Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "processing_status": {
+            "$ref": "#/components/schemas/ProcessingStatus",
+            "default": "ready",
+            "description": "Pipeline lifecycle; sync bridge writes ready immediately"
+          },
+          "start_time": {
+            "title": "Start Time",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "start_time",
+          "end_time"
+        ],
+        "title": "FrontendActivityCreate",
+        "type": "object"
+      },
+      "FrontendActivityResponse": {
+        "description": "Activity response formatted for the frontend app expectations.",
+        "properties": {
+          "average_pace": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Pace"
+          },
+          "calories": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calories"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "distance": {
+            "title": "Distance",
+            "type": "number"
+          },
+          "duration": {
+            "title": "Duration",
+            "type": "integer"
+          },
+          "elevation_gain": {
+            "title": "Elevation Gain",
+            "type": "number"
+          },
+          "end_time": {
+            "title": "End Time",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "is_public": {
+            "title": "Is Public",
+            "type": "boolean"
+          },
+          "locations": {
+            "items": {
+              "$ref": "#/components/schemas/FrontendLocation"
+            },
+            "title": "Locations",
+            "type": "array"
+          },
+          "map_activity_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Map Activity Id"
+          },
+          "max_pace": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Pace"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "processing_status": {
+            "$ref": "#/components/schemas/ProcessingStatus",
+            "default": "ready"
+          },
+          "start_time": {
+            "title": "Start Time",
+            "type": "string"
+          },
+          "storage_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storage Key"
+          },
+          "thumbnail_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Url"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "type",
+          "distance",
+          "duration",
+          "elevation_gain",
+          "start_time",
+          "end_time",
+          "is_public"
+        ],
+        "title": "FrontendActivityResponse",
+        "type": "object"
+      },
+      "FrontendActivityUpdate": {
+        "description": "Frontend update payload (maps is_public -> visibility).",
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "is_public": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Public"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "FrontendActivityUpdate",
+        "type": "object"
+      },
+      "FrontendLocation": {
+        "description": "Frontend location schema (as sent/expected by the Flutter app).",
+        "properties": {
+          "accuracy": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accuracy"
+          },
+          "activity_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activity Id"
+          },
+          "altitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Altitude"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "latitude": {
+            "title": "Latitude",
+            "type": "number"
+          },
+          "longitude": {
+            "title": "Longitude",
+            "type": "number"
+          },
+          "speed": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Speed"
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp"
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "title": "FrontendLocation",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "ListMeta": {
+        "description": "Metadata for paginated list responses (extends ResponseMeta with pagination).\n\nAttributes:\n    pagination: PaginationMeta with limit, offset, total, next_cursor, has_next",
+        "properties": {
+          "deprecated_params": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Deprecated parameters used (soft-accept migration indication)",
+            "title": "Deprecated Params"
+          },
+          "deprecation_info": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Deprecation message or link to migration guide",
+            "title": "Deprecation Info"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationMeta",
+            "description": "Pagination metadata"
+          },
+          "request_id": {
+            "description": "Request identifier for correlation",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Response timestamp",
+            "title": "Timestamp"
+          }
+        },
+        "required": [
+          "request_id",
+          "pagination"
+        ],
+        "title": "ListMeta",
+        "type": "object"
+      },
+      "ListResponse": {
+        "description": "Standardized paginated list response.\n\nAll list endpoints must return items in this envelope with pagination metadata.\n\nAttributes:\n    items: List of actual items\n    meta: ListMeta with pagination and request tracking",
+        "properties": {
+          "items": {
+            "description": "List of items",
+            "items": {},
+            "title": "Items",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ListMeta",
+            "description": "Pagination and metadata"
+          }
+        },
+        "required": [
+          "items",
+          "meta"
+        ],
+        "title": "ListResponse",
+        "type": "object"
+      },
+      "PaginationMeta": {
+        "description": "Standardized pagination metadata for list responses.\n\nAttributes:\n    limit: Number of items returned per page (query parameter)\n    offset: Starting position in the result set (query parameter)\n    total: Total number of items available\n    next_cursor: Opaque cursor for cursor-based pagination (next page start)\n    has_next: Whether more items exist after current page",
+        "properties": {
+          "has_next": {
+            "description": "More items available after this page",
+            "title": "Has Next",
+            "type": "boolean"
+          },
+          "limit": {
+            "description": "Items per page",
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cursor for next page",
+            "title": "Next Cursor"
+          },
+          "offset": {
+            "description": "Starting position",
+            "minimum": 0.0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "description": "Total items available",
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "limit",
+          "offset",
+          "total",
+          "has_next"
+        ],
+        "title": "PaginationMeta",
+        "type": "object"
+      },
+      "ProcessingStatus": {
+        "description": "Lifecycle of an activity through upload and server-side pipeline.",
+        "enum": [
+          "pending",
+          "uploading",
+          "processing",
+          "ready",
+          "failed"
+        ],
+        "title": "ProcessingStatus",
+        "type": "string"
+      },
+      "ShareLinkResponse": {
+        "description": "Schema for activity share link response.",
+        "properties": {
+          "share_token": {
+            "title": "Share Token",
+            "type": "string"
+          },
+          "share_url": {
+            "title": "Share Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "share_token",
+          "share_url"
+        ],
+        "title": "ShareLinkResponse",
+        "type": "object"
+      },
+      "ToggleKudosResponse": {
+        "description": "Schema for kudos toggle response.",
+        "properties": {
+          "liked": {
+            "title": "Liked",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "liked"
+        ],
+        "title": "ToggleKudosResponse",
+        "type": "object"
+      },
+      "UploadCompleteResponse": {
+        "description": "Acknowledgement that raw file upload finished; pipeline queued or running.",
+        "properties": {
+          "activity_id": {
+            "title": "Activity Id",
+            "type": "string"
+          },
+          "message": {
+            "default": "Pipeline processing started",
+            "title": "Message",
+            "type": "string"
+          },
+          "processing_status": {
+            "$ref": "#/components/schemas/ProcessingStatus"
+          }
+        },
+        "required": [
+          "activity_id",
+          "processing_status"
+        ],
+        "title": "UploadCompleteResponse",
+        "type": "object"
+      },
+      "UploadUrlRequest": {
+        "description": "Request presigned upload URL for async GPX/FIT pipeline.",
+        "properties": {
+          "activity_type": {
+            "default": "alpine",
+            "description": "Stored as activity_type",
+            "title": "Activity Type",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "source_type": {
+            "default": "gpx",
+            "description": "gpx | fit",
+            "title": "Source Type",
+            "type": "string"
+          }
+        },
+        "title": "UploadUrlRequest",
+        "type": "object"
+      },
+      "UploadUrlResponse": {
+        "description": "Presigned upload target + placeholder activity row.",
+        "properties": {
+          "activity_id": {
+            "title": "Activity Id",
+            "type": "string"
+          },
+          "processing_status": {
+            "$ref": "#/components/schemas/ProcessingStatus",
+            "default": "pending"
+          },
+          "storage_key": {
+            "title": "Storage Key",
+            "type": "string"
+          },
+          "token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token"
+          },
+          "upload_url": {
+            "title": "Upload Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "activity_id",
+          "upload_url",
+          "storage_key"
+        ],
+        "title": "UploadUrlResponse",
+        "type": "object"
+      },
+      "UserStatsResponse": {
+        "description": "Cached user stats returned by GET /me/stats.",
+        "properties": {
+          "activity_days": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Activity Days",
+            "type": "array"
+          },
+          "all_time_distance_km": {
+            "title": "All Time Distance Km",
+            "type": "number"
+          },
+          "all_time_elev_gain_m": {
+            "title": "All Time Elev Gain M",
+            "type": "number"
+          },
+          "all_time_session_count": {
+            "title": "All Time Session Count",
+            "type": "integer"
+          },
+          "all_time_time_min": {
+            "title": "All Time Time Min",
+            "type": "integer"
+          },
+          "best_efforts": {
+            "items": {
+              "$ref": "#/components/schemas/BestEffort"
+            },
+            "title": "Best Efforts",
+            "type": "array"
+          },
+          "current_streak_weeks": {
+            "title": "Current Streak Weeks",
+            "type": "integer"
+          },
+          "last_week_session_count": {
+            "title": "Last Week Session Count",
+            "type": "integer"
+          },
+          "longest_streak_weeks": {
+            "title": "Longest Streak Weeks",
+            "type": "integer"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          },
+          "week_start": {
+            "title": "Week Start",
+            "type": "string"
+          },
+          "weekly_distance_km": {
+            "title": "Weekly Distance Km",
+            "type": "number"
+          },
+          "weekly_elev_gain_m": {
+            "title": "Weekly Elev Gain M",
+            "type": "number"
+          },
+          "weekly_session_count": {
+            "title": "Weekly Session Count",
+            "type": "integer"
+          },
+          "weekly_time_min": {
+            "title": "Weekly Time Min",
+            "type": "integer"
+          },
+          "yearly_distance_km": {
+            "title": "Yearly Distance Km",
+            "type": "number"
+          },
+          "yearly_elev_gain_m": {
+            "title": "Yearly Elev Gain M",
+            "type": "number"
+          },
+          "yearly_session_count": {
+            "title": "Yearly Session Count",
+            "type": "integer"
+          },
+          "yearly_time_min": {
+            "title": "Yearly Time Min",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "user_id",
+          "week_start",
+          "weekly_distance_km",
+          "weekly_time_min",
+          "weekly_elev_gain_m",
+          "weekly_session_count",
+          "last_week_session_count",
+          "yearly_distance_km",
+          "yearly_time_min",
+          "yearly_elev_gain_m",
+          "yearly_session_count",
+          "all_time_distance_km",
+          "all_time_time_min",
+          "all_time_elev_gain_m",
+          "all_time_session_count",
+          "current_streak_weeks",
+          "longest_streak_weeks",
+          "activity_days",
+          "best_efforts"
+        ],
+        "title": "UserStatsResponse",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "## Canonical API surface\n\nAll supported clients MUST use **`/api/v1/*`** paths documented here.",
+    "title": "Activity Backend API",
+    "version": "1.0.0",
+    "x-canonical-prefix": "/api/v1"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/activities/": {
+      "get": {
+        "description": "List public activities in standardized response format.",
+        "operationId": "list_activities_api_v1_activities__get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Activities",
+        "tags": [
+          "activities"
+        ]
+      },
+      "post": {
+        "description": "Create a new activity and return frontend response shape.",
+        "operationId": "create_activity_api_v1_activities__post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FrontendActivityCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FrontendActivityResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Activity",
+        "tags": [
+          "activities"
+        ]
+      }
+    },
+    "/api/v1/activities/me": {
+      "get": {
+        "description": "List activities for the authenticated user with optional filters.",
+        "operationId": "list_my_activities_api_v1_activities_me_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "in": "query",
+            "name": "activity_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Activity Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List My Activities",
+        "tags": [
+          "activities"
+        ]
+      }
+    },
+    "/api/v1/activities/me/stats": {
+      "get": {
+        "description": "Return cached stats for the authenticated user.\n\nNo cached row means the user has no activities yet \u2014 returns zeros without\ntouching the DB. The cache is first written when they create an activity.",
+        "operationId": "get_my_stats_api_v1_activities_me_stats_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserStatsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get My Stats",
+        "tags": [
+          "activities"
+        ]
+      }
+    },
+    "/api/v1/activities/upload-url": {
+      "post": {
+        "description": "Reserve a feed activity row and return a presigned Supabase Storage upload URL.",
+        "operationId": "create_upload_url_api_v1_activities_upload_url_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadUrlRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadUrlResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Upload Url",
+        "tags": [
+          "activities"
+        ]
+      }
+    },
+    "/api/v1/activities/{activity_id}": {
+      "delete": {
+        "description": "Delete an activity owned by the authenticated user.",
+        "operationId": "delete_activity_api_v1_activities__activity_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "activity_id",
+            "required": true,
+            "schema": {
+              "title": "Activity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Activity",
+        "tags": [
+          "activities"
+        ]
+      },
+      "get": {
+        "description": "Get activity details formatted for frontend.",
+        "operationId": "get_activity_api_v1_activities__activity_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "activity_id",
+            "required": true,
+            "schema": {
+              "title": "Activity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FrontendActivityResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Activity",
+        "tags": [
+          "activities"
+        ]
+      },
+      "put": {
+        "description": "Update an activity and return frontend response shape.",
+        "operationId": "update_activity_api_v1_activities__activity_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "activity_id",
+            "required": true,
+            "schema": {
+              "title": "Activity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FrontendActivityUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FrontendActivityResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Activity",
+        "tags": [
+          "activities"
+        ]
+      }
+    },
+    "/api/v1/activities/{activity_id}/comments": {
+      "get": {
+        "description": "Get comments for an activity.",
+        "operationId": "list_comments_api_v1_activities__activity_id__comments_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "activity_id",
+            "required": true,
+            "schema": {
+              "title": "Activity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentsListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Comments",
+        "tags": [
+          "activities"
+        ]
+      },
+      "post": {
+        "description": "Add a comment to an activity.",
+        "operationId": "add_comment_api_v1_activities__activity_id__comments_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "activity_id",
+            "required": true,
+            "schema": {
+              "title": "Activity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Comment",
+        "tags": [
+          "activities"
+        ]
+      }
+    },
+    "/api/v1/activities/{activity_id}/kudos": {
+      "post": {
+        "description": "Like or unlike an activity.",
+        "operationId": "toggle_kudos_api_v1_activities__activity_id__kudos_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "activity_id",
+            "required": true,
+            "schema": {
+              "title": "Activity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToggleKudosResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Toggle Kudos",
+        "tags": [
+          "activities"
+        ]
+      }
+    },
+    "/api/v1/activities/{activity_id}/share": {
+      "post": {
+        "description": "Generate a shareable link for an activity.",
+        "operationId": "create_share_link_api_v1_activities__activity_id__share_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "activity_id",
+            "required": true,
+            "schema": {
+              "title": "Activity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShareLinkResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Share Link",
+        "tags": [
+          "activities"
+        ]
+      }
+    },
+    "/api/v1/activities/{activity_id}/upload-complete": {
+      "post": {
+        "description": "Client finished uploading raw file \u2014 enqueue or run pipeline inline.",
+        "operationId": "upload_complete_api_v1_activities__activity_id__upload_complete_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "activity_id",
+            "required": true,
+            "schema": {
+              "title": "Activity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadCompleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Upload Complete",
+        "tags": [
+          "activities"
+        ]
+      }
+    }
+  }
+}

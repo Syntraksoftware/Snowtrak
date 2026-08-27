@@ -4,12 +4,21 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - 'v*'
+      # Final versions only. 'v*' also matched pre-release tags such as
+      # v0.0.1-rc1, so the release candidate used to verify the backend deploy
+      # path would itself have uploaded a build to App Store Connect.
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: read
 
 jobs:
   build-and-upload:
     name: Build iOS and Upload to App Store Connect
     runs-on: macos-latest
+    # Pauses for an admin's approval before any binary reaches Apple. The tag
+    # still starts the run; the upload waits.
+    environment: appstore
     steps:
       - uses: actions/checkout@v4
 
@@ -33,6 +42,13 @@ jobs:
         run: |
           echo "$ASC_KEY_BASE64" | base64 --decode > /tmp/AuthKey.p8
 
+      - name: Create placeholder MapTiler asset
+        # frontend/pubspec.yaml declares .env.local.json as an asset, but the file
+        # is gitignored (it holds a real MapTiler key), so CI never has it and the
+        # asset bundle fails to build. MapConfig.init() already tolerates an empty
+        # file and --dart-define overrides it, so a stub is enough here.
+        run: echo '{}' > frontend/.env.local.json
+
       - name: Install bundler and fastlane
         run: |
           gem install bundler
@@ -46,6 +62,11 @@ jobs:
           ASC_KEY_PATH: /tmp/AuthKey.p8
           APP_IDENTIFIER: ${{ secrets.APP_IDENTIFIER }}
           PROV_PROFILE_NAME: ${{ secrets.PROV_PROFILE_NAME }}
+          # Baked into the binary via --dart-define by the Fastfile. Without it the
+          # shipped build falls back to keyless open tile sources.
+          MAPTILER_API_KEY: ${{ secrets.MAPTILER_API_KEY }}
+          # Read by frontend/ios/fastlane/Appfile; kept out of the public repo.
+          FASTLANE_APPLE_ID: ${{ secrets.FASTLANE_APPLE_ID }}
         run: |
           cd frontend/ios
           bundle exec fastlane production

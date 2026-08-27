@@ -1,4 +1,4 @@
-import 'package:syntrak/models/post.dart';
+import 'package:snowtrak/models/post.dart';
 
 class ThreadsTabPostState {
   ThreadsTabPostState._();

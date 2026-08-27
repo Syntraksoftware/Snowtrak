@@ -1,1 +1,1767 @@
-{"openapi":"3.1.0","info":{"title":"Syntrak Auth API","description":"Authentication API for Syntrak with Supabase integration","version":"1.0.0"},"paths":{"/api/v1/auth/register":{"post":{"tags":["Authentication"],"summary":"Register","description":"Register a new user account.","operationId":"register_api_v1_auth_register_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserCreate"}}},"required":true},"responses":{"201":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/AuthSession"}}}},"409":{"description":"Email already registered","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}},"400":{"description":"Invalid input data","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/auth/login":{"post":{"tags":["Authentication"],"summary":"Login","description":"Authenticate user and obtain tokens.","operationId":"login_api_v1_auth_login_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/LoginRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/AuthSession"}}}},"401":{"description":"Invalid credentials","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}},"403":{"description":"Account disabled","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/auth/refresh":{"post":{"tags":["Authentication"],"summary":"Refresh Token","description":"Obtain new access token using refresh token.","operationId":"refresh_token_api_v1_auth_refresh_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/RefreshTokenRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/AuthSession"}}}},"401":{"description":"Invalid or expired refresh token","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/users/me":{"get":{"tags":["Users"],"summary":"Get Current User Profile","description":"Get current authenticated user's profile.","operationId":"get_current_user_profile_api_v1_users_me_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserResponse"}}}}},"security":[{"HTTPBearer":[]}]},"put":{"tags":["Users"],"summary":"Update Current User Profile","description":"Update current user's basic profile fields.","operationId":"update_current_user_profile_api_v1_users_me_put","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserUpdate"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/v1/users/me/profile":{"get":{"tags":["Users"],"summary":"Get Current User Profile Endpoint","description":"Get current authenticated user's profile.","operationId":"get_current_user_profile_endpoint_api_v1_users_me_profile_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ProfileResponse"}}}}},"security":[{"HTTPBearer":[]}]},"put":{"tags":["Users"],"summary":"Update Current User Profile Endpoint","description":"Update current user's profile details.","operationId":"update_current_user_profile_endpoint_api_v1_users_me_profile_put","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/ProfileUpdate"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ProfileResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/v1/users/{user_id}/profile":{"get":{"tags":["Users"],"summary":"Get User Profile By Id","description":"Get any user's profile by user identifier.","operationId":"get_user_profile_by_id_api_v1_users__user_id__profile_get","security":[{"HTTPBearer":[]}],"parameters":[{"name":"user_id","in":"path","required":true,"schema":{"type":"string","title":"User Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ProfileResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/users/me/profile/avatar":{"post":{"tags":["Users"],"summary":"Upload Avatar","description":"Upload avatar image for current user profile.","operationId":"upload_avatar_api_v1_users_me_profile_avatar_post","requestBody":{"content":{"multipart/form-data":{"schema":{"$ref":"#/components/schemas/Body_upload_avatar_api_v1_users_me_profile_avatar_post"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ProfileResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/v1/notifications/test":{"post":{"tags":["notifications"],"summary":"Trigger Test Notification","description":"Trigger a test notification that will appear in the app.\n\n**Usage from terminal:**\n```bash\ncurl -X POST http://localhost:8080/api/v1/notifications/test \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"type\": \"kudos\", \"title\": \"New Kudos!\", \"message\": \"Sarah liked your activity\"}'\n```\n- kudos: Someone gave kudos\n- comment: New comment\n- follow: New follower\n- friendActivity: Friend completed activity\n- challenge: Challenge update\n- group: Group activity\n- weather: Weather alert\n- powderDay: Fresh snow alert\n- achievement: New achievement\n- system: System notification","operationId":"trigger_test_notification_api_v1_notifications_test_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/TestNotificationRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/NotificationResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/notifications/pending":{"get":{"tags":["notifications"],"summary":"Get Pending Notifications","description":"Get all pending notifications and clear the queue.\nThe Flutter app polls this endpoint to receive notifications.","operationId":"get_pending_notifications_api_v1_notifications_pending_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"items":{"$ref":"#/components/schemas/NotificationResponse"},"type":"array","title":"Response Get Pending Notifications Api V1 Notifications Pending Get"}}}}}}},"/api/v1/notifications/history":{"get":{"tags":["notifications"],"summary":"Get Notification History","description":"Get notification history (most recent first)","operationId":"get_notification_history_api_v1_notifications_history_get","parameters":[{"name":"limit","in":"query","required":false,"schema":{"type":"integer","default":50,"title":"Limit"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/NotificationResponse"},"title":"Response Get Notification History Api V1 Notifications History Get"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/notifications/clear":{"delete":{"tags":["notifications"],"summary":"Clear Notifications","description":"Clear all pending and historical notifications","operationId":"clear_notifications_api_v1_notifications_clear_delete","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}}}},"/api/v1/notifications/test/kudos":{"post":{"tags":["notifications"],"summary":"Test Kudos","description":"Quick endpoint to test kudos notification","operationId":"test_kudos_api_v1_notifications_test_kudos_post","parameters":[{"name":"sender","in":"query","required":false,"schema":{"type":"string","default":"Sarah Chen","title":"Sender"}},{"name":"activity","in":"query","required":false,"schema":{"type":"string","default":"Morning Ski Run","title":"Activity"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/notifications/test/comment":{"post":{"tags":["notifications"],"summary":"Test Comment","description":"Quick endpoint to test comment notification","operationId":"test_comment_api_v1_notifications_test_comment_post","parameters":[{"name":"sender","in":"query","required":false,"schema":{"type":"string","default":"Mike Johnson","title":"Sender"}},{"name":"comment","in":"query","required":false,"schema":{"type":"string","default":"Amazing run! 🎿","title":"Comment"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/notifications/test/follow":{"post":{"tags":["notifications"],"summary":"Test Follow","description":"Quick endpoint to test follow notification","operationId":"test_follow_api_v1_notifications_test_follow_post","parameters":[{"name":"follower","in":"query","required":false,"schema":{"type":"string","default":"Alex Kim","title":"Follower"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/notifications/test/powder-day":{"post":{"tags":["notifications"],"summary":"Test Powder Day","description":"Quick endpoint to test powder day notification","operationId":"test_powder_day_api_v1_notifications_test_powder_day_post","parameters":[{"name":"resort","in":"query","required":false,"schema":{"type":"string","default":"Whistler Blackcomb","title":"Resort"}},{"name":"inches","in":"query","required":false,"schema":{"type":"integer","default":12,"title":"Inches"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/notifications/test/achievement":{"post":{"tags":["notifications"],"summary":"Test Achievement","description":"Quick endpoint to test achievement notification","operationId":"test_achievement_api_v1_notifications_test_achievement_post","parameters":[{"name":"name","in":"query","required":false,"schema":{"type":"string","default":"Speed Demon","title":"Name"}},{"name":"description","in":"query","required":false,"schema":{"type":"string","default":"Reached 50 km/h","title":"Description"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/notifications/test/weather":{"post":{"tags":["notifications"],"summary":"Test Weather","description":"Quick endpoint to test weather notification","operationId":"test_weather_api_v1_notifications_test_weather_post","parameters":[{"name":"alert","in":"query","required":false,"schema":{"type":"string","default":"High winds expected at the summit","title":"Alert"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/health":{"get":{"summary":"Health Check","operationId":"health_check_health_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}}}}},"components":{"schemas":{"AuthSession":{"properties":{"access_token":{"type":"string","title":"Access Token"},"refresh_token":{"type":"string","title":"Refresh Token"},"expires_at":{"type":"string","format":"date-time","title":"Expires At"},"user":{"$ref":"#/components/schemas/UserResponse"}},"type":"object","required":["access_token","refresh_token","expires_at","user"],"title":"AuthSession","description":"Complete authentication session (matches Flutter AuthSession)."},"Body_upload_avatar_api_v1_users_me_profile_avatar_post":{"properties":{"file":{"type":"string","format":"binary","title":"File"}},"type":"object","required":["file"],"title":"Body_upload_avatar_api_v1_users_me_profile_avatar_post"},"ErrorResponse":{"properties":{"error":{"type":"string","title":"Error"},"detail":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Detail"}},"type":"object","required":["error"],"title":"ErrorResponse","description":"Error response."},"HTTPValidationError":{"properties":{"detail":{"items":{"$ref":"#/components/schemas/ValidationError"},"type":"array","title":"Detail"}},"type":"object","title":"HTTPValidationError"},"LoginRequest":{"properties":{"email":{"type":"string","format":"email","title":"Email"},"password":{"type":"string","title":"Password"}},"type":"object","required":["email","password"],"title":"LoginRequest","description":"Login credentials."},"NotificationResponse":{"properties":{"id":{"type":"string","title":"Id"},"type":{"type":"string","title":"Type"},"title":{"type":"string","title":"Title"},"message":{"type":"string","title":"Message"},"created_at":{"type":"string","title":"Created At"},"is_read":{"type":"boolean","title":"Is Read","default":false},"sender_name":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Sender Name"},"avatar_url":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Avatar Url"},"action_route":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Action Route"}},"type":"object","required":["id","type","title","message","created_at"],"title":"NotificationResponse","description":"Response model for a notification"},"NotificationType":{"type":"string","enum":["kudos","comment","follow","friendActivity","challenge","group","weather","powderDay","achievement","system"],"title":"NotificationType"},"ProfileResponse":{"properties":{"id":{"type":"string","title":"Id"},"full_name":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Full Name"},"username":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Username"},"bio":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Bio"},"avatar_url":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Avatar Url"},"push_token":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Push Token"},"ski_level":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Ski Level"},"home":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Home"},"created_at":{"type":"string","format":"date-time","title":"Created At"},"updated_at":{"anyOf":[{"type":"string","format":"date-time"},{"type":"null"}],"title":"Updated At"}},"type":"object","required":["id","created_at"],"title":"ProfileResponse","description":"Profile data returned to API clients (frontend)."},"ProfileUpdate":{"properties":{"full_name":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Full Name"},"username":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Username"},"bio":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Bio"},"avatar_url":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Avatar Url"},"push_token":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Push Token"},"ski_level":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Ski Level"},"home":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Home"}},"type":"object","title":"ProfileUpdate","description":"Schema for profile updates."},"RefreshTokenRequest":{"properties":{"refresh_token":{"type":"string","title":"Refresh Token"}},"type":"object","required":["refresh_token"],"title":"RefreshTokenRequest","description":"Refresh token request."},"TestNotificationRequest":{"properties":{"type":{"$ref":"#/components/schemas/NotificationType","default":"system"},"title":{"type":"string","title":"Title"},"message":{"type":"string","title":"Message"},"sender_name":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Sender Name"},"avatar_url":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Avatar Url"},"action_route":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Action Route"}},"type":"object","required":["title","message"],"title":"TestNotificationRequest","description":"Request body for triggering a test notification"},"UserCreate":{"properties":{"email":{"type":"string","format":"email","title":"Email"},"first_name":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"First Name"},"last_name":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Last Name"},"password":{"type":"string","maxLength":100,"minLength":8,"title":"Password"}},"type":"object","required":["email","password"],"title":"UserCreate","description":"Schema for user registration."},"UserResponse":{"properties":{"id":{"type":"string","title":"Id"},"email":{"type":"string","title":"Email"},"first_name":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"First Name"},"last_name":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Last Name"}},"type":"object","required":["id","email"],"title":"UserResponse","description":"Public user response (no sensitive data)."},"UserUpdate":{"properties":{"first_name":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"First Name"},"last_name":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Last Name"}},"type":"object","title":"UserUpdate","description":"Schema for user profile updates."},"ValidationError":{"properties":{"loc":{"items":{"anyOf":[{"type":"string"},{"type":"integer"}]},"type":"array","title":"Location"},"msg":{"type":"string","title":"Message"},"type":{"type":"string","title":"Error Type"}},"type":"object","required":["loc","msg","type"],"title":"ValidationError"}},"securitySchemes":{"HTTPBearer":{"type":"http","scheme":"bearer"}}}}
+{
+  "components": {
+    "schemas": {
+      "AuthSession": {
+        "description": "Complete authentication session (matches Flutter AuthSession).",
+        "properties": {
+          "access_token": {
+            "title": "Access Token",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "refresh_token": {
+            "title": "Refresh Token",
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserResponse"
+          }
+        },
+        "required": [
+          "access_token",
+          "refresh_token",
+          "expires_at",
+          "user"
+        ],
+        "title": "AuthSession",
+        "type": "object"
+      },
+      "Body_upload_avatar_api_v1_users_me_profile_avatar_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_avatar_api_v1_users_me_profile_avatar_post",
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "description": "Error response.",
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "error": {
+            "title": "Error",
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "LoginRequest": {
+        "description": "Login credentials.",
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginRequest",
+        "type": "object"
+      },
+      "NotificationResponse": {
+        "description": "Response model for a notification",
+        "properties": {
+          "action_route": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action Route"
+          },
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "is_read": {
+            "default": false,
+            "title": "Is Read",
+            "type": "boolean"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "sender_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sender Name"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "title",
+          "message",
+          "created_at"
+        ],
+        "title": "NotificationResponse",
+        "type": "object"
+      },
+      "NotificationType": {
+        "enum": [
+          "kudos",
+          "comment",
+          "follow",
+          "friendActivity",
+          "challenge",
+          "group",
+          "weather",
+          "powderDay",
+          "achievement",
+          "system"
+        ],
+        "title": "NotificationType",
+        "type": "string"
+      },
+      "ProfileResponse": {
+        "description": "Profile data returned to API clients (frontend).",
+        "properties": {
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          },
+          "bio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bio"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "home": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Home"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "push_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Push Token"
+          },
+          "ski_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ski Level"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          }
+        },
+        "required": [
+          "id",
+          "created_at"
+        ],
+        "title": "ProfileResponse",
+        "type": "object"
+      },
+      "ProfileUpdate": {
+        "description": "Schema for profile updates.",
+        "properties": {
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          },
+          "bio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bio"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "home": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Home"
+          },
+          "push_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Push Token"
+          },
+          "ski_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ski Level"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          }
+        },
+        "title": "ProfileUpdate",
+        "type": "object"
+      },
+      "RefreshTokenRequest": {
+        "description": "Refresh token request.",
+        "properties": {
+          "refresh_token": {
+            "title": "Refresh Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "refresh_token"
+        ],
+        "title": "RefreshTokenRequest",
+        "type": "object"
+      },
+      "TestNotificationRequest": {
+        "description": "Request body for triggering a test notification",
+        "properties": {
+          "action_route": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action Route"
+          },
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "sender_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sender Name"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/NotificationType",
+            "default": "system"
+          }
+        },
+        "required": [
+          "title",
+          "message"
+        ],
+        "title": "TestNotificationRequest",
+        "type": "object"
+      },
+      "UserCreate": {
+        "description": "Schema for user registration.",
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "password": {
+            "maxLength": 100,
+            "minLength": 8,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "UserCreate",
+        "type": "object"
+      },
+      "UserResponse": {
+        "description": "Public user response (no sensitive data).",
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          }
+        },
+        "required": [
+          "id",
+          "email"
+        ],
+        "title": "UserResponse",
+        "type": "object"
+      },
+      "UserUpdate": {
+        "description": "Schema for user profile updates.",
+        "properties": {
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          }
+        },
+        "title": "UserUpdate",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "WeatherLocation": {
+        "description": "Coordinates and location hint used for a weather lookup.",
+        "properties": {
+          "city_hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City Hint"
+          },
+          "latitude": {
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Latitude",
+            "type": "number"
+          },
+          "longitude": {
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Longitude",
+            "type": "number"
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "title": "WeatherLocation",
+        "type": "object"
+      },
+      "WeatherSnapshot": {
+        "description": "Weather snapshot at a specific point in time.",
+        "properties": {
+          "atmosphere": {
+            "$ref": "#/components/schemas/WeatherSnapshotAtmosphere"
+          },
+          "condition": {
+            "title": "Condition",
+            "type": "string"
+          },
+          "condition_code": {
+            "title": "Condition Code",
+            "type": "string"
+          },
+          "icon_url": {
+            "title": "Icon Url",
+            "type": "string"
+          },
+          "precipitation": {
+            "$ref": "#/components/schemas/WeatherSnapshotPrecipitation"
+          },
+          "temperatures": {
+            "$ref": "#/components/schemas/WeatherSnapshotTemperatures"
+          },
+          "timestamp": {
+            "title": "Timestamp",
+            "type": "string"
+          },
+          "wind": {
+            "$ref": "#/components/schemas/WeatherSnapshotWind"
+          }
+        },
+        "required": [
+          "timestamp",
+          "condition",
+          "condition_code",
+          "icon_url",
+          "temperatures",
+          "atmosphere",
+          "wind",
+          "precipitation"
+        ],
+        "title": "WeatherSnapshot",
+        "type": "object"
+      },
+      "WeatherSnapshotAtmosphere": {
+        "description": "Atmospheric conditions for a weather snapshot.",
+        "properties": {
+          "humidity_percent": {
+            "title": "Humidity Percent",
+            "type": "integer"
+          },
+          "pressure_hpa": {
+            "title": "Pressure Hpa",
+            "type": "number"
+          },
+          "uv_index": {
+            "title": "Uv Index",
+            "type": "number"
+          }
+        },
+        "required": [
+          "humidity_percent",
+          "pressure_hpa",
+          "uv_index"
+        ],
+        "title": "WeatherSnapshotAtmosphere",
+        "type": "object"
+      },
+      "WeatherSnapshotPrecipitation": {
+        "description": "Precipitation signal for a weather snapshot.",
+        "properties": {
+          "probability_percent": {
+            "title": "Probability Percent",
+            "type": "integer"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "probability_percent",
+          "type"
+        ],
+        "title": "WeatherSnapshotPrecipitation",
+        "type": "object"
+      },
+      "WeatherSnapshotRequest": {
+        "description": "Request payload used to build a weather snapshot.",
+        "properties": {
+          "activity_id": {
+            "title": "Activity Id",
+            "type": "integer"
+          },
+          "athlete_id": {
+            "title": "Athlete Id",
+            "type": "integer"
+          },
+          "location": {
+            "$ref": "#/components/schemas/WeatherLocation"
+          },
+          "strava_reported_celsius": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strava Reported Celsius"
+          }
+        },
+        "required": [
+          "activity_id",
+          "athlete_id",
+          "location"
+        ],
+        "title": "WeatherSnapshotRequest",
+        "type": "object"
+      },
+      "WeatherSnapshotResponse": {
+        "description": "Normalized weather response returned by the API.",
+        "properties": {
+          "activity_id": {
+            "description": "Activity identifier",
+            "title": "Activity Id",
+            "type": "integer"
+          },
+          "athlete_id": {
+            "description": "Athlete identifier",
+            "title": "Athlete Id",
+            "type": "integer"
+          },
+          "location": {
+            "$ref": "#/components/schemas/WeatherLocation"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "weather_snapshot": {
+            "$ref": "#/components/schemas/WeatherSnapshot"
+          }
+        },
+        "required": [
+          "activity_id",
+          "athlete_id",
+          "source",
+          "location",
+          "weather_snapshot"
+        ],
+        "title": "WeatherSnapshotResponse",
+        "type": "object"
+      },
+      "WeatherSnapshotTemperatures": {
+        "description": "Temperature values for a weather snapshot.",
+        "properties": {
+          "ambient_celsius": {
+            "title": "Ambient Celsius",
+            "type": "number"
+          },
+          "feels_like_celsius": {
+            "title": "Feels Like Celsius",
+            "type": "number"
+          },
+          "strava_reported_celsius": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strava Reported Celsius"
+          }
+        },
+        "required": [
+          "ambient_celsius",
+          "feels_like_celsius"
+        ],
+        "title": "WeatherSnapshotTemperatures",
+        "type": "object"
+      },
+      "WeatherSnapshotWind": {
+        "description": "Wind conditions for a weather snapshot.",
+        "properties": {
+          "bearing_degrees": {
+            "title": "Bearing Degrees",
+            "type": "integer"
+          },
+          "cardinal_direction": {
+            "title": "Cardinal Direction",
+            "type": "string"
+          },
+          "gust_meters_per_second": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gust Meters Per Second"
+          },
+          "speed_meters_per_second": {
+            "title": "Speed Meters Per Second",
+            "type": "number"
+          }
+        },
+        "required": [
+          "speed_meters_per_second",
+          "bearing_degrees",
+          "cardinal_direction"
+        ],
+        "title": "WeatherSnapshotWind",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "## Canonical API surface\n\nAll supported clients MUST use **`/api/v1/*`** paths documented here.",
+    "title": "Snowtrak Auth API",
+    "version": "1.0.0",
+    "x-canonical-prefix": "/api/v1"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "description": "Authenticate user and obtain tokens.",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSession"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid credentials"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Account disabled"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Login",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "description": "Obtain new access token using refresh token.",
+        "operationId": "refresh_token_api_v1_auth_refresh_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSession"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid or expired refresh token"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Refresh Token",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "description": "Register a new user account.",
+        "operationId": "register_api_v1_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSession"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid input data"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Email already registered"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/notifications/clear": {
+      "delete": {
+        "description": "Clear all pending and historical notifications",
+        "operationId": "clear_notifications_api_v1_notifications_clear_delete",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Clear Notifications",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/history": {
+      "get": {
+        "description": "Get notification history (most recent first)",
+        "operationId": "get_notification_history_api_v1_notifications_history_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationResponse"
+                  },
+                  "title": "Response Get Notification History Api V1 Notifications History Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Notification History",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/pending": {
+      "get": {
+        "description": "Get all pending notifications and clear the queue.\nThe Flutter app polls this endpoint to receive notifications.",
+        "operationId": "get_pending_notifications_api_v1_notifications_pending_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationResponse"
+                  },
+                  "title": "Response Get Pending Notifications Api V1 Notifications Pending Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Pending Notifications",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/test": {
+      "post": {
+        "description": "Trigger a test notification that will appear in the app.\n\n**Usage from terminal:**\n```bash\ncurl -X POST http://localhost:8080/api/v1/notifications/test \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"type\": \"kudos\", \"title\": \"New Kudos!\", \"message\": \"Sarah liked your activity\"}'\n```\n- kudos: Someone gave kudos\n- comment: New comment\n- follow: New follower\n- friendActivity: Friend completed activity\n- challenge: Challenge update\n- group: Group activity\n- weather: Weather alert\n- powderDay: Fresh snow alert\n- achievement: New achievement\n- system: System notification",
+        "operationId": "trigger_test_notification_api_v1_notifications_test_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestNotificationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Trigger Test Notification",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/test/achievement": {
+      "post": {
+        "description": "Quick endpoint to test achievement notification",
+        "operationId": "test_achievement_api_v1_notifications_test_achievement_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "name",
+            "required": false,
+            "schema": {
+              "default": "Speed Demon",
+              "title": "Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "description",
+            "required": false,
+            "schema": {
+              "default": "Reached 50 km/h",
+              "title": "Description",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Test Achievement",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/test/comment": {
+      "post": {
+        "description": "Quick endpoint to test comment notification",
+        "operationId": "test_comment_api_v1_notifications_test_comment_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sender",
+            "required": false,
+            "schema": {
+              "default": "Mike Johnson",
+              "title": "Sender",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "comment",
+            "required": false,
+            "schema": {
+              "default": "Amazing run! \ud83c\udfbf",
+              "title": "Comment",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Test Comment",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/test/follow": {
+      "post": {
+        "description": "Quick endpoint to test follow notification",
+        "operationId": "test_follow_api_v1_notifications_test_follow_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "follower",
+            "required": false,
+            "schema": {
+              "default": "Alex Kim",
+              "title": "Follower",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Test Follow",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/test/kudos": {
+      "post": {
+        "description": "Quick endpoint to test kudos notification",
+        "operationId": "test_kudos_api_v1_notifications_test_kudos_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sender",
+            "required": false,
+            "schema": {
+              "default": "Sarah Chen",
+              "title": "Sender",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "activity",
+            "required": false,
+            "schema": {
+              "default": "Morning Ski Run",
+              "title": "Activity",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Test Kudos",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/test/powder-day": {
+      "post": {
+        "description": "Quick endpoint to test powder day notification",
+        "operationId": "test_powder_day_api_v1_notifications_test_powder_day_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "resort",
+            "required": false,
+            "schema": {
+              "default": "Whistler Blackcomb",
+              "title": "Resort",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "inches",
+            "required": false,
+            "schema": {
+              "default": 12,
+              "title": "Inches",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Test Powder Day",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/test/weather": {
+      "post": {
+        "description": "Quick endpoint to test weather notification",
+        "operationId": "test_weather_api_v1_notifications_test_weather_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "alert",
+            "required": false,
+            "schema": {
+              "default": "High winds expected at the summit",
+              "title": "Alert",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Test Weather",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "description": "Get current authenticated user's profile.",
+        "operationId": "get_current_user_profile_api_v1_users_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Current User Profile",
+        "tags": [
+          "Users"
+        ]
+      },
+      "put": {
+        "description": "Update current user's basic profile fields.",
+        "operationId": "update_current_user_profile_api_v1_users_me_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Current User Profile",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/v1/users/me/profile": {
+      "get": {
+        "description": "Get current authenticated user's profile.",
+        "operationId": "get_current_user_profile_endpoint_api_v1_users_me_profile_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Current User Profile Endpoint",
+        "tags": [
+          "Users"
+        ]
+      },
+      "put": {
+        "description": "Update current user's profile details.",
+        "operationId": "update_current_user_profile_endpoint_api_v1_users_me_profile_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Current User Profile Endpoint",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/v1/users/me/profile/avatar": {
+      "post": {
+        "description": "Upload avatar image for current user profile.",
+        "operationId": "upload_avatar_api_v1_users_me_profile_avatar_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_avatar_api_v1_users_me_profile_avatar_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Upload Avatar",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/v1/users/{user_id}/profile": {
+      "get": {
+        "description": "Get any user's profile by user identifier.",
+        "operationId": "get_user_profile_by_id_api_v1_users__user_id__profile_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get User Profile By Id",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/v1/weather/snapshot": {
+      "post": {
+        "description": "Build a weather snapshot for the provided activity coordinates.",
+        "operationId": "get_weather_snapshot_api_v1_weather_snapshot_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeatherSnapshotRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeatherSnapshotResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Weather Snapshot",
+        "tags": [
+          "Weather"
+        ]
+      }
+    }
+  }
+}

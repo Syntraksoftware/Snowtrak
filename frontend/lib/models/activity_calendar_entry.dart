@@ -1,4 +1,4 @@
-import 'package:syntrak/models/activity.dart';
+import 'package:snowtrak/models/activity.dart';
 
 class ActivityCalendarEntry {
   final DateTime date;

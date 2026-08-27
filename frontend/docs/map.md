@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document outlines the implementation plan for building a robust, Strava-style GPS tracking and map visualization system for Syntrak. The implementation will transform the existing basic recording functionality into a production-ready MVP with proper architecture, state management, and local persistence.
+This document outlines the implementation plan for building a robust, Strava-style GPS tracking and map visualization system for Snowtrak. The implementation will transform the existing basic recording functionality into a production-ready MVP with proper architecture, state management, and local persistence.
 
 ---
 

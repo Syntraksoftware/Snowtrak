@@ -1,19 +1,25 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart' hide ActivityType;
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/models/activity.dart';
-import 'package:syntrak/providers/activity_provider.dart';
-import 'package:syntrak/screens/activities/activity_detail_screen.dart';
-import 'package:syntrak/screens/record/activity_type_selector.dart';
-import 'package:syntrak/screens/record/record_bottom_sheet.dart';
-import 'package:syntrak/screens/record/record_error_view.dart';
-import 'package:syntrak/screens/record/record_helpers.dart';
-import 'package:syntrak/screens/record/record_map_view.dart';
-import 'package:syntrak/services/location_service.dart';
-import 'package:geolocator/geolocator.dart' hide ActivityType;
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/models/activity.dart';
+import 'package:snowtrak/providers/activity_provider.dart';
+import 'package:snowtrak/providers/auth_provider.dart';
+import 'package:snowtrak/screens/activities/activity_detail_screen.dart';
+import 'package:snowtrak/screens/record/activity_type_selector.dart';
+import 'package:snowtrak/screens/record/record_bottom_sheet.dart';
+import 'package:snowtrak/screens/record/record_error_view.dart';
+import 'package:snowtrak/screens/record/record_map_view.dart';
+import 'package:snowtrak/services/location_service.dart';
+
+const _liveRouteSourceId = 'live-route';
+const _liveRouteLayerId = 'live-route-layer';
+
+// Only push a GeoJSON update when the user has moved this far (meters).
+const _geoJsonUpdateThresholdM = 5.0;
 
 class RecordScreen extends StatefulWidget {
   const RecordScreen({super.key});
@@ -22,23 +28,35 @@ class RecordScreen extends StatefulWidget {
   State<RecordScreen> createState() => _RecordScreenState();
 }
 
-class _RecordScreenState extends State<RecordScreen> {
+class _RecordScreenState extends State<RecordScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   final LocationService _locationService = LocationService();
-  final Completer<MapLibreMapController> _mapController = Completer();
-  MapLibreMapController? _mapControllerRef;
-  bool _mapCompleterUsed = false;
+  MapLibreMapController? _mapController;
+  MyLocationTrackingMode _trackingMode = MyLocationTrackingMode.tracking;
   ActivityType? _selectedActivityType;
   bool _isRecording = false;
   bool _isPaused = false;
   DateTime? _startTime;
-  Duration _elapsedTime = Duration.zero;
   Timer? _timer;
   StreamSubscription<Position>? _positionSubscription;
   final List<LatLng> _routePoints = [];
   CameraPosition? _initialCameraPosition;
   bool _hasError = false;
   String? _errorMessage;
-  MyLocationTrackingMode _locationTrackingMode = MyLocationTrackingMode.tracking;
+
+  // ValueNotifier so the timer ticks don't rebuild the map widget.
+  final _elapsedNotifier = ValueNotifier<Duration>(Duration.zero);
+
+  // Track last point where GeoJSON was pushed to avoid redundant redraws.
+  LatLng? _lastGeoJsonUpdatePoint;
+
+  // Processing overlay state — shown after save while pipeline runs.
+  bool _isProcessing = false;
+  double _rawDistance = 0;
+  double _rawElevationGain = 0;
+  Duration _rawDuration = Duration.zero;
 
   @override
   void initState() {
@@ -54,70 +72,85 @@ class _RecordScreenState extends State<RecordScreen> {
     });
   }
 
-  Future<void> _initializeLocation() async {
-    try {
-      final hasPermission = await _locationService.checkPermissions();
-
-      if (!hasPermission && mounted) {
-        setState(() {
-          _initialCameraPosition = const CameraPosition(
-            target: LatLng(37.7749, -122.4194),
-            zoom: 15,
-          );
-          _hasError = false;
-        });
-        return;
-      }
-
-      final position = await _locationService.getCurrentPosition();
-
-      if (position != null && mounted) {
-        setState(() {
-          _initialCameraPosition = CameraPosition(
-            target: LatLng(position.latitude, position.longitude),
-            zoom: 15,
-          );
-          _hasError = false;
-        });
-      } else if (mounted) {
-        setState(() {
-          _initialCameraPosition = const CameraPosition(
-            target: LatLng(37.7749, -122.4194),
-            zoom: 15,
-          );
-          _hasError = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _hasError = true;
-          _errorMessage = 'The page is not ready!';
-        });
-      }
-    }
-  }
-
   @override
   void dispose() {
     _timer?.cancel();
     _positionSubscription?.cancel();
     _locationService.stopTracking();
+    _elapsedNotifier.dispose();
     super.dispose();
   }
 
-  Future<void> _selectActivityType() async {
-    final type = await Navigator.push<ActivityType>(
-      context,
-      MaterialPageRoute(builder: (_) => const ActivityTypeSelector()),
-    );
+  Future<void> _initializeLocation() async {
+    try {
+      final hasPermission = await _locationService.checkPermissions();
+      final position = hasPermission
+          ? await _locationService.getCurrentPosition()
+          : null;
 
-    if (!mounted) return;
-    if (type != null) {
+      if (!mounted) return;
       setState(() {
-        _selectedActivityType = type;
+        _initialCameraPosition = CameraPosition(
+          target: position != null
+              ? LatLng(position.latitude, position.longitude)
+              : const LatLng(37.7749, -122.4194),
+          zoom: 15,
+        );
+        _hasError = false;
       });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _hasError = true;
+          _errorMessage = 'Failed to initialize map.';
+        });
+      }
     }
+  }
+
+  Future<void> _onMapStyleLoaded() async {
+    final controller = _mapController;
+    if (controller == null) return;
+    // Add the source/layer with empty data — path only appears after Start.
+    await controller.addGeoJsonSource(
+        _liveRouteSourceId, _emptyGeoJson());
+    await controller.addLineLayer(
+      _liveRouteSourceId,
+      _liveRouteLayerId,
+      const LineLayerProperties(
+        lineColor: '#FF5A1F',
+        lineWidth: 4.0,
+        lineJoin: 'round',
+        lineCap: 'round',
+      ),
+    );
+  }
+
+  Map<String, dynamic> _emptyGeoJson() =>
+      {'type': 'FeatureCollection', 'features': []};
+
+  Map<String, dynamic> _buildRouteGeoJson() {
+    if (_routePoints.length < 2) return _emptyGeoJson();
+    return {
+      'type': 'FeatureCollection',
+      'features': [
+        {
+          'type': 'Feature',
+          'geometry': {
+            'type': 'LineString',
+            'coordinates':
+                _routePoints.map((p) => [p.longitude, p.latitude]).toList(),
+          },
+          'properties': {},
+        }
+      ],
+    };
+  }
+
+  Future<void> _selectActivityType() async {
+    final type = await showActivityTypePicker(context);
+    if (!mounted || type == null) return;
+    setState(() => _selectedActivityType = type);
   }
 
   Future<void> _startRecording() async {
@@ -129,32 +162,8 @@ class _RecordScreenState extends State<RecordScreen> {
     final hasPermission = await _locationService.checkPermissions();
     if (!hasPermission) {
       if (mounted) {
-        await showDialog<void>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('GPS Required'),
-            content: const Text(
-              'We need your GPS service to record your activities trajectory. Please enable location access in Settings.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  await openAppSettings();
-                  if (context.mounted) Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF4500),
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Open Settings'),
-              ),
-            ],
-          ),
-        );
+        await showGpsDeniedSheet(context);
+        await openAppSettings();
       }
       return;
     }
@@ -163,99 +172,63 @@ class _RecordScreenState extends State<RecordScreen> {
       _isRecording = true;
       _isPaused = false;
       _startTime = DateTime.now();
-      _elapsedTime = Duration.zero;
+      _elapsedNotifier.value = Duration.zero;
       _routePoints.clear();
+      _lastGeoJsonUpdatePoint = null;
+      _trackingMode = MyLocationTrackingMode.tracking;
     });
 
     _locationService.startTracking();
 
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!_isPaused) {
-        setState(() {
-          _elapsedTime = DateTime.now().difference(_startTime!);
-        });
+        // Update notifier only — does NOT rebuild the map.
+        _elapsedNotifier.value = DateTime.now().difference(_startTime!);
       }
     });
 
     _positionSubscription = _locationService.getPositionStream().listen(
       (position) {
-        if (!_isPaused) {
-          _locationService.addLocation(position);
-          _routePoints.add(LatLng(position.latitude, position.longitude));
+        if (_isPaused) return;
+
+        _locationService.addLocation(position);
+        final newPoint = LatLng(position.latitude, position.longitude);
+        _routePoints.add(newPoint);
+
+        // Only push GeoJSON when moved enough to matter.
+        final last = _lastGeoJsonUpdatePoint;
+        final distMoved = last == null
+            ? double.infinity
+            : Geolocator.distanceBetween(
+                last.latitude, last.longitude,
+                newPoint.latitude, newPoint.longitude,
+              );
+
+        if (distMoved >= _geoJsonUpdateThresholdM) {
+          _lastGeoJsonUpdatePoint = newPoint;
+          _mapController?.setGeoJsonSource(
+              _liveRouteSourceId, _buildRouteGeoJson());
         }
       },
     );
   }
 
-  Future<void> _enableFollowAndCenter() async {
-    setState(() {
-      _locationTrackingMode = MyLocationTrackingMode.tracking;
-    });
-
-    final controller = _mapControllerRef;
-    if (controller == null) {
-      return;
-    }
-
-    final currentPosition = await _locationService.getCurrentPosition();
-    if (currentPosition != null) {
-      await controller.animateCamera(
-        CameraUpdate.newLatLng(
-          LatLng(currentPosition.latitude, currentPosition.longitude),
-        ),
-      );
-      return;
-    }
-
-    if (_routePoints.isNotEmpty) {
-      final last = _routePoints.last;
-      await controller.animateCamera(CameraUpdate.newLatLng(last));
-      return;
-    }
-
-    final target = _initialCameraPosition?.target;
-    if (target == null) {
-      return;
-    }
-
-    await controller.animateCamera(CameraUpdate.newLatLng(target));
-  }
-
-  String _followButtonTooltip() {
-    if (_locationTrackingMode != MyLocationTrackingMode.none) {
-      return _isRecording ? 'Following your location' : 'Follow mode enabled';
-    }
-    return _isRecording ? 'Re-center and follow' : 'Center map';
-  }
-
-  void _handleTrackingDismissed() {
-    if (_locationTrackingMode == MyLocationTrackingMode.none) {
-      return;
-    }
-
-    setState(() {
-      _locationTrackingMode = MyLocationTrackingMode.none;
-    });
-  }
-
   void _pauseRecording() {
-    setState(() {
-      _isPaused = true;
-    });
+    setState(() => _isPaused = true);
     _positionSubscription?.pause();
   }
 
   void _resumeRecording() {
     setState(() {
       _isPaused = false;
-      _startTime = DateTime.now().subtract(_elapsedTime);
+      _startTime = DateTime.now().subtract(_elapsedNotifier.value);
     });
     _positionSubscription?.resume();
   }
 
   Future<void> _stopRecording() async {
     _timer?.cancel();
-    await _positionSubscription?.cancel();
+    _positionSubscription?.cancel();
     _locationService.stopTracking();
 
     if (_locationService.locations.isEmpty) {
@@ -263,63 +236,213 @@ class _RecordScreenState extends State<RecordScreen> {
         _isRecording = false;
         _isPaused = false;
         _startTime = null;
-        _elapsedTime = Duration.zero;
+        _elapsedNotifier.value = Duration.zero;
       });
       return;
     }
 
-    if (!mounted) {
-      return;
-    }
+    // Compute once — shared by the dialog display and the save call.
+    final rawDistance = _locationService.calculateDistance();
+    final rawElevationGain = _locationService.calculateElevationGain();
+    final rawDuration = _elapsedNotifier.value;
 
-    final shouldSave = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Save Activity?'),
-        content: const Text('Do you want to save this activity?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Discard'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
+    final activityName =
+        await _showSaveDialog(rawDistance, rawElevationGain, rawDuration);
 
-    if (shouldSave == true && mounted) {
-      await _saveActivity();
+    if (activityName != null && mounted) {
+      await _saveActivity(activityName, rawDistance, rawElevationGain, rawDuration);
     } else {
-      setState(() {
-        _isRecording = false;
-        _isPaused = false;
-        _startTime = null;
-        _elapsedTime = Duration.zero;
-        _routePoints.clear();
-      });
-      _locationService.clearLocations();
+      _resetState();
     }
   }
 
-  Future<void> _saveActivity() async {
+  Future<String?> _showSaveDialog(
+      double distance, double elevation, Duration duration) {
+    final hour = DateTime.now().hour;
+    final timeOfDay =
+        hour < 12 ? 'Morning' : (hour < 17 ? 'Afternoon' : 'Evening');
+    final defaultName =
+        '$timeOfDay ${_selectedActivityType?.displayName ?? 'Activity'}';
+    final nameController = TextEditingController(text: defaultName);
+
+    String fmtDist(double d) => d >= 1000
+        ? '${(d / 1000).toStringAsFixed(2)} km'
+        : '${d.toStringAsFixed(0)} m';
+    String fmtDur(Duration d) {
+      final h = d.inHours;
+      final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+      final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+      return h > 0 ? '$h:$m:$s' : '$m:$s';
+    }
+
+    return showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => Padding(
+        padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: EdgeInsets.fromLTRB(
+              24, 12, 24, MediaQuery.of(context).padding.bottom + 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drag handle
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.black12,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Success badge
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: SnowtrakColors.primary.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.check_rounded,
+                    color: SnowtrakColors.primary, size: 34),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'Activity Complete',
+                style: SnowtrakTypography.headlineMedium.copyWith(
+                  color: SnowtrakColors.textPrimary,
+                ),
+              ),
+              if (_selectedActivityType != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    _selectedActivityType!.displayName,
+                    style: SnowtrakTypography.bodyMedium.copyWith(
+                      color: SnowtrakColors.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 20),
+              // Editable activity name
+              TextField(
+                controller: nameController,
+                style: SnowtrakTypography.bodyLarge.copyWith(
+                  color: SnowtrakColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+                textCapitalization: TextCapitalization.words,
+                decoration: InputDecoration(
+                  hintText: 'Activity name',
+                  filled: true,
+                  fillColor: SnowtrakColors.surfaceVariant,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Stats row
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                decoration: BoxDecoration(
+                  color: SnowtrakColors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: IntrinsicHeight(
+                  child: Row(
+                    children: [
+                      Expanded(
+                          child: _StatItem(
+                              value: fmtDist(distance), label: 'Distance')),
+                      VerticalDivider(
+                          width: 1,
+                          thickness: 1,
+                          color: SnowtrakColors.divider),
+                      Expanded(
+                          child: _StatItem(
+                              value: fmtDur(duration), label: 'Time')),
+                      VerticalDivider(
+                          width: 1,
+                          thickness: 1,
+                          color: SnowtrakColors.divider),
+                      Expanded(
+                          child: _StatItem(
+                              value: '+${elevation.toStringAsFixed(0)} m',
+                              label: 'Elevation')),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Save button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    final name = nameController.text.trim();
+                    Navigator.pop(context, name.isEmpty ? defaultName : name);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: SnowtrakColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                    elevation: 0,
+                  ),
+                  child: const Text('Save Activity',
+                      style: TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w600)),
+                ),
+              ),
+              const SizedBox(height: 4),
+              TextButton(
+                onPressed: () => Navigator.pop(context, null),
+                child: Text(
+                  'Discard',
+                  style: SnowtrakTypography.bodyMedium.copyWith(
+                    color: SnowtrakColors.textTertiary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _saveActivity(String name, double rawDistance,
+      double rawElevationGain, Duration rawDuration) async {
     final locations = _locationService.locations;
     if (locations.isEmpty) return;
 
-    final startTime = locations.first.timestamp;
-    final endTime = locations.last.timestamp;
+    final activityProvider =
+        Provider.of<ActivityProvider>(context, listen: false);
+    final auth = Provider.of<AuthProvider>(context, listen: false);
 
     final activity = Activity(
       id: '',
-      userId: '',
+      userId: auth.user?.id ?? '',
+      name: name,
       type: _selectedActivityType!,
-      distance: _locationService.calculateDistance(),
-      duration: _elapsedTime.inSeconds,
-      elevationGain: _locationService.calculateElevationGain(),
-      startTime: startTime,
-      endTime: endTime,
+      distance: rawDistance,
+      duration: rawDuration.inSeconds,
+      elevationGain: rawElevationGain,
+      startTime: locations.first.timestamp,
+      endTime: locations.last.timestamp,
       averagePace: 0,
       maxPace: 0,
       isPublic: true,
@@ -327,34 +450,89 @@ class _RecordScreenState extends State<RecordScreen> {
       locations: locations,
     );
 
-    final activityProvider =
-        Provider.of<ActivityProvider>(context, listen: false);
-    final savedActivity = await activityProvider.createActivity(activity);
+    final saved = await activityProvider.createActivity(activity);
 
-    if (savedActivity != null && mounted) {
-      await Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ActivityDetailScreen(activityId: savedActivity.id),
-        ),
-      );
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to save activity'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    if (saved == null || !mounted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to save activity'),
+            backgroundColor: Color(0xFFDC2626),
+          ),
+        );
+      }
+      _resetState();
+      return;
     }
 
+    // If the backend already processed it inline, skip the wait.
+    if (!saved.isPipelinePending) {
+      _resetState();
+      _navigateToDetail(saved.id);
+      return;
+    }
+
+    // Show processing overlay while pipeline runs.
+    _resetState();
+    setState(() {
+      _isProcessing = true;
+      _rawDistance = rawDistance;
+      _rawElevationGain = rawElevationGain;
+      _rawDuration = rawDuration;
+    });
+    _pollPipelineStatus(saved.id);
+  }
+
+  Future<void> _pollPipelineStatus(String activityId) async {
+    final activityProvider =
+        Provider.of<ActivityProvider>(context, listen: false);
+    final deadline = DateTime.now().add(const Duration(minutes: 2));
+    while (mounted && DateTime.now().isBefore(deadline)) {
+      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
+      try {
+        final activity = await activityProvider.getActivity(activityId);
+        if (activity != null && !activity.isPipelinePending) {
+          if (!mounted) return;
+          // Refresh the full list so processed metrics (GPS distance, elevation)
+          // replace the raw values and stats recompute with accurate data.
+          unawaited(activityProvider.loadActivities(refresh: true, forceNetwork: true));
+          setState(() => _isProcessing = false);
+          _navigateToDetail(activityId);
+          return;
+        }
+      } catch (_) {
+        // swallow transient errors and keep polling until the deadline
+      }
+    }
+    // Timed out: drop the overlay and navigate anyway (detail screen can
+    // continue to reflect status) or surface a retry.
+    if (mounted) {
+      setState(() => _isProcessing = false);
+      _navigateToDetail(activityId);
+    }
+  }
+
+  void _navigateToDetail(String activityId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ActivityDetailScreen(activityId: activityId),
+      ),
+    );
+  }
+
+  void _resetState() {
     setState(() {
       _isRecording = false;
       _isPaused = false;
       _startTime = null;
-      _elapsedTime = Duration.zero;
+      _elapsedNotifier.value = Duration.zero;
       _routePoints.clear();
     });
     _locationService.clearLocations();
+    // Clear the live route from the map.
+    _mapController?.setGeoJsonSource(_liveRouteSourceId, _emptyGeoJson());
   }
 
   void _retryAfterError() {
@@ -363,11 +541,25 @@ class _RecordScreenState extends State<RecordScreen> {
       _initialCameraPosition = null;
       _errorMessage = null;
     });
-    unawaited(_initializeLocation());
+    _initializeLocation();
+  }
+
+  void _recentre() {
+    setState(() => _trackingMode = MyLocationTrackingMode.tracking);
+    // Widget prop alone doesn't force a camera snap on an already-loaded map.
+    // Animate explicitly to the last known position.
+    final pos = _locationService.currentPosition;
+    if (pos != null) {
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(
+            LatLng(pos.latitude, pos.longitude), 15),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // required by AutomaticKeepAliveClientMixin
     if (_hasError) {
       return RecordErrorView(
         message: _errorMessage ?? 'The page is not ready!',
@@ -375,130 +567,290 @@ class _RecordScreenState extends State<RecordScreen> {
       );
     }
 
-    try {
-      if (_initialCameraPosition == null) {
-        Future.delayed(const Duration(seconds: 3), () {
-          if (mounted && _initialCameraPosition == null) {
-            setState(() {
-              _initialCameraPosition = const CameraPosition(
-                target: LatLng(37.7749, -122.4194),
-                zoom: 15,
-              );
-            });
-          }
-        });
-        return const Scaffold(
-          body: Center(
+    if (_initialCameraPosition == null) {
+      // Fallback timeout after 3 s.
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted && _initialCameraPosition == null) {
+          setState(() {
+            _initialCameraPosition = const CameraPosition(
+              target: LatLng(37.7749, -122.4194),
+              zoom: 15,
+            );
+          });
+        }
+      });
+
+      return Scaffold(
+        backgroundColor: SnowtrakColors.background,
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(
+                    SnowtrakColors.primary),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Acquiring GPS…',
+                style: SnowtrakTypography.bodyMedium.copyWith(
+                  color: SnowtrakColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Approximate heights so layers don't overlap:
+    //   controls bar  ≈ 120px
+    //   stats card gap ≈ 12px
+    //   stats card     ≈ 130px expanded / 56px collapsed
+    const _controlsHeight = 120.0;
+    const _statsCardBottom = _controlsHeight + 12.0;
+    const _recentreBottom = _statsCardBottom + 140.0; // always above stats card
+
+    return Scaffold(
+      backgroundColor: SnowtrakColors.darkBackground,
+      body: Stack(
+        children: [
+          // 1 — Full-screen map
+          RecordMapView(
+            initialCameraPosition: _initialCameraPosition!,
+            myLocationTrackingMode: _trackingMode,
+            onTrackingDismissed: () =>
+                setState(() => _trackingMode = MyLocationTrackingMode.none),
+            onMapCreated: (c) => _mapController = c,
+            onStyleLoaded: _onMapStyleLoaded,
+          ),
+
+          // 2 — Re-centre button (right side, above stats card)
+          Positioned(
+            right: 16,
+            bottom: _recentreBottom,
+            child: _RecentreButton(onTap: _recentre),
+          ),
+
+          // 3 — Stats card (floating, collapsible)
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: _statsCardBottom,
+            child: RecordStatsCard(
+              isRecording: _isRecording,
+              selectedActivityType: _selectedActivityType,
+              locationService: _locationService,
+              routePoints: _routePoints,
+              elapsedNotifier: _elapsedNotifier,
+              onSelectType: _selectActivityType,
+            ),
+          ),
+
+          // 4 — Controls bar (pinned to very bottom)
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: RecordControls(
+              isRecording: _isRecording,
+              isPaused: _isPaused,
+              activityType: _selectedActivityType,
+              onSelectType: _selectActivityType,
+              onStart: _startRecording,
+              onStop: _stopRecording,
+              onPause: _pauseRecording,
+              onResume: _resumeRecording,
+            ),
+          ),
+
+          // 5 — Pipeline processing overlay (blocks all input until ready)
+          if (_isProcessing)
+            Positioned.fill(
+              child: _ProcessingOverlay(
+                distance: _rawDistance,
+                elevationGain: _rawElevationGain,
+                duration: _rawDuration,
+                activityType: _selectedActivityType,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Processing overlay ───────────────────────────────────────────────────────
+
+class _ProcessingOverlay extends StatelessWidget {
+  const _ProcessingOverlay({
+    required this.distance,
+    required this.elevationGain,
+    required this.duration,
+    this.activityType,
+  });
+
+  final double distance;
+  final double elevationGain;
+  final Duration duration;
+  final ActivityType? activityType;
+
+  String get _formattedDistance => distance >= 1000
+      ? '${(distance / 1000).toStringAsFixed(2)} km'
+      : '${distance.toStringAsFixed(0)} m';
+
+  String get _formattedDuration {
+    final h = duration.inHours;
+    final m = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return h > 0 ? '$h:$m:$s' : '$m:$s';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AbsorbPointer(
+      child: Container(
+        color: SnowtrakColors.background,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Loading map...'),
+                SizedBox(
+                  width: 56,
+                  height: 56,
+                  child: CircularProgressIndicator(
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(SnowtrakColors.primary),
+                    strokeWidth: 3,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Text(
+                  'Saving Activity',
+                  style: SnowtrakTypography.headlineMedium.copyWith(
+                    color: SnowtrakColors.textPrimary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  activityType != null
+                      ? 'Matching trails for your ${activityType!.displayName.toLowerCase()}…'
+                      : 'Matching trails and correcting elevation…',
+                  style: SnowtrakTypography.bodyMedium.copyWith(
+                    color: SnowtrakColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 48),
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  decoration: BoxDecoration(
+                    color: SnowtrakColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: SnowtrakColors.divider),
+                  ),
+                  child: IntrinsicHeight(
+                    child: Row(
+                      children: [
+                        Expanded(
+                            child: _StatItem(
+                                label: 'Distance',
+                                value: _formattedDistance)),
+                        VerticalDivider(
+                            width: 1,
+                            thickness: 1,
+                            color: SnowtrakColors.divider),
+                        Expanded(
+                            child: _StatItem(
+                                label: 'Elevation',
+                                value:
+                                    '+${elevationGain.toStringAsFixed(0)} m')),
+                        VerticalDivider(
+                            width: 1,
+                            thickness: 1,
+                            color: SnowtrakColors.divider),
+                        Expanded(
+                            child: _StatItem(
+                                label: 'Time', value: _formattedDuration)),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-        );
-      }
+        ),
+      ),
+    );
+  }
+}
 
-      return Scaffold(
-        body: Stack(
-          children: [
-            RecordMapView(
-              initialCameraPosition: _initialCameraPosition!,
-              routePoints: _routePoints,
-              myLocationTrackingMode: _locationTrackingMode,
-              onTrackingDismissed: _handleTrackingDismissed,
-              onMapCreated: (controller) {
-                _mapControllerRef = controller;
-                if (!_mapCompleterUsed) {
-                  _mapCompleterUsed = true;
-                  _mapController.complete(controller);
-                }
-              },
-            ),
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const SizedBox(width: 48),
-                    if (_isRecording)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: SyntrakColors.textPrimary.withValues(alpha: 0.9),
-                          borderRadius:
-                              BorderRadius.circular(SyntrakRadius.round),
-                        ),
-                        child: Text(
-                          formatRecordDuration(_elapsedTime),
-                          style: SyntrakTypography.metricLarge.copyWith(
-                            color: SyntrakColors.textOnPrimary,
-                          ),
-                        ),
-                      )
-                    else
-                      const SizedBox(width: 48),
-                    if (_isRecording)
-                      IconButton(
-                        icon: Icon(
-                          _isPaused ? Icons.play_arrow : Icons.pause,
-                          color: SyntrakColors.textPrimary,
-                        ),
-                        onPressed:
-                            _isPaused ? _resumeRecording : _pauseRecording,
-                      )
-                    else
-                      const SizedBox(width: 48),
-                  ],
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: RecordBottomSheet(
-                isRecording: _isRecording,
-                selectedActivityType: _selectedActivityType,
-                locationService: _locationService,
-                routePoints: _routePoints,
-                onSelectType: _selectActivityType,
-                onStart: _startRecording,
-                onStop: _stopRecording,
-              ),
-            ),
-            Positioned(
-              right: 16,
-              bottom: 164,
-              child: FloatingActionButton.small(
-                heroTag: 'record-follow-location',
-                backgroundColor: const Color(0xFF1A73E8),
-                foregroundColor: Colors.white,
-                onPressed: _enableFollowAndCenter,
-                tooltip: _followButtonTooltip(),
-                child: Icon(
-                  _locationTrackingMode != MyLocationTrackingMode.none
-                      ? Icons.gps_fixed
-                      : Icons.my_location,
-                ),
-              ),
+class _StatItem extends StatelessWidget {
+  const _StatItem({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          value,
+          textAlign: TextAlign.center,
+          style: SnowtrakTypography.headlineSmall.copyWith(
+            color: SnowtrakColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: SnowtrakTypography.labelSmall.copyWith(
+            color: SnowtrakColors.textTertiary,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+
+// ─── Re-centre FAB ────────────────────────────────────────────────────────────
+
+class _RecentreButton extends StatelessWidget {
+  const _RecentreButton({this.onTap});
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          border: Border.all(color: SnowtrakColors.divider),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
-      );
-    } catch (e, stackTrace) {
-      debugPrint('RecordScreen build: $e\n$stackTrace');
-      return RecordErrorView(
-        message: _errorMessage ?? 'The page is not ready!',
-        onRetry: _retryAfterError,
-      );
-    }
+        child: Icon(Icons.my_location,
+            color: SnowtrakColors.primary, size: 20),
+      ),
+    );
   }
-
 }

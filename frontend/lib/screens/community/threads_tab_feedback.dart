@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/errors/app_error.dart';
+import 'package:snowtrak/core/errors/app_error.dart';
 
 class ThreadsTabFeedback {
   ThreadsTabFeedback._();

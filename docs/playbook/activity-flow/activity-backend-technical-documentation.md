@@ -7,7 +7,7 @@
 - Repository path: `backend/activity-backend/`
 
 ### Business and Technical Purpose
-This folder contains the Activity domain service for Syntrak. It owns activity lifecycle APIs and related social interactions for activities.
+This folder contains the Activity domain service for Snowtrak. It owns activity lifecycle APIs and related social interactions for activities.
 
 Core responsibilities:
 - Create, read, update, and delete activities
@@ -39,7 +39,7 @@ External dependencies:
 - Pydantic and pydantic-settings
 
 Runtime service dependencies:
-- Supabase project (tables/views created by `SUPABASE_SETUP.sql`)
+- Supabase project with the `public` activity tables already created (managed in the Supabase dashboard)
 
 ---
 
@@ -104,7 +104,6 @@ Top-level:
 - `run.py`: standardized entry-point runner
 - `config.py`: typed environment config with defaults
 - `models.py`: request/response schemas
-- `SUPABASE_SETUP.sql`: schema bootstrap for activity tables and indexes
 
 Routes:
 - `routes/activities.py`: router aggregator with `/api/v1/activities` prefix
@@ -158,7 +157,7 @@ Defined in `config.py` (env-backed):
 1. Create and activate a virtual environment in `backend/activity-backend/`
 2. Install dependencies from `requirements.txt`
 3. Create `.env` with required variables
-4. Ensure Supabase tables exist (run `SUPABASE_SETUP.sql` in Supabase SQL editor)
+4. Ensure the Supabase activity tables exist (`activities`, `activity_comments`, `activity_kudos`, `activity_shares`, `user_stats`)
 5. Start server with `python run.py`
 
 ### Testing Strategy

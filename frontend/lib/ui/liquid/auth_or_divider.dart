@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
+import 'package:snowtrak/core/theme.dart';
 
 class AuthOrDivider extends StatelessWidget {
   const AuthOrDivider({super.key});
@@ -8,17 +8,17 @@ class AuthOrDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: Divider(color: SyntrakColors.divider, height: 1)),
+        Expanded(child: Divider(color: SnowtrakColors.divider, height: 1)),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+          padding: const EdgeInsets.symmetric(horizontal: SnowtrakSpacing.md),
           child: Text(
             'or',
-            style: SyntrakTypography.bodyMedium.copyWith(
-              color: SyntrakColors.textSecondary,
+            style: SnowtrakTypography.bodyMedium.copyWith(
+              color: SnowtrakColors.textSecondary,
             ),
           ),
         ),
-        Expanded(child: Divider(color: SyntrakColors.divider, height: 1)),
+        Expanded(child: Divider(color: SnowtrakColors.divider, height: 1)),
       ],
     );
   }

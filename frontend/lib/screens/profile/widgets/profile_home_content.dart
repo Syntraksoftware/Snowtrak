@@ -1,32 +1,46 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/screens/profile/widgets/profile_layout_primitives.dart';
-import 'package:syntrak/screens/profile/widgets/profile_privacy_controls.dart';
-import 'package:syntrak/ui/liquid/liquid_section_card.dart';
-import 'package:syntrak/ui/liquid/snowtrak_auth_theme.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/models/activity.dart';
+import 'package:snowtrak/models/user_stats.dart';
+import 'package:snowtrak/providers/activity_provider.dart';
+import 'package:snowtrak/screens/activities/widgets/activity_feed_formatters.dart';
+import 'package:snowtrak/screens/profile/widgets/profile_layout_primitives.dart';
+import 'package:snowtrak/screens/profile/widgets/progress/progress_weekly_overview.dart';
+import 'package:snowtrak/screens/profile/widgets/profile_privacy_controls.dart';
+import 'package:snowtrak/ui/liquid/liquid_section_card.dart';
+import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
-/// Scrollable profile sections — layout placeholders until features ship.
-class ProfileHomeContent extends StatelessWidget {
+class ProfileHomeContent extends StatefulWidget {
   const ProfileHomeContent({super.key});
 
+  @override
+  State<ProfileHomeContent> createState() => _ProfileHomeContentState();
+}
+
+class _ProfileHomeContentState extends State<ProfileHomeContent> {
+  int _periodIndex = 0; // 0 = Week, 1 = Year, 2 = All-time
   static const _accent = SnowtrakAuthTheme.brand;
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<ActivityProvider>();
+    final stats = provider.stats;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: SyntrakSpacing.md),
+        const SizedBox(height: SnowtrakSpacing.md),
         _identitySection(),
-        const SizedBox(height: SyntrakSpacing.md),
-        _performanceSection(),
-        const SizedBox(height: SyntrakSpacing.md),
-        _trainingSection(),
-        const SizedBox(height: SyntrakSpacing.md),
+        const SizedBox(height: SnowtrakSpacing.md),
+        _performanceSection(stats),
+        const SizedBox(height: SnowtrakSpacing.md),
+        _trainingSection(provider.activities),
+        const SizedBox(height: SnowtrakSpacing.md),
         _socialSection(),
-        const SizedBox(height: SyntrakSpacing.md),
+        const SizedBox(height: SnowtrakSpacing.md),
         _privacySection(),
-        const SizedBox(height: SyntrakSpacing.xl),
+        const SizedBox(height: SnowtrakSpacing.xl),
       ],
     );
   }
@@ -45,33 +59,33 @@ class ProfileHomeContent extends StatelessWidget {
             label: 'Location',
             value: 'Not set',
           ),
-          const SizedBox(height: SyntrakSpacing.sm),
+          const SizedBox(height: SnowtrakSpacing.sm),
           Wrap(
-            spacing: SyntrakSpacing.sm,
-            runSpacing: SyntrakSpacing.sm,
+            spacing: SnowtrakSpacing.sm,
+            runSpacing: SnowtrakSpacing.sm,
             children: const [
               ProfileChip(label: 'Alpine', icon: Icons.downhill_skiing, selected: true),
               ProfileChip(label: 'Cross-country', icon: Icons.nordic_walking),
               ProfileChip(label: 'Snowboard', icon: Icons.snowboarding),
             ],
           ),
-          const SizedBox(height: SyntrakSpacing.md),
+          const SizedBox(height: SnowtrakSpacing.md),
           Text(
             'Add a short bio to tell the community about your training.',
-            style: SyntrakTypography.bodyMedium.copyWith(
-              color: SyntrakColors.textSecondary,
+            style: SnowtrakTypography.bodyMedium.copyWith(
+              color: SnowtrakColors.textSecondary,
             ),
           ),
-          const SizedBox(height: SyntrakSpacing.md),
+          const SizedBox(height: SnowtrakSpacing.md),
           const ProfilePlaceholderBlock(
             icon: Icons.inventory_2_outlined,
             label: 'Virtual gear locker — track skis, boots, and binding mileage',
             height: 72,
           ),
-          const SizedBox(height: SyntrakSpacing.sm),
+          const SizedBox(height: SnowtrakSpacing.sm),
           Wrap(
-            spacing: SyntrakSpacing.sm,
-            runSpacing: SyntrakSpacing.sm,
+            spacing: SnowtrakSpacing.sm,
+            runSpacing: SnowtrakSpacing.sm,
             children: const [
               ProfileChip(label: 'Alpine Club', icon: Icons.groups_outlined),
               ProfileChip(label: 'Corp Team', icon: Icons.business_outlined),
@@ -82,7 +96,33 @@ class ProfileHomeContent extends StatelessWidget {
     );
   }
 
-  Widget _performanceSection() {
+  Widget _performanceSection(UserStats? stats) {
+    final periods = ['Week', 'Year', 'All-time'];
+    final dist = stats == null ? '—' : [
+      stats.weeklyDistanceKm,
+      stats.yearlyDistanceKm,
+      stats.allTimeDistanceKm,
+    ][_periodIndex].toStringAsFixed(1);
+
+    final timeMin = stats == null ? null : [
+      stats.weeklyTimeMin,
+      stats.yearlyTimeMin,
+      stats.allTimeTimeMin,
+    ][_periodIndex];
+    final timeStr = timeMin == null ? '—' : formatDurationMinutes(timeMin);
+
+    final elev = stats == null ? '—' : formatElevation([
+      stats.weeklyElevGain,
+      stats.yearlyElevGain,
+      stats.allTimeElevGain,
+    ][_periodIndex]);
+
+    final sessions = stats == null ? '—' : [
+      stats.weeklySessionCount,
+      stats.yearlySessionCount,
+      stats.allTimeSessionCount,
+    ][_periodIndex].toString();
+
     return LiquidSectionCard(
       icon: Icons.insights_outlined,
       title: 'Performance summaries',
@@ -92,50 +132,53 @@ class ProfileHomeContent extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Wrap(
-            spacing: SyntrakSpacing.sm,
-            children: const [
-              ProfileChip(label: 'Week', selected: true),
-              ProfileChip(label: 'Year'),
-              ProfileChip(label: 'All-time'),
-            ],
+            spacing: SnowtrakSpacing.sm,
+            children: List.generate(periods.length, (i) => GestureDetector(
+              onTap: () => setState(() => _periodIndex = i),
+              child: ProfileChip(label: periods[i], selected: _periodIndex == i),
+            )),
           ),
-          const SizedBox(height: SyntrakSpacing.md),
-          const ProfileMetricRow(
+          const SizedBox(height: SnowtrakSpacing.md),
+          ProfileMetricRow(
             left: ProfileMetricTile(
               icon: Icons.straighten,
               label: 'Distance',
-              value: '—',
+              value: dist,
               unit: 'km',
+              accentColor: SnowtrakColors.primary,
             ),
             right: ProfileMetricTile(
               icon: Icons.timer_outlined,
               label: 'Time',
-              value: '—',
-              unit: 'hr',
+              value: timeStr,
+              unit: '',
+              accentColor: SnowtrakColors.primary,
             ),
           ),
-          const SizedBox(height: SyntrakSpacing.sm),
-          const ProfileMetricRow(
+          const SizedBox(height: SnowtrakSpacing.sm),
+          ProfileMetricRow(
             left: ProfileMetricTile(
               icon: Icons.terrain,
               label: 'Elevation',
-              value: '—',
-              unit: 'm',
+              value: elev,
+              unit: '',
+              accentColor: SnowtrakColors.primary,
             ),
             right: ProfileMetricTile(
-              icon: Icons.emoji_events_outlined,
-              label: 'PRs',
-              value: '—',
+              icon: Icons.directions_run_outlined,
+              label: 'Sessions',
+              value: sessions,
               unit: '',
+              accentColor: SnowtrakColors.primary,
             ),
           ),
-          const SizedBox(height: SyntrakSpacing.md),
+          const SizedBox(height: SnowtrakSpacing.md),
           const ProfilePlaceholderBlock(
             icon: Icons.emoji_events_outlined,
             label: 'Personal records — 5K, 10K, and segment bests',
             height: 72,
           ),
-          const SizedBox(height: SyntrakSpacing.sm),
+          const SizedBox(height: SnowtrakSpacing.sm),
           const ProfilePlaceholderBlock(
             icon: Icons.show_chart,
             label: 'Fitness trends — fitness, fatigue, and form',
@@ -146,26 +189,26 @@ class ProfileHomeContent extends StatelessWidget {
     );
   }
 
-  Widget _trainingSection() {
+  Widget _trainingSection(List<Activity> activities) {
+    final recent = activities.take(3).toList();
     return LiquidSectionCard(
       icon: Icons.history,
       title: 'Training history',
       subtitle: 'Recent workouts and consistency',
       iconColor: _accent,
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ProfilePlaceholderBlock(
-            icon: Icons.map_outlined,
-            label: 'Recent activity feed with routes and metrics',
-            height: 88,
-          ),
-          SizedBox(height: SyntrakSpacing.sm),
-          ProfilePlaceholderBlock(
-            icon: Icons.calendar_month_outlined,
-            label: 'Training calendar — weekly volume at a glance',
-            height: 88,
-          ),
+          if (recent.isEmpty)
+            const ProfilePlaceholderBlock(
+              icon: Icons.map_outlined,
+              label: 'No activities yet — record your first run!',
+              height: 72,
+            )
+          else
+            ...recent.map((a) => _RecentActivityRow(activity: a)),
+          const SizedBox(height: SnowtrakSpacing.sm),
+          TwelveWeekSparkline(activities: activities),
         ],
       ),
     );
@@ -194,7 +237,7 @@ class ProfileHomeContent extends StatelessWidget {
               unit: '',
             ),
           ),
-          const SizedBox(height: SyntrakSpacing.sm),
+          const SizedBox(height: SnowtrakSpacing.sm),
           const ProfileMetricRow(
             left: ProfileMetricTile(
               icon: Icons.thumb_up_outlined,
@@ -209,12 +252,12 @@ class ProfileHomeContent extends StatelessWidget {
               unit: '',
             ),
           ),
-          const SizedBox(height: SyntrakSpacing.md),
+          const SizedBox(height: SnowtrakSpacing.md),
           _ChallengePreview(
             title: '100K vertical February',
             progress: 0,
           ),
-          const SizedBox(height: SyntrakSpacing.sm),
+          const SizedBox(height: SnowtrakSpacing.sm),
           _ChallengePreview(
             title: 'Gran Fondo prep',
             progress: 0,
@@ -235,6 +278,53 @@ class ProfileHomeContent extends StatelessWidget {
   }
 }
 
+class _RecentActivityRow extends StatelessWidget {
+  const _RecentActivityRow({required this.activity});
+  final Activity activity;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: SnowtrakSpacing.sm),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: SnowtrakColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(SnowtrakRadius.md),
+            ),
+            child: const Icon(Icons.downhill_skiing, size: 18, color: SnowtrakColors.primary),
+          ),
+          const SizedBox(width: SnowtrakSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  activity.name ?? 'Activity',
+                  style: SnowtrakTypography.labelMedium.copyWith(color: SnowtrakColors.textPrimary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  DateFormat('MMM d, yyyy').format(activity.startTime),
+                  style: SnowtrakTypography.bodySmall.copyWith(color: SnowtrakColors.textTertiary),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            activity.formattedDistance,
+            style: SnowtrakTypography.labelMedium.copyWith(color: SnowtrakColors.textPrimary),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ChallengePreview extends StatelessWidget {
   const _ChallengePreview({
     required this.title,
@@ -251,17 +341,17 @@ class _ChallengePreview extends StatelessWidget {
       children: [
         Text(
           title,
-          style: SyntrakTypography.labelLarge.copyWith(
-            color: SyntrakColors.textPrimary,
+          style: SnowtrakTypography.labelLarge.copyWith(
+            color: SnowtrakColors.textPrimary,
           ),
         ),
-        const SizedBox(height: SyntrakSpacing.xs),
+        const SizedBox(height: SnowtrakSpacing.xs),
         ClipRRect(
-          borderRadius: BorderRadius.circular(SyntrakRadius.round),
+          borderRadius: BorderRadius.circular(SnowtrakRadius.round),
           child: LinearProgressIndicator(
             value: progress,
             minHeight: 6,
-            backgroundColor: SyntrakColors.surfaceVariant,
+            backgroundColor: SnowtrakColors.surfaceVariant,
             color: SnowtrakAuthTheme.brand,
           ),
         ),

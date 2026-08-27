@@ -1,6 +1,7 @@
 """Pydantic models for Activity Backend."""
 
 from pydantic import BaseModel, Field
+from shared.pipeline_enums import ProcessingStatus
 
 
 class LocationPoint(BaseModel):
@@ -48,6 +49,13 @@ class FrontendActivityCreate(BaseModel):
     end_time: str  # ISO 8601
     locations: list[FrontendLocation] = Field(default_factory=list)
     is_public: bool = True
+    map_activity_id: str | None = Field(
+        None, description="UUID of map_trail.activities row when pipeline persisted server-side"
+    )
+    processing_status: ProcessingStatus = Field(
+        default=ProcessingStatus.ready,
+        description="Pipeline lifecycle; sync bridge writes ready immediately",
+    )
 
 
 class ActivityUpdate(BaseModel):
@@ -101,6 +109,36 @@ class FrontendActivityResponse(BaseModel):
     is_public: bool
     created_at: str | None = None
     locations: list[FrontendLocation] = Field(default_factory=list)
+    map_activity_id: str | None = None
+    processing_status: ProcessingStatus = ProcessingStatus.ready
+    storage_key: str | None = None
+    thumbnail_url: str | None = None
+
+
+class UploadUrlRequest(BaseModel):
+    """Request presigned upload URL for async GPX/FIT pipeline."""
+
+    source_type: str = Field("gpx", description="gpx | fit")
+    name: str | None = None
+    activity_type: str = Field("alpine", description="Stored as activity_type")
+
+
+class UploadUrlResponse(BaseModel):
+    """Presigned upload target + placeholder activity row."""
+
+    activity_id: str
+    upload_url: str
+    storage_key: str
+    token: str | None = None
+    processing_status: ProcessingStatus = ProcessingStatus.pending
+
+
+class UploadCompleteResponse(BaseModel):
+    """Acknowledgement that raw file upload finished; pipeline queued or running."""
+
+    activity_id: str
+    processing_status: ProcessingStatus
+    message: str = "Pipeline processing started"
 
 
 class ActivitiesListResponse(BaseModel):
@@ -151,3 +189,41 @@ class DeleteResponse(BaseModel):
 
     message: str
     deleted_activity_id: str | None = None
+
+
+class BestEffort(BaseModel):
+    """A single best-effort entry (longest, most elevation, fastest pace)."""
+
+    type: str
+    value: str
+    date: str
+    is_pr: bool = False
+
+
+class UserStatsResponse(BaseModel):
+    """Cached user stats returned by GET /me/stats."""
+
+    user_id: str
+    week_start: str                     # ISO date string (Monday)
+
+    weekly_distance_km: float
+    weekly_time_min: int
+    weekly_elev_gain_m: float
+    weekly_session_count: int
+    last_week_session_count: int
+
+    yearly_distance_km: float
+    yearly_time_min: int
+    yearly_elev_gain_m: float
+    yearly_session_count: int
+
+    all_time_distance_km: float
+    all_time_time_min: int
+    all_time_elev_gain_m: float
+    all_time_session_count: int
+
+    current_streak_weeks: int
+    longest_streak_weeks: int
+
+    activity_days: list[str]            # Sorted ISO date strings
+    best_efforts: list[BestEffort]

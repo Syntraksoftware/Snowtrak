@@ -3,8 +3,14 @@ Core configuration module using Pydantic Settings.
 Loads environment variables and provides type-safe config access.
 """
 
-from pydantic import Field, model_validator
+import json
+
+from pydantic import AliasChoices, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# The value a fresh checkout runs on. Named so the validator below can
+# recognise it; it is public in this repo and must never reach a droplet.
+DEV_SECRET_KEY = "dev-secret-key-change-in-production"
 
 
 class Settings(BaseSettings):
@@ -14,20 +20,32 @@ class Settings(BaseSettings):
         env_file=".env",
         case_sensitive=False,
         env_file_encoding="utf-8",
+        extra="ignore",
     )
 
     # App Info
-    app_name: str = Field(default="Syntrak Auth API", alias="APP_NAME")
+    app_name: str = Field(default="Snowtrak Auth API", alias="APP_NAME")
     app_version: str = Field(default="1.0.0", alias="APP_VERSION")
     debug: bool = Field(default=True, alias="DEBUG")
     environment: str = Field(default="development", alias="ENVIRONMENT")
+    # Set by the Compose files, where ENVIRONMENT is not. Read here only so
+    # the dev-secret check below can tell a deployed stack from a laptop.
+    fastapi_env: str = Field(default="development", alias="FASTAPI_ENV")
 
     # Server
     host: str = Field(default="0.0.0.0", alias="HOST")
     port: int = Field(default=8080, alias="PORT")
 
     # JWT
-    secret_key: str = Field(default="dev-secret-key-change-in-production", alias="SECRET_KEY")
+    # JWT_SECRET is accepted as well as SECRET_KEY. The three satellite
+    # services already take either name (shared/jwt_env.py); without the same
+    # here, an env file that sets only JWT_SECRET leaves this service signing
+    # tokens with the development default while the others verify against the
+    # real one -- every token minted rejected, and no configuration missing.
+    secret_key: str = Field(
+        default=DEV_SECRET_KEY,
+        validation_alias=AliasChoices("SECRET_KEY", "JWT_SECRET"),
+    )
     algorithm: str = Field(default="HS256", alias="ALGORITHM")
     access_token_expire_minutes: int = Field(default=60, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
     refresh_token_expire_days: int = Field(default=7, alias="REFRESH_TOKEN_EXPIRE_DAYS")
@@ -44,6 +62,38 @@ class Settings(BaseSettings):
     # Supabase
     supabase_url: str | None = Field(default=None, alias="SUPABASE_URL")
     supabase_service_role_key: str | None = Field(default=None, alias="SUPABASE_SERVICE_ROLE_KEY")
+
+    # Open-Meteo (free, no API key required)
+    open_meteo_base_url: str = Field(default="https://api.open-meteo.com/v1", alias="OPENMETEO_BASE_URL")
+    open_meteo_timeout_seconds: float = Field(default=10.0, gt=0, alias="OPENMETEO_TIMEOUT_SECONDS")
+    weather_cache_enabled: bool = Field(default=True, alias="WEATHER_CACHE_ENABLED")
+    weather_cache_redis_url: str = Field(default="redis://localhost:6379/0", alias="WEATHER_CACHE_REDIS_URL")
+    weather_cache_namespace: str = Field(default="main-backend", alias="WEATHER_CACHE_NAMESPACE")
+    weather_cache_ttl_seconds: int = Field(default=900, gt=0, alias="WEATHER_CACHE_TTL_SECONDS")
+    weather_cache_distance_threshold: float = Field(
+        default=0.02,
+        gt=0,
+        alias="WEATHER_CACHE_DISTANCE_THRESHOLD",
+    )
+
+    # Redis-backed rate limiter
+    rate_limit_enabled: bool = Field(default=True, alias="RATE_LIMIT_ENABLED")
+    rate_limit_redis_url: str = Field(default="redis://localhost:6379/0", alias="RATE_LIMIT_REDIS_URL")
+    rate_limit_namespace: str = Field(default="main-backend", alias="RATE_LIMIT_NAMESPACE")
+    rate_limit_fail_open: bool = Field(default=True, alias="RATE_LIMIT_FAIL_OPEN")
+    rate_limit_default_limit: int = Field(default=240, alias="RATE_LIMIT_DEFAULT_LIMIT")
+    rate_limit_default_window_seconds: int = Field(default=60, alias="RATE_LIMIT_DEFAULT_WINDOW_SECONDS")
+    rate_limit_policies: list = Field(default_factory=list, alias="RATE_LIMIT_POLICIES")
+
+    @field_validator("rate_limit_policies", mode="before")
+    @classmethod
+    def parse_policies(cls, v: str | list) -> list:
+        """Parse JSON policies string or accept list directly."""
+        if isinstance(v, list):
+            return v
+        if isinstance(v, str):
+            return json.loads(v) if v else []
+        return []
 
     def get_allowed_origins(self) -> list[str]:
         """Get allowed origins as a list."""
@@ -80,6 +130,27 @@ class Settings(BaseSettings):
                     "supabase_service_role_key is provided but supabase_url is missing. "
                     "Both SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set together."
                 )
+
+        return self
+
+    @model_validator(mode="after")
+    def reject_dev_secret_when_deployed(self):
+        """Refuse to start on the built-in secret outside development.
+
+        The default exists so a fresh checkout runs. Left in place on the
+        droplet it is worse than a missing value: the service starts, signs
+        tokens with a key published in this repo, and nothing looks wrong.
+        """
+        deployed = {"production", "staging"}
+        if self.secret_key == DEV_SECRET_KEY and (
+            self.fastapi_env.lower() in deployed or self.environment.lower() in deployed
+        ):
+            raise ValueError(
+                "SECRET_KEY is still the development default while FASTAPI_ENV/"
+                "ENVIRONMENT says this is a deployed stack. Set SECRET_KEY (or "
+                "JWT_SECRET) in backend/main-backend/.env to the same value the "
+                "other services verify with."
+            )
 
         return self
 

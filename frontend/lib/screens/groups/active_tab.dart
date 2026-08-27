@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/screens/groups/active_tab_widgets.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/screens/groups/active_tab_widgets.dart';
 
 class ActiveTab extends StatefulWidget {
   const ActiveTab({super.key});
@@ -24,17 +24,17 @@ class _ActiveTabState extends State<ActiveTab> {
       onRefresh: () async {
         await Future.delayed(const Duration(seconds: 1));
       },
-      color: SyntrakColors.primary,
+      color: SnowtrakColors.primary,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildDesignChallengeCard(),
-            const SizedBox(height: SyntrakSpacing.md),
+            const SizedBox(height: SnowtrakSpacing.md),
             _buildChallengesSection(),
             _buildBanner(),
-            const SizedBox(height: SyntrakSpacing.xl),
+            const SizedBox(height: SnowtrakSpacing.xl),
           ],
         ),
       ),
@@ -43,44 +43,44 @@ class _ActiveTabState extends State<ActiveTab> {
 
   Widget _buildDesignChallengeCard() {
     return Container(
-      padding: const EdgeInsets.all(SyntrakSpacing.lg),
+      padding: const EdgeInsets.all(SnowtrakSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'SYNTRAK SUBSCRIPTION',
-            style: SyntrakTypography.labelSmall.copyWith(
-              color: SyntrakColors.textTertiary,
+            style: SnowtrakTypography.labelSmall.copyWith(
+              color: SnowtrakColors.textTertiary,
               letterSpacing: 1.2,
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: SyntrakSpacing.md),
+          const SizedBox(height: SnowtrakSpacing.md),
           Text(
             'Design Your',
-            style: SyntrakTypography.displaySmall.copyWith(
+            style: SnowtrakTypography.displaySmall.copyWith(
               fontWeight: FontWeight.w800,
-              color: SyntrakColors.textPrimary,
+              color: SnowtrakColors.textPrimary,
               height: 1.1,
             ),
           ),
           Text(
             'Own Challenge',
-            style: SyntrakTypography.displaySmall.copyWith(
+            style: SnowtrakTypography.displaySmall.copyWith(
               fontWeight: FontWeight.w800,
-              color: SyntrakColors.textPrimary,
+              color: SnowtrakColors.textPrimary,
               height: 1.1,
             ),
           ),
-          const SizedBox(height: SyntrakSpacing.md),
+          const SizedBox(height: SnowtrakSpacing.md),
           Text(
             'Rally your crew with a custom Group Challenge. Your game, your rules.',
-            style: SyntrakTypography.bodyLarge.copyWith(
-              color: SyntrakColors.textSecondary,
+            style: SnowtrakTypography.bodyLarge.copyWith(
+              color: SnowtrakColors.textSecondary,
               height: 1.4,
             ),
           ),
-          const SizedBox(height: SyntrakSpacing.lg),
+          const SizedBox(height: SnowtrakSpacing.lg),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -93,17 +93,17 @@ class _ActiveTabState extends State<ActiveTab> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: SyntrakColors.primary,
+                backgroundColor: SnowtrakColors.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(SyntrakRadius.round),
+                  borderRadius: BorderRadius.circular(SnowtrakRadius.round),
                 ),
                 elevation: 0,
               ),
               child: Text(
                 'Start Your Free Trial',
-                style: SyntrakTypography.labelLarge.copyWith(
+                style: SnowtrakTypography.labelLarge.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
                 ),
@@ -117,17 +117,17 @@ class _ActiveTabState extends State<ActiveTab> {
 
   Widget _buildChallengesSection() {
     return Container(
-      padding: const EdgeInsets.all(SyntrakSpacing.lg),
+      padding: const EdgeInsets.all(SnowtrakSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Available challenges',
-            style: SyntrakTypography.headlineSmall.copyWith(
+            style: SnowtrakTypography.headlineSmall.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: SyntrakSpacing.md),
+          const SizedBox(height: SnowtrakSpacing.md),
           ...List.generate(
             _challenges.length,
             (index) => ActiveGroupChallengeCard(challenge: _challenges[index]),
@@ -138,8 +138,8 @@ class _ActiveTabState extends State<ActiveTab> {
               onPressed: () {},
               child: Text(
                 'See All Challenges',
-                style: SyntrakTypography.labelLarge.copyWith(
-                  color: SyntrakColors.primary,
+                style: SnowtrakTypography.labelLarge.copyWith(
+                  color: SnowtrakColors.primary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -152,10 +152,10 @@ class _ActiveTabState extends State<ActiveTab> {
 
   Widget _buildBanner() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.lg),
+      margin: const EdgeInsets.symmetric(horizontal: SnowtrakSpacing.lg),
       height: 180,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
+        borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -184,23 +184,23 @@ class _ActiveTabState extends State<ActiveTab> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(SyntrakSpacing.lg),
+            padding: const EdgeInsets.all(SnowtrakSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: SyntrakSpacing.sm,
+                    horizontal: SnowtrakSpacing.sm,
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(SyntrakRadius.sm),
+                    borderRadius: BorderRadius.circular(SnowtrakRadius.sm),
                   ),
                   child: Text(
                     'Challenge',
-                    style: SyntrakTypography.labelSmall.copyWith(
+                    style: SnowtrakTypography.labelSmall.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
                     ),
@@ -210,8 +210,8 @@ class _ActiveTabState extends State<ActiveTab> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'SynTrak',
-                      style: SyntrakTypography.headlineLarge.copyWith(
+                      'Snowtrak',
+                      style: SnowtrakTypography.headlineLarge.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.5,
@@ -220,7 +220,7 @@ class _ActiveTabState extends State<ActiveTab> {
                     const SizedBox(height: 2),
                     Text(
                       'Winter Season 2026',
-                      style: SyntrakTypography.bodyMedium.copyWith(
+                      style: SnowtrakTypography.bodyMedium.copyWith(
                         color: Colors.white.withOpacity(0.8),
                       ),
                     ),

@@ -1,6 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:syntrak/ui/liquid/snowtrak_auth_theme.dart';
+import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 class AuthAccountLink extends StatelessWidget {
   const AuthAccountLink({

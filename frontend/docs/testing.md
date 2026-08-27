@@ -1,6 +1,6 @@
 # Testing Guide
 
-Comprehensive testing setup for the Syntrak application with best practices.
+Comprehensive testing setup for the Snowtrak application with best practices.
 
 ## Overview
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/screens/profile/widgets/progress/progress_section_card.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/screens/profile/widgets/progress/progress_section_card.dart';
 
 /// Best efforts, goals, relative effort, training log, and trial CTA.
 class ProgressInsightCards extends StatelessWidget {
@@ -24,15 +24,13 @@ class ProgressInsightCards extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _BestEffortsCard(efforts: bestEfforts),
-        const SizedBox(height: SyntrakSpacing.md),
+        const SizedBox(height: SnowtrakSpacing.md),
         _GoalsCard(goals: goals),
-        const SizedBox(height: SyntrakSpacing.md),
+        const SizedBox(height: SnowtrakSpacing.md),
         _RelativeEffortCard(relativeEffort: relativeEffort),
-        const SizedBox(height: SyntrakSpacing.md),
+        const SizedBox(height: SnowtrakSpacing.md),
         _TrainingLogCard(trainingLog: trainingLog),
-        const SizedBox(height: SyntrakSpacing.lg),
-        _FreeTrialButton(),
-        const SizedBox(height: SyntrakSpacing.xl),
+        const SizedBox(height: SnowtrakSpacing.xl),
       ],
     );
   }
@@ -50,13 +48,13 @@ class _BestEffortsCard extends StatelessWidget {
       child: efforts.isEmpty
           ? Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: SyntrakSpacing.md,
-                vertical: SyntrakSpacing.lg,
+                horizontal: SnowtrakSpacing.md,
+                vertical: SnowtrakSpacing.lg,
               ),
               child: Text(
                 'No best efforts yet. Complete activities to see your records!',
-                style: SyntrakTypography.bodyMedium.copyWith(
-                  color: SyntrakColors.textTertiary,
+                style: SnowtrakTypography.bodyMedium.copyWith(
+                  color: SnowtrakColors.textTertiary,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -65,10 +63,12 @@ class _BestEffortsCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: efforts.map((effort) {
                 return _BestEffortRow(
-                  isPR: effort['isPR'] ?? false,
+                  isPR: effort['is_pr'] ?? effort['isPR'] ?? false,
                   type: effort['type'] ?? '',
-                  time: effort['time'] ?? '',
-                  date: effort['date'] as DateTime? ?? DateTime.now(),
+                  value: effort['value'] ?? effort['time'] ?? '',
+                  date: effort['date'] is DateTime
+                      ? effort['date'] as DateTime
+                      : DateTime.tryParse(effort['date'] as String? ?? '') ?? DateTime.now(),
                 );
               }).toList(),
             ),
@@ -80,21 +80,21 @@ class _BestEffortRow extends StatelessWidget {
   const _BestEffortRow({
     required this.isPR,
     required this.type,
-    required this.time,
+    required this.value,
     required this.date,
   });
 
   final bool isPR;
   final String type;
-  final String time;
+  final String value;
   final DateTime date;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: SyntrakSpacing.md,
-        vertical: SyntrakSpacing.sm,
+        horizontal: SnowtrakSpacing.md,
+        vertical: SnowtrakSpacing.sm,
       ),
       child: Row(
         children: [
@@ -103,17 +103,17 @@ class _BestEffortRow extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               color: isPR
-                  ? SyntrakColors.accent.withOpacity(0.2)
-                  : SyntrakColors.textTertiary.withOpacity(0.2),
+                  ? SnowtrakColors.accent.withOpacity(0.2)
+                  : SnowtrakColors.textTertiary.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(
               isPR ? Icons.emoji_events : Icons.military_tech,
-              color: isPR ? SyntrakColors.accent : SyntrakColors.textTertiary,
+              color: isPR ? SnowtrakColors.accent : SnowtrakColors.textTertiary,
               size: 20,
             ),
           ),
-          const SizedBox(width: SyntrakSpacing.md),
+          const SizedBox(width: SnowtrakSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,37 +122,37 @@ class _BestEffortRow extends StatelessWidget {
                   children: [
                     Text(
                       isPR ? 'PR' : '2nd-fastest',
-                      style: SyntrakTypography.labelMedium.copyWith(
-                        color: SyntrakColors.textPrimary,
+                      style: SnowtrakTypography.labelMedium.copyWith(
+                        color: SnowtrakColors.textPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(width: SyntrakSpacing.xs),
+                    const SizedBox(width: SnowtrakSpacing.xs),
                     Flexible(
                       child: Text(
                         type,
-                        style: SyntrakTypography.bodyMedium.copyWith(
-                          color: SyntrakColors.textSecondary,
+                        style: SnowtrakTypography.bodyMedium.copyWith(
+                          color: SnowtrakColors.textSecondary,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: SyntrakSpacing.xs / 2),
+                const SizedBox(height: SnowtrakSpacing.xs / 2),
                 Text(
                   DateFormat('d MMM yyyy').format(date),
-                  style: SyntrakTypography.bodySmall.copyWith(
-                    color: SyntrakColors.textTertiary,
+                  style: SnowtrakTypography.bodySmall.copyWith(
+                    color: SnowtrakColors.textTertiary,
                   ),
                 ),
               ],
             ),
           ),
           Text(
-            time,
-            style: SyntrakTypography.bodyLarge.copyWith(
-              color: SyntrakColors.textPrimary,
+            value,
+            style: SnowtrakTypography.bodyLarge.copyWith(
+              color: SnowtrakColors.textPrimary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -174,8 +174,8 @@ class _GoalsCard extends StatelessWidget {
       title: 'Goals',
       child: Padding(
         padding: const EdgeInsets.symmetric(
-          horizontal: SyntrakSpacing.md,
-          vertical: SyntrakSpacing.md,
+          horizontal: SnowtrakSpacing.md,
+          vertical: SnowtrakSpacing.md,
         ),
         child: Row(
           children: [
@@ -188,37 +188,37 @@ class _GoalsCard extends StatelessWidget {
                   child: CircularProgressIndicator(
                     value: weekly['current'] / weekly['target'],
                     strokeWidth: 4,
-                    backgroundColor: SyntrakColors.surfaceVariant,
+                    backgroundColor: SnowtrakColors.surfaceVariant,
                     valueColor: const AlwaysStoppedAnimation<Color>(
-                      SyntrakColors.success,
+                      SnowtrakColors.primary,
                     ),
                   ),
                 ),
                 Icon(
                   Icons.downhill_skiing,
-                  color: SyntrakColors.primary,
+                  color: SnowtrakColors.primary,
                   size: 24,
                 ),
               ],
             ),
-            const SizedBox(width: SyntrakSpacing.md),
+            const SizedBox(width: SnowtrakSpacing.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     goals['description'] as String,
-                    style: SyntrakTypography.bodyMedium.copyWith(
-                      color: SyntrakColors.textPrimary,
+                    style: SnowtrakTypography.bodyMedium.copyWith(
+                      color: SnowtrakColors.textPrimary,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: SyntrakSpacing.xs),
+                  const SizedBox(height: SnowtrakSpacing.xs),
                   Text(
                     '${weekly['current']}/${weekly['target']} activities',
-                    style: SyntrakTypography.bodySmall.copyWith(
-                      color: SyntrakColors.textSecondary,
+                    style: SnowtrakTypography.bodySmall.copyWith(
+                      color: SnowtrakColors.textSecondary,
                     ),
                   ),
                 ],
@@ -226,7 +226,7 @@ class _GoalsCard extends StatelessWidget {
             ),
             Icon(
               Icons.chevron_right,
-              color: SyntrakColors.textTertiary,
+              color: SnowtrakColors.textTertiary,
             ),
           ],
         ),
@@ -245,23 +245,23 @@ class _RelativeEffortCard extends StatelessWidget {
     return ProgressSectionCard(
       title: 'Relative Effort',
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: SyntrakSpacing.sm),
+        padding: const EdgeInsets.symmetric(vertical: SnowtrakSpacing.sm),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             _RelativeEffortRow(
               relativeEffort['current'] as int,
-              'Jan 6 - Jan 12, 2026',
-              SyntrakColors.error,
+              relativeEffort['currentRange'] as String? ?? '',
+              SnowtrakColors.primary,
             ),
             Divider(
               height: 1,
-              color: SyntrakColors.divider,
+              color: SnowtrakColors.divider,
             ),
             _RelativeEffortRow(
               relativeEffort['previous'] as int,
-              'Dec 30 - Jan 5, 2026',
-              SyntrakColors.snowboard,
+              relativeEffort['lastRange'] as String? ?? '',
+              SnowtrakColors.textTertiary,
             ),
           ],
         ),
@@ -281,8 +281,8 @@ class _RelativeEffortRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: SyntrakSpacing.md,
-        vertical: SyntrakSpacing.sm,
+        horizontal: SnowtrakSpacing.md,
+        vertical: SnowtrakSpacing.sm,
       ),
       child: Row(
         children: [
@@ -291,24 +291,24 @@ class _RelativeEffortRow extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(SyntrakRadius.md),
+              borderRadius: BorderRadius.circular(SnowtrakRadius.md),
             ),
             child: Center(
               child: Text(
                 value.toString(),
-                style: SyntrakTypography.headlineSmall.copyWith(
+                style: SnowtrakTypography.headlineSmall.copyWith(
                   color: color,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
           ),
-          const SizedBox(width: SyntrakSpacing.md),
+          const SizedBox(width: SnowtrakSpacing.md),
           Expanded(
             child: Text(
               dateRange,
-              style: SyntrakTypography.bodyMedium.copyWith(
-                color: SyntrakColors.textPrimary,
+              style: SnowtrakTypography.bodyMedium.copyWith(
+                color: SnowtrakColors.textPrimary,
               ),
             ),
           ),
@@ -329,8 +329,8 @@ class _TrainingLogCard extends StatelessWidget {
       title: 'Training Log',
       child: Padding(
         padding: const EdgeInsets.symmetric(
-          horizontal: SyntrakSpacing.md,
-          vertical: SyntrakSpacing.md,
+          horizontal: SnowtrakSpacing.md,
+          vertical: SnowtrakSpacing.md,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -341,8 +341,8 @@ class _TrainingLogCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     trainingLog['dateRange'] as String,
-                    style: SyntrakTypography.bodyMedium.copyWith(
-                      color: SyntrakColors.textPrimary,
+                    style: SnowtrakTypography.bodyMedium.copyWith(
+                      color: SnowtrakColors.textPrimary,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -350,53 +350,44 @@ class _TrainingLogCard extends StatelessWidget {
                 ),
                 Text(
                   '${trainingLog['distance']} km',
-                  style: SyntrakTypography.headlineSmall.copyWith(
-                    color: SyntrakColors.textPrimary,
+                  style: SnowtrakTypography.headlineSmall.copyWith(
+                    color: SnowtrakColors.textPrimary,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: SyntrakSpacing.md),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day) {
-                return SizedBox(
-                  width: 30,
-                  child: Center(
-                    child: Text(
-                      day,
-                      style: SyntrakTypography.labelSmall.copyWith(
-                        color: SyntrakColors.textTertiary,
+            const SizedBox(height: SnowtrakSpacing.md),
+            Builder(builder: (context) {
+              final activeDays = (trainingLog['activeDays'] as Set<int>?) ?? <int>{};
+              const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: List.generate(7, (i) {
+                  final isActive = activeDays.contains(i + 1);
+                  return Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? SnowtrakColors.primary.withValues(alpha: 0.15)
+                          : Colors.transparent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        labels[i],
+                        style: SnowtrakTypography.labelSmall.copyWith(
+                          color: isActive ? SnowtrakColors.primary : SnowtrakColors.textTertiary,
+                          fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                        ),
                       ),
                     ),
-                  ),
-                );
-              }).toList(),
-            ),
+                  );
+                }),
+              );
+            }),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FreeTrialButton extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: () {},
-        style: ElevatedButton.styleFrom(
-          backgroundColor: SyntrakColors.accent,
-          foregroundColor: SyntrakColors.textOnPrimary,
-          padding: const EdgeInsets.symmetric(vertical: SyntrakSpacing.md),
-        ),
-        child: Text(
-          'Start a free trial',
-          style: SyntrakTypography.labelLarge,
         ),
       ),
     );

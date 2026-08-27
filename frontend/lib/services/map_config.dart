@@ -1,7 +1,5 @@
-// Shared map UI configuration.
-//
-// Defaults to a clean 2D basemap so all map screens stay readable and avoid
-// heavy 3D visual clutter.
+import 'dart:convert';
+import 'package:flutter/services.dart';
 
 enum MapVisualStyle {
   clean2d,
@@ -9,26 +7,38 @@ enum MapVisualStyle {
 }
 
 class MapConfig {
-  static const String _styleUrl = String.fromEnvironment(
-    'MAP_STYLE_URL',
-    defaultValue: '',
-  );
+  // Runtime key — populated by init() below.
+  static String _mapTilerKey = '';
 
-  static const String _mapTilerKey = String.fromEnvironment(
-    'MAPTILER_API_KEY',
-    defaultValue: '',
-  );
+  // ponytail: --dart-define takes precedence so CI/CD never needs the asset file.
+  static const String _compiledKey = String.fromEnvironment('MAPTILER_API_KEY');
+  static const String _compiledStyleUrl = String.fromEnvironment('MAP_STYLE_URL');
 
-      static const String _mapTilerStreetsStyleUrl =
-        'https://api.maptiler.com/maps/streets-v2/style.json';
-      static const String _mapTilerOutdoorStyleUrl =
-        'https://api.maptiler.com/maps/outdoor-v2/style.json';
+  /// Call once during app bootstrap (before runApp).
+  /// Loads keys from .env.local.json; --dart-define values override the file.
+  static Future<void> init() async {
+    if (_compiledKey.isNotEmpty) {
+      _mapTilerKey = _compiledKey;
+      return;
+    }
+    try {
+      final raw = await rootBundle.loadString('.env.local.json');
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      _mapTilerKey = (map['MAPTILER_API_KEY'] as String? ?? '').trim();
+    } catch (_) {
+      // File missing or malformed — tiles fall back to open sources.
+    }
+  }
 
-  // Very quiet 2D raster style for a Strava-like clean base map.
+  static const String _mapTilerStreetsStyleUrl =
+      'https://api.maptiler.com/maps/streets-v2/style.json';
+  static const String _mapTilerOutdoorStyleUrl =
+      'https://api.maptiler.com/maps/outdoor-v2/style.json';
+
   static const String _clean2dRasterStyleJson = '''
 {
   "version": 8,
-  "name": "Syntrak Clean 2D",
+  "name": "Snowtrak Clean 2D",
   "glyphs": "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
   "sources": {
     "carto_light": {
@@ -52,11 +62,10 @@ class MapConfig {
 }
 ''';
 
-  // Terrain style fallback (topographic tiles), useful for slope readability.
   static const String _terrainRasterStyleJson = '''
 {
   "version": 8,
-  "name": "Syntrak Terrain",
+  "name": "Snowtrak Terrain",
   "glyphs": "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
   "sources": {
     "opentopo": {
@@ -81,15 +90,12 @@ class MapConfig {
 ''';
 
   static String styleForMode(MapVisualStyle style) {
-    final hasStyleOverride = _styleUrl.trim().isNotEmpty;
-
-    // Respect explicit MAP_STYLE_URL override for clean mode, while still
-    // allowing terrain toggle to switch maps.
-    if (style == MapVisualStyle.clean2d && hasStyleOverride) {
-      return _styleUrl;
+    final styleUrl = _compiledStyleUrl.trim();
+    if (style == MapVisualStyle.clean2d && styleUrl.isNotEmpty) {
+      return styleUrl;
     }
 
-    if (_mapTilerKey.trim().isNotEmpty) {
+    if (_mapTilerKey.isNotEmpty) {
       switch (style) {
         case MapVisualStyle.clean2d:
           return '$_mapTilerStreetsStyleUrl?key=$_mapTilerKey';
@@ -106,11 +112,9 @@ class MapConfig {
     }
   }
 
-  static String get defaultStyleString {
-    return styleForMode(MapVisualStyle.clean2d);
-  }
+  static String get defaultStyleString => styleForMode(MapVisualStyle.clean2d);
 
-  static bool get hasMapTilerApiKey => _mapTilerKey.trim().isNotEmpty;
+  static bool get hasMapTilerApiKey => _mapTilerKey.isNotEmpty;
 
   static bool isUsingMapTiler(MapVisualStyle style) {
     return styleForMode(style).contains('api.maptiler.com/maps/');
@@ -118,27 +122,16 @@ class MapConfig {
 
   static String resolvedSourceLabel(MapVisualStyle style) {
     final resolved = styleForMode(style);
-    if (resolved.contains('api.maptiler.com/maps/outdoor')) {
-      return 'MapTiler Outdoor';
-    }
-    if (resolved.contains('api.maptiler.com/maps/streets')) {
-      return 'MapTiler Streets';
-    }
-    if (resolved.contains('tile.opentopomap.org')) {
-      return 'OpenTopoMap fallback';
-    }
-    if (resolved.contains('basemaps.cartocdn.com')) {
-      return 'CARTO fallback';
-    }
-    if (resolved.contains('tiles.openfreemap.org')) {
-      return 'OpenFreeMap fallback';
-    }
+    if (resolved.contains('api.maptiler.com/maps/outdoor')) return 'MapTiler Outdoor';
+    if (resolved.contains('api.maptiler.com/maps/streets')) return 'MapTiler Streets';
+    if (resolved.contains('tile.opentopomap.org')) return 'OpenTopoMap fallback';
+    if (resolved.contains('basemaps.cartocdn.com')) return 'CARTO fallback';
+    if (resolved.contains('tiles.openfreemap.org')) return 'OpenFreeMap fallback';
     return 'Custom style';
   }
 
-  static String get emergencyFallbackStyleJson {
-    return 'https://demotiles.maplibre.org/style.json';
-  }
+  static String get emergencyFallbackStyleJson =>
+      'https://demotiles.maplibre.org/style.json';
 
   static bool get isConfigured => true;
 }

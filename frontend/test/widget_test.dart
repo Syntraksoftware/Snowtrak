@@ -8,10 +8,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:syntrak/core/config/app_environment.dart';
-import 'package:syntrak/core/di/service_locator.dart';
+import 'package:snowtrak/core/config/app_environment.dart';
+import 'package:snowtrak/core/di/service_locator.dart';
 
-import 'package:syntrak/main.dart';
+import 'package:snowtrak/main.dart';
 
 void main() {
   setUp(() async {
@@ -24,7 +24,7 @@ void main() {
 
   testWidgets('App loads successfully', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const SyntrakApp());
+    await tester.pumpWidget(const SnowtrakApp());
 
     // Avoid pumpAndSettle because periodic polling timers keep the app "busy".
     await tester.pump();

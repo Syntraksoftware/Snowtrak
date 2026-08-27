@@ -1,7 +1,7 @@
 /// Test data factories for creating test objects
-import 'package:syntrak/models/user.dart';
-import 'package:syntrak/models/activity.dart';
-import 'package:syntrak/models/auth_session.dart';
+import 'package:snowtrak/models/user.dart';
+import 'package:snowtrak/models/activity.dart';
+import 'package:snowtrak/models/auth_session.dart';
 
 class TestData {
   /// Create a test user
@@ -56,7 +56,6 @@ class TestData {
     DateTime? startTime,
     double? distance,
     int? duration,
-    String? thumbnailUrl,
   }) {
     final now = DateTime.now();
     final start = startTime ?? now;
@@ -74,7 +73,6 @@ class TestData {
       maxPace: 300.0,
       isPublic: true,
       createdAt: now,
-      thumbnailUrl: thumbnailUrl,
     );
   }
 

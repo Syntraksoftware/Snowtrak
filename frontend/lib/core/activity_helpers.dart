@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/models/activity.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/models/activity.dart';
 
 /// Helper functions for activity types with skiing-specific icons and colors
 class ActivityHelpers {
@@ -24,17 +24,17 @@ class ActivityHelpers {
   static Color getActivityColor(ActivityType type) {
     switch (type) {
       case ActivityType.alpine:
-        return SyntrakColors.alpine;
+        return SnowtrakColors.alpine;
       case ActivityType.crossCountry:
-        return SyntrakColors.crossCountry;
+        return SnowtrakColors.crossCountry;
       case ActivityType.freestyle:
-        return SyntrakColors.freestyle;
+        return SnowtrakColors.freestyle;
       case ActivityType.backcountry:
-        return SyntrakColors.backcountry;
+        return SnowtrakColors.backcountry;
       case ActivityType.snowboard:
-        return SyntrakColors.snowboard;
+        return SnowtrakColors.snowboard;
       case ActivityType.other:
-        return SyntrakColors.textSecondary;
+        return SnowtrakColors.textSecondary;
     }
   }
   

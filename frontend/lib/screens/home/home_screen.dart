@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/screens/activities/activities_screen.dart';
-import 'package:syntrak/screens/record/record_screen.dart';
-import 'package:syntrak/screens/profile/profile_screen.dart';
-import 'package:syntrak/screens/groups/groups_screen.dart';
-import 'package:syntrak/screens/community/community_screen.dart';
-import 'package:syntrak/screens/home/home_tab_scope.dart';
-import 'package:syntrak/screens/home/location_permission_dialog.dart';
-import 'package:syntrak/services/location_service.dart';
-import 'package:syntrak/services/storage_service.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/screens/activities/activities_screen.dart';
+import 'package:snowtrak/screens/record/record_screen.dart';
+import 'package:snowtrak/screens/profile/profile_screen.dart';
+import 'package:snowtrak/screens/groups/groups_screen.dart';
+import 'package:snowtrak/screens/community/community_screen.dart';
+import 'package:snowtrak/screens/home/home_tab_scope.dart';
+import 'package:snowtrak/screens/home/location_permission_dialog.dart';
+import 'package:snowtrak/services/location_service.dart';
+import 'package:snowtrak/services/storage_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,7 +24,6 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _hasCheckedPermission = false;
   final PageController _pageController = PageController(initialPage: 2);
 
-  // Restructured navigation order: Map, Community, Home, Groups/Activities, You
   final List<Widget> _screens = [
     const RecordScreen(),      // 0: Map (Record Activities)
     const CommunityScreen(),   // 1: Community
@@ -36,9 +35,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Ensure currentIndex is within bounds on initialization
-    _currentIndex = _currentIndex.clamp(0, _screens.length - 1);
-    // Check and ask for location permission after a short delay
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkLocationPermission();
     });
@@ -76,13 +72,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onTabTapped(int index) {
     if (index >= 0 && index < _screens.length && index != _currentIndex) {
-      setState(() {
-        _currentIndex = index;
-      });
       _pageController.animateToPage(
         index,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOutCubic,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
       );
     }
   }
@@ -97,17 +90,12 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Scaffold(
         body: PageView(
           controller: _pageController,
-          physics: const NeverScrollableScrollPhysics(),
-          onPageChanged: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
+          onPageChanged: (index) => setState(() => _currentIndex = index),
           children: _screens,
         ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          boxShadow: SyntrakElevation.md,
+          boxShadow: SnowtrakElevation.md,
         ),
         child: BottomNavigationBar(
           currentIndex: safeIndex,

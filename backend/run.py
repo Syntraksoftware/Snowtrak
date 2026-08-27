@@ -60,6 +60,18 @@ SERVICES = {
 VENV_PYTHON = _venv_python_path()
 
 
+def _service_env() -> dict[str, str]:
+    """Build a shared child-process environment for all backend services."""
+    existing_pythonpath = os.environ.get("PYTHONPATH", "")
+    backend_path = str(backend_directory)
+    pythonpath = (
+        f"{backend_path}{os.pathsep}{existing_pythonpath}"
+        if existing_pythonpath
+        else backend_path
+    )
+    return {**os.environ, "PYTHONUNBUFFERED": "1", "PYTHONPATH": pythonpath}
+
+
 def start_service(service_name):
     """Start a single service using the shared venv."""
     if service_name not in SERVICES:
@@ -83,7 +95,7 @@ def start_service(service_name):
         result = subprocess.run(
             [str(VENV_PYTHON), "run.py"],
             cwd=str(service_dir),
-            env={**os.environ, "PYTHONUNBUFFERED": "1"},
+            env=_service_env(),
         )
         return result.returncode == 0
     except KeyboardInterrupt:
@@ -115,7 +127,7 @@ def start_all_services():
             proc = subprocess.Popen(
                 [str(VENV_PYTHON), "run.py"],
                 cwd=str(service_dir),
-                env={**os.environ, "PYTHONUNBUFFERED": "1"},
+                env=_service_env(),
             )
             processes[service_name] = proc
             print(f"   ✅ Process started (PID: {proc.pid})")
@@ -136,10 +148,12 @@ def start_all_services():
 
     # Wait for processes or keyboard interrupt
     try:
+        reported_stops = set()
         while True:
             for service_name, proc in processes.items():
-                if proc.poll() is not None:
+                if proc.poll() is not None and service_name not in reported_stops:
                     print(f"⚠️  {service_name}-backend stopped (exit code: {proc.returncode})")
+                    reported_stops.add(service_name)
             import time
 
             time.sleep(1)

@@ -1,4 +1,4 @@
-/// Notification model for Syntrak app
+/// Notification model for Snowtrak app
 /// Represents different types of in-app notifications
 
 enum NotificationType {

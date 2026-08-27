@@ -1,66 +1,63 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:syntrak/services/map_config.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/services/map_config.dart';
 
 class RecordMapView extends StatefulWidget {
   const RecordMapView({
     super.key,
     required this.initialCameraPosition,
-    required this.routePoints,
     required this.onMapCreated,
     required this.myLocationTrackingMode,
     this.onTrackingDismissed,
+    this.onStyleLoaded,
   });
 
   final CameraPosition initialCameraPosition;
-  final List<LatLng> routePoints;
   final void Function(MapLibreMapController) onMapCreated;
   final MyLocationTrackingMode myLocationTrackingMode;
   final VoidCallback? onTrackingDismissed;
+  final VoidCallback? onStyleLoaded;
 
   @override
   State<RecordMapView> createState() => _RecordMapViewState();
 }
 
 class _RecordMapViewState extends State<RecordMapView> {
-  MapLibreMapController? _mapController;
-  MapVisualStyle _selectedStyle = MapVisualStyle.terrain;
+  bool _styleLoaded = false;
+  bool _timedOut = false;
+  Timer? _loadTimer;
 
-  Future<void> _zoomIn() async {
-    if (_mapController == null) {
-      return;
-    }
-    await _mapController!.animateCamera(CameraUpdate.zoomIn());
-  }
-
-  Future<void> _zoomOut() async {
-    if (_mapController == null) {
-      return;
-    }
-    await _mapController!.animateCamera(CameraUpdate.zoomOut());
-  }
-
-  void _setStyle(MapVisualStyle style) {
-    if (_selectedStyle == style) {
-      return;
-    }
-
-    setState(() {
-      _selectedStyle = style;
-      _mapController = null;
+  @override
+  void initState() {
+    super.initState();
+    // ponytail: 10s covers slow connections; shows actionable error instead of silent blank
+    _loadTimer = Timer(const Duration(seconds: 10), () {
+      if (mounted && !_styleLoaded) setState(() => _timedOut = true);
     });
+  }
 
-    final source = MapConfig.resolvedSourceLabel(style);
-    final needsMapTiler = style == MapVisualStyle.terrain;
-    final suffix = needsMapTiler && !MapConfig.hasMapTilerApiKey
-        ? ' (MAPTILER_API_KEY not set)'
-        : '';
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Map style: $source$suffix'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+  @override
+  void dispose() {
+    _loadTimer?.cancel();
+    super.dispose();
+  }
+
+  void _onStyleLoaded() {
+    _loadTimer?.cancel();
+    setState(() => _styleLoaded = true);
+    widget.onStyleLoaded?.call();
+  }
+
+  void _retry() {
+    setState(() {
+      _styleLoaded = false;
+      _timedOut = false;
+    });
+    _loadTimer = Timer(const Duration(seconds: 10), () {
+      if (mounted && !_styleLoaded) setState(() => _timedOut = true);
+    });
   }
 
   @override
@@ -68,163 +65,70 @@ class _RecordMapViewState extends State<RecordMapView> {
     return Stack(
       children: [
         MapLibreMap(
-          key: ValueKey<String>('record-${_selectedStyle.name}'),
-          styleString: MapConfig.styleForMode(_selectedStyle),
+          // ponytail: terrain locked during recording
+          styleString: MapConfig.styleForMode(MapVisualStyle.terrain),
           initialCameraPosition: widget.initialCameraPosition,
           myLocationEnabled: true,
           myLocationTrackingMode: widget.myLocationTrackingMode,
           compassEnabled: false,
           rotateGesturesEnabled: false,
           tiltGesturesEnabled: false,
-          onCameraTrackingDismissed: () {
-            widget.onTrackingDismissed?.call();
-          },
-          onMapCreated: (controller) {
-            _mapController = controller;
-            widget.onMapCreated(controller);
-          },
+          onCameraTrackingDismissed: widget.onTrackingDismissed,
+          onMapCreated: widget.onMapCreated,
+          onStyleLoadedCallback: _onStyleLoaded,
         ),
-        Positioned(
-          top: 12,
-          right: 10,
-          child: _RecordStyleToggle(
-            selectedStyle: _selectedStyle,
-            onSelected: _setStyle,
+        if (_timedOut)
+          Positioned.fill(
+            child: _MapErrorOverlay(
+              message: MapConfig.hasMapTilerApiKey
+                  ? 'Map failed to load — check your network connection.'
+                  : 'Map tiles not configured.\nRun with MAPTILER_API_KEY set.',
+              onRetry: _retry,
+            ),
           ),
-        ),
-        Positioned(
-          right: 10,
-          bottom: 12,
-          child: _RecordZoomControls(
-            onZoomIn: _zoomIn,
-            onZoomOut: _zoomOut,
-          ),
-        ),
       ],
     );
   }
 }
 
-class _RecordStyleToggle extends StatelessWidget {
-  const _RecordStyleToggle({
-    required this.selectedStyle,
-    required this.onSelected,
-  });
+class _MapErrorOverlay extends StatelessWidget {
+  const _MapErrorOverlay({required this.message, required this.onRetry});
 
-  final MapVisualStyle selectedStyle;
-  final void Function(MapVisualStyle style) onSelected;
+  final String message;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _RecordStyleButton(
-            label: '2D',
-            selected: selectedStyle == MapVisualStyle.clean2d,
-            onTap: () => onSelected(MapVisualStyle.clean2d),
-          ),
-          _RecordStyleButton(
-            label: 'Terrain',
-            selected: selectedStyle == MapVisualStyle.terrain,
-            onTap: () => onSelected(MapVisualStyle.terrain),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RecordStyleButton extends StatelessWidget {
-  const _RecordStyleButton({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: selected ? const Color(0xFFFF5A1F) : Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
+    return Container(
+      color: SnowtrakColors.darkBackground.withValues(alpha: 0.85),
+      child: Center(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: selected ? Colors.white : Colors.black87,
-              fontWeight: FontWeight.w600,
-            ),
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.map_outlined, color: Colors.white54, size: 48),
+              const SizedBox(height: 16),
+              Text(
+                message,
+                style: SnowtrakTypography.bodyMedium
+                    .copyWith(color: Colors.white70),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: onRetry,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: SnowtrakColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Retry'),
+              ),
+            ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _RecordZoomControls extends StatelessWidget {
-  const _RecordZoomControls({
-    required this.onZoomIn,
-    required this.onZoomOut,
-  });
-
-  final Future<void> Function() onZoomIn;
-  final Future<void> Function() onZoomOut;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            visualDensity: VisualDensity.compact,
-            icon: const Icon(Icons.add),
-            onPressed: () => onZoomIn(),
-            tooltip: 'Zoom in',
-          ),
-          Container(
-            width: 30,
-            height: 1,
-            color: Colors.black12,
-          ),
-          IconButton(
-            visualDensity: VisualDensity.compact,
-            icon: const Icon(Icons.remove),
-            onPressed: () => onZoomOut(),
-            tooltip: 'Zoom out',
-          ),
-        ],
       ),
     );
   }

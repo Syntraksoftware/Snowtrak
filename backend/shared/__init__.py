@@ -41,8 +41,6 @@ from .track_pipeline_schemas import (
     SourceType,
     TrackPointIn,
     TrackPointOut,
-    TrailMatchRequest,
-    TrailMatchResponse,
 )
 
 __all__ = [
@@ -72,8 +70,6 @@ __all__ = [
     "ElevationChartDataOut",
     "ElevationCorrectionRequest",
     "ElevationCorrectionResponse",
-    "TrailMatchRequest",
-    "TrailMatchResponse",
     "LocationIn",
     "LocationOut",
     "ActivityIn",

@@ -1,4 +1,4 @@
-import 'package:syntrak/core/errors/app_error.dart';
+import 'package:snowtrak/core/errors/app_error.dart';
 
 /// Sentinel for successful operations with no payload ([deleteActivity], etc.).
 final class Unit {

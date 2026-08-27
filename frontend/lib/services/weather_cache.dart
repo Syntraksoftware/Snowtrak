@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:syntrak/models/weather.dart';
+import 'package:snowtrak/models/weather.dart';
 
 class CachedWeatherEntry {
   const CachedWeatherEntry({

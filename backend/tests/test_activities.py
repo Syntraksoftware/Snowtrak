@@ -10,8 +10,8 @@ import httpx
 import pytest
 from fastapi import FastAPI
 
-from domains.activities_service.ports import get_activities_conn
 from domains.activities_service.api import router
+from domains.activities_service.ports import get_activities_conn
 
 
 def _iso_ts() -> str:
@@ -261,6 +261,15 @@ async def test_create_activity_segment_index_validation(
 async def test_activities_503_without_pool(activities_app: FastAPI, monkeypatch: pytest.MonkeyPatch) -> None:
     import db.connection as db_conn
 
+    from domains.activities_service import infra as activities_infra
+    from domains.activities_service import ports as activities_ports
+
+    # Wire the real infra provider the way application.py does, so the request
+    # reaches require_pool_conn instead of tripping the "provider not configured"
+    # guard in ports. monkeypatch restores the global afterwards.
+    monkeypatch.setattr(
+        activities_ports, "_activities_conn_provider", activities_infra.get_activities_conn
+    )
     monkeypatch.setattr(db_conn, "get_pool", lambda: None)
 
     transport = httpx.ASGITransport(app=activities_app)

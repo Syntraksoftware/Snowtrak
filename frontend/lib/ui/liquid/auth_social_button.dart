@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/ui/liquid/snowtrak_auth_theme.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 enum AuthSocialProvider { google, apple }
 
@@ -27,13 +27,13 @@ class AuthSocialButton extends StatelessWidget {
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
-          backgroundColor: SyntrakColors.surface,
-          foregroundColor: SyntrakColors.textPrimary,
+          backgroundColor: SnowtrakColors.surface,
+          foregroundColor: SnowtrakColors.textPrimary,
           side: const BorderSide(color: SnowtrakAuthTheme.socialBorder),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(SnowtrakAuthTheme.buttonRadius),
           ),
-          textStyle: SyntrakTypography.labelLarge.copyWith(
+          textStyle: SnowtrakTypography.labelLarge.copyWith(
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -41,7 +41,7 @@ class AuthSocialButton extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _ProviderIcon(provider: provider),
-            const SizedBox(width: SyntrakSpacing.sm),
+            const SizedBox(width: SnowtrakSpacing.sm),
             Text(_label),
           ],
         ),

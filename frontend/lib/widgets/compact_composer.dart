@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/providers/auth_provider.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/providers/auth_provider.dart';
 
+/// Twitter / Threads-style inline composer at the top of the feed.
 class CompactComposer extends StatefulWidget {
-  final Function(String text) onPost;
-  final int maxCharacters;
-  final VoidCallback? onComposeTap;
-
   const CompactComposer({
     super.key,
     required this.onPost,
     this.maxCharacters = 280,
     this.onComposeTap,
   });
+
+  final Function(String text) onPost;
+  final int maxCharacters;
+  final VoidCallback? onComposeTap;
 
   @override
   State<CompactComposer> createState() => _CompactComposerState();
@@ -57,111 +59,114 @@ class _CompactComposerState extends State<CompactComposer> {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final user = authProvider.user;
+    final canPost = widget.onComposeTap == null &&
+        _characterCount > 0 &&
+        _characterCount <= widget.maxCharacters;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.grey[200]!,
-            width: 0.5,
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            SnowtrakSpacing.md,
+            SnowtrakSpacing.md,
+            SnowtrakSpacing.md,
+            SnowtrakSpacing.sm,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: SnowtrakColors.primary.withValues(alpha: 0.12),
+                child: user?.firstName != null
+                    ? Text(
+                        user!.firstName![0].toUpperCase(),
+                        style: SnowtrakTypography.labelMedium.copyWith(
+                          color: SnowtrakColors.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.person_outline,
+                        color: SnowtrakColors.textSecondary,
+                        size: 20,
+                      ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      controller: _textController,
+                      focusNode: _focusNode,
+                      readOnly: widget.onComposeTap != null,
+                      maxLines: _isExpanded ? 4 : 1,
+                      maxLength: widget.maxCharacters,
+                      style: SnowtrakTypography.bodyLarge.copyWith(
+                        color: SnowtrakColors.textPrimary,
+                      ),
+                      onTap: () {
+                        if (widget.onComposeTap != null) {
+                          widget.onComposeTap!.call();
+                          return;
+                        }
+                        if (!_isExpanded) {
+                          setState(() => _isExpanded = true);
+                        }
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Start a thread…',
+                        hintStyle: SnowtrakTypography.bodyLarge.copyWith(
+                          color: SnowtrakColors.textTertiary,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                        counterText: '',
+                        isDense: true,
+                      ),
+                    ),
+                    if (_isExpanded && widget.onComposeTap == null) ...[
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: FilledButton(
+                          onPressed: canPost ? _handlePost : null,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: SnowtrakColors.primary,
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor:
+                                SnowtrakColors.primary.withValues(alpha: 0.35),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 8,
+                            ),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(SnowtrakRadius.round),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            'Post',
+                            style: SnowtrakTypography.labelMedium.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Avatar - same size as message cards (radius 20)
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: Colors.grey[300],
-            child: user?.firstName != null
-                ? Text(
-                    user!.firstName![0].toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.black87,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  )
-                : const Icon(Icons.person, color: Colors.grey, size: 20),
-          ),
-          const SizedBox(width: 12),
-          // Text input
-          Expanded(
-            child: TextField(
-              controller: _textController,
-              focusNode: _focusNode,
-              readOnly: widget.onComposeTap != null,
-              maxLines: _isExpanded ? null : 1,
-              maxLength: widget.maxCharacters,
-              style: const TextStyle(
-                fontSize: 15,
-                color: Colors.black87,
-              ),
-              onTap: () {
-                if (widget.onComposeTap != null) {
-                  widget.onComposeTap!.call();
-                  return;
-                }
-                if (!_isExpanded) {
-                  setState(() {
-                    _isExpanded = true;
-                  });
-                }
-              },
-              decoration: InputDecoration(
-                hintText: "What's new?",
-                hintStyle: TextStyle(
-                  color: Colors.grey[400],
-                  fontSize: 15,
-                ),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
-                counterText: '',
-                isDense: true,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          // Post button
-          SizedBox(
-            height: 32,
-            child: ElevatedButton(
-              onPressed: widget.onComposeTap ??
-                  (_characterCount > 0 &&
-                          _characterCount <= widget.maxCharacters
-                      ? _handlePost
-                      : null),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF4500),
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: Colors.grey[300],
-                disabledForegroundColor: Colors.grey[600],
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 0,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 0,
-              ),
-              child: const Text(
-                'Post',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+        const Divider(height: 1, thickness: 1, color: SnowtrakColors.divider),
+      ],
     );
   }
 }
-
-
-

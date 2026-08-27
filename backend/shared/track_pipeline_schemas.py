@@ -196,47 +196,6 @@ class ElevationCorrectionResponse(BaseModel):
     points: list[TrackPointOut]
 
 
-# --- Trail matching (Engine / resort integration) ---
-
-
-class TrailMatchRequest(BaseModel):
-    """Match track geometry to named trails (implementation-specific)."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    processed_track: ProcessedTrackIn | None = None
-    points: list[TrackPointIn] | None = Field(
-        None, description="Alternative to processed_track when no Engine 1 id exists yet"
-    )
-    segments: list[SegmentOut] | None = Field(
-        None,
-        description=(
-            "Engine 2 segments; only ``descent`` slices are matched to ``map_trail.ski_runs``. "
-            "If omitted, the server treats the full track as a single descent."
-        ),
-    )
-    resort_id: str | None = Field(
-        None, description="Reserved for future resort-scoped layers; ignored by the current matcher"
-    )
-
-    @model_validator(mode="after")
-    def require_track_payload(self) -> Self:
-        has_track = self.processed_track is not None
-        has_points = self.points is not None and len(self.points) > 0
-        has_segments = self.segments is not None and len(self.segments) > 0
-        if not has_track and not has_points and not has_segments:
-            raise ValueError(
-                "Provide processed_track, a non-empty points list, or non-empty segments"
-            )
-        return self
-
-
-class TrailMatchResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    segments: list[SegmentOut] = Field(default_factory=list)
-
-
 # --- Activity (Dart: Activity + Location) ---
 
 
@@ -362,6 +321,7 @@ class MapActivityDetailResponse(BaseModel):
     stats: dict[str, Any] | None = None
     processed_track: ProcessedTrackOut
     segments: list[SegmentOut]
+    thumbnail_url: str | None = None
 
 
 class MapActivityListItem(BaseModel):

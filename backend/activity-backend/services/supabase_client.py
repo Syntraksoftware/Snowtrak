@@ -8,6 +8,7 @@ from typing import Any
 from uuid import uuid4
 
 from postgrest import CountMethod
+from shared.pipeline_enums import ProcessingStatus
 from supabase import Client, create_client
 
 from config import get_config
@@ -59,8 +60,12 @@ class ActivitySupabaseClient:
         elevation_gain_meters: float,
         visibility: str = "private",
         description: str | None = None,
+        map_activity_id: str | None = None,
+        processing_status: ProcessingStatus | str = ProcessingStatus.ready,
+        storage_key: str | None = None,
+        activity_id: str | None = None,
     ) -> dict[str, Any] | None:
-        payload = {
+        payload: dict[str, Any] = {
             "user_id": user_id,
             "name": name,
             "start_time": start_time,
@@ -74,11 +79,82 @@ class ActivitySupabaseClient:
             "description": description,
             "created_at": datetime.utcnow().isoformat() + "Z",
         }
+        if map_activity_id:
+            payload["map_activity_id"] = map_activity_id
+        if storage_key:
+            payload["storage_key"] = storage_key
+        if activity_id:
+            payload["id"] = activity_id
+        # processing_status: set via update_activity_pipeline_fields after migration 004
+
         resp = self._client.table("activities").insert(payload).execute()
         data = getattr(resp, "data", None)
         if isinstance(data, list) and data:
             return data[0]
         return None
+
+    def update_activity_pipeline_fields(
+        self,
+        activity_id: str,
+        user_id: str,
+        *,
+        map_activity_id: str | None = None,
+        processing_status: ProcessingStatus | str | None = None,
+        storage_key: str | None = None,
+        distance_meters: float | None = None,
+        duration_seconds: int | None = None,
+        elevation_gain_meters: float | None = None,
+        gps_path: list[dict[str, Any]] | None = None,
+        thumbnail_url: str | None = None,
+        name: str | None = None,
+    ) -> dict[str, Any] | None:
+        update_fields: dict[str, Any] = {
+            "updated_at": datetime.utcnow().isoformat() + "Z",
+        }
+        if map_activity_id is not None:
+            update_fields["map_activity_id"] = map_activity_id
+        if processing_status is not None:
+            update_fields["processing_status"] = str(processing_status)
+        if storage_key is not None:
+            update_fields["storage_key"] = storage_key
+        if distance_meters is not None:
+            update_fields["distance_meters"] = distance_meters
+        if duration_seconds is not None:
+            update_fields["duration_seconds"] = duration_seconds
+        if elevation_gain_meters is not None:
+            update_fields["elevation_gain_meters"] = elevation_gain_meters
+        if gps_path is not None:
+            update_fields["gps_path"] = gps_path
+        if thumbnail_url is not None:
+            update_fields["thumbnail_url"] = thumbnail_url
+        if name is not None:
+            update_fields["name"] = name
+
+        resp = (
+            self._client.table("activities")
+            .update(update_fields)
+            .eq("id", activity_id)
+            .eq("user_id", user_id)
+            .execute()
+        )
+        data = getattr(resp, "data", None)
+        if isinstance(data, list) and data:
+            return data[0]
+        return None
+
+    def create_signed_upload_url(
+        self,
+        bucket: str,
+        storage_key: str,
+        expires_in: int,
+    ) -> dict[str, Any]:
+        return self._client.storage.from_(bucket).create_signed_upload_url(
+            storage_key,
+            expires_in,
+        )
+
+    def download_storage_object(self, bucket: str, storage_key: str) -> bytes:
+        return self._client.storage.from_(bucket).download(storage_key)
 
     def list_activities(self, limit: int = 20, offset: int = 0) -> dict[str, Any]:
         resp = (

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/core/activity_helpers.dart';
-import 'package:syntrak/models/activity.dart';
-import 'package:syntrak/screens/groups/challenges_tab_widgets.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/core/activity_helpers.dart';
+import 'package:snowtrak/models/activity.dart';
+import 'package:snowtrak/screens/groups/challenges_tab_widgets.dart';
 
 class ChallengesTab extends StatefulWidget {
   const ChallengesTab({super.key});
@@ -30,7 +30,7 @@ class _ChallengesTabState extends State<ChallengesTab> {
         // TODO: Implement refresh functionality
         await Future.delayed(const Duration(seconds: 1));
       },
-      color: SyntrakColors.primary,
+      color: SnowtrakColors.primary,
       child: CustomScrollView(
         slivers: [
           // Activity type filter chips - skiing focused
@@ -38,8 +38,8 @@ class _ChallengesTabState extends State<ChallengesTab> {
             child: Container(
               height: 56,
               padding: const EdgeInsets.symmetric(
-                vertical: SyntrakSpacing.sm,
-                horizontal: SyntrakSpacing.md,
+                vertical: SnowtrakSpacing.sm,
+                horizontal: SnowtrakSpacing.md,
               ),
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
@@ -50,7 +50,7 @@ class _ChallengesTabState extends State<ChallengesTab> {
                   final icon = ActivityHelpers.getActivityIcon(activityType);
                   
                   return Padding(
-                    padding: const EdgeInsets.only(right: SyntrakSpacing.sm),
+                    padding: const EdgeInsets.only(right: SnowtrakSpacing.sm),
                     child: FilterChip(
                       selected: isSelected,
                       label: Row(
@@ -60,13 +60,13 @@ class _ChallengesTabState extends State<ChallengesTab> {
                             icon,
                             size: 18,
                             color: isSelected
-                                ? SyntrakColors.textOnPrimary
-                                : SyntrakColors.textSecondary,
+                                ? SnowtrakColors.textOnPrimary
+                                : SnowtrakColors.textSecondary,
                           ),
-                          const SizedBox(width: SyntrakSpacing.xs),
+                          const SizedBox(width: SnowtrakSpacing.xs),
                           Text(
                             activityType.displayName,
-                            style: SyntrakTypography.labelMedium,
+                            style: SnowtrakTypography.labelMedium,
                           ),
                         ],
                       ),
@@ -76,18 +76,18 @@ class _ChallengesTabState extends State<ChallengesTab> {
                               selected ? activityType : null;
                         });
                       },
-                      selectedColor: SyntrakColors.primary,
-                      checkmarkColor: SyntrakColors.textOnPrimary,
-                      backgroundColor: SyntrakColors.surfaceVariant,
-                      labelStyle: SyntrakTypography.labelMedium.copyWith(
+                      selectedColor: SnowtrakColors.primary,
+                      checkmarkColor: SnowtrakColors.textOnPrimary,
+                      backgroundColor: SnowtrakColors.surfaceVariant,
+                      labelStyle: SnowtrakTypography.labelMedium.copyWith(
                         color: isSelected
-                            ? SyntrakColors.textOnPrimary
-                            : SyntrakColors.textSecondary,
+                            ? SnowtrakColors.textOnPrimary
+                            : SnowtrakColors.textSecondary,
                         fontWeight:
                             isSelected ? FontWeight.w600 : FontWeight.normal,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(SyntrakRadius.round),
+                        borderRadius: BorderRadius.circular(SnowtrakRadius.round),
                       ),
                     ),
                   );
@@ -98,19 +98,19 @@ class _ChallengesTabState extends State<ChallengesTab> {
           // Featured challenge banner (placeholder)
           SliverToBoxAdapter(
             child: Container(
-              margin: const EdgeInsets.all(SyntrakSpacing.md),
+              margin: const EdgeInsets.all(SnowtrakSpacing.md),
               height: 200,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    SyntrakColors.primaryDark,
-                    SyntrakColors.primary,
+                    SnowtrakColors.primaryDark,
+                    SnowtrakColors.primary,
                   ],
                 ),
-                borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-                boxShadow: SyntrakElevation.md,
+                borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
+                boxShadow: SnowtrakElevation.md,
               ),
               child: Stack(
                 children: [
@@ -148,33 +148,33 @@ class _ChallengesTabState extends State<ChallengesTab> {
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: SyntrakSpacing.md,
-                            vertical: SyntrakSpacing.xs,
+                            horizontal: SnowtrakSpacing.md,
+                            vertical: SnowtrakSpacing.xs,
                           ),
                           decoration: BoxDecoration(
-                            color: SyntrakColors.accent,
-                            borderRadius: BorderRadius.circular(SyntrakRadius.sm),
+                            color: SnowtrakColors.accent,
+                            borderRadius: BorderRadius.circular(SnowtrakRadius.sm),
                           ),
                           child: Text(
                             'SYNTRAK',
-                            style: SyntrakTypography.labelSmall.copyWith(
-                              color: SyntrakColors.textOnPrimary,
+                            style: SnowtrakTypography.labelSmall.copyWith(
+                              color: SnowtrakColors.textOnPrimary,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
-                        const SizedBox(height: SyntrakSpacing.md),
+                        const SizedBox(height: SnowtrakSpacing.md),
                         Text(
                           'December Vertical Challenge',
-                          style: SyntrakTypography.displaySmall.copyWith(
-                            color: SyntrakColors.textOnPrimary,
+                          style: SnowtrakTypography.displaySmall.copyWith(
+                            color: SnowtrakColors.textOnPrimary,
                           ),
                         ),
-                        const SizedBox(height: SyntrakSpacing.sm),
+                        const SizedBox(height: SnowtrakSpacing.sm),
                         Text(
                           'Complete 5,000m of vertical drop',
-                          style: SyntrakTypography.bodyMedium.copyWith(
-                            color: SyntrakColors.textOnPrimary.withOpacity(0.9),
+                          style: SnowtrakTypography.bodyMedium.copyWith(
+                            color: SnowtrakColors.textOnPrimary.withOpacity(0.9),
                           ),
                         ),
                       ],
@@ -197,7 +197,7 @@ class _ChallengesTabState extends State<ChallengesTab> {
           // Join button for featured challenge
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+              padding: const EdgeInsets.symmetric(horizontal: SnowtrakSpacing.md),
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -205,15 +205,15 @@ class _ChallengesTabState extends State<ChallengesTab> {
                     // TODO: Implement join challenge functionality
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: SyntrakColors.primary,
-                    foregroundColor: SyntrakColors.textOnPrimary,
+                    backgroundColor: SnowtrakColors.primary,
+                    foregroundColor: SnowtrakColors.textOnPrimary,
                     padding: const EdgeInsets.symmetric(
-                      vertical: SyntrakSpacing.md,
+                      vertical: SnowtrakSpacing.md,
                     ),
                   ),
                   child: Text(
                     'Join Challenge',
-                    style: SyntrakTypography.labelLarge,
+                    style: SnowtrakTypography.labelLarge,
                   ),
                 ),
               ),
@@ -223,23 +223,23 @@ class _ChallengesTabState extends State<ChallengesTab> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(
-                SyntrakSpacing.md,
-                SyntrakSpacing.lg,
-                SyntrakSpacing.md,
-                SyntrakSpacing.sm,
+                SnowtrakSpacing.md,
+                SnowtrakSpacing.lg,
+                SnowtrakSpacing.md,
+                SnowtrakSpacing.sm,
               ),
               child: Row(
                 children: [
                   Icon(
                     Icons.person,
                     size: 18,
-                    color: SyntrakColors.textSecondary,
+                    color: SnowtrakColors.textSecondary,
                   ),
-                  const SizedBox(width: SyntrakSpacing.sm),
+                  const SizedBox(width: SnowtrakSpacing.sm),
                   Text(
                     'Recommended For You',
-                    style: SyntrakTypography.headlineSmall.copyWith(
-                      color: SyntrakColors.textPrimary,
+                    style: SnowtrakTypography.headlineSmall.copyWith(
+                      color: SnowtrakColors.textPrimary,
                     ),
                   ),
                 ],
@@ -248,11 +248,11 @@ class _ChallengesTabState extends State<ChallengesTab> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: SyntrakSpacing.md),
+              padding: const EdgeInsets.symmetric(horizontal: SnowtrakSpacing.md),
               child: Text(
                 'Based on your skiing activities.',
-                style: SyntrakTypography.bodySmall.copyWith(
-                  color: SyntrakColors.textTertiary,
+                style: SnowtrakTypography.bodySmall.copyWith(
+                  color: SnowtrakColors.textTertiary,
                 ),
               ),
             ),
@@ -263,14 +263,14 @@ class _ChallengesTabState extends State<ChallengesTab> {
               height: 180,
               child: ListView(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.all(SyntrakSpacing.md),
+                padding: const EdgeInsets.all(SnowtrakSpacing.md),
                 children: [
                   ChallengesRecommendedCard(
                     icon: ActivityHelpers.getActivityIcon(ActivityType.alpine),
                     title: 'December 400-Minute Alpine Challenge',
                     badge: '400\'',
                   ),
-                  const SizedBox(width: SyntrakSpacing.md),
+                  const SizedBox(width: SnowtrakSpacing.md),
                   ChallengesRecommendedCard(
                     icon: ActivityHelpers.getActivityIcon(ActivityType.crossCountry),
                     title: 'December Cross-Country 50K Challenge',
@@ -292,20 +292,20 @@ class _ChallengesTabState extends State<ChallengesTab> {
                     Icon(
                       Icons.emoji_events,
                       size: 80,
-                      color: SyntrakColors.textTertiary,
+                      color: SnowtrakColors.textTertiary,
                     ),
-                    const SizedBox(height: SyntrakSpacing.lg),
+                    const SizedBox(height: SnowtrakSpacing.lg),
                     Text(
                       'No challenges available',
-                      style: SyntrakTypography.headlineMedium.copyWith(
-                        color: SyntrakColors.textSecondary,
+                      style: SnowtrakTypography.headlineMedium.copyWith(
+                        color: SnowtrakColors.textSecondary,
                       ),
                     ),
-                    const SizedBox(height: SyntrakSpacing.sm),
+                    const SizedBox(height: SnowtrakSpacing.sm),
                     Text(
                       'Check back later for new skiing challenges',
-                      style: SyntrakTypography.bodyMedium.copyWith(
-                        color: SyntrakColors.textTertiary,
+                      style: SnowtrakTypography.bodyMedium.copyWith(
+                        color: SnowtrakColors.textTertiary,
                       ),
                       textAlign: TextAlign.center,
                     ),

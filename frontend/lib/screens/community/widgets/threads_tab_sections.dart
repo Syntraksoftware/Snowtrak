@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/models/post.dart';
-import 'package:syntrak/widgets/compact_composer.dart';
-import 'package:syntrak/widgets/message_card.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/models/post.dart';
+import 'package:snowtrak/widgets/compact_composer.dart';
+import 'package:snowtrak/widgets/message_card.dart';
 
 class ThreadsEmptyState extends StatelessWidget {
   const ThreadsEmptyState({
@@ -20,19 +20,19 @@ class ThreadsEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(SyntrakSpacing.lg),
+        padding: const EdgeInsets.all(SnowtrakSpacing.lg),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               message,
               textAlign: TextAlign.center,
-              style: SyntrakTypography.bodyMedium.copyWith(
-                color: SyntrakColors.error,
+              style: SnowtrakTypography.bodyMedium.copyWith(
+                color: SnowtrakColors.error,
               ),
             ),
             if (retryable) ...[
-              const SizedBox(height: SyntrakSpacing.md),
+              const SizedBox(height: SnowtrakSpacing.md),
               ElevatedButton(
                 onPressed: onRetry,
                 child: const Text('Retry'),
@@ -73,9 +73,9 @@ class ThreadsFeedBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return RefreshIndicator(
       onRefresh: onRefresh,
-      color: SyntrakColors.primary,
+      color: SnowtrakColors.primary,
       child: ListView.builder(
-        padding: const EdgeInsets.only(top: SyntrakSpacing.sm),
+        padding: const EdgeInsets.only(bottom: SnowtrakSpacing.md),
         itemCount: posts.length + 1,
         itemBuilder: (context, index) {
           if (index == 0) {

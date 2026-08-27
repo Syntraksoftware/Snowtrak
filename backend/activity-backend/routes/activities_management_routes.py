@@ -2,7 +2,8 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from shared.pipeline_enums import ProcessingStatus
 
 from middleware.auth import get_current_user, get_optional_user
 from models import (
@@ -17,15 +18,31 @@ from routes.activity_transformers import (
     map_activity_to_frontend_payload,
     parse_iso_timestamp,
 )
+from services.activity_deletion_service import ActivityDeletionService
+from services.map_backend_client import get_map_backend_client
 from services.supabase_client import get_activity_client
+from services.user_stats_service import get_stats_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+async def _background_thumbnail(activity_id: str, user_id: str, gps_path: list[dict]) -> None:
+    """Generate thumbnail after response is sent; failure is non-fatal."""
+    try:
+        thumbnail_url = await get_map_backend_client().generate_thumbnail(activity_id, gps_path)
+        if thumbnail_url:
+            get_activity_client().update_activity_pipeline_fields(
+                activity_id, user_id, thumbnail_url=thumbnail_url
+            )
+    except Exception:
+        logger.warning("background thumbnail failed for activity %s", activity_id, exc_info=True)
+
+
 @router.post("/", response_model=FrontendActivityResponse, status_code=status.HTTP_201_CREATED)
 async def create_activity(
     data: FrontendActivityCreate,
+    background_tasks: BackgroundTasks,
     user_id: str = Depends(get_current_user),
 ):
     """Create a new activity and return frontend response shape."""
@@ -58,6 +75,8 @@ async def create_activity(
             elevation_gain_meters=computed_metrics["elevation_gain_meters"],
             visibility=visibility_value,
             description=data.description,
+            map_activity_id=data.map_activity_id,
+            processing_status=data.processing_status or ProcessingStatus.ready,
         )
 
         if not created_activity:
@@ -71,6 +90,10 @@ async def create_activity(
             fallback_start_time=data.start_time,
             fallback_end_time=data.end_time,
         )
+        background_tasks.add_task(
+            _background_thumbnail, created_activity["id"], user_id, gps_path_records
+        )
+        background_tasks.add_task(get_stats_service().recompute_and_upsert, user_id)
         return FrontendActivityResponse(**frontend_payload)
     except HTTPException:
         raise
@@ -163,18 +186,21 @@ async def update_activity(
 @router.delete("/{activity_id}", response_model=DeleteResponse)
 async def delete_activity(
     activity_id: str,
+    background_tasks: BackgroundTasks,
     user_id: str = Depends(get_current_user),
 ):
     """Delete an activity owned by the authenticated user."""
     activity_client = get_activity_client()
+    deletion_service = ActivityDeletionService(activity_client)
     try:
-        is_deleted = activity_client.delete_activity(activity_id, user_id)
+        is_deleted = await deletion_service.delete_activity(activity_id, user_id)
         if not is_deleted:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Activity not found or not authorized",
             ) from None
 
+        background_tasks.add_task(get_stats_service().recompute_and_upsert, user_id)
         return DeleteResponse(
             message="Activity deleted",
             deleted_activity_id=activity_id,

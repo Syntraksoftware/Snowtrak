@@ -1,5 +1,10 @@
 name: Deploy Backend to VPS
 
+# Manual only, by choice. A merge to main is not a deploy: you pick when
+# production changes. The production environment additionally carries a
+# required reviewer, so this workflow pauses for approval before it touches
+# the live stack.
+
 on:
   workflow_dispatch:
     inputs:
@@ -11,30 +16,270 @@ on:
         options:
           - staging
           - production
+      ref:
+        description: 'Release tag (v1.2.3), or a 40-char commit SHA for staging only'
+        required: true
+        default: ''
+        type: string
+      action:
+        description: Bring the stack up, or take it down (staging only)
+        required: true
+        default: up
+        type: choice
+        options:
+          - up
+          - down
+
+permissions:
+  contents: read
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Resolves VPS_HOST, VPS_USER, VPS_SSH_KEY and VPS_APP_DIR from the chosen
+    # environment. Staging and production therefore point at different checkout
+    # directories on the box, which is what stops one from git-reset --hard'ing
+    # over the other.
+    environment: ${{ inputs.environment }}
     steps:
+      - name: Resolve image digests
+        id: images
+        shell: bash
+        env:
+          REF: ${{ inputs.ref }}
+          DEPLOY_ENV: ${{ inputs.environment }}
+        run: |
+          set -euo pipefail
+
+          # A teardown pulls nothing, but `docker compose down` still parses the
+          # Compose file, and the image variables there are `:?` so that a real
+          # deploy fails loudly rather than running an empty image reference.
+          # Unset them and the teardown aborts instead of the stack coming down.
+          if [ "${{ inputs.action }}" = "down" ]; then
+            for v in SNOWTRAK_MAIN_IMAGE SNOWTRAK_COMMUNITY_IMAGE \
+                     SNOWTRAK_ACTIVITY_IMAGE SNOWTRAK_MAP_IMAGE; do
+              echo "$v=unused-for-teardown" >> "$GITHUB_ENV"
+            done
+            echo "Teardown: image resolution skipped." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # Production takes release tags only. Staging additionally takes a raw
+          # commit SHA so a develop commit can be tested without cutting a tag.
+          if [[ "$REF" =~ ^v ]]; then
+            image_tag="$REF"
+          elif [[ "$REF" =~ ^[0-9a-f]{40}$ ]]; then
+            if [ "$DEPLOY_ENV" = "production" ]; then
+              echo "::error::production deploys a v* release tag, not a raw SHA." >&2
+              exit 1
+            fi
+            image_tag="sha-$REF"
+          else
+            echo "::error::ref must be a v* tag or a 40-character commit SHA, got '$REF'." >&2
+            exit 1
+          fi
+
+          # Both stacks run the same four services. Keep in step with the
+          # Compose files -- an unresolved service leaves its image variable
+          # unset, and the `:?` in the Compose file aborts the deploy.
+          services="main-backend community-backend activity-backend map-backend"
+
+          echo "Resolving \`$image_tag\`" >> "$GITHUB_STEP_SUMMARY"
+          for svc in $services; do
+            image="ghcr.io/syntraksoftware/snowtrak-${svc}"
+            digest=$(docker buildx imagetools inspect "${image}:${image_tag}" \
+              --format '{{.Manifest.Digest}}')
+            if [ -z "$digest" ]; then
+              echo "::error::could not resolve ${image}:${image_tag}" >&2
+              exit 1
+            fi
+            pinned="${image}@${digest}"
+            echo "- \`${svc}\` -> \`${digest}\`" >> "$GITHUB_STEP_SUMMARY"
+
+            case "$svc" in
+              main-backend)      echo "SNOWTRAK_MAIN_IMAGE=$pinned"      >> "$GITHUB_ENV" ;;
+              community-backend) echo "SNOWTRAK_COMMUNITY_IMAGE=$pinned" >> "$GITHUB_ENV" ;;
+              activity-backend)  echo "SNOWTRAK_ACTIVITY_IMAGE=$pinned"  >> "$GITHUB_ENV" ;;
+              map-backend)       echo "SNOWTRAK_MAP_IMAGE=$pinned"       >> "$GITHUB_ENV" ;;
+            esac
+          done
+
+      - name: Reject a production teardown
+        if: inputs.environment == 'production' && inputs.action == 'down'
+        run: |
+          echo "::error::Refusing to take production down from this workflow." >&2
+          exit 1
+
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          DEPLOY_ENV: ${{ inputs.environment }}
+          DEPLOY_REF: ${{ inputs.ref }}
+          DEPLOY_ACTION: ${{ inputs.action }}
+          SNOWTRAK_MAIN_IMAGE: ${{ env.SNOWTRAK_MAIN_IMAGE }}
+          SNOWTRAK_COMMUNITY_IMAGE: ${{ env.SNOWTRAK_COMMUNITY_IMAGE }}
+          SNOWTRAK_ACTIVITY_IMAGE: ${{ env.SNOWTRAK_ACTIVITY_IMAGE }}
+          SNOWTRAK_MAP_IMAGE: ${{ env.SNOWTRAK_MAP_IMAGE }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          envs: DEPLOY_ENV,DEPLOY_REF,DEPLOY_ACTION,SNOWTRAK_MAIN_IMAGE,SNOWTRAK_COMMUNITY_IMAGE,SNOWTRAK_ACTIVITY_IMAGE,SNOWTRAK_MAP_IMAGE
           script: |
-            set -e
+            set -euo pipefail
             cd "${{ secrets.VPS_APP_DIR }}"
-            git fetch origin
 
-            if [ "${{ inputs.environment }}" = "production" ]; then
-              git checkout main
-              git reset --hard origin/main
-              docker compose -f backend/deploy/docker-compose.production.yml up -d --build
+            # Both environments check out the ref being deployed. Production
+            # used to pin REF=main, from when it always deployed branch HEAD.
+            # That would now pair images built from the tag with Compose files
+            # taken from main -- so a rollback to an older tag would run old
+            # images against newer Compose files, which is the one moment that
+            # surprise is least welcome.
+            REF="$DEPLOY_REF"
+            # All four services are checked, not just main-backend. Three of
+            # them can fail to start and the stack still answers on 8080, so a
+            # single-port poll reported a green deploy over a broken one.
+            if [ "$DEPLOY_ENV" = "production" ]; then
+              COMPOSE=backend/deploy/docker-compose.production.yml
+              PROJECT=snowtrak-prod
+              HEALTH="main:8080 community:5001 activity:5100 map:5200"
             else
-              git checkout develop
-              git reset --hard origin/develop
-              docker compose -f backend/deploy/docker-compose.staging.yml up -d --build
+              COMPOSE=backend/deploy/docker-compose.staging.yml
+              PROJECT=snowtrak-staging
+              HEALTH="main:15080 community:15001 activity:15100 map:15200"
             fi
 
-            docker image prune -f
+            # -p pins the Compose project name. Without it both files resolve to
+            # the name of their parent directory ("deploy") and a staging deploy
+            # replaces the production containers instead of running beside them.
+            if [ "$DEPLOY_ACTION" = "down" ]; then
+              docker compose -f "$COMPOSE" -p "$PROJECT" down
+              echo "$PROJECT stopped."
+              exit 0
+            fi
+
+            # Each service reads its own env file, which holds live credentials
+            # and is not in git. They are deliberately not merged: POSTGRES_SCHEMA
+            # alone differs per service (main / community / map), so one shared
+            # file would point three services at one schema. Fail loudly rather
+            # than starting against missing configuration.
+            # Both stacks run the same four services, so both need all four env
+            # files. Keep this list in step with the Compose files: a service
+            # present there and missing here starts against no configuration.
+            #
+            # Checking the keys, not just the file. A present-but-incomplete env
+            # file is the worse failure: pydantic falls back to its defaults, the
+            # service starts, and main-backend signs tokens with a key published
+            # in this repo. Only the three that have no safe default are gated --
+            # the rest are tuning knobs and are reported below instead.
+            missing=""
+            for svc in main community activity map; do
+              env_file="backend/${svc}-backend/.env"
+              if [ ! -f "$env_file" ]; then
+                missing="$missing $env_file"
+                continue
+              fi
+              # Either name is accepted everywhere: the satellites read
+              # JWT_SECRET, main-backend reads SECRET_KEY, and both take the
+              # other as an alias.
+              for key in 'SECRET_KEY|JWT_SECRET' 'SUPABASE_URL' 'SUPABASE_SERVICE_ROLE_KEY'; do
+                grep -qE "^(${key})=.+" "$env_file" || missing="$missing ${env_file}:${key}"
+              done
+            done
+            if [ -n "$missing" ]; then
+              echo "::error::missing env config:$missing -- see backend/deploy/README.md" >&2
+              exit 1
+            fi
+
+            git fetch origin --prune --tags
+            git checkout --detach "origin/$REF" 2>/dev/null || git checkout --detach "$REF"
+            echo "Deploying $DEPLOY_ENV from $REF at $(git rev-parse --short HEAD)"
+
+            # Non-fatal: names in the committed template that the box has not
+            # got. Most are optional, which is why this reports rather than
+            # gates -- but a setting added in a release and never set here is
+            # otherwise invisible until someone wonders why a default is running.
+            for svc in main community activity map; do
+              drift=$(comm -23 \
+                <(grep -oE '^[A-Z_][A-Z0-9_]*' "backend/${svc}-backend/.env.example" | sort -u) \
+                <(grep -oE '^[A-Z_][A-Z0-9_]*' "backend/${svc}-backend/.env" | sort -u) \
+                | tr '\n' ' ') || true
+              if [ -n "$drift" ]; then
+                echo "note: ${svc}-backend .env does not set: $drift"
+              fi
+            done
+
+            # What is running right now, so a bad rollout can be undone here
+            # rather than by a human noticing the red X and re-running the
+            # workflow by hand. Deploys pin digests, so a running container's
+            # image reference is exactly the digest to go back to.
+            rollback=""
+            found=0
+            for svc in main community activity map; do
+              cid=$(docker compose -f "$COMPOSE" -p "$PROJECT" ps -q "${svc}-backend" 2>/dev/null || true)
+              [ -n "$cid" ] || continue
+              img=$(docker inspect -f '{{.Config.Image}}' "$cid")
+              found=$((found + 1))
+              case "$svc" in
+                main)      rollback="$rollback SNOWTRAK_MAIN_IMAGE=$img" ;;
+                community) rollback="$rollback SNOWTRAK_COMMUNITY_IMAGE=$img" ;;
+                activity)  rollback="$rollback SNOWTRAK_ACTIVITY_IMAGE=$img" ;;
+                map)       rollback="$rollback SNOWTRAK_MAP_IMAGE=$img" ;;
+              esac
+            done
+            # A partial capture is not a rollback target: the Compose file's `:?`
+            # would abort on whichever image variable is unset, so treat anything
+            # short of all four as nothing.
+            [ "$found" -eq 4 ] || rollback=""
+
+            # Compose returns as soon as the containers start, which is before
+            # uvicorn is listening. Poll instead of trusting the exit code.
+            wait_healthy() {
+              for _ in $(seq 1 30); do
+                ok=1
+                for hp in $HEALTH; do
+                  curl -fsS -o /dev/null "http://127.0.0.1:${hp#*:}/health" || { ok=0; break; }
+                done
+                if [ "$ok" -eq 1 ]; then
+                  return 0
+                fi
+                sleep 10
+              done
+              return 1
+            }
+
+            # Pull the exact digests CI scanned. The box no longer builds: the
+            # image that Trivy passed is the image that runs.
+            docker compose -f "$COMPOSE" -p "$PROJECT" pull
+            docker compose -f "$COMPOSE" -p "$PROJECT" up -d
+
+            if wait_healthy; then
+              # Pruning only once the new stack is good. Run before the health
+              # check and it collects the previous images -- which are untagged
+              # the moment their containers go, and are the rollback target.
+              docker image prune -f
+              echo "all four services healthy."
+              exit 0
+            fi
+
+            echo "::error::a service did not become healthy within 5 minutes." >&2
+            for svc in main community activity map; do
+              docker compose -f "$COMPOSE" -p "$PROJECT" logs --tail 30 "${svc}-backend" >&2 || true
+            done
+
+            if [ -z "$rollback" ]; then
+              echo "::error::no previous stack to roll back to. Leaving it up for inspection." >&2
+              exit 1
+            fi
+
+            echo "Rolling back to:$rollback" >&2
+            # Unquoted on purpose: $rollback is a list of NAME=value pairs.
+            # shellcheck disable=SC2086
+            env $rollback docker compose -f "$COMPOSE" -p "$PROJECT" up -d
+            if wait_healthy; then
+              echo "::error::rolled back; the previous digests are healthy." >&2
+            else
+              echo "::error::the rollback did not come up healthy either. Stack needs hands." >&2
+            fi
+            # A rollback is still a failed deploy.
+            exit 1

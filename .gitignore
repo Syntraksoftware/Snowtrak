@@ -1,12 +1,31 @@
 # Root gitignore
 .venv/
 __pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
 build/
 frontend/build/
 frontend/.dart_tool/
 frontend/.idea/
 frontend/ios/Pods/
+frontend/ios/Flutter/Generated.xcconfig
+frontend/ios/Flutter/flutter_export_environment.sh
 backend/.venv/
 backend/data/*.geojson
-.env
+**/.env
+!**/.env.example
+backend/postgres.env
+backend/deploy/env/staging.env
+backend/deploy/env/production.env
 *.p8
+.cursor/
+
+# graphify knowledge-graph output (graph.json exceeds the 5MB CI guard)
+graphify-out/
+
+# fastlane run report, regenerated on every build
+frontend/ios/fastlane/report.xml
+
+# editor settings
+.vscode/

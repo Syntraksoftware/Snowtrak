@@ -1,7 +1,8 @@
-import 'package:syntrak/core/errors/app_result.dart';
-import 'package:syntrak/models/post.dart';
-import 'package:syntrak/screens/community/community_post_mapper.dart';
-import 'package:syntrak/services/community_service.dart';
+import 'package:snowtrak/core/errors/app_result.dart';
+import 'package:snowtrak/models/post.dart';
+import 'package:snowtrak/screens/community/community_post_mapper.dart';
+import 'package:snowtrak/services/community_service.dart';
+import 'package:snowtrak/services/feed/feed_post_sort.dart';
 
 class ThreadsFeedLoaderResult {
   const ThreadsFeedLoaderResult({
@@ -28,6 +29,7 @@ class ThreadsFeedLoader {
   static Future<AppResult<ThreadsFeedLoaderResult>> load({
     required CommunityService service,
     required int pageSize,
+    int offset = 0,
     required Future<AppResult<Map<String, List<Map<String, dynamic>>>>> Function(
       List<String> postIds,
     )
@@ -44,7 +46,10 @@ class ThreadsFeedLoader {
           );
         }
         final activeSubthreadId = pickDefaultSubthreadId(value);
-        final postsResult = await service.getFeedPosts(limit: pageSize);
+        final postsResult = await service.getFeedPosts(
+          limit: pageSize,
+          offset: offset,
+        );
         switch (postsResult) {
           case AppFailure(:final error):
             return AppFailure(error);
@@ -69,7 +74,7 @@ class ThreadsFeedLoader {
                 return AppSuccess(
                   ThreadsFeedLoaderResult(
                     activeSubthreadId: activeSubthreadId,
-                    posts: mapped,
+                    posts: FeedPostSort.byRecent(mapped),
                   ),
                 );
             }

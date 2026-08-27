@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/ui/liquid/snowtrak_auth_theme.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 class AuthPrimaryButton extends StatelessWidget {
   const AuthPrimaryButton({
@@ -26,13 +26,13 @@ class AuthPrimaryButton extends StatelessWidget {
         style: FilledButton.styleFrom(
           backgroundColor: SnowtrakAuthTheme.brand,
           disabledBackgroundColor: SnowtrakAuthTheme.brandMuted.withValues(alpha: 0.35),
-          foregroundColor: SyntrakColors.textOnPrimary,
-          disabledForegroundColor: SyntrakColors.textOnPrimary.withValues(alpha: 0.85),
+          foregroundColor: SnowtrakColors.textOnPrimary,
+          disabledForegroundColor: SnowtrakColors.textOnPrimary.withValues(alpha: 0.85),
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(SnowtrakAuthTheme.buttonRadius),
           ),
-          textStyle: SyntrakTypography.labelLarge.copyWith(
+          textStyle: SnowtrakTypography.labelLarge.copyWith(
             fontWeight: FontWeight.w600,
             fontSize: 16,
           ),
@@ -44,7 +44,7 @@ class AuthPrimaryButton extends StatelessWidget {
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    SyntrakColors.textOnPrimary,
+                    SnowtrakColors.textOnPrimary,
                   ),
                 ),
               )

@@ -1,126 +1,97 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/models/post.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/models/post.dart';
 
+/// Threads-style reply teaser: stacked avatars + engagement summary.
 class InlineReplyPreview extends StatelessWidget {
-  final List<Post> replies;
-  final VoidCallback? onTap;
-
   const InlineReplyPreview({
     super.key,
     required this.replies,
+    this.likeCount = 0,
     this.onTap,
   });
+
+  final List<Post> replies;
+  final int likeCount;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     if (replies.isEmpty) return const SizedBox.shrink();
 
-    // Show up to 2 latest replies
-    final previewReplies = replies.take(2).toList();
+    final previewReplies = replies.take(3).toList();
+    final replyLabel = replies.length == 1
+        ? '1 reply'
+        : '${replies.length} replies';
+    final likeLabel = likeCount == 1 ? '1 like' : '$likeCount likes';
+    final summary = likeCount > 0 ? '$replyLabel · $likeLabel' : replyLabel;
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        margin:
-            const EdgeInsets.only(top: 8, left: 52), // Align with text content
-        padding: const EdgeInsets.only(left: 12, top: 8, bottom: 8, right: 8),
-        decoration: BoxDecoration(
-          border: Border(
-            left: BorderSide(
-              color: Colors.grey[300]!,
-              width: 1,
-            ),
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 10),
+        child: Row(
           children: [
-            ...previewReplies.map((reply) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CircleAvatar(
-                        radius: 20, // Same size as main posts
-                        backgroundColor: Colors.grey[300],
-                        child: reply.author.avatarUrl != null
-                            ? null
-                            : Text(
-                                reply.author.displayName[0].toUpperCase(),
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                      ),
-                      const SizedBox(width: 12), // Same spacing as main posts
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text(
-                                  reply.author.displayName,
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '·',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    color: Colors.grey[400],
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Flexible(
-                                  child: Text(
-                                    '@${reply.author.username}',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[600],
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              reply.text,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.black87,
-                                height: 1.5,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                )),
-            if (replies.length > 2)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  '${replies.length - 2} more replies',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                    fontStyle: FontStyle.italic,
-                  ),
+            SizedBox(
+              width: 18 + (previewReplies.length - 1) * 14.0,
+              height: 22,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  for (var i = 0; i < previewReplies.length; i++)
+                    Positioned(
+                      left: i * 14.0,
+                      child: _MiniAvatar(author: previewReplies[i].author),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                summary,
+                style: SnowtrakTypography.bodySmall.copyWith(
+                  color: SnowtrakColors.textSecondary,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniAvatar extends StatelessWidget {
+  const _MiniAvatar({required this.author});
+
+  final PostAuthor author;
+
+  @override
+  Widget build(BuildContext context) {
+    final initial = author.displayName.isNotEmpty
+        ? author.displayName[0].toUpperCase()
+        : '?';
+    return Container(
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: SnowtrakColors.surface,
+        border: Border.all(color: SnowtrakColors.divider, width: 1.5),
+      ),
+      child: CircleAvatar(
+        radius: 9,
+        backgroundColor: SnowtrakColors.primary.withValues(alpha: 0.12),
+        child: Text(
+          initial,
+          style: SnowtrakTypography.labelSmall.copyWith(
+            fontSize: 9,
+            fontWeight: FontWeight.w700,
+            color: SnowtrakColors.primary,
+          ),
         ),
       ),
     );

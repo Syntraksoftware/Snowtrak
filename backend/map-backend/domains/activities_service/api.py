@@ -4,13 +4,16 @@ Persist and read ``map_trail`` activities (PostGIS): track points, segments, sta
 
 from __future__ import annotations
 
+import asyncio
+import json
 import logging
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
 import asyncpg
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
 from shared.track_pipeline_schemas import (
     ActivityStatsOut,
     MapActivityCreateRequest,
@@ -25,11 +28,46 @@ from shared.track_pipeline_schemas import (
     TrackPointOut,
 )
 
-from domains.activities_service.ports import get_activities_conn
+from config import get_config
+from domains.activities_service.ports import get_activities_conn, upload_thumbnail
+from engine.thumbnail import render_route_png
 
 logger = logging.getLogger(__name__)
 
+
+async def _render_and_upload(activity_id: str, latlon: list[tuple[float, float]]) -> str | None:
+    """Render route PNG and upload to storage; returns public URL or None on failure."""
+    try:
+        cfg = get_config()
+        # ponytail: asyncio.to_thread keeps Pillow off the event loop
+        png = await asyncio.to_thread(
+            render_route_png, latlon, cfg.STATIC_MAP_WIDTH, cfg.STATIC_MAP_HEIGHT
+        )
+        return await asyncio.to_thread(upload_thumbnail, activity_id, png)
+    except Exception:
+        logger.warning("thumbnail generation failed for %s", activity_id, exc_info=True)
+        return None
+
+
+async def _generate_thumbnail(activity_id: UUID, points: list) -> str | None:
+    return await _render_and_upload(str(activity_id), [(p.lat, p.lon) for p in points])
+
+
 router = APIRouter(prefix="/activities", tags=["activities"])
+
+
+class _ThumbnailRequest(BaseModel):
+    activity_id: str
+    points: list[dict]  # [{lat: float, lon: float}, ...]
+
+
+@router.post("/thumbnail")
+async def generate_activity_thumbnail(body: _ThumbnailRequest) -> dict:
+    """Generate and upload a route thumbnail from raw GPS points (live recording path)."""
+    latlon = [(p["lat"], p["lon"]) for p in body.points if "lat" in p and "lon" in p]
+    url = await _render_and_upload(body.activity_id, latlon)
+    return {"thumbnail_url": url}
+
 
 _INSERT_ACTIVITY = """
 INSERT INTO map_trail.activities (user_id, recorded_at, stats)
@@ -109,10 +147,7 @@ def _build_processed_track_out(
         lat = float(r["lat"])
         z = float(r["elev_m"])
         ts_raw = point_timestamps[i] if point_timestamps and i < len(point_timestamps) else None
-        if ts_raw:
-            ts = datetime.fromisoformat(ts_raw.replace("Z", "+00:00"))
-        else:
-            ts = recorded_at
+        ts = datetime.fromisoformat(ts_raw.replace("Z", "+00:00")) if ts_raw else recorded_at
         st = r["segment_type"]
         seg_type = PointSegmentType(st) if st else None
         points_out.append(
@@ -182,7 +217,9 @@ async def _detail_response(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Activity not found")
 
     stats = row["stats"]
-    if stats is not None and not isinstance(stats, dict):
+    if isinstance(stats, str):
+        stats = json.loads(stats)
+    elif stats is not None and not isinstance(stats, dict):
         stats = dict(stats)
 
     pt_rows = await conn.fetch(_SELECT_POINTS, activity_id)
@@ -223,7 +260,7 @@ async def create_activity(
                 _INSERT_ACTIVITY,
                 body.user_id,
                 recorded_at,
-                stats_blob,
+                json.dumps(stats_blob),
             )
             assert aid is not None
 
@@ -259,7 +296,10 @@ async def create_activity(
             if seg_tuples:
                 await conn.executemany(_INSERT_SEGMENT, seg_tuples)
 
-            return await _detail_response(conn, aid)
+            detail = await _detail_response(conn, aid)
+
+        thumbnail_url = await _generate_thumbnail(aid, body.processed_track.points)
+        return detail.model_copy(update={"thumbnail_url": thumbnail_url})
     except asyncpg.PostgresError:
         logger.exception("activity insert failed (rolled back)")
         raise HTTPException(
@@ -283,6 +323,35 @@ async def get_activity(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to load activity",
         ) from None
+
+
+_DELETE_ACTIVITY = """
+DELETE FROM map_trail.activities
+WHERE id = $1::uuid
+RETURNING id
+"""
+
+
+@router.delete("/{activity_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_activity(
+    activity_id: UUID,
+    conn: asyncpg.Connection = Depends(get_activities_conn),
+) -> None:
+    """Delete activity header; ``track_points`` and ``segments`` cascade via FK."""
+    try:
+        deleted_id = await conn.fetchval(_DELETE_ACTIVITY, activity_id)
+    except asyncpg.PostgresError:
+        logger.exception("activity delete failed")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete activity",
+        ) from None
+
+    if deleted_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Activity not found",
+        )
 
 
 @router.get("", response_model=MapActivityListResponse)

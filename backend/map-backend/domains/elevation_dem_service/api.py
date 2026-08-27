@@ -12,8 +12,8 @@ import time
 from collections import OrderedDict
 from dataclasses import dataclass
 
-from fastapi import APIRouter, HTTPException, status
 import numpy as np
+from fastapi import APIRouter, HTTPException, status
 from shared.track_pipeline_schemas import (
     ElevationCorrectionRequest,
     ElevationCorrectionResponse,
@@ -24,7 +24,7 @@ from domains.elevation_dem_service import ports as elevation_ports
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(tags=["elevation-dem"])
+router = APIRouter(prefix="/elevation", tags=["elevation-dem"])
 
 # --- Response cache (bounding box + point signature) ---
 
@@ -94,7 +94,7 @@ def _cache_set(key: tuple, response: ElevationCorrectionResponse) -> None:
             _cache.popitem(last=False)
 
 
-@router.post("/elevation/correct", response_model=ElevationCorrectionResponse)
+@router.post("/correct", response_model=ElevationCorrectionResponse)
 async def correct_elevation_dem(request: ElevationCorrectionRequest) -> ElevationCorrectionResponse:
     """
     Correct ``elevation_m`` using Copernicus GLO-30 DEM tiles (local cache + rasterio).

@@ -1,6 +1,6 @@
 # Scripts
 
-Collection of shell scripts and utilities for development, testing, and deployment of the Syntrak application.
+Collection of shell scripts and utilities for development, testing, and deployment of the Snowtrak application.
 
 ## 1. Purpose and scope
 

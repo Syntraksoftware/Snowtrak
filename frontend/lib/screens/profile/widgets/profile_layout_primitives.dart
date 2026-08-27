@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/ui/liquid/snowtrak_auth_theme.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 /// Compact label + value row used in profile section placeholders.
 class ProfileInfoRow extends StatelessWidget {
@@ -18,23 +18,23 @@ class ProfileInfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: SyntrakSpacing.xs),
+      padding: const EdgeInsets.symmetric(vertical: SnowtrakSpacing.xs),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: SyntrakColors.textTertiary),
-          const SizedBox(width: SyntrakSpacing.sm),
+          Icon(icon, size: 18, color: SnowtrakColors.textTertiary),
+          const SizedBox(width: SnowtrakSpacing.sm),
           Expanded(
             child: Text(
               label,
-              style: SyntrakTypography.bodyMedium.copyWith(
-                color: SyntrakColors.textSecondary,
+              style: SnowtrakTypography.bodyMedium.copyWith(
+                color: SnowtrakColors.textSecondary,
               ),
             ),
           ),
           Text(
             value,
-            style: SyntrakTypography.labelLarge.copyWith(
-              color: SyntrakColors.textPrimary,
+            style: SnowtrakTypography.labelLarge.copyWith(
+              color: SnowtrakColors.textPrimary,
             ),
           ),
         ],
@@ -66,27 +66,27 @@ class ProfileMetricTile extends StatelessWidget {
 
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(SyntrakSpacing.sm),
+        padding: const EdgeInsets.all(SnowtrakSpacing.sm),
         decoration: BoxDecoration(
-          color: SyntrakColors.surfaceVariant,
-          borderRadius: BorderRadius.circular(SyntrakRadius.md),
+          color: SnowtrakColors.surfaceVariant,
+          borderRadius: BorderRadius.circular(SnowtrakRadius.md),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(icon, size: 18, color: accent),
-            const SizedBox(height: SyntrakSpacing.xs),
+            const SizedBox(height: SnowtrakSpacing.xs),
             Text(
               label,
-              style: SyntrakTypography.labelSmall.copyWith(
-                color: SyntrakColors.textSecondary,
+              style: SnowtrakTypography.labelSmall.copyWith(
+                color: SnowtrakColors.textSecondary,
               ),
             ),
             const SizedBox(height: 2),
             RichText(
               text: TextSpan(
-                style: SyntrakTypography.metricMedium.copyWith(
-                  color: SyntrakColors.textPrimary,
+                style: SnowtrakTypography.metricMedium.copyWith(
+                  color: SnowtrakColors.textPrimary,
                   fontSize: 18,
                 ),
                 children: [
@@ -94,8 +94,8 @@ class ProfileMetricTile extends StatelessWidget {
                   if (unit.isNotEmpty)
                     TextSpan(
                       text: ' $unit',
-                      style: SyntrakTypography.labelMedium.copyWith(
-                        color: SyntrakColors.textSecondary,
+                      style: SnowtrakTypography.labelMedium.copyWith(
+                        color: SnowtrakColors.textSecondary,
                       ),
                     ),
                 ],
@@ -124,7 +124,7 @@ class ProfileMetricRow extends StatelessWidget {
     return Row(
       children: [
         left,
-        const SizedBox(width: SyntrakSpacing.sm),
+        const SizedBox(width: SnowtrakSpacing.sm),
         right,
       ],
     );
@@ -148,16 +148,16 @@ class ProfileChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: SyntrakSpacing.sm,
-        vertical: SyntrakSpacing.xs,
+        horizontal: SnowtrakSpacing.sm,
+        vertical: SnowtrakSpacing.xs,
       ),
       decoration: BoxDecoration(
         color: selected
-            ? SyntrakColors.primary.withValues(alpha: 0.12)
-            : SyntrakColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(SyntrakRadius.round),
+            ? SnowtrakColors.primary.withValues(alpha: 0.12)
+            : SnowtrakColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(SnowtrakRadius.round),
         border: Border.all(
-          color: selected ? SyntrakColors.primary : SyntrakColors.divider,
+          color: selected ? SnowtrakColors.primary : SnowtrakColors.divider,
         ),
       ),
       child: Row(
@@ -167,14 +167,14 @@ class ProfileChip extends StatelessWidget {
             Icon(
               icon,
               size: 14,
-              color: selected ? SyntrakColors.primary : SyntrakColors.textSecondary,
+              color: selected ? SnowtrakColors.primary : SnowtrakColors.textSecondary,
             ),
             const SizedBox(width: 4),
           ],
           Text(
             label,
-            style: SyntrakTypography.labelMedium.copyWith(
-              color: selected ? SyntrakColors.primary : SyntrakColors.textSecondary,
+            style: SnowtrakTypography.labelMedium.copyWith(
+              color: selected ? SnowtrakColors.primary : SnowtrakColors.textSecondary,
             ),
           ),
         ],
@@ -202,19 +202,19 @@ class ProfilePlaceholderBlock extends StatelessWidget {
       height: height,
       width: double.infinity,
       decoration: BoxDecoration(
-        color: SyntrakColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(SyntrakRadius.md),
-        border: Border.all(color: SyntrakColors.divider),
+        color: SnowtrakColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(SnowtrakRadius.md),
+        border: Border.all(color: SnowtrakColors.divider),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 28, color: SyntrakColors.textTertiary),
-          const SizedBox(height: SyntrakSpacing.xs),
+          Icon(icon, size: 28, color: SnowtrakColors.textTertiary),
+          const SizedBox(height: SnowtrakSpacing.xs),
           Text(
             label,
-            style: SyntrakTypography.bodySmall.copyWith(
-              color: SyntrakColors.textTertiary,
+            style: SnowtrakTypography.bodySmall.copyWith(
+              color: SnowtrakColors.textTertiary,
             ),
             textAlign: TextAlign.center,
           ),

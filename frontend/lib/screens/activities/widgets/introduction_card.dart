@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/screens/activities/widgets/home_action_row.dart';
-import 'package:syntrak/screens/activities/widgets/home_section_card.dart';
-import 'package:syntrak/screens/activities/widgets/home_section_spacing.dart';
-import 'package:syntrak/screens/activities/widgets/home_selectable_chip.dart';
-import 'package:syntrak/screens/home/home_tab_scope.dart';
-import 'package:syntrak/ui/liquid/snowtrak_auth_theme.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/screens/activities/widgets/home_action_row.dart';
+import 'package:snowtrak/screens/activities/widgets/home_section_card.dart';
+import 'package:snowtrak/screens/activities/widgets/home_section_spacing.dart';
+import 'package:snowtrak/screens/activities/widgets/home_selectable_chip.dart';
+import 'package:snowtrak/screens/home/home_tab_scope.dart';
+import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 enum _IntroAction { record, community, stats }
 
@@ -40,8 +40,8 @@ class _IntroductionCardState extends State<IntroductionCard> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Wrap(
-              spacing: SyntrakSpacing.xs,
-              runSpacing: SyntrakSpacing.xs,
+              spacing: SnowtrakSpacing.xs,
+              runSpacing: SnowtrakSpacing.xs,
               children: [
                 HomeSelectableChip(
                   label: 'Record',
@@ -66,7 +66,7 @@ class _IntroductionCardState extends State<IntroductionCard> {
                 ),
               ],
             ),
-            const SizedBox(height: SyntrakSpacing.sm),
+            const SizedBox(height: SnowtrakSpacing.sm),
             HomeActionRow(
               title: _actionTitle(_selected),
               subtitle: _actionSubtitle(_selected),

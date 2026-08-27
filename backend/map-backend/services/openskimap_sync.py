@@ -65,7 +65,7 @@ async def download_geojson(url: str | None = None, *, bust_cache: bool = True) -
     async with httpx.AsyncClient(
         timeout=httpx.Timeout(DEFAULT_REQUEST_TIMEOUT_S),
         follow_redirects=True,
-        headers={"User-Agent": "syntrak-map-backend/openskimap-sync"},
+        headers={"User-Agent": "snowtrak-map-backend/openskimap-sync"},
     ) as client:
         response = await client.get(fetch_url)
         response.raise_for_status()

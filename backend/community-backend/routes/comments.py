@@ -22,6 +22,7 @@ from routes.validators.community_write_validators import (
     ensure_text_or_media,
     ensure_vote_type,
 )
+from services.community_cache import invalidate_post_comments_cache
 from services.media_validation import normalize_media_urls
 from services.supabase_client import get_community_client
 
@@ -73,6 +74,8 @@ async def create_comment(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to create comment",
             ) from None
+
+        await invalidate_post_comments_cache(data.post_id)
 
         return created_comment
     except HTTPException:
@@ -128,6 +131,8 @@ async def update_comment(
                 detail="Comment not found or unauthorized",
             ) from None
 
+        await invalidate_post_comments_cache(updated_comment["post_id"])
+
         return updated_comment
     except HTTPException:
         raise
@@ -180,12 +185,21 @@ async def delete_comment(
     """Delete a comment and nested replies."""
     community_client = get_community_client()
     try:
+        current_comment = community_client.get_comment_by_id(comment_id)
+        if not current_comment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Comment not found or unauthorized",
+            ) from None
+
         is_deleted = community_client.delete_comment(comment_id, user_id)
         if not is_deleted:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Comment not found or unauthorized",
             ) from None
+
+        await invalidate_post_comments_cache(current_comment["post_id"])
 
         return CommunityDeleteCommentResponse(
             message="Comment and nested replies deleted successfully",

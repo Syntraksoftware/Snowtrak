@@ -1,27 +1,33 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:syntrak/core/di/service_locator.dart';
-import 'package:syntrak/core/errors/app_error.dart';
-import 'package:syntrak/core/errors/app_result.dart';
-import 'package:syntrak/core/logging/app_logger.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/features/community/data/community_outbox_service.dart';
-import 'package:syntrak/services/community_service.dart';
-import 'package:syntrak/providers/auth_provider.dart';
-import 'package:syntrak/models/post.dart';
-import 'package:syntrak/screens/community/community_post_mapper.dart';
-import 'package:syntrak/screens/community/community_repost_sheet.dart';
-import 'package:syntrak/screens/community/new_thread_draft_screen.dart';
-import 'package:syntrak/screens/community/threads_tab_action_builders.dart';
-import 'package:syntrak/screens/community/threads_tab_action_coordinator.dart';
-import 'package:syntrak/screens/community/thread_draft_builders.dart';
-import 'package:syntrak/screens/community/thread_detail_screen.dart';
-import 'package:syntrak/screens/community/threads_feed_loader.dart';
-import 'package:syntrak/screens/community/threads_tab_feedback.dart';
-import 'package:syntrak/screens/community/threads_tab_post_state.dart';
-import 'package:syntrak/screens/community/threads_tab_sync_coordinator.dart';
-import 'package:syntrak/screens/community/widgets/threads_search_bar.dart';
-import 'package:syntrak/screens/community/widgets/threads_tab_sections.dart';
+import 'package:snowtrak/core/di/service_locator.dart';
+import 'package:snowtrak/core/errors/app_error.dart';
+import 'package:snowtrak/core/errors/app_result.dart';
+import 'package:snowtrak/core/logging/app_logger.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/features/community/data/community_outbox_service.dart';
+import 'package:snowtrak/services/community_service.dart';
+import 'package:snowtrak/providers/auth_provider.dart';
+import 'package:snowtrak/models/post.dart';
+import 'package:snowtrak/screens/community/community_post_mapper.dart';
+import 'package:snowtrak/screens/community/community_repost_sheet.dart';
+import 'package:snowtrak/screens/community/new_thread_draft_screen.dart';
+import 'package:snowtrak/screens/community/threads_tab_action_builders.dart';
+import 'package:snowtrak/screens/community/threads_tab_action_coordinator.dart';
+import 'package:snowtrak/screens/community/thread_draft_builders.dart';
+import 'package:snowtrak/screens/community/thread_detail_screen.dart';
+import 'package:snowtrak/screens/community/threads_feed_loader.dart';
+import 'package:snowtrak/screens/community/threads_tab_feedback.dart';
+import 'package:snowtrak/screens/community/threads_tab_post_state.dart';
+import 'package:snowtrak/screens/community/threads_tab_sync_coordinator.dart';
+import 'package:snowtrak/screens/community/widgets/threads_search_bar.dart';
+import 'package:snowtrak/screens/community/widgets/threads_tab_sections.dart';
+import 'package:snowtrak/services/feed/community_feed_cache.dart';
+import 'package:snowtrak/services/feed/feed_post_sort.dart';
+import 'package:snowtrak/services/feed/feed_rebase.dart';
+import 'package:snowtrak/widgets/skeleton.dart';
 
 class ThreadsTab extends StatefulWidget {
   const ThreadsTab({super.key});
@@ -41,6 +47,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
   final FocusNode _searchFocusNode = FocusNode();
   final CommunityOutboxService _outboxService = CommunityOutboxService();
   final CommunityService _communityService = sl<CommunityService>();
+  final CommunityFeedCache _feedCache = sl<CommunityFeedCache>();
   late final ThreadsTabActionCoordinator _actionCoordinator =
       ThreadsTabActionCoordinator(
         communityService: _communityService,
@@ -54,6 +61,9 @@ class _ThreadsTabState extends State<ThreadsTab> {
 
   bool _isRefreshing = false;
   bool _isLoading = false;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  int _feedOffset = 0;
   int _activeUploadOps = 0;
   bool _isSearchFocused = false;
   String? _activeSubthreadId;
@@ -70,7 +80,16 @@ class _ThreadsTabState extends State<ThreadsTab> {
         _isSearchFocused = _searchFocusNode.hasFocus;
       });
     });
+    _scrollController.addListener(_handleScroll);
     _bootstrapFeed();
+  }
+
+  void _handleScroll() {
+    if (!_scrollController.hasClients || _isLoadingMore || !_hasMore) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 320) {
+      _loadMoreFeed();
+    }
   }
 
   @override
@@ -82,17 +101,20 @@ class _ThreadsTabState extends State<ThreadsTab> {
   }
 
   void _filterPosts() {
+    FeedPostSort.sortInPlace(_posts);
     final query = _searchController.text.toLowerCase().trim();
     if (query.isEmpty) {
       _filteredPosts = List.from(_posts);
     } else {
-      _filteredPosts = _posts.where((post) {
-        final topic = (post.topic ?? '').toLowerCase();
-        return post.text.toLowerCase().contains(query) ||
-            post.author.displayName.toLowerCase().contains(query) ||
-            post.author.username.toLowerCase().contains(query) ||
-            (topic.isNotEmpty && topic.contains(query));
-      }).toList();
+      _filteredPosts = FeedPostSort.byRecent(
+        _posts.where((post) {
+          final topic = (post.topic ?? '').toLowerCase();
+          return post.text.toLowerCase().contains(query) ||
+              post.author.displayName.toLowerCase().contains(query) ||
+              post.author.username.toLowerCase().contains(query) ||
+              (topic.isNotEmpty && topic.contains(query));
+        }),
+      );
     }
   }
 
@@ -174,8 +196,25 @@ class _ThreadsTabState extends State<ThreadsTab> {
   }
 
   Future<void> _bootstrapFeed() async {
-    await _loadFeed();
+    await _hydrateFeedFromCache();
+    await _loadFeed(showLoading: _posts.isEmpty);
     await _retryOutbox();
+  }
+
+  Future<void> _hydrateFeedFromCache() async {
+    final cached = await _feedCache.read();
+    if (cached == null || !cached.isFresh(CommunityFeedCache.cacheTtl)) return;
+    if (!mounted) return;
+    setState(() {
+      _posts
+        ..clear()
+        ..addAll(FeedPostSort.byRecent(cached.posts));
+      _recomputeVisiblePosts();
+      _activeSubthreadId = cached.activeSubthreadId;
+      _feedOffset = cached.offset;
+      _hasMore = cached.posts.length >= _defaultPageSize;
+      _isLoading = false;
+    });
   }
 
   void _applyLoadFailure(AppError error) {
@@ -192,14 +231,27 @@ class _ThreadsTabState extends State<ThreadsTab> {
     }
   }
 
-  Future<void> _loadFeed({bool afterDefaultSubthread = false}) async {
-    if (!afterDefaultSubthread && _isLoading) return;
+  Future<void> _loadFeed({
+    bool afterDefaultSubthread = false,
+    bool showLoading = true,
+    bool forceNetwork = false,
+    bool append = false,
+  }) async {
+    if (!afterDefaultSubthread && _isLoading && showLoading) return;
 
-    setState(() {
-      _isLoading = true;
-      _feedError = null;
-    });
+    if (showLoading && !append) {
+      setState(() {
+        _isLoading = true;
+        _feedError = null;
+      });
+    }
 
+    if (!append) {
+      _feedOffset = 0;
+      _hasMore = true;
+    }
+
+    final previousLocal = List<Post>.from(_posts);
     final subResult = await _communityService.getSubthreads(limit: 50);
     switch (subResult) {
       case AppFailure(:final error):
@@ -238,6 +290,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
         final feedResult = await ThreadsFeedLoader.load(
           service: _communityService,
           pageSize: _defaultPageSize,
+          offset: append ? _feedOffset : 0,
           fetchBatchComments: _communityService.getCommentsForPosts,
         );
         switch (feedResult) {
@@ -246,17 +299,59 @@ class _ThreadsTabState extends State<ThreadsTab> {
             return;
           case AppSuccess(:final value):
             _activeSubthreadId = value.activeSubthreadId;
+            final merged = FeedPostSort.byRecent(
+              append
+                  ? [..._posts, ...value.posts]
+                  : FeedRebase.mergeCommunityPosts(
+                      serverPosts: value.posts,
+                      localPosts: previousLocal,
+                    ),
+            );
             if (mounted) {
               setState(() {
                 _posts
                   ..clear()
-                  ..addAll(value.posts);
-                _filteredPosts = List.from(_posts);
+                  ..addAll(merged);
+                _recomputeVisiblePosts();
+                _feedOffset = _posts.length;
+                _hasMore = value.posts.length >= _defaultPageSize;
                 _isLoading = false;
+                _isLoadingMore = false;
                 _feedError = null;
               });
             }
+            await _feedCache.write(
+              activeSubthreadId: _activeSubthreadId,
+              posts: _posts,
+              offset: _feedOffset,
+            );
+            unawaited(_prefetchNextCommunityPage());
         }
+    }
+  }
+
+  Future<void> _loadMoreFeed() async {
+    if (_isLoadingMore || !_hasMore || _isLoading) return;
+    setState(() => _isLoadingMore = true);
+    await _loadFeed(showLoading: false, append: true);
+  }
+
+  Future<void> _prefetchNextCommunityPage() async {
+    if (!_hasMore) return;
+
+    final prefetchResult = await ThreadsFeedLoader.load(
+      service: _communityService,
+      pageSize: CommunityFeedCache.prefetchPageSize,
+      offset: _feedOffset,
+      fetchBatchComments: _communityService.getCommentsForPosts,
+    );
+    if (prefetchResult case AppSuccess(:final value)) {
+      if (value.posts.isEmpty) return;
+      await _feedCache.write(
+        activeSubthreadId: value.activeSubthreadId,
+        posts: FeedPostSort.byRecent([..._posts, ...value.posts]),
+        offset: _feedOffset + value.posts.length,
+      );
     }
   }
 
@@ -267,7 +362,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
       _isRefreshing = true;
     });
 
-    await _loadFeed();
+    await _loadFeed(forceNetwork: true);
 
     if (mounted) {
       setState(() {
@@ -436,7 +531,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
           final confirmed = _mapConfirmedPost(value, user);
           if (!mounted) return;
           _replaceTempPost(tempId, confirmed);
-          await _loadFeed();
+          await _loadFeed(forceNetwork: true);
         case AppFailure(:final error):
           _removeTempPost(tempId);
           if (!mounted) return;
@@ -478,7 +573,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
         final confirmed = _mapConfirmedPost(value, user);
         if (!mounted) return;
         _replaceTempPost(tempId, confirmed);
-        await _loadFeed();
+        await _loadFeed(forceNetwork: true);
       case AppFailure(:final error):
         _removeTempPost(tempId);
         if (!mounted) return;
@@ -551,7 +646,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
       ),
     );
     if (mounted) {
-      await _loadFeed();
+      await _loadFeed(forceNetwork: true);
     }
   }
 
@@ -640,7 +735,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
 
     await _actionCoordinator.replaceOutbox(pending);
     if (mounted) {
-      await _loadFeed();
+      await _loadFeed(forceNetwork: true);
     }
   }
 
@@ -683,11 +778,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading && _posts.isEmpty && _feedError == null) {
-      return const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(SyntrakColors.primary),
-        ),
-      );
+      return const SkeletonFeedList();
     }
 
     if (!_isLoading && _posts.isEmpty && _feedError != null) {
@@ -710,7 +801,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
                 pinned: true,
                 floating: false,
                 automaticallyImplyLeading: false,
-                backgroundColor: SyntrakColors.surface,
+                backgroundColor: SnowtrakColors.surface,
                 surfaceTintColor: Colors.transparent,
                 elevation: innerBoxIsScrolled ? 2 : 0,
                 shadowColor: Colors.black26,
@@ -754,7 +845,7 @@ class _ThreadsTabState extends State<ThreadsTab> {
             child: LinearProgressIndicator(
               minHeight: 2.5,
               backgroundColor: Colors.transparent,
-              valueColor: AlwaysStoppedAnimation<Color>(SyntrakColors.primary),
+              valueColor: AlwaysStoppedAnimation<Color>(SnowtrakColors.primary),
             ),
           ),
       ],

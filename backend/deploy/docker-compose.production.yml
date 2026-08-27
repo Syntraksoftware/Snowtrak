@@ -1,61 +1,103 @@
 services:
+  # Not published on any host port: the backends reach it as redis://redis:6379/0
+  # over the Compose network. It has no password, so it must never be published.
+  # appendonly keeps the activity-pipeline stream across restarts -- without it a
+  # container restart silently drops whatever was still in flight.
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
   main-backend:
-    build:
-      context: ../
-      dockerfile: ./main-backend/Dockerfile
+    image: ${SNOWTRAK_MAIN_IMAGE:?set by the deploy workflow to a pinned digest}
     env_file:
-      - ./env/production.env
+      - ../main-backend/.env
     environment:
       PYTHONUNBUFFERED: "1"
       FASTAPI_ENV: production
       HOST: 0.0.0.0
       PORT: 8080
+      RATE_LIMIT_REDIS_URL: redis://redis:6379/0
+      WEATHER_CACHE_REDIS_URL: redis://redis:6379/0
+      # Pinned here as well as in the service's .env. Compose's environment
+      # block wins over env_file, so these survive an env file that is edited,
+      # regenerated, or consolidated later -- the four services must never share
+      # one rate-limit namespace.
+      RATE_LIMIT_NAMESPACE: main-backend
+      WEATHER_CACHE_NAMESPACE: main-backend
     ports:
       - "127.0.0.1:8080:8080"
     restart: unless-stopped
+    depends_on:
+      - redis
 
   community-backend:
-    build:
-      context: ../
-      dockerfile: ./community-backend/Dockerfile
+    image: ${SNOWTRAK_COMMUNITY_IMAGE:?set by the deploy workflow to a pinned digest}
     env_file:
-      - ./env/production.env
+      - ../community-backend/.env
     environment:
       PYTHONUNBUFFERED: "1"
       FASTAPI_ENV: production
       HOST: 0.0.0.0
       PORT: 5001
+      RATE_LIMIT_REDIS_URL: redis://redis:6379/0
+      CACHE_REDIS_URL: redis://redis:6379/0
+      # Pinned here as well as in the service's .env. Compose's environment
+      # block wins over env_file, so these survive an env file that is edited,
+      # regenerated, or consolidated later -- the four services must never share
+      # one rate-limit namespace.
+      RATE_LIMIT_NAMESPACE: community-backend
+      CACHE_NAMESPACE: community-backend-cache
     ports:
       - "127.0.0.1:5001:5001"
     restart: unless-stopped
+    depends_on:
+      - redis
 
   activity-backend:
-    build:
-      context: ../
-      dockerfile: ./activity-backend/Dockerfile
+    image: ${SNOWTRAK_ACTIVITY_IMAGE:?set by the deploy workflow to a pinned digest}
     env_file:
-      - ./env/production.env
+      - ../activity-backend/.env
     environment:
       PYTHONUNBUFFERED: "1"
       FASTAPI_ENV: production
       HOST: 0.0.0.0
       PORT: 5100
+      RATE_LIMIT_REDIS_URL: redis://redis:6379/0
+      # Pinned here as well as in the service's .env. Compose's environment
+      # block wins over env_file, so these survive an env file that is edited,
+      # regenerated, or consolidated later -- the four services must never share
+      # one rate-limit namespace.
+      RATE_LIMIT_NAMESPACE: activity-backend
     ports:
       - "127.0.0.1:5100:5100"
     restart: unless-stopped
+    depends_on:
+      - redis
 
   map-backend:
-    build:
-      context: ../
-      dockerfile: ./map-backend/Dockerfile
+    image: ${SNOWTRAK_MAP_IMAGE:?set by the deploy workflow to a pinned digest}
     env_file:
-      - ./env/production.env
+      - ../map-backend/.env
     environment:
       PYTHONUNBUFFERED: "1"
       FASTAPI_ENV: production
       HOST: 0.0.0.0
       PORT: 5200
       MAP_STORAGE_BACKEND: supabase
+      RATE_LIMIT_REDIS_URL: redis://redis:6379/0
+      # Pinned here as well as in the service's .env. Compose's environment
+      # block wins over env_file, so these survive an env file that is edited,
+      # regenerated, or consolidated later -- the four services must never share
+      # one rate-limit namespace.
+      RATE_LIMIT_NAMESPACE: map-backend
     ports:
       - "127.0.0.1:5200:5200"
     restart: unless-stopped
+    depends_on:
+      - redis
+
+volumes:
+  redis_data:

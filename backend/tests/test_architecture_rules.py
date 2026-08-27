@@ -6,12 +6,9 @@ Ensures all cross-layer dependencies flow through ports.
 """
 
 import ast
-import sys
 from pathlib import Path
-from typing import Set
 
 import pytest
-
 
 DOMAINS_DIR = Path(__file__).parent.parent / "map-backend" / "domains"
 
@@ -42,8 +39,8 @@ class ImportVisitor(ast.NodeVisitor):
     """Visitor to collect all imports from an AST."""
 
     def __init__(self):
-        self.imports: Set[str] = set()
-        self.from_imports: dict[str, Set[str]] = {}  # module -> {names}
+        self.imports: set[str] = set()
+        self.from_imports: dict[str, set[str]] = {}  # module -> {names}
 
     def visit_Import(self, node: ast.Import):
         """Handle: import module [as alias]"""
@@ -55,10 +52,16 @@ class ImportVisitor(ast.NodeVisitor):
     def visit_ImportFrom(self, node: ast.ImportFrom):
         """Handle: from module import name"""
         if node.module:
-            module = node.module.split(".")[0]  # Get top-level module
+            parts = node.module.split(".")
+            module = parts[0]  # Get top-level module
             names = {alias.name for alias in node.names}
             self.from_imports.setdefault(module, set()).update(names)
             self.imports.add(module)
+            # Also record the leaf package (e.g. "ports" in
+            # "domains.activities_service.ports") so layer checks see it.
+            if len(parts) > 1:
+                self.from_imports.setdefault(parts[-1], set()).update(names)
+                self.imports.add(parts[-1])
         self.generic_visit(node)
 
 
@@ -67,7 +70,7 @@ def get_api_files() -> list[Path]:
     return sorted(DOMAINS_DIR.glob("*/api.py"))
 
 
-def extract_imports(file_path: Path) -> tuple[Set[str], dict[str, Set[str]]]:
+def extract_imports(file_path: Path) -> tuple[set[str], dict[str, set[str]]]:
     """Parse Python file and extract all imports."""
     try:
         tree = ast.parse(file_path.read_text())
@@ -158,8 +161,13 @@ def test_api_imports_from_ports():
     for api_file in api_files:
         imports, from_imports = extract_imports(api_file)
 
-        # Check that ports is imported
-        if "ports" not in imports and "ports" not in from_imports:
+        # Check that ports is imported. Both spellings count:
+        #   from domains.<svc>.ports import X   -> module tail is "ports"
+        #   from domains.<svc> import ports     -> "ports" is an imported name
+        uses_ports = "ports" in imports or "ports" in from_imports or any(
+            "ports" in names for names in from_imports.values()
+        )
+        if not uses_ports:
             violations.append(
                 f"{api_file.relative_to(DOMAINS_DIR.parent.parent)}: "
                 f"must import from 'ports' (missing ports import)"
@@ -176,14 +184,13 @@ def test_api_no_forbidden_module_combinations():
     violations = []
     for api_file in api_files:
         content = api_file.read_text()
-        domain_name = api_file.parent.name
 
         # Forbidden direct imports in api.py
         forbidden_patterns = [
             ("services.", "direct service import (use ports)"),
             ("db.connection", "direct db.connection import (use ports)"),
-            (f"from .models import", "internal model import (use ports)"),
-            (f"from ..models import", "parent model import (use ports)"),
+            ("from .models import", "internal model import (use ports)"),
+            ("from ..models import", "parent model import (use ports)"),
         ]
 
         for pattern, reason in forbidden_patterns:

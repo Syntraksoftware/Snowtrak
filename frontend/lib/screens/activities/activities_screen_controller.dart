@@ -1,7 +1,7 @@
-import 'package:syntrak/features/activities/data/activities_context_repository.dart';
-import 'package:syntrak/models/weather.dart';
-import 'package:syntrak/providers/activity_provider.dart';
-import 'package:syntrak/providers/auth_provider.dart';
+import 'package:snowtrak/features/activities/data/activities_context_repository.dart';
+import 'package:snowtrak/models/weather.dart';
+import 'package:snowtrak/providers/activity_provider.dart';
+import 'package:snowtrak/providers/auth_provider.dart';
 
 class ActivitiesScreenController {
   const ActivitiesScreenController();
@@ -29,7 +29,7 @@ class ActivitiesScreenController {
     required ActivitiesContextRepository contextRepository,
     required Future<void> Function(WeatherData? weather) onWeatherLoaded,
   }) async {
-    await activityProvider.loadActivities(refresh: true);
+    await activityProvider.loadActivities(refresh: true, forceNetwork: true);
     await _loadWeatherStaleWhileRevalidate(
       contextRepository: contextRepository,
       onWeatherLoaded: onWeatherLoaded,

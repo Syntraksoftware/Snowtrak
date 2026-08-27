@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/config/app_environment.dart';
+import 'package:snowtrak/core/config/app_environment.dart';
 
 enum AppLogLevel { debug, info, warning, error }
 
@@ -30,7 +30,7 @@ class AppLogger {
     if (_fileExportEnabled && !kIsWeb) {
       final ts = DateTime.now().toIso8601String().replaceAll(':', '-');
       final path =
-          '${Directory.systemTemp.path}/syntrak-$ts.log.jsonl';
+          '${Directory.systemTemp.path}/snowtrak-$ts.log.jsonl';
       _logFile = File(path);
       if (!_logFile!.existsSync()) {
         _logFile!.createSync(recursive: true);

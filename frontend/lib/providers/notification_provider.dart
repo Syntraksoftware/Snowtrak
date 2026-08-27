@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:syntrak/core/logging/app_logger.dart';
-import 'package:syntrak/features/notifications/data/notifications_repository.dart';
-import 'package:syntrak/models/notification.dart';
+import 'package:snowtrak/core/logging/app_logger.dart';
+import 'package:snowtrak/features/notifications/data/notifications_repository.dart';
+import 'package:snowtrak/models/notification.dart';
 
 /// Provider for managing notification state
 /// Handles the list of notifications, unread count, and notification operations

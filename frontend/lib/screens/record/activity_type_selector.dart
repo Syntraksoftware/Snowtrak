@@ -1,106 +1,126 @@
 import 'package:flutter/material.dart';
-import 'package:syntrak/core/theme.dart';
-import 'package:syntrak/core/activity_helpers.dart';
-import 'package:syntrak/models/activity.dart';
+import 'package:snowtrak/core/activity_helpers.dart';
+import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/models/activity.dart';
 
-class ActivityTypeSelector extends StatelessWidget {
-  const ActivityTypeSelector({super.key});
+/// Compact half-screen modal picker. Returns the chosen [ActivityType] or null.
+Future<ActivityType?> showActivityTypePicker(BuildContext context) {
+  return showModalBottomSheet<ActivityType>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    builder: (_) => const _ActivityTypePicker(),
+  );
+}
+
+class _ActivityTypePicker extends StatelessWidget {
+  const _ActivityTypePicker();
+
+  static const _types = [
+    ActivityType.alpine,
+    ActivityType.crossCountry,
+    ActivityType.freestyle,
+    ActivityType.backcountry,
+    ActivityType.snowboard,
+    ActivityType.other,
+  ];
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Select Activity Type'),
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      body: GridView.count(
-        crossAxisCount: 2,
-        padding: const EdgeInsets.all(SyntrakSpacing.lg),
-        crossAxisSpacing: SyntrakSpacing.md,
-        mainAxisSpacing: SyntrakSpacing.md,
-        childAspectRatio: 1.1,
+      padding: EdgeInsets.fromLTRB(
+        20,
+        12,
+        20,
+        MediaQuery.of(context).padding.bottom + 24,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildActivityTypeCard(context, ActivityType.alpine),
-          _buildActivityTypeCard(context, ActivityType.crossCountry),
-          _buildActivityTypeCard(context, ActivityType.freestyle),
-          _buildActivityTypeCard(context, ActivityType.backcountry),
-          _buildActivityTypeCard(context, ActivityType.snowboard),
-          _buildActivityTypeCard(context, ActivityType.other),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActivityTypeCard(
-    BuildContext context,
-    ActivityType type,
-  ) {
-    final color = ActivityHelpers.getActivityColor(type);
-    final icon = ActivityHelpers.getActivityIcon(type);
-    final label = type.displayName;
-    final description = ActivityHelpers.getActivityDescription(type);
-    
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-        side: BorderSide(
-          color: SyntrakColors.divider,
-          width: 1,
-        ),
-      ),
-      child: InkWell(
-        onTap: () => Navigator.pop(context, type),
-        borderRadius: BorderRadius.circular(SyntrakRadius.lg),
-        child: Padding(
-          padding: const EdgeInsets.all(SyntrakSpacing.sm),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Flexible(
-                child: Container(
-                  padding: const EdgeInsets.all(SyntrakSpacing.sm),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  icon,
-                    size: 32,
-                  color: color,
-                  ),
-                ),
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.black12,
+                borderRadius: BorderRadius.circular(2),
               ),
-              const SizedBox(height: SyntrakSpacing.xs),
-              Flexible(
-                child: Text(
-                label,
-                  style: SyntrakTypography.labelLarge.copyWith(
-                  color: SyntrakColors.textPrimary,
-                ),
-                textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(height: SyntrakSpacing.xs / 2),
-              Flexible(
-                child: Text(
-                description,
-                style: SyntrakTypography.bodySmall.copyWith(
-                  color: SyntrakColors.textTertiary,
-                    fontSize: 10,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+          const SizedBox(height: 20),
+          Text(
+            'Select Activity',
+            style: SnowtrakTypography.headlineSmall.copyWith(
+              color: SnowtrakColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          GridView.count(
+            crossAxisCount: 3,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            childAspectRatio: 0.95,
+            children: _types
+                .map((t) => _TypeTile(
+                      type: t,
+                      onTap: () => Navigator.pop(context, t),
+                    ))
+                .toList(),
+          ),
+        ],
       ),
     );
   }
 }
 
+class _TypeTile extends StatelessWidget {
+  const _TypeTile({required this.type, required this.onTap});
+  final ActivityType type;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = ActivityHelpers.getActivityColor(type);
+    final icon = ActivityHelpers.getActivityIcon(type);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: SnowtrakColors.surfaceVariant,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: SnowtrakColors.divider),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              type.displayName,
+              style: SnowtrakTypography.labelMedium.copyWith(
+                color: SnowtrakColors.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
