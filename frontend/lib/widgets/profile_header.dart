@@ -6,14 +6,26 @@ import 'package:snowtrak/core/errors/app_result.dart';
 import 'package:snowtrak/core/theme.dart';
 import 'package:snowtrak/models/profile.dart';
 import 'package:snowtrak/providers/auth_provider.dart';
+import 'package:snowtrak/widgets/follow_button.dart';
 import 'package:snowtrak/services/profile_service.dart';
 import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 /// Profile identity block at the top of the profile screen.
 class ProfileHeader extends StatefulWidget {
-  const ProfileHeader({super.key, this.userId});
+  const ProfileHeader({
+    super.key,
+    this.userId,
+    this.fallbackName,
+    this.fallbackUsername,
+  });
 
   final String? userId;
+
+  /// Shown until the profile arrives, and kept if it never does. Callers that
+  /// already know who they are opening (a feed post's author) should pass it
+  /// so the card never flashes a placeholder name.
+  final String? fallbackName;
+  final String? fallbackUsername;
 
   @override
   State<ProfileHeader> createState() => _ProfileHeaderState();
@@ -96,42 +108,66 @@ class _ProfileHeaderState extends State<ProfileHeader> {
   @override
   Widget build(BuildContext context) {
     final authUser = Provider.of<AuthProvider>(context).user;
+    final profile = _profile;
+    final isOwnProfile = widget.userId == null;
 
-    if (_isLoading && _profile == null) {
-      if (widget.userId == null && authUser != null) {
-        return _buildHeader(
-          displayName: authUser.fullName,
-          username: authUser.email.split('@').first,
-          avatarUrl: null,
-          bio: null,
-          skiLevel: null,
-          home: null,
-        );
-      }
-      return const SizedBox.shrink();
-    }
-
-    if (_error != null) {
-      return Padding(
-        padding: const EdgeInsets.all(SnowtrakSpacing.md),
-        child: Text(
-          _error!,
-          style: SnowtrakTypography.bodyMedium.copyWith(color: SnowtrakColors.error),
-          textAlign: TextAlign.center,
+    // The card always renders. Loading, a failed request and a user with no
+    // `profiles` row used to each collapse the header to zero height, which
+    // reads as a broken screen rather than as missing data.
+    if (profile != null) {
+      return _withError(
+        _buildHeader(
+          displayName: profile.fullName ?? widget.fallbackName ?? 'User',
+          username: profile.username ?? widget.fallbackUsername ?? '',
+          avatarUrl: profile.avatarUrl,
+          bio: profile.bio,
+          skiLevel: profile.skiLevel,
+          home: profile.home,
         ),
       );
     }
 
-    if (_profile == null) return const SizedBox.shrink();
+    final fallbackName = isOwnProfile && authUser != null
+        ? authUser.fullName
+        : widget.fallbackName ?? 'User';
+    final fallbackUsername = isOwnProfile && authUser != null
+        ? authUser.email.split('@').first
+        : widget.fallbackUsername ?? '';
 
-    final profile = _profile!;
-    return _buildHeader(
-      displayName: profile.fullName ?? 'User',
-      username: profile.username ?? '',
-      avatarUrl: profile.avatarUrl,
-      bio: profile.bio,
-      skiLevel: profile.skiLevel,
-      home: profile.home,
+    return _withError(
+      _buildHeader(
+        displayName: fallbackName,
+        username: fallbackUsername,
+        avatarUrl: null,
+        bio: null,
+        skiLevel: null,
+        home: null,
+      ),
+    );
+  }
+
+  /// Keeps a load failure visible without letting it replace the card.
+  Widget _withError(Widget header) {
+    if (_error == null) return header;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        header,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            SnowtrakSpacing.md,
+            SnowtrakSpacing.sm,
+            SnowtrakSpacing.md,
+            0,
+          ),
+          child: Text(
+            _error!,
+            style: SnowtrakTypography.bodySmall
+                .copyWith(color: SnowtrakColors.error),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
     );
   }
 
@@ -239,11 +275,24 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                   ],
                 ),
               ],
+              if (_followTargetId != null) ...[
+                const SizedBox(height: SnowtrakSpacing.md),
+                FollowButton(userId: _followTargetId!),
+              ],
             ],
           ),
         ),
       ),
     );
+  }
+
+  /// The user this header can be followed as, or null when there is nobody to
+  /// follow: your own profile, or a header with no id behind it.
+  String? get _followTargetId {
+    final userId = widget.userId;
+    if (userId == null || userId.trim().isEmpty) return null;
+    final signedInId = Provider.of<AuthProvider>(context, listen: false).user?.id;
+    return userId == signedInId ? null : userId;
   }
 }
 

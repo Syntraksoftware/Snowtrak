@@ -18,12 +18,14 @@ import 'package:snowtrak/providers/auth_provider.dart';
 import 'package:snowtrak/services/activities_service.dart';
 import 'package:snowtrak/services/auth_service.dart';
 import 'package:snowtrak/services/community_service.dart';
+import 'package:snowtrak/services/follow_service.dart';
 import 'package:snowtrak/services/profile_service.dart';
 import 'package:snowtrak/features/track_pipeline/application/activity_upload_coordinator.dart';
 import 'package:snowtrak/services/apis/activities_api.dart';
 import 'package:snowtrak/services/apis/activity_upload_api.dart';
 import 'package:snowtrak/services/apis/auth_api.dart';
 import 'package:snowtrak/services/apis/community_api.dart';
+import 'package:snowtrak/services/apis/follow_api.dart';
 import 'package:snowtrak/services/apis/map_activities_api.dart';
 import 'package:snowtrak/services/apis/notifications_api.dart';
 import 'package:snowtrak/services/apis/users_api.dart';
@@ -95,6 +97,9 @@ Future<void> setupServiceLocatorWithEnvironment({
   sl.registerLazySingleton<ActivityUploadApi>(
     () => ActivityUploadApi(dio: sl<Dio>(instanceName: 'activity')),
   );
+  sl.registerLazySingleton<FollowApi>(
+    () => FollowApi(dio: sl<Dio>(instanceName: 'community')),
+  );
   sl.registerLazySingleton<CommunityApi>(
     () => CommunityApi(dio: sl<Dio>(instanceName: 'community')),
   );
@@ -140,6 +145,9 @@ Future<void> setupServiceLocatorWithEnvironment({
   );
   sl.registerLazySingleton<CommunityService>(
     () => CommunityService(communityRepository: sl<CommunityRepository>()),
+  );
+  sl.registerLazySingleton<FollowService>(
+    () => FollowService(followApi: sl<FollowApi>()),
   );
 
   sl.registerLazySingleton<WeatherService>(() => WeatherService());

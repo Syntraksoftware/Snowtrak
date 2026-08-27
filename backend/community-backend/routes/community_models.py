@@ -101,6 +101,25 @@ class CommunityPostResponse(BaseModel):
     media_urls: list[str] = Field(default_factory=list)
 
 
+class FollowStatsResponse(BaseModel):
+    """Counts plus the viewing user's relationship to this profile."""
+
+    follower_count: int = 0
+    following_count: int = 0
+    is_following: bool = False
+    is_followed_by: bool = False
+
+
+class FollowUserResponse(BaseModel):
+    """One row in a followers or following list."""
+
+    user_id: str
+    email: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    created_at: str | None = None
+
+
 class CommunityCommentResponse(BaseModel):
     """Schema for comment response payload."""
 
