@@ -1,6 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:snowtrak/core/di/service_locator.dart';
+import 'package:snowtrak/core/errors/app_result.dart';
 import 'package:snowtrak/core/theme.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:snowtrak/providers/auth_provider.dart';
+import 'package:snowtrak/services/apis/privacy_api.dart';
+import 'package:snowtrak/services/follow_service.dart';
 
 class PrivacySettingsScreen extends StatefulWidget {
   const PrivacySettingsScreen({super.key});
@@ -18,6 +26,60 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
   bool _discoverableByEmail = true;
   bool _discoverableByPhone = false;
   bool _hideFromLeaderboards = false;
+
+  // The account-privacy flag. Read from FollowStats (Task 9), not a second
+  // endpoint, so there is one source of truth for it -- see PrivacyApi.
+  bool _isPrivate = false;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadPrivacy());
+  }
+
+  Future<void> _loadPrivacy() async {
+    final myUserId = Provider.of<AuthProvider>(context, listen: false).user?.id;
+    if (myUserId == null) return;
+    final result = await sl<FollowService>().getStats(myUserId);
+    if (!mounted) return;
+    switch (result) {
+      case AppSuccess(:final value):
+        setState(() => _isPrivate = value.isPrivate);
+      case AppFailure():
+        // No fallback needed beyond the default: the switch just starts as
+        // public until the screen is reopened, rather than surfacing a
+        // second error banner on top of the rest of the page.
+        break;
+    }
+  }
+
+  Future<void> _setPrivate(bool value) async {
+    final previous = _isPrivate;
+    setState(() {
+      _isPrivate = value;
+      _busy = true;
+    });
+    try {
+      final settled = await sl<PrivacyApi>().setPrivate(value);
+      if (!mounted) return;
+      setState(() {
+        _isPrivate = settled;
+        _busy = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      // Fall back to what the server last told us rather than leaving the
+      // switch showing a change that did not happen.
+      setState(() {
+        _isPrivate = previous;
+        _busy = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not change your privacy setting')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +101,33 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
       ),
       body: ListView(
         children: [
+          const SizedBox(height: 24),
+
+          // Account Privacy
+          _buildSectionHeader('ACCOUNT PRIVACY'),
+          _SettingsGroup(
+            children: [
+              SwitchListTile(
+                key: const Key('private-account-switch'),
+                value: _isPrivate,
+                onChanged: _busy ? null : _setPrivate,
+                title: Text(
+                  'Private account',
+                  style: SnowtrakTypography.bodyLarge.copyWith(
+                    color: context.colors.textPrimary,
+                  ),
+                ),
+                subtitle: Text(
+                  'People have to ask before they can follow you. '
+                  'Anyone already following you stays.',
+                  style: SnowtrakTypography.bodySmall.copyWith(
+                    color: context.colors.textSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
           const SizedBox(height: 24),
 
           // Profile Visibility
