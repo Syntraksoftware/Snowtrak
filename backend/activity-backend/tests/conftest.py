@@ -181,6 +181,13 @@ class StubActivityClient:
         return {"items": [self._activity], "total": 1}
 
     def get_activity_by_id(self, activity_id):
+        # Checks self.activities first so tests that replace the list (as the
+        # visibility tests do) are honored; falls back to the two fixed rows
+        # so the pre-existing activity-1 / activity-private tests keep working
+        # without every test having to repopulate self.activities.
+        for row in self.activities:
+            if row["id"] == activity_id:
+                return row
         if activity_id == "activity-1":
             return self._activity
         if activity_id == "activity-private":

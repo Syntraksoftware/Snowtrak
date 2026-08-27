@@ -198,3 +198,69 @@ def test_the_owner_sees_their_own_private_activity(client, stub_client, as_user)
     ]
     ids = {i["id"] for i in client.get("/api/v1/activities/").json()["items"]}
     assert ids == {"a-private"}
+
+
+def test_comments_on_an_invisible_activity_are_refused(client, stub_client):
+    stub_client.activities = [
+        {**BASE, "id": "a-1", "user_id": "u-1", "visibility": "private"},
+    ]
+    assert client.get("/api/v1/activities/a-1/comments").status_code == 404
+
+
+def test_comments_on_a_public_activity_are_open(client, stub_client):
+    stub_client.activities = [
+        {**BASE, "id": "a-1", "user_id": "u-1", "visibility": "public"},
+    ]
+    assert client.get("/api/v1/activities/a-1/comments").status_code == 200
+
+
+def test_comments_on_a_followers_activity_are_open_to_a_follower(client, stub_client, as_user):
+    as_user("u-2")
+    stub_client.follows = {("u-2", "u-1")}
+    stub_client.activities = [
+        {**BASE, "id": "a-1", "user_id": "u-1", "visibility": "followers"},
+    ]
+    assert client.get("/api/v1/activities/a-1/comments").status_code == 200
+
+
+def test_add_comment_on_an_invisible_activity_is_refused(client, stub_client, as_user):
+    as_user("u-2")
+    stub_client.activities = [
+        {**BASE, "id": "a-1", "user_id": "u-1", "visibility": "private"},
+    ]
+    response = client.post("/api/v1/activities/a-1/comments", json={"content": "hi"})
+    assert response.status_code == 404
+
+
+def test_kudos_on_an_invisible_activity_are_refused(client, stub_client, as_user):
+    as_user("u-2")
+    stub_client.activities = [
+        {**BASE, "id": "a-1", "user_id": "u-1", "visibility": "private"},
+    ]
+    assert client.post("/api/v1/activities/a-1/kudos").status_code == 404
+
+
+def test_share_on_an_invisible_activity_is_refused(client, stub_client, as_user):
+    as_user("u-2")
+    stub_client.activities = [
+        {**BASE, "id": "a-1", "user_id": "u-1", "visibility": "private"},
+    ]
+    assert client.post("/api/v1/activities/a-1/share").status_code == 404
+
+
+def test_hidden_and_missing_activities_return_the_same_404(client, stub_client, as_user):
+    """A private activity's existence is itself private -- both 404s must match.
+
+    Compares code/message/details rather than the full body: request_id and
+    timestamp are expected to differ per request and carry no information
+    about which activity was asked for.
+    """
+    as_user("u-2")
+    stub_client.activities = [
+        {**BASE, "id": "a-1", "user_id": "u-1", "visibility": "private"},
+    ]
+    hidden = client.post("/api/v1/activities/a-1/kudos")
+    missing = client.post("/api/v1/activities/does-not-exist/kudos")
+    assert hidden.status_code == missing.status_code == 404
+    for field in ("code", "message", "details"):
+        assert hidden.json()[field] == missing.json()[field]
