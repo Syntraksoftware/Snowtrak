@@ -7,13 +7,11 @@ import 'package:snowtrak/core/logging/app_logger.dart';
 import 'package:snowtrak/core/theme.dart';
 import 'package:snowtrak/features/activities/data/activities_context_repository.dart';
 import 'package:snowtrak/features/auth/data/auth_session_store.dart';
-import 'package:snowtrak/models/notification.dart'; // notification model
 import 'package:snowtrak/providers/auth_provider.dart';
 import 'package:snowtrak/providers/activity_provider.dart';
 import 'package:snowtrak/providers/notification_provider.dart';
 import 'package:snowtrak/screens/auth/login_screen.dart';
 import 'package:snowtrak/screens/home/home_screen.dart';
-import 'package:snowtrak/services/notification_service.dart';
 import 'package:snowtrak/services/storage_service.dart';
 
 Future<void> main() async {
@@ -110,32 +108,6 @@ class _AppWrapper extends StatefulWidget {
 }
 
 class _AppWrapperState extends State<_AppWrapper> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _setupNotificationCallback();
-    });
-  }
-
-  void _setupNotificationCallback() {
-    final notificationProvider = context.read<NotificationProvider>();
-    notificationProvider.onNewNotification = (AppNotification notification) {
-      if (mounted) {
-        NotificationService.showBanner(
-          context,
-          notification: notification,
-          onTap: () {
-            NotificationService.showToast(
-              context,
-              'Tapped: ${notification.title}',
-            );
-          },
-        );
-      }
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(

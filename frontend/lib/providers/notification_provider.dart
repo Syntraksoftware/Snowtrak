@@ -23,9 +23,6 @@ class NotificationProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
 
-  // Callback for showing banner notifications (set by the app)
-  void Function(AppNotification)? onNewNotification;
-
   List<AppNotification> get notifications => _notifications;
   bool get isLoading => _isLoading;
   String? get error => _error;
