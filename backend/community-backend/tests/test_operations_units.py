@@ -342,6 +342,9 @@ class FakeRpc:
             "has_requested": any(
                 r["requester_id"] == viewer and r["target_id"] == target for r in requests
             ),
+            "requests_you": any(
+                r["requester_id"] == target and r["target_id"] == viewer for r in requests
+            ),
         }
 
 
@@ -795,3 +798,73 @@ def test_turning_private_keeps_existing_followers(harness):
     # No demotion path exists, and that is the decision: Instagram keeps
     # them. The escape hatch is remove-a-follower, which already ships.
     assert harness.following_ids("user-1") == ["user-2"]
+
+
+def test_a_private_account_hides_its_profile_from_a_stranger(harness):
+    """The profile is gated as a whole, unlike the feed.
+
+    `test_a_private_accounts_public_post_stays_public` keeps the two axes
+    independent for `list_recent_posts`, and that still holds. On a profile
+    they are not independent: opening one is asking to read a person, and a
+    private account answers that with approval or nothing.
+    """
+    harness._client.tables["posts"].append(
+        {
+            "post_id": "post-open",
+            "user_id": "user-2",  # a private account
+            "subthread_id": "sub-1",
+            "title": "Open to all",
+            "content": "Anyone can read this",
+            "created_at": "2026-01-03T00:00:00Z",
+            "visibility": "public",
+        }
+    )
+
+    assert harness.list_posts_by_user_id("user-2", current_user_id="user-1") == []
+    assert harness.list_posts_by_user_id("user-2", current_user_id=None) == []
+
+
+def test_a_pending_request_does_not_open_the_profile(harness):
+    harness._client.tables["posts"].append(
+        {
+            "post_id": "post-open",
+            "user_id": "user-2",
+            "subthread_id": "sub-1",
+            "title": "Open to all",
+            "content": "Anyone can read this",
+            "created_at": "2026-01-03T00:00:00Z",
+            "visibility": "public",
+        }
+    )
+    harness.request_follow("user-1", "user-2")
+
+    assert harness.can_read_account("user-2", "user-1") is False
+    assert harness.list_posts_by_user_id("user-2", current_user_id="user-1") == []
+
+
+def test_approval_opens_the_profile(harness):
+    harness._client.tables["posts"].append(
+        {
+            "post_id": "post-open",
+            "user_id": "user-2",
+            "subthread_id": "sub-1",
+            "title": "Open to all",
+            "content": "Anyone can read this",
+            "created_at": "2026-01-03T00:00:00Z",
+            "visibility": "public",
+        }
+    )
+    harness.follow("user-1", "user-2")
+
+    assert harness.can_read_account("user-2", "user-1") is True
+    ids = {p["post_id"] for p in harness.list_posts_by_user_id("user-2", current_user_id="user-1")}
+    assert "post-open" in ids
+
+
+def test_a_private_account_reads_its_own_profile(harness):
+    assert harness.can_read_account("user-2", "user-2") is True
+
+
+def test_a_public_account_stays_open(harness):
+    assert harness.can_read_account("user-1", "user-2") is True
+    assert harness.can_read_account("user-1", None) is True

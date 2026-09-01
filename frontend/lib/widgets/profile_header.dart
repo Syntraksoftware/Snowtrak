@@ -10,6 +10,7 @@ import 'package:snowtrak/models/profile.dart';
 import 'package:snowtrak/providers/auth_provider.dart';
 import 'package:snowtrak/screens/profile/follow_requests_screen.dart';
 import 'package:snowtrak/widgets/follow_button.dart';
+import 'package:snowtrak/models/follow_stats.dart';
 import 'package:snowtrak/services/follow_service.dart';
 import 'package:snowtrak/services/profile_service.dart';
 
@@ -20,6 +21,7 @@ class ProfileHeader extends StatefulWidget {
     this.userId,
     this.fallbackName,
     this.fallbackUsername,
+    this.onFollowStats,
   });
 
   final String? userId;
@@ -29,6 +31,10 @@ class ProfileHeader extends StatefulWidget {
   /// so the card never flashes a placeholder name.
   final String? fallbackName;
   final String? fallbackUsername;
+
+  /// The stats the follow button already fetched, so the page around this
+  /// header can gate on them without making the same call a second time.
+  final ValueChanged<FollowStats>? onFollowStats;
 
   @override
   State<ProfileHeader> createState() => _ProfileHeaderState();
@@ -306,7 +312,10 @@ class _ProfileHeaderState extends State<ProfileHeader> {
               ],
               if (_followTargetId != null) ...[
                 const SizedBox(height: SnowtrakSpacing.md),
-                FollowButton(userId: _followTargetId!),
+                FollowButton(
+                  userId: _followTargetId!,
+                  onChanged: widget.onFollowStats,
+                ),
               ],
               if (widget.userId == null && _requestCount > 0) ...[
                 const SizedBox(height: SnowtrakSpacing.md),

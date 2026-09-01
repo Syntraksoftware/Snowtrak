@@ -10,6 +10,7 @@ class FollowStats {
     this.isFollowedBy = false,
     this.isPrivate = false,
     this.hasRequested = false,
+    this.requestsYou = false,
   });
 
   final int followerCount;
@@ -27,6 +28,10 @@ class FollowStats {
   /// The viewer has a request pending on this account.
   final bool hasRequested;
 
+  /// This account has a request pending on the viewer -- what puts Approve
+  /// and Deny on their profile instead of a Follow button.
+  final bool requestsYou;
+
   factory FollowStats.fromJson(Map<String, dynamic> json) {
     return FollowStats(
       followerCount: (json['follower_count'] as num?)?.toInt() ?? 0,
@@ -35,6 +40,7 @@ class FollowStats {
       isFollowedBy: json['is_followed_by'] as bool? ?? false,
       isPrivate: json['is_private'] as bool? ?? false,
       hasRequested: json['has_requested'] as bool? ?? false,
+      requestsYou: json['requests_you'] as bool? ?? false,
     );
   }
 
@@ -50,6 +56,7 @@ class FollowStats {
       isFollowedBy: isFollowedBy,
       isPrivate: isPrivate,
       hasRequested: hasRequested,
+      requestsYou: requestsYou,
     );
   }
 
@@ -65,6 +72,7 @@ class FollowStats {
       isFollowedBy: isFollowedBy,
       isPrivate: isPrivate,
       hasRequested: !hasRequested,
+      requestsYou: requestsYou,
     );
   }
 }

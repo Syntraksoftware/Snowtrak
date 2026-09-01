@@ -114,7 +114,12 @@ class FollowStatsResponse(BaseModel):
     is_following: bool = False
     is_followed_by: bool = False
     is_private: bool = False
+
+    # The two directions of a pending request. `has_requested` is the viewer
+    # waiting on this account; `requests_you` is this account waiting on the
+    # viewer, which is what puts Approve and Deny on their profile.
     has_requested: bool = False
+    requests_you: bool = False
 
 
 class FollowResultResponse(BaseModel):

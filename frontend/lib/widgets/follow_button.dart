@@ -115,6 +115,32 @@ class _FollowButtonState extends State<FollowButton> {
     }
   }
 
+  /// Approve or deny the request this profile has pending on the viewer.
+  ///
+  /// Re-reads rather than guessing the result: approving turns them into a
+  /// follower, which moves `follower_count` and `is_followed_by` as well as
+  /// clearing the request, and that is three optimistic edits to save one
+  /// round trip on a button tapped once per requester.
+  Future<void> _respondToRequest({required bool approve}) async {
+    setState(() => _busy = true);
+    final result = approve
+        ? await _followService.approveRequest(widget.userId)
+        : await _followService.denyRequest(widget.userId);
+    if (!mounted) return;
+
+    switch (result) {
+      case AppSuccess():
+        setState(() => _busy = false);
+        await _loadStats();
+        if (mounted) widget.onChanged?.call(_stats ?? const FollowStats());
+      case AppFailure(:final error):
+        setState(() => _busy = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.userMessage)),
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final stats = _stats;
@@ -188,6 +214,31 @@ class _FollowButtonState extends State<FollowButton> {
       return const _ButtonPlaceholder();
     }
 
+    // Their ask outranks yours. Deciding on a pending request is the one
+    // action this profile exists to offer right now, and a Follow button in
+    // its place answers a question nobody asked.
+    if (stats.requestsYou) {
+      return Row(
+        children: [
+          Expanded(
+            child: FilledButton(
+              onPressed: _busy ? null : () => _respondToRequest(approve: true),
+              style: _filledStyle,
+              child: const Text('Accept'),
+            ),
+          ),
+          const SizedBox(width: SnowtrakSpacing.sm),
+          Expanded(
+            child: OutlinedButton(
+              onPressed: _busy ? null : () => _respondToRequest(approve: false),
+              style: _outlinedStyle,
+              child: const Text('Decline'),
+            ),
+          ),
+        ],
+      );
+    }
+
     if (stats.hasRequested) {
       return OutlinedButton(
         onPressed: _busy ? null : _toggle,
@@ -206,17 +257,19 @@ class _FollowButtonState extends State<FollowButton> {
 
     return FilledButton(
       onPressed: _busy ? null : _toggle,
-      style: FilledButton.styleFrom(
+      style: _filledStyle,
+      child: const Text('Follow'),
+    );
+  }
+
+  ButtonStyle get _filledStyle => FilledButton.styleFrom(
         backgroundColor: context.colors.primary,
         foregroundColor: context.colors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(SnowtrakRadius.md),
           side: BorderSide(color: context.colors.primary),
         ),
-      ),
-      child: const Text('Follow'),
-    );
-  }
+      );
 
   ButtonStyle get _outlinedStyle => OutlinedButton.styleFrom(
         foregroundColor: context.colors.textPrimary,

@@ -105,6 +105,7 @@ class CommunityFollowOperations:
             "is_followed_by": False,
             "is_private": True,
             "has_requested": False,
+            "requests_you": False,
         }
         try:
             response = self._client.rpc(
@@ -143,6 +144,33 @@ class CommunityFollowOperations:
     def following_ids(self, user_id: str) -> list[str]:
         """Ids `user_id` follows, for the feed's visibility filter."""
         return _following_ids(self._client, user_id)
+
+    def can_read_account(self, user_id: str, viewer_id: str | None) -> bool:
+        """Whether `viewer_id` may read anything `user_id` authored.
+
+        A private account is closed as a whole, not post by post: a public post
+        by a private account is still that account's, and per-post visibility
+        alone would hand it to a stranger. Approving a follower is what opens
+        it, which is the point of approving one.
+
+        Fails closed, because `follow_snapshot` does -- an RPC error reports
+        `is_private` and no follow edge, so the caller sees nothing rather than
+        everything.
+
+        Args:
+            user_id: The account being read.
+            viewer_id: Who is reading, or None when signed out.
+
+        Returns:
+            True for a public account, for the owner, and for an approved
+            follower. False otherwise.
+        """
+        if viewer_id and viewer_id == user_id:
+            return True
+        snapshot, _ = self.follow_snapshot(user_id, viewer_id)
+        if not snapshot.get("is_private"):
+            return True
+        return bool(snapshot.get("is_following"))
 
     def follower_ids(self, user_id: str) -> list[str]:
         return self._edge_ids(

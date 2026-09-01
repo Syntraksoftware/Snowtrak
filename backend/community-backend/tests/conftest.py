@@ -294,6 +294,7 @@ class StubCommunityClient:
                 "is_followed_by": (user_id, viewer_id) in self.follows if viewer_id else False,
                 "is_private": user_id in self.private_accounts,
                 "has_requested": (viewer_id, user_id) in self.requests if viewer_id else False,
+                "requests_you": (user_id, viewer_id) in self.requests if viewer_id else False,
             },
             True,
         )

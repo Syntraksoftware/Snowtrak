@@ -370,6 +370,8 @@ class CommunityPostReadOperations:
         current_user_id: str | None = None,
     ) -> list[dict[str, Any]]:
         """List posts authored by a user with author information."""
+        if not self.can_read_account(user_id, current_user_id):
+            return []
         try:
             response = (
                 self._client.table("posts")
