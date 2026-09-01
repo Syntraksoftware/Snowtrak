@@ -300,9 +300,14 @@ Named so they are decisions rather than oversights:
 - **Blocking** — moderation, not social graph.
 - **A mutual-only "friends" tier** — a third check on every read and a
   three-way picker, for a tier nobody has asked for yet.
-- **New-follower push notifications** — `notifications.py` has a `follow` type,
-  but only behind `/test/follow`. There is no real send path from a backend
-  event; building one is its own change.
+- **Push notifications** — tracked in
+  [#41](https://github.com/Syntraksoftware/Snowtrak/issues/41), which carries
+  the investigation: FCM is the chosen provider, ~610 lines of sender already
+  sit unmerged on `feat/build-notification-service`, and the real obstacle is
+  that `frontend/android/` holds two files and does not build. `notifications.py`
+  and its `/test/follow` endpoint are gone as of #40; the in-app list is derived
+  from pending follow requests instead, which is why `markAsRead` does not
+  persist.
 - **Follow suggestions / "people you may know"** — needs a graph before it can
   recommend anything.
 - **Feed ranking** — this change makes relevance *possible* by capturing the
