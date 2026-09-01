@@ -142,6 +142,28 @@ class UserOperations(SupabaseBase):
             logger.exception(f"Failed to update last_login_at for user {id}: {exc}")
             return False
 
+    def set_user_privacy(self, id: str, is_private: bool) -> bool:
+        """Set whether this account approves its followers.
+
+        On user_info rather than profiles: most users have no profiles row,
+        and a privacy flag that is absent for some users is not a privacy
+        flag. See backend/db/migrations/015_account_privacy.sql.
+        """
+        if not self.is_configured():
+            logger.warning("Supabase not configured; skipping set_user_privacy.")
+            return False
+        client = self._client
+        if client is None:
+            return False
+        try:
+            resp = (
+                client.table("user_info").update({"is_private": is_private}).eq("id", id).execute()
+            )
+            return bool(getattr(resp, "data", None))
+        except Exception as exc:
+            logger.exception(f"Failed to set is_private for user {id}: {exc}")
+            return False
+
     def email_exists(self, email: str) -> bool:
         """Check if email already exists in user_info table."""
         if not self.is_configured():

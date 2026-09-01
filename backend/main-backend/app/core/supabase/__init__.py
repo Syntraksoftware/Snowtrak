@@ -10,13 +10,10 @@ Database Tables:
 - subthreads: Community topics/categories
 - posts: User posts within subthreads
 - comments: Comments on posts (supports nesting)
-- activities: User activities (skiing, etc.)
-- activity_locations: GPS points for activities
 """
 
 from __future__ import annotations
 
-from .activities import ActivityOperations
 from .base import SupabaseBase
 from .comments import CommentOperations
 from .posts import PostOperations
@@ -31,7 +28,6 @@ class SupabaseClient(
     SubthreadOperations,
     PostOperations,
     CommentOperations,
-    ActivityOperations,
 ):
     """
     Unified Supabase client combining all operations.
@@ -42,7 +38,6 @@ class SupabaseClient(
     - SubthreadOperations: subthreads table CRUD
     - PostOperations: posts table CRUD
     - CommentOperations: comments table CRUD
-    - ActivityOperations: activities table CRUD
 
     All classes inherit from SupabaseBase which handles connection management.
     """
@@ -63,6 +58,5 @@ __all__ = [
     "SubthreadOperations",
     "PostOperations",
     "CommentOperations",
-    "ActivityOperations",
     "supabase_client",
 ]

@@ -1,5 +1,10 @@
 # Following, and what a follow unlocks
 
+> **Superseded in part.** The "accounts are public; following is instant"
+> decision was reversed on 2026-08-27. See
+> [2026-08-27-account-privacy-design.md](2026-08-27-account-privacy-design.md).
+> Everything else in this document still stands.
+
 Design for the follow graph and post visibility. Branch `feat/follower-mechansim`.
 
 ## The problem

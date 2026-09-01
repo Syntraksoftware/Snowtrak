@@ -29,4 +29,42 @@ void main() {
     expect(stats.followerCount, 0);
     expect(stats.isFollowing, isFalse);
   });
+
+  test('parses the privacy fields', () {
+    final stats = FollowStats.fromJson(const {
+      'follower_count': 3,
+      'following_count': 1,
+      'is_following': false,
+      'is_followed_by': false,
+      'is_private': true,
+      'has_requested': true,
+    });
+    expect(stats.isPrivate, isTrue);
+    expect(stats.hasRequested, isTrue);
+  });
+
+  test('an older payload without the privacy fields still parses', () {
+    final stats = FollowStats.fromJson(const {
+      'follower_count': 3,
+      'following_count': 1,
+      'is_following': true,
+      'is_followed_by': false,
+    });
+    expect(stats.isPrivate, isFalse);
+    expect(stats.hasRequested, isFalse);
+  });
+
+  test('requesting flips only the request flag, never the count', () {
+    const stats = FollowStats(followerCount: 7, isPrivate: true);
+    final after = stats.requested();
+    expect(after.hasRequested, isTrue);
+    expect(after.isFollowing, isFalse);
+    // A request is not a follower. The count must not move.
+    expect(after.followerCount, 7);
+  });
+
+  test('withdrawing clears the flag', () {
+    const stats = FollowStats(isPrivate: true, hasRequested: true);
+    expect(stats.requested().hasRequested, isFalse);
+  });
 }

@@ -4,8 +4,7 @@ used for organizing and standardizing the data structures across different route
 """
 
 from pydantic import BaseModel, Field
-
-from services.visibility import PUBLIC
+from shared.visibility import PUBLIC
 
 
 class PostCreate(BaseModel):
@@ -114,6 +113,24 @@ class FollowStatsResponse(BaseModel):
     following_count: int = 0
     is_following: bool = False
     is_followed_by: bool = False
+    is_private: bool = False
+
+    # The two directions of a pending request. `has_requested` is the viewer
+    # waiting on this account; `requests_you` is this account waiting on the
+    # viewer, which is what puts Approve and Deny on their profile.
+    has_requested: bool = False
+    requests_you: bool = False
+
+
+class FollowResultResponse(BaseModel):
+    """What tapping Follow actually did.
+
+    A private account turns a follow into a request, and the client cannot
+    guess which happened. A status code is a worse place to put that than a
+    body, which is why this endpoint no longer answers 204.
+    """
+
+    state: str  # "following" | "requested"
 
 
 class FollowUserResponse(BaseModel):

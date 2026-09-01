@@ -3,9 +3,10 @@
 import logging
 from typing import Any
 
+from shared.visibility import PUBLIC, TIERS
+
 from services.constants.community_tables import POST_LIKES, POST_REPOSTS, POSTS
 from services.helpers.engagement_ops import set_like
-from services.visibility import PUBLIC, TIERS
 
 logger = logging.getLogger(__name__)
 

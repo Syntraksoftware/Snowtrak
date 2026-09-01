@@ -1,0 +1,198 @@
+"""Tests for /api/v1/follows -- following, and following a private account.
+
+A private account turns a follow into a request instead. The client cannot
+tell the two apart from a 204, which is why the route now answers with a
+body describing which one happened.
+
+`{user_id}` in this router is typed `UUID` (routes/follows_routes.py, unchanged
+by this task), so path segments must be real UUID text -- the "user-2" style
+id the task brief's sketch used only works for values that never go through
+FastAPI's path converter (current_user, and the requester ids embedded in a
+response body).
+"""
+
+from middleware.auth import get_current_user, get_optional_user
+from routes import follows_routes
+
+STUB_USER_2 = "22222222-2222-2222-2222-222222222222"
+STUB_USER_3 = "33333333-3333-3333-3333-333333333333"
+
+
+def _recording_set_cached_json(calls):
+    """An async stand-in for services.community_cache.set_cached_json.
+
+    Records every call instead of touching Redis, so a test can assert on
+    whether the route wrote a snapshot to the cache -- not just on the
+    response it returned.
+    """
+
+    async def _set(key, value, ttl):
+        calls.append((key, value, ttl))
+
+    return _set
+
+
+def test_following_a_public_account_returns_following(client, stub_client):
+    stub_client.private_accounts = set()
+    response = client.post(f"/api/v1/follows/{STUB_USER_2}")
+    assert response.status_code == 200
+    assert response.json() == {"state": "following"}
+    assert ("user-1", STUB_USER_2) in stub_client.follows
+
+
+def test_following_a_private_account_returns_requested(client, stub_client):
+    stub_client.private_accounts = {STUB_USER_2}
+    response = client.post(f"/api/v1/follows/{STUB_USER_2}")
+    assert response.status_code == 200
+    assert response.json() == {"state": "requested"}
+    assert ("user-1", STUB_USER_2) in stub_client.requests
+    assert ("user-1", STUB_USER_2) not in stub_client.follows
+
+
+def test_cannot_follow_yourself(client, app):
+    # get_current_user is fixed to "user-1" for every other test in this
+    # suite; the self-follow guard compares it against a real UUID path
+    # segment, so this test needs a matching override just for itself.
+    app.dependency_overrides[get_current_user] = lambda: STUB_USER_2
+    response = client.post(f"/api/v1/follows/{STUB_USER_2}")
+    assert response.status_code == 400
+
+
+def test_list_my_requests_is_not_shadowed_by_user_id_route(client, stub_client):
+    stub_client.requests = {(STUB_USER_2, "user-1"), (STUB_USER_3, "user-1")}
+    response = client.get("/api/v1/follows/me/requests")
+    assert response.status_code == 200
+    body = response.json()
+    requester_ids = {item["user_id"] for item in body["items"]}
+    assert requester_ids == {STUB_USER_2, STUB_USER_3}
+
+
+def test_approve_request_turns_it_into_a_follow(client, stub_client):
+    stub_client.requests = {(STUB_USER_2, "user-1")}
+    response = client.post(f"/api/v1/follows/me/requests/{STUB_USER_2}/approve")
+    assert response.status_code == 204
+    assert (STUB_USER_2, "user-1") not in stub_client.requests
+    assert (STUB_USER_2, "user-1") in stub_client.follows
+
+
+def test_approve_request_404s_when_there_was_none(client, stub_client):
+    stub_client.requests = set()
+    response = client.post(f"/api/v1/follows/me/requests/{STUB_USER_2}/approve")
+    assert response.status_code == 404
+
+
+def test_deny_request_drops_it_without_following(client, stub_client):
+    stub_client.requests = {(STUB_USER_2, "user-1")}
+    response = client.delete(f"/api/v1/follows/me/requests/{STUB_USER_2}")
+    assert response.status_code == 204
+    assert (STUB_USER_2, "user-1") not in stub_client.requests
+    assert (STUB_USER_2, "user-1") not in stub_client.follows
+
+
+def test_withdraw_request_is_not_shadowed_by_unfollow_route(client, stub_client):
+    stub_client.requests = {("user-1", STUB_USER_2)}
+    response = client.delete(f"/api/v1/follows/{STUB_USER_2}/request")
+    assert response.status_code == 204
+    assert ("user-1", STUB_USER_2) not in stub_client.requests
+
+
+def test_a_strangers_view_of_a_private_follower_list_is_refused(client, stub_client, app):
+    # `app` pins get_optional_user to "user-1" for every other test in this
+    # suite; an anonymous viewer needs a matching override just for itself.
+    stub_client.private_accounts = {STUB_USER_2}
+    app.dependency_overrides[get_optional_user] = lambda: None
+    response = client.get(f"/api/v1/follows/{STUB_USER_2}/followers")
+    assert response.status_code == 403
+
+
+def test_an_approved_follower_sees_the_list(client, stub_client):
+    stub_client.private_accounts = {STUB_USER_2}
+    stub_client.follows.add(("user-1", STUB_USER_2))
+    response = client.get(f"/api/v1/follows/{STUB_USER_2}/followers")
+    assert response.status_code == 200
+
+
+def test_a_public_accounts_list_stays_open(client, stub_client):
+    stub_client.private_accounts = set()
+    response = client.get(f"/api/v1/follows/{STUB_USER_2}/followers")
+    assert response.status_code == 200
+
+
+def test_an_anonymous_caller_still_sees_a_public_accounts_list(client, stub_client, app):
+    # A public account's lists stay public even with no viewer at all -- the
+    # early return in _may_see_edges means an anonymous caller never reaches
+    # the viewer check, but that is a load-bearing design decision worth
+    # pinning on its own, separate from the signed-in case above.
+    stub_client.private_accounts = set()
+    app.dependency_overrides[get_optional_user] = lambda: None
+    response = client.get(f"/api/v1/follows/{STUB_USER_2}/followers")
+    assert response.status_code == 200
+
+
+def test_a_pending_requester_without_an_accepted_edge_is_still_refused(client, stub_client):
+    """A follow request is not a follow.
+
+    `stub_client.requests` holds a pending request from user-1 to a private
+    STUB_USER_2, but `stub_client.follows` has no matching edge. If a future
+    change made `is_following` also consult pending requests -- a
+    plausible-sounding "fix" -- this would start passing the follower list to
+    someone who was never approved. Assert on the status code, not on how
+    the gate is implemented.
+    """
+    stub_client.private_accounts = {STUB_USER_2}
+    stub_client.requests = {("user-1", STUB_USER_2)}
+    followers_response = client.get(f"/api/v1/follows/{STUB_USER_2}/followers")
+    following_response = client.get(f"/api/v1/follows/{STUB_USER_2}/following")
+    assert followers_response.status_code == 403
+    assert following_response.status_code == 403
+
+
+def test_a_failed_follow_stats_read_is_not_cached(client, stub_client, monkeypatch):
+    """A fail-closed follow_snapshot fallback must not be written to Redis.
+
+    It is only correct for the instant the RPC failed; persisting it would
+    mislabel the header -- e.g. a "Follow" button under a viewer who already
+    follows a public account -- for CACHE_FOLLOW_STATS_TTL_SECONDS, with no
+    way for the user to clear it.
+    """
+    stub_client.follow_snapshot_result = (
+        {
+            "follower_count": 0,
+            "following_count": 0,
+            "is_following": False,
+            "is_followed_by": False,
+            "is_private": True,
+            "has_requested": False,
+        },
+        False,
+    )
+    calls = []
+    monkeypatch.setattr(follows_routes, "set_cached_json", _recording_set_cached_json(calls))
+
+    response = client.get(f"/api/v1/follows/{STUB_USER_2}/stats")
+
+    assert response.status_code == 200
+    assert response.json()["is_private"] is True
+    assert calls == []
+
+
+def test_a_successful_follow_stats_read_is_still_cached(client, stub_client, monkeypatch):
+    """The happy path must keep being cached.
+
+    This endpoint sits on every profile open, and the whole point of the
+    cache is to spare the ~440ms round trip for repeat viewers.
+    """
+    stub_client.follows = {("user-1", STUB_USER_2)}
+    calls = []
+    monkeypatch.setattr(follows_routes, "set_cached_json", _recording_set_cached_json(calls))
+
+    response = client.get(f"/api/v1/follows/{STUB_USER_2}/stats")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["follower_count"] == 1
+    assert body["is_private"] is False
+    assert len(calls) == 1
+    _cached_key, cached_value, cached_ttl = calls[0]
+    assert cached_value == body
+    assert cached_ttl == 120

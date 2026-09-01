@@ -5,6 +5,7 @@ Pytest configuration and shared fixtures.
 import pytest
 from fastapi.testclient import TestClient
 
+from app.api.dependencies import get_current_user
 from app.core.security import hash_password
 from app.core.storage import User, user_store
 from app.core.supabase import supabase_client
@@ -23,6 +24,63 @@ def app(monkeypatch):
 def client(app):
     """Create a test client for the app."""
     return TestClient(app)
+
+
+class _StubSupabase:
+    """Stands in for the `user_info` slice of SupabaseClient.
+
+    Only the methods the privacy route touches are implemented: reading a row
+    for `get_current_user` and writing `is_private` for the route itself.
+    """
+
+    def __init__(self) -> None:
+        self.user_info: dict[str, dict[str, object]] = {
+            "user-1": {
+                "id": "user-1",
+                "email": "user-1@example.com",
+                "hashed_password": "stub-hash",
+                "first_name": "Stub",
+                "last_name": "User",
+                "is_active": True,
+                "is_private": False,
+            }
+        }
+
+    def is_configured(self) -> bool:
+        return True
+
+    def get_user_info_by_id(self, user_id: str) -> dict[str, object] | None:
+        return self.user_info.get(user_id)
+
+    def set_user_privacy(self, user_id: str, is_private: bool) -> bool:
+        row = self.user_info.get(user_id)
+        if row is None:
+            return False
+        row["is_private"] = is_private
+        return True
+
+
+@pytest.fixture(scope="function")
+def stub_supabase(monkeypatch, app):
+    """Stub Supabase and authenticate every request as `user-1`.
+
+    Overrides `get_current_user` directly rather than exercising a real
+    login/JWT flow -- the privacy route only cares about `current_user.id`,
+    and this keeps the test focused on the route under test.
+    """
+    stub = _StubSupabase()
+    monkeypatch.setattr(supabase_client, "is_configured", stub.is_configured)
+    monkeypatch.setattr(supabase_client, "get_user_info_by_id", stub.get_user_info_by_id)
+    monkeypatch.setattr(supabase_client, "set_user_privacy", stub.set_user_privacy)
+
+    def _current_user() -> User:
+        # is_private lives on the raw user_info row, not on the User model.
+        row = {k: v for k, v in stub.user_info["user-1"].items() if k != "is_private"}
+        return User(**row)  # type: ignore[arg-type]
+
+    app.dependency_overrides[get_current_user] = _current_user
+    yield stub
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture(scope="function")

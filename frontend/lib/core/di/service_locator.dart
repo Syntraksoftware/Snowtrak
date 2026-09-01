@@ -11,7 +11,6 @@ import 'package:snowtrak/features/activities/data/activities_repository.dart';
 import 'package:snowtrak/features/auth/data/auth_repository.dart';
 import 'package:snowtrak/features/auth/data/auth_session_store.dart';
 import 'package:snowtrak/features/community/data/community_repository.dart';
-import 'package:snowtrak/features/notifications/data/notifications_repository.dart';
 import 'package:snowtrak/features/profile/data/profile_repository.dart';
 import 'package:snowtrak/providers/activity_provider.dart';
 import 'package:snowtrak/providers/auth_provider.dart';
@@ -27,7 +26,7 @@ import 'package:snowtrak/services/apis/auth_api.dart';
 import 'package:snowtrak/services/apis/community_api.dart';
 import 'package:snowtrak/services/apis/follow_api.dart';
 import 'package:snowtrak/services/apis/map_activities_api.dart';
-import 'package:snowtrak/services/apis/notifications_api.dart';
+import 'package:snowtrak/services/apis/privacy_api.dart';
 import 'package:snowtrak/services/apis/users_api.dart';
 import 'package:snowtrak/services/location_service.dart';
 import 'package:snowtrak/services/map_config.dart';
@@ -100,11 +99,13 @@ Future<void> setupServiceLocatorWithEnvironment({
   sl.registerLazySingleton<FollowApi>(
     () => FollowApi(dio: sl<Dio>(instanceName: 'community')),
   );
+  // main-backend, not community: `/users/me/privacy` lives next to
+  // `/users/me/profile` (see users_profile_routes.py), not next to follows.
+  sl.registerLazySingleton<PrivacyApi>(
+    () => PrivacyApi(dio: sl<Dio>(instanceName: 'main')),
+  );
   sl.registerLazySingleton<CommunityApi>(
     () => CommunityApi(dio: sl<Dio>(instanceName: 'community')),
-  );
-  sl.registerLazySingleton<NotificationsApi>(
-    () => NotificationsApi(dio: sl<Dio>(instanceName: 'main')),
   );
   sl.registerLazySingleton<MapActivitiesApi>(
     () => MapActivitiesApi(dio: sl<Dio>(instanceName: 'map')),
@@ -123,9 +124,6 @@ Future<void> setupServiceLocatorWithEnvironment({
   );
   sl.registerLazySingleton<CommunityRepository>(
     () => CommunityRepository(sl<CommunityApi>()),
-  );
-  sl.registerLazySingleton<NotificationsRepository>(
-    () => NotificationsRepository(sl<NotificationsApi>()),
   );
   sl.registerLazySingleton<AuthService>(
     () => AuthService(

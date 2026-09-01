@@ -8,6 +8,9 @@ class FollowStats {
     this.followingCount = 0,
     this.isFollowing = false,
     this.isFollowedBy = false,
+    this.isPrivate = false,
+    this.hasRequested = false,
+    this.requestsYou = false,
   });
 
   final int followerCount;
@@ -19,17 +22,30 @@ class FollowStats {
   /// This profile follows the viewer — what makes a "Follows you" badge.
   final bool isFollowedBy;
 
+  /// This account approves its followers, so Follow sends a request.
+  final bool isPrivate;
+
+  /// The viewer has a request pending on this account.
+  final bool hasRequested;
+
+  /// This account has a request pending on the viewer -- what puts Approve
+  /// and Deny on their profile instead of a Follow button.
+  final bool requestsYou;
+
   factory FollowStats.fromJson(Map<String, dynamic> json) {
     return FollowStats(
       followerCount: (json['follower_count'] as num?)?.toInt() ?? 0,
       followingCount: (json['following_count'] as num?)?.toInt() ?? 0,
       isFollowing: json['is_following'] as bool? ?? false,
       isFollowedBy: json['is_followed_by'] as bool? ?? false,
+      isPrivate: json['is_private'] as bool? ?? false,
+      hasRequested: json['has_requested'] as bool? ?? false,
+      requestsYou: json['requests_you'] as bool? ?? false,
     );
   }
 
-  /// The optimistic result of tapping Follow / Following, before the request
-  /// lands. Reverted by re-fetching if the request fails.
+  /// The optimistic result of tapping Follow / Following on a public
+  /// account, before the request lands. Reverted by re-fetching on failure.
   FollowStats toggled() {
     return FollowStats(
       followerCount: isFollowing
@@ -38,6 +54,25 @@ class FollowStats {
       followingCount: followingCount,
       isFollowing: !isFollowing,
       isFollowedBy: isFollowedBy,
+      isPrivate: isPrivate,
+      hasRequested: hasRequested,
+      requestsYou: requestsYou,
+    );
+  }
+
+  /// The optimistic result of asking, or of taking the ask back.
+  ///
+  /// The follower count does not move: a request is not a follower, and
+  /// showing it as one would be a lie the server corrects a second later.
+  FollowStats requested() {
+    return FollowStats(
+      followerCount: followerCount,
+      followingCount: followingCount,
+      isFollowing: isFollowing,
+      isFollowedBy: isFollowedBy,
+      isPrivate: isPrivate,
+      hasRequested: !hasRequested,
+      requestsYou: requestsYou,
     );
   }
 }

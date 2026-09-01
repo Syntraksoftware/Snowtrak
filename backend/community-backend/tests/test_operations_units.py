@@ -9,6 +9,7 @@ from services.community_post_read_operations import CommunityPostReadOperations
 from services.community_post_write_operations import CommunityPostWriteOperations
 from services.community_subthread_operations import CommunitySubthreadOperations
 from services.follow_operations import CommunityFollowOperations
+from services.follow_request_operations import CommunityFollowRequestOperations
 
 
 class FakeResponse:
@@ -92,6 +93,13 @@ class FakeQuery:
         self.operation = "delete"
         return self
 
+    def upsert(self, payload, on_conflict=None, ignore_duplicates=False):
+        self.operation = "upsert"
+        self.payload = payload
+        self.on_conflict = [f.strip() for f in (on_conflict or "").split(",") if f.strip()]
+        self.ignore_duplicates = ignore_duplicates
+        return self
+
     def eq(self, field, value):
         self.filters.append(("eq", field, value))
         return self
@@ -137,6 +145,24 @@ class FakeQuery:
 
     def execute(self):
         table_rows = self.client.tables[self.table_name]
+
+        if self.operation == "upsert":
+            rows = self.client.tables.setdefault(self.table_name, [])
+            payloads = self.payload if isinstance(self.payload, list) else [self.payload]
+            for item in payloads:
+                match = next(
+                    (
+                        row
+                        for row in rows
+                        if all(row.get(k) == item.get(k) for k in self.on_conflict)
+                    ),
+                    None,
+                )
+                if match is None:
+                    rows.append(dict(item))
+                elif not self.ignore_duplicates:
+                    match.update(item)
+            return FakeResponse(data=payloads, count=None)
 
         if self.operation == "insert":
             payload = dict(self.payload)
@@ -247,15 +273,85 @@ class FakeSupabaseClient:
             "post_likes": [],
             "post_votes": [],
             "comment_votes": [],
+            "follow_requests": [],
+            "user_info": [
+                {"id": "user-1", "is_private": False},
+                {"id": "user-2", "is_private": True},
+            ],
         }
 
     def table(self, table_name):
         return FakeQuery(self, table_name)
 
+    def rpc(self, name, params):
+        return FakeRpc(self, name, params)
+
+
+class FakeRpc:
+    """Just enough of the two functions the code calls.
+
+    The real ones live in backend/db/migrations/. Reimplementing them here
+    is a deliberate duplication: without it, approve and follow_stats have
+    no unit coverage at all, and both are load-bearing for privacy.
+    """
+
+    def __init__(self, client, name, params):
+        self.client = client
+        self.name = name
+        self.params = params
+
+    def execute(self):
+        if self.name == "approve_follow_request":
+            return FakeResponse(data=self._approve(), count=None)
+        if self.name == "follow_stats":
+            return FakeResponse(data=self._stats(), count=None)
+        raise AssertionError(f"fake does not implement rpc {self.name!r}")
+
+    def _approve(self):
+        target = self.params["target"]
+        requester = self.params["requester"]
+        requests = self.client.tables.setdefault("follow_requests", [])
+        before = len(requests)
+        requests[:] = [
+            r for r in requests if not (r["target_id"] == target and r["requester_id"] == requester)
+        ]
+        if len(requests) == before:
+            return False
+        follows = self.client.tables.setdefault("follows", [])
+        if not any(f["follower_id"] == requester and f["followee_id"] == target for f in follows):
+            follows.append({"follower_id": requester, "followee_id": target})
+        return True
+
+    def _stats(self):
+        target = self.params["target"]
+        viewer = self.params["viewer"]
+        follows = self.client.tables.get("follows", [])
+        requests = self.client.tables.get("follow_requests", [])
+        users = self.client.tables.get("user_info", [])
+        row = next((u for u in users if u["id"] == target), None)
+        return {
+            "follower_count": sum(1 for f in follows if f["followee_id"] == target),
+            "following_count": sum(1 for f in follows if f["follower_id"] == target),
+            "is_following": any(
+                f["follower_id"] == viewer and f["followee_id"] == target for f in follows
+            ),
+            "is_followed_by": any(
+                f["follower_id"] == target and f["followee_id"] == viewer for f in follows
+            ),
+            "is_private": bool(row and row.get("is_private")),
+            "has_requested": any(
+                r["requester_id"] == viewer and r["target_id"] == target for r in requests
+            ),
+            "requests_you": any(
+                r["requester_id"] == target and r["target_id"] == viewer for r in requests
+            ),
+        }
+
 
 class OperationHarness(
     CommunitySubthreadOperations,
     CommunityFollowOperations,
+    CommunityFollowRequestOperations,
     CommunityPostReadOperations,
     CommunityPostWriteOperations,
     CommunityCommentReadOperations,
@@ -276,6 +372,11 @@ def patch_postgrest_count_method(monkeypatch):
 
 @pytest.fixture
 def operations_client():
+    return OperationHarness()
+
+
+@pytest.fixture
+def harness():
     return OperationHarness()
 
 
@@ -587,3 +688,183 @@ def test_visible_post_ids_denies_when_the_lookup_fails(visibility_client):
 
     visibility_client._client.table = explode
     assert visibility_client.visible_post_ids(["public-post"], "visibility.eq.public") == set()
+
+
+def test_shared_visibility_expression_covers_all_three_tiers():
+    from shared.visibility import visible_rows_expression
+
+    anonymous = visible_rows_expression(None, [])
+    assert anonymous == "visibility.eq.public"
+
+    viewer = visible_rows_expression("user-1", ["user-2"])
+    assert "visibility.eq.public" in viewer
+    assert "user_id.eq.user-1" in viewer
+    assert "and(visibility.eq.followers,user_id.in.(user-2))" in viewer
+
+    # PostgREST rejects an empty in.(), so the clause must not be built.
+    alone = visible_rows_expression("user-1", [])
+    assert "in.()" not in alone
+
+
+# ---------------------------------------------------------------------------
+# Pending follow requests
+#
+# The single most important property of this design: a pending request must
+# never create a row in `follows`. Every visibility read path above depends
+# on `follows` meaning "accepted edge" and nothing else.
+# ---------------------------------------------------------------------------
+
+
+def test_following_a_private_account_creates_a_request_not_an_edge(harness):
+    assert harness.is_private_account("user-2") is True
+    assert harness.request_follow("user-1", "user-2") is True
+
+    assert harness._client.tables["follow_requests"] == [
+        {"requester_id": "user-1", "target_id": "user-2"}
+    ]
+    # The point of the separate table: no edge, so follow_counts and every
+    # visibility read stay correct without knowing requests exist.
+    assert harness._client.tables["follows"] == []
+
+
+def test_requesting_twice_leaves_one_row(harness):
+    harness.request_follow("user-1", "user-2")
+    harness.request_follow("user-1", "user-2")
+    assert len(harness._client.tables["follow_requests"]) == 1
+
+
+def test_approving_moves_the_row_into_follows(harness):
+    harness.request_follow("user-1", "user-2")
+    assert harness.approve_request("user-2", "user-1") is True
+
+    assert harness._client.tables["follow_requests"] == []
+    assert harness._client.tables["follows"] == [{"follower_id": "user-1", "followee_id": "user-2"}]
+
+
+def test_approving_something_never_requested_is_false(harness):
+    assert harness.approve_request("user-2", "user-1") is False
+    assert harness._client.tables["follows"] == []
+
+
+def test_withdrawing_leaves_no_edge(harness):
+    harness.request_follow("user-1", "user-2")
+    assert harness.withdraw_request("user-1", "user-2") is True
+    assert harness._client.tables["follow_requests"] == []
+    assert harness._client.tables["follows"] == []
+
+
+def test_a_pending_requester_cannot_read_followers_tier_posts(harness):
+    harness._client.tables["posts"].append(
+        {
+            "post_id": "post-private",
+            "user_id": "user-2",
+            "subthread_id": "sub-1",
+            "title": "Members only",
+            "content": "Secret line",
+            "created_at": "2026-01-02T00:00:00Z",
+            "visibility": "followers",
+        }
+    )
+    harness.request_follow("user-1", "user-2")
+
+    ids = {p["post_id"] for p in harness.list_recent_posts(current_user_id="user-1")}
+    assert "post-private" not in ids
+
+
+def test_a_private_accounts_public_post_stays_public(harness):
+    """The two axes are independent. This is the test that catches somebody
+    later 'fixing' the model into Instagram's ceiling, where a private
+    account's public post silently becomes followers-only."""
+    harness._client.tables["posts"].append(
+        {
+            "post_id": "post-open",
+            "user_id": "user-2",  # a private account
+            "subthread_id": "sub-1",
+            "title": "Open to all",
+            "content": "Anyone can read this",
+            "created_at": "2026-01-03T00:00:00Z",
+            "visibility": "public",
+        }
+    )
+
+    anonymous = {p["post_id"] for p in harness.list_recent_posts(current_user_id=None)}
+    assert "post-open" in anonymous
+
+
+def test_turning_private_keeps_existing_followers(harness):
+    harness.follow("user-1", "user-2")
+    harness._client.tables["user_info"][1]["is_private"] = True
+
+    # No demotion path exists, and that is the decision: Instagram keeps
+    # them. The escape hatch is remove-a-follower, which already ships.
+    assert harness.following_ids("user-1") == ["user-2"]
+
+
+def test_a_private_account_hides_its_profile_from_a_stranger(harness):
+    """The profile is gated as a whole, unlike the feed.
+
+    `test_a_private_accounts_public_post_stays_public` keeps the two axes
+    independent for `list_recent_posts`, and that still holds. On a profile
+    they are not independent: opening one is asking to read a person, and a
+    private account answers that with approval or nothing.
+    """
+    harness._client.tables["posts"].append(
+        {
+            "post_id": "post-open",
+            "user_id": "user-2",  # a private account
+            "subthread_id": "sub-1",
+            "title": "Open to all",
+            "content": "Anyone can read this",
+            "created_at": "2026-01-03T00:00:00Z",
+            "visibility": "public",
+        }
+    )
+
+    assert harness.list_posts_by_user_id("user-2", current_user_id="user-1") == []
+    assert harness.list_posts_by_user_id("user-2", current_user_id=None) == []
+
+
+def test_a_pending_request_does_not_open_the_profile(harness):
+    harness._client.tables["posts"].append(
+        {
+            "post_id": "post-open",
+            "user_id": "user-2",
+            "subthread_id": "sub-1",
+            "title": "Open to all",
+            "content": "Anyone can read this",
+            "created_at": "2026-01-03T00:00:00Z",
+            "visibility": "public",
+        }
+    )
+    harness.request_follow("user-1", "user-2")
+
+    assert harness.can_read_account("user-2", "user-1") is False
+    assert harness.list_posts_by_user_id("user-2", current_user_id="user-1") == []
+
+
+def test_approval_opens_the_profile(harness):
+    harness._client.tables["posts"].append(
+        {
+            "post_id": "post-open",
+            "user_id": "user-2",
+            "subthread_id": "sub-1",
+            "title": "Open to all",
+            "content": "Anyone can read this",
+            "created_at": "2026-01-03T00:00:00Z",
+            "visibility": "public",
+        }
+    )
+    harness.follow("user-1", "user-2")
+
+    assert harness.can_read_account("user-2", "user-1") is True
+    ids = {p["post_id"] for p in harness.list_posts_by_user_id("user-2", current_user_id="user-1")}
+    assert "post-open" in ids
+
+
+def test_a_private_account_reads_its_own_profile(harness):
+    assert harness.can_read_account("user-2", "user-2") is True
+
+
+def test_a_public_account_stays_open(harness):
+    assert harness.can_read_account("user-1", "user-2") is True
+    assert harness.can_read_account("user-1", None) is True

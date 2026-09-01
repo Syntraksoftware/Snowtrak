@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 
 from app.api.dependencies import get_current_user
 from app.core.profile_cache import get_profile, invalidate_profile, set_profile
@@ -101,6 +102,44 @@ def get_current_user_profile_endpoint(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get user profile",
         ) from None
+
+
+class PrivacySetting(BaseModel):
+    """Whether this account approves its followers."""
+
+    is_private: bool
+
+
+@router.put("/me/privacy", response_model=PrivacySetting)
+def set_my_privacy(
+    setting: PrivacySetting,
+    current_user: User = Depends(get_current_user),
+) -> PrivacySetting:
+    """Turn follower approval on or off.
+
+    Existing followers are kept. Turning private does not retroactively hide
+    followers-only content from people who already follow you -- the escape
+    hatch for that is DELETE /api/v1/follows/me/followers/{id}.
+
+    community-backend caches follow_stats, which carries this flag, for
+    CACHE_FOLLOW_STATS_TTL_SECONDS. No invalidation is wired across the
+    service boundary for one field.
+
+    # ponytail: up to 120s of stale is_private in another viewer's cached
+    # stats. POST /follows/{id} re-reads it fresh, so only the button's
+    # label lags, never the gate. If that becomes visible, bump the
+    # follow-stats cache version from here.
+    """
+    _ensure_database_configured()
+
+    if not supabase_client.set_user_privacy(current_user.id, setting.is_private):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        ) from None
+
+    invalidate_profile(current_user.id)
+    return setting
 
 
 @router.put("/me/profile", response_model=ProfileResponse)

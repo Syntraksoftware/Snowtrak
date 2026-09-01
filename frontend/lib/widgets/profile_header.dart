@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:snowtrak/core/auth/authenticated_session.dart';
@@ -6,7 +8,10 @@ import 'package:snowtrak/core/errors/app_result.dart';
 import 'package:snowtrak/core/theme.dart';
 import 'package:snowtrak/models/profile.dart';
 import 'package:snowtrak/providers/auth_provider.dart';
+import 'package:snowtrak/screens/profile/follow_requests_screen.dart';
 import 'package:snowtrak/widgets/follow_button.dart';
+import 'package:snowtrak/models/follow_stats.dart';
+import 'package:snowtrak/services/follow_service.dart';
 import 'package:snowtrak/services/profile_service.dart';
 
 /// Profile identity block at the top of the profile screen.
@@ -16,6 +21,7 @@ class ProfileHeader extends StatefulWidget {
     this.userId,
     this.fallbackName,
     this.fallbackUsername,
+    this.onFollowStats,
   });
 
   final String? userId;
@@ -26,23 +32,53 @@ class ProfileHeader extends StatefulWidget {
   final String? fallbackName;
   final String? fallbackUsername;
 
+  /// The stats the follow button already fetched, so the page around this
+  /// header can gate on them without making the same call a second time.
+  final ValueChanged<FollowStats>? onFollowStats;
+
   @override
   State<ProfileHeader> createState() => _ProfileHeaderState();
 }
 
 class _ProfileHeaderState extends State<ProfileHeader> {
   final ProfileService _profileService = sl<ProfileService>();
+  final FollowService _followService = sl<FollowService>();
   Profile? _profile;
   bool _isLoading = true;
   String? _error;
   bool _hasLoaded = false;
   String? _lastUserId;
 
+  /// Pending requests to follow this profile's owner. Only ever loaded on
+  /// your own profile -- see [_loadRequestCount].
+  int _requestCount = 0;
+
   @override
   void initState() {
     super.initState();
     _lastUserId = widget.userId;
     _loadProfile();
+    if (widget.userId == null) _loadRequestCount();
+  }
+
+  // ponytail: the badge counts the first page, so it stops at 20. Add a
+  // count endpoint if anybody ever has more pending requests than that.
+  Future<void> _loadRequestCount() async {
+    final result = await _followService.getRequests(limit: 20);
+    if (!mounted) return;
+    switch (result) {
+      case AppSuccess(:final value):
+        setState(() => _requestCount = value.length);
+      case AppFailure():
+        // No count rather than a wrong one -- the pill just doesn't show.
+    }
+  }
+
+  Future<void> _openRequests() async {
+    await openFollowRequests(context);
+    // The screen the badge points at is the only place these are resolved,
+    // so a return trip is exactly when the count is stale.
+    if (mounted) unawaited(_loadRequestCount());
   }
 
   @override
@@ -276,7 +312,14 @@ class _ProfileHeaderState extends State<ProfileHeader> {
               ],
               if (_followTargetId != null) ...[
                 const SizedBox(height: SnowtrakSpacing.md),
-                FollowButton(userId: _followTargetId!),
+                FollowButton(
+                  userId: _followTargetId!,
+                  onChanged: widget.onFollowStats,
+                ),
+              ],
+              if (widget.userId == null && _requestCount > 0) ...[
+                const SizedBox(height: SnowtrakSpacing.md),
+                _RequestsPill(count: _requestCount, onTap: _openRequests),
               ],
             ],
           ),
@@ -292,6 +335,51 @@ class _ProfileHeaderState extends State<ProfileHeader> {
     if (userId == null || userId.trim().isEmpty) return null;
     final signedInId = Provider.of<AuthProvider>(context, listen: false).user?.id;
     return userId == signedInId ? null : userId;
+  }
+}
+
+/// Tappable pill pointing at [FollowRequestsScreen] -- the only place a
+/// pending request is visible at all, since there is no push notification.
+class _RequestsPill extends StatelessWidget {
+  const _RequestsPill({required this.count, required this.onTap});
+
+  final int count;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(SnowtrakRadius.round),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: SnowtrakSpacing.sm,
+          vertical: SnowtrakSpacing.xs,
+        ),
+        decoration: BoxDecoration(
+          color: context.colors.primary.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(SnowtrakRadius.round),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.person_add_alt_1,
+              size: 16,
+              color: context.colors.primary,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              count == 1 ? '1 follow request' : '$count follow requests',
+              style: SnowtrakTypography.labelMedium.copyWith(
+                color: context.colors.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:snowtrak/core/theme.dart';
 import 'package:snowtrak/models/notification.dart';
 import 'package:snowtrak/providers/notification_provider.dart';
+import 'package:snowtrak/screens/profile/user_profile_screen.dart';
 import 'package:snowtrak/services/notification_service.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -206,18 +207,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  void _handleNotificationTap(AppNotification notification) {
-    // Mark as read
+  Future<void> _handleNotificationTap(AppNotification notification) async {
     context.read<NotificationProvider>().markAsRead(notification.id);
 
-    // Navigate based on notification type (example)
-    if (notification.actionRoute != null) {
-      // Navigate to specific route
-      // Navigator.pushNamed(context, notification.actionRoute!);
-    }
+    // Every notification is a follow request today, so the tap goes to the
+    // requester's profile -- where the Follow button and their runs are, which
+    // is what you need to decide whether to approve.
+    final userId = notification.metadata?['user_id'] as String? ?? '';
+    if (userId.isEmpty) return;
 
-    // For now, show a toast
-    NotificationService.showToast(context, 'Tapped: ${notification.title}');
+    await openUserProfile(context, userId, displayName: notification.senderName);
+    // Approving or denying from the profile clears the request, so the list
+    // behind this screen is stale exactly on the way back.
+    if (mounted) await context.read<NotificationProvider>().loadNotifications();
   }
 
   void _handleNotificationDismiss(AppNotification notification) {

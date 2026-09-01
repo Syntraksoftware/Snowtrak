@@ -8,7 +8,9 @@ from typing import Any
 from uuid import uuid4
 
 from postgrest import CountMethod
+from shared.follow_graph import following_ids as _following_ids
 from shared.pipeline_enums import ProcessingStatus
+from shared.visibility import visible_rows_expression
 from supabase import Client, create_client
 
 from config import get_config
@@ -156,10 +158,49 @@ class ActivitySupabaseClient:
     def download_storage_object(self, bucket: str, storage_key: str) -> bytes:
         return self._client.storage.from_(bucket).download(storage_key)
 
-    def list_activities(self, limit: int = 20, offset: int = 0) -> dict[str, Any]:
+    def following_ids(self, user_id: str) -> list[str]:
+        """Ids `user_id` follows, for the visibility filter.
+
+        Reads community-backend's table directly. An HTTP hop would put two
+        more round trips in front of every activity list; see
+        backend/shared/follow_graph.py. Reads only -- writes stay there.
+
+        Args:
+            user_id: The viewer whose follow graph to read.
+
+        Returns:
+            Ids of accounts `user_id` follows. Empty on failure or when
+            `user_id` is falsy.
+        """
+        return _following_ids(self._client, user_id)
+
+    def list_activities(
+        self,
+        viewer_id: str | None = None,
+        following: list[str] | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> dict[str, Any]:
+        """Activities this viewer may see, newest first.
+
+        This used to be an unfiltered select. It returned every private GPS
+        track in the database to an unauthenticated caller.
+
+        Args:
+            viewer_id: The caller, or `None` for an anonymous request.
+            following: Ids `viewer_id` follows, for the followers-tier clause.
+            limit: Max rows to return.
+            offset: Rows to skip, for pagination.
+
+        Returns:
+            `{"items": [...], "total": n}` -- `total` counts all visible
+            rows, not just the returned page.
+        """
         resp = (
             self._client.table("activities")
             .select("*", count=CountMethod.exact)
+            .or_(visible_rows_expression(viewer_id, following))
+            .order("created_at", desc=True)
             .range(offset, offset + limit - 1)
             .execute()
         )

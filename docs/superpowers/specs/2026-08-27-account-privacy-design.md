@@ -292,9 +292,14 @@ New, main-backend:
 PUT    /api/v1/users/me/privacy   {"is_private": bool}
 ```
 
-Main-backend owns `user_info`, so it owns this write. The profile
-response gains `is_private` so the settings screen renders without a
-second call.
+Main-backend owns `user_info`, so it owns this write.
+
+**Corrected 2026-08-27, during implementation.** An earlier draft of this
+section had the profile response gain `is_private` too. It does not, and
+should not: the flag already reaches the client through `follow_stats`,
+which the profile header calls anyway. A second copy on a second endpoint
+is a second thing to go stale, and the two would disagree for exactly as
+long as one of their caches outlives the other.
 
 Changed:
 

@@ -39,13 +39,6 @@ void main() {
     'success', 'warning', 'error', 'info', 'live', 'scrim',
   };
 
-  /// Static data that happens to be typed as a role. GroupChallengeItem's badge
-  /// says which challenge it is, the way an activity type does, so it belongs
-  /// on `SnowtrakColors` and cannot read a context anyway.
-  const roleAllowed = <String>{
-    'lib/screens/groups/active_tab_widgets.dart',
-  };
-
   List<File> dartFiles() => lib
       .listSync(recursive: true)
       .whereType<File>()
@@ -114,9 +107,7 @@ void main() {
     final hits = scan(
       RegExp(r'SnowtrakColors\.(\w+)'),
       (path, m) =>
-          path != 'lib/core/theme.dart' &&
-          !roleAllowed.contains(path) &&
-          paletteRoles.contains(m.group(1)),
+          path != 'lib/core/theme.dart' && paletteRoles.contains(m.group(1)),
     );
     expect(
       hits,
@@ -124,7 +115,9 @@ void main() {
       reason: 'Right role, wrong layer. SnowtrakColors is a compile-time '
           'constant, so it cannot answer a theme change -- this renders '
           'correctly today and silently wrong the moment dark mode is on.\n'
-          'Read context.colors.<role> instead.\n\n'
+          'Read context.colors.<role> instead. Const data that needs a role '
+          'stores the role, not the Color, and resolves it at build time -- '
+          'see ChallengeAccent in screens/groups/active_tab_widgets.dart.\n\n'
           '${hits.join("\n")}',
     );
   });

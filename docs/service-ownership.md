@@ -31,6 +31,21 @@ One specific backend for each service (activity-related, main-backend handling u
 - Activity ownership is hard-cut over to activity-backend.
 - Notifications remain in main-backend as cross-domain infrastructure.
 
+**Finished 2026-08-27.** The 2026-03-20 cut unmounted the router but left the
+implementation in the tree: routes, an `ActivityOperations` mixin on the shared
+Supabase client, Pydantic schemas, and an in-memory store — about 700 lines,
+reachable from nothing.
+
+It was not inert. It used `activities.is_public` as its access-control column,
+while activity-backend uses `visibility`. Neither writer knew about the other,
+so the two disagreed in production: one activity was stored `visibility =
+'private'` alongside `is_public = true`. Had that router ever been mounted,
+`list_public_activities` — which filters on `.eq("is_public", True)` — would
+have served it.
+
+A hard cut that leaves the old implementation behind is not a cut; it is a
+second implementation waiting for someone to plug it back in.
+
 ## Follows Decision (2026-08-27)
 
 The follow graph is exposed at `/api/v1/follows`, not under `/api/v1/users`.
@@ -40,6 +55,17 @@ per domain. Follows went to community-backend instead of main-backend because
 the only reader that cannot afford a network hop is the feed's visibility
 filter, which runs inside community-backend on every request. main-backend has
 no reader for this data, so the table sits next to its hot reader.
+
+### activity-backend reads `follows` (2026-08-27)
+
+community-backend owns the follow graph and is the only service that writes
+it. activity-backend reads it directly, through
+`backend/shared/follow_graph.py`, to build the visibility filter for the
+activity list.
+
+An HTTP hop would put two more round trips — roughly 880ms — in front of
+every activity list, for one indexed read of a two-column table whose shape
+is settled. The read is allowed; a write from activity-backend is not.
 
 ## Future Direction
 

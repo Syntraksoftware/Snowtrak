@@ -4,6 +4,7 @@ import 'package:snowtrak/core/auth/authenticated_session.dart';
 import 'package:snowtrak/core/di/service_locator.dart';
 import 'package:snowtrak/core/errors/app_error.dart';
 import 'package:snowtrak/core/errors/app_result.dart';
+import 'package:snowtrak/models/follow_stats.dart';
 import 'package:snowtrak/core/logging/app_logger.dart';
 import 'package:snowtrak/core/theme.dart';
 import 'package:snowtrak/services/community_service.dart';
@@ -64,6 +65,10 @@ class UserProfileScreen extends StatefulWidget {
 class _UserProfileScreenState extends State<UserProfileScreen> {
   final CommunityService _communityService = sl<CommunityService>();
   final List<Post> _posts = [];
+
+  /// From the header's follow button, which fetched them anyway. Null until
+  /// that call lands; a private account is not assumed either way before then.
+  FollowStats? _followStats;
   bool _isLoading = false; // Start as false - will be set when loading starts
   bool _isLoadingMore = false;
   String? _error;
@@ -235,15 +240,22 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         userId: widget.userId,
                         fallbackName: widget.displayName,
                         fallbackUsername: widget.username,
+                        onFollowStats: (stats) {
+                          if (mounted) setState(() => _followStats = stats);
+                        },
                       ),
                     ),
                     SliverToBoxAdapter(
                       child: ProfileTotals(activities: activities),
                     ),
-                    SliverToBoxAdapter(
-                      child: ProfileHomeContent(isOwnProfile: isOwnProfile),
-                    ),
-                    _postsSliver(),
+                    if (_isLocked(isOwnProfile))
+                      const SliverToBoxAdapter(child: _PrivateAccountNotice())
+                    else ...[
+                      SliverToBoxAdapter(
+                        child: ProfileHomeContent(isOwnProfile: isOwnProfile),
+                      ),
+                      _postsSliver(),
+                    ],
                   ],
                 ),
               ),
@@ -252,6 +264,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         ),
       ),
     );
+  }
+
+  /// Whether this profile withholds its content from this viewer.
+  ///
+  /// The server already returns nothing for a locked profile -- see
+  /// `can_read_account` in community-backend. This only decides which empty
+  /// state to draw, so that a private account does not read as an account with
+  /// nothing on it.
+  bool _isLocked(bool isOwnProfile) {
+    if (isOwnProfile) return false;
+    final stats = _followStats;
+    return stats != null && stats.isPrivate && !stats.isFollowing;
   }
 
   String _headerTitle() {
@@ -341,6 +365,47 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           );
         },
         childCount: _posts.length + (_hasMore ? 1 : 0),
+      ),
+    );
+  }
+}
+
+/// What a private account shows a viewer it has not approved.
+///
+/// The counts and the follow button stay above this: knowing an account exists
+/// and how many followers it has is what lets somebody decide to ask. What it
+/// posted is the part approval buys.
+class _PrivateAccountNotice extends StatelessWidget {
+  const _PrivateAccountNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SnowtrakSpacing.xl,
+        vertical: SnowtrakSpacing.xxl,
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.lock_outline, size: 32, color: context.colors.textTertiary),
+          const SizedBox(height: SnowtrakSpacing.md),
+          Text(
+            'This account is private',
+            textAlign: TextAlign.center,
+            style: SnowtrakTypography.bodyLarge.copyWith(
+              color: context.colors.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: SnowtrakSpacing.xs),
+          Text(
+            'Follow this account to see what they post.',
+            textAlign: TextAlign.center,
+            style: SnowtrakTypography.bodyMedium.copyWith(
+              color: context.colors.textSecondary,
+            ),
+          ),
+        ],
       ),
     );
   }

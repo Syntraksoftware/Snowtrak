@@ -8,14 +8,12 @@ docs/service-ownership.md.
 import logging
 from typing import Any
 
+from shared.follow_graph import MAX_FOLLOW_IDS
+from shared.follow_graph import following_ids as _following_ids
+
 from services.constants.community_tables import FOLLOWS
 
 logger = logging.getLogger(__name__)
-
-# A read that walks the whole graph would be unbounded; nobody follows this
-# many people, and past it the predicate belongs in a Postgres view.
-# ponytail: cap the in-memory follow list, move to a DB-side join if it bites.
-MAX_FOLLOW_IDS = 1000
 
 
 class CommunityFollowOperations:
@@ -79,19 +77,35 @@ class CommunityFollowOperations:
             logger.exception("Failed to read follow edge: %s", exception)
             return False
 
-    def follow_snapshot(self, user_id: str, viewer_id: str | None) -> dict[str, Any]:
+    def follow_snapshot(self, user_id: str, viewer_id: str | None) -> tuple[dict[str, Any], bool]:
         """Counts and the viewer's relationship, in one round trip.
 
         The database is a continent away -- one trip measures ~440ms of pure
         distance -- so the four obvious queries cost about a second before
         Postgres does any work. `follow_stats` does all four server-side; see
-        backend/db/migrations/011_follow_stats_function.sql.
+        backend/db/migrations/017_follow_requests_function.sql.
+
+        Returns:
+            A `(snapshot, ok)` pair. `ok` is `False` whenever `snapshot` is the
+            fail-closed fallback rather than a real read, so the route can
+            tell the two apart -- a caller that caches `snapshot` regardless
+            of `ok` would pin the fallback's `0 followers / is_private: True`
+            for a viewer for `CACHE_FOLLOW_STATS_TTL_SECONDS`.
         """
+        # Fail closed: an RPC error makes the account look private rather
+        # than public. This dict only ever labels a button (POST
+        # /follows/{id} makes its own independent fresh check before it acts),
+        # but every other privacy decision in this feature fails closed, and
+        # a mislabeled "Follow" button is a smaller cost than momentarily
+        # advertising a private account's list as public.
         empty = {
             "follower_count": 0,
             "following_count": 0,
             "is_following": False,
             "is_followed_by": False,
+            "is_private": True,
+            "has_requested": False,
+            "requests_you": False,
         }
         try:
             response = self._client.rpc(
@@ -99,10 +113,12 @@ class CommunityFollowOperations:
                 {"target": user_id, "viewer": viewer_id},
             ).execute()
             data = getattr(response, "data", None)
-            return data if isinstance(data, dict) else empty
+            if isinstance(data, dict):
+                return data, True
+            return empty, False
         except Exception as exception:
             logger.exception("Failed to read follow stats for %s: %s", user_id, exception)
-            return empty
+            return empty, False
 
     def count_followers(self, user_id: str) -> int:
         return self._count(field="followee_id", user_id=user_id)
@@ -127,9 +143,34 @@ class CommunityFollowOperations:
 
     def following_ids(self, user_id: str) -> list[str]:
         """Ids `user_id` follows, for the feed's visibility filter."""
-        return self._edge_ids(
-            select_field="followee_id", match_field="follower_id", user_id=user_id
-        )
+        return _following_ids(self._client, user_id)
+
+    def can_read_account(self, user_id: str, viewer_id: str | None) -> bool:
+        """Whether `viewer_id` may read anything `user_id` authored.
+
+        A private account is closed as a whole, not post by post: a public post
+        by a private account is still that account's, and per-post visibility
+        alone would hand it to a stranger. Approving a follower is what opens
+        it, which is the point of approving one.
+
+        Fails closed, because `follow_snapshot` does -- an RPC error reports
+        `is_private` and no follow edge, so the caller sees nothing rather than
+        everything.
+
+        Args:
+            user_id: The account being read.
+            viewer_id: Who is reading, or None when signed out.
+
+        Returns:
+            True for a public account, for the owner, and for an approved
+            follower. False otherwise.
+        """
+        if viewer_id and viewer_id == user_id:
+            return True
+        snapshot, _ = self.follow_snapshot(user_id, viewer_id)
+        if not snapshot.get("is_private"):
+            return True
+        return bool(snapshot.get("is_following"))
 
     def follower_ids(self, user_id: str) -> list[str]:
         return self._edge_ids(

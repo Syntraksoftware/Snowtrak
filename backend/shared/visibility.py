@@ -1,8 +1,12 @@
-"""Who is allowed to see which post.
+"""Who is allowed to see which row.
 
-One predicate, built in one place, so that every read path enforces the same
-rule. Filtering only the feed leaves four other doors open: a shared link, a
-profile's post list, a subthread listing, and the preview of a quoted post.
+One predicate, built in one place, so that every read path in every service
+enforces the same rule. Filtering only the community feed leaves five other
+doors open: a shared post link, a profile's post list, a subthread listing,
+the preview of a quoted post, and the entire activity list.
+
+`posts` and `activities` both name the column `visibility` and the author
+`user_id`, so one expression serves both.
 """
 
 PUBLIC = "public"
@@ -15,11 +19,11 @@ TIERS = (PUBLIC, FOLLOWERS, PRIVATE)
 DEFAULT_TIER = PUBLIC
 
 
-def visible_posts_expression(
+def visible_rows_expression(
     viewer_id: str | None,
     following_ids: list[str] | None = None,
 ) -> str:
-    """A PostgREST `or` for "posts this viewer may read".
+    """A PostgREST `or` for "rows this viewer may read".
 
         visibility = 'public'
         OR user_id = viewer

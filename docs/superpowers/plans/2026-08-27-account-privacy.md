@@ -30,9 +30,21 @@ via Supabase / Redis / Flutter / Dart / GetIt.
   `docs/database_changes.md`.
 - **Do not change the Supabase region.** Standing instruction from the user.
   Every latency decision in this plan assumes ~440ms per round trip.
-- Backend checks, from `backend/`:
-  `../.venv/bin/ruff check .`, `../.venv/bin/ruff format --check .`,
-  and `pytest` from each service directory.
+- Backend checks, from `backend/`: `../.venv/bin/ruff check .` and
+  `../.venv/bin/ruff format --check .`. Tests run per service, and two of
+  them need a workaround in this checkout:
+
+  ```bash
+  # community-backend and activity-backend: the console script does not put
+  # cwd on sys.path, so conftest cannot import `main`. Use -m.
+  (cd community-backend && ../../.venv/bin/python -m pytest -q)
+  (cd activity-backend  && ../../.venv/bin/python -m pytest -q)
+
+  # main-backend: pytest.ini passes --cov flags and pytest-cov is not
+  # installed in .venv. Override addopts, or install pytest-cov and drop
+  # the flag.
+  (cd main-backend && ../../.venv/bin/python -m pytest -q -o addopts="")
+  ```
 - Frontend checks, from `frontend/`: `dart analyze lib test` and
   `flutter test`. Do **not** run `flutter analyze` with multiple paths — it
   crashes the analysis server with exit 64 in this repo.
@@ -49,14 +61,21 @@ via Supabase / Redis / Flutter / Dart / GetIt.
 - `CHANGELOG.md` is written last, from the commits, per
   `docs/changelog_style.md`.
 
-## Working tree hazard
+## Branch state (updated 2026-08-27)
 
-Roughly 33 files are modified in the working tree by a third party's
-in-flight design work, including
-`frontend/lib/screens/settings/privacy_settings_screen.dart`, which Task 10
-edits. Run `git status` before Task 10 and coordinate rather than
-overwriting. The `home preview` golden test already fails for the same
-reason — it is not caused by anything in this plan.
+The design-system work that was dirtying the tree has landed: PR #39 merged
+into `develop`, and `feat/follower-mechansim` was fast-forwarded onto it at
+`909125e`. The tree is clean and all three backend suites plus 33 Flutter
+tests pass.
+
+Two consequences for this plan:
+
+- `frontend/lib/screens/settings/privacy_settings_screen.dart` (Task 10) and
+  every other screen now read colours through `context.colors`. There is a
+  test, `frontend/test/core/design_system_guard_test.dart`, that **fails the
+  build when UI code names a colour**. Task 10 and Task 11 must not
+  introduce a literal `Color(0xFF…)` or a Material `Colors.*`.
+- The `home preview` golden no longer fails; it was un-gated in `3e3517f`.
 
 ---
 
@@ -122,7 +141,7 @@ DB_URL="$(grep '^SYNTRAK_DATABASE_URL=' backend/map-backend/.env \
 `016` drops it and that cannot be undone. Both of these must come back empty:
 
 ```bash
-psql "$DB_URL" -c "select polname, tablename from pg_policies
+psql "$DB_URL" -c "select policyname, tablename from pg_policies
                     where qual::text like '%is_public%'
                        or with_check::text like '%is_public%';"
 
@@ -134,6 +153,25 @@ grep -rn "is_public" backend --include=*.py | grep -v "/tests/" \
 The three excluded files are the request/response mapping, which reads the
 Pydantic field, never the column. If anything else appears, **stop and report
 it** — do not run `016`.
+
+**This was run on 2026-08-27 and it failed.** main-backend held a second,
+unmounted activities implementation — ~700 lines — that used
+`activities.is_public` as its access-control column while activity-backend
+used `visibility`. Production still shows the disagreement: one activity is
+stored `visibility = 'private'` with `is_public = true`. It was deleted in
+`1501b69`; see the "Migration Decision" section of `docs/service-ownership.md`.
+
+After that deletion the grep returns only three lines, all of which are the
+API-level boolean and none of which name the column:
+
+```
+backend/shared/track_pipeline_schemas.py:247   is_public: bool = True     # contract schema
+backend/shared/track_pipeline_schemas.py:275   is_public: bool            # contract schema
+backend/scripts/test_delete_orchestration.py:92  "is_public": True,       # an HTTP request body
+```
+
+Re-run it anyway before `016`. The point of a pre-flight is that it is run,
+not that somebody once ran it.
 
 - [ ] **Step 2: Write `014_follow_requests.sql`**
 
@@ -211,11 +249,21 @@ commit;
 -- ActivityCreate defaults to "private" and activities_upload_routes.py
 -- writes "private" -- the column simply never carried the same default.
 --
--- is_public is dropped because it lies. It is `not null default true` and
--- no write path has ever updated it: the API's is_public is derived from
--- visibility at routes/activity_transformers.py:175. Every private
--- activity in the database currently stores is_public = true beside
--- visibility = 'private'. Left in place, somebody eventually believes it.
+-- is_public is dropped because two services disagreed about it. The API's
+-- is_public is derived from visibility at
+-- routes/activity_transformers.py:175 and is unaffected by this; the
+-- column is a different thing wearing the same name.
+--
+-- activity-backend has never written the column, so it kept its `not null
+-- default true` on every row -- including the one activity stored
+-- visibility = 'private', which reads is_public = true to this day.
+--
+-- main-backend meanwhile had a whole unmounted activities implementation
+-- that did write it, filter on it, and use it for access control. That was
+-- deleted first; see docs/service-ownership.md, "Migration Decision".
+--
+-- One table, one privacy column. Left in place, somebody believes the
+-- wrong one.
 
 begin;
 
@@ -577,6 +625,7 @@ activity-backend can read the graph without importing community-backend."
   `is_private_account(user_id) -> bool`,
   `request_follow(requester_id, target_id) -> bool`,
   `withdraw_request(requester_id, target_id) -> bool`,
+  `deny_request(target_id, requester_id) -> bool`,
   `approve_request(target_id, requester_id) -> bool`,
   `list_requests(target_id, limit, offset) -> list[dict]`,
   `count_requests(target_id) -> int`.
@@ -2087,8 +2136,9 @@ and, in `_action`, before the `isFollowing` branch:
 cd frontend && dart analyze lib test && flutter test
 ```
 
-Expected: 0 errors, 0 warnings. The `home preview` golden still fails — that
-is the third party's in-flight design work, not this task.
+Expected: 0 errors, 0 warnings, 33 tests passing. The `home preview` golden
+that used to fail was un-gated in `3e3517f`; if it fails again, that is a
+regression worth reporting rather than the known-bad it used to be.
 
 - [ ] **Step 8: Commit**
 
@@ -2414,22 +2464,16 @@ endpoint is a round trip for a number that is almost always zero."
 
 **Interfaces:** none.
 
-- [ ] **Step 1: Record the cross-service read in service-ownership.md**
+- [ ] **Step 1: Confirm the cross-service read is recorded**
 
-Add under the follows section:
+**Already done in Task 2's fix round.** `backend/shared/follow_graph.py`
+cited `docs/service-ownership.md` for the exception before that document had
+an entry, so the entry moved forward rather than shipping a comment that
+pointed at nothing for eleven commits.
 
-```markdown
-### activity-backend reads `follows` (2026-08-27)
-
-community-backend owns the follow graph and is the only service that
-writes it. activity-backend reads it directly, through
-`backend/shared/follow_graph.py`, to build the visibility filter for the
-activity list.
-
-An HTTP hop would put two more round trips — roughly 880ms — in front of
-every activity list, for one indexed read of a two-column table whose shape
-is settled. The read is allowed; a write from activity-backend is not.
-```
+Confirm the section "activity-backend reads `follows` (2026-08-27)" is
+present in `docs/service-ownership.md` and still describes what the code
+does. Do not add a second copy.
 
 - [ ] **Step 2: Mark the old spec superseded**
 

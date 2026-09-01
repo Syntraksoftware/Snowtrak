@@ -50,7 +50,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         context,
         authProvider.error ?? 'Registration failed',
       );
+      return;
     }
+
+    // AppWrapper has already swapped LoginScreen for HomeScreen at the root,
+    // but this screen was pushed on top of it and would otherwise stay there.
+    Navigator.pop(context);
   }
 
   void _showComingSoon(String provider) {

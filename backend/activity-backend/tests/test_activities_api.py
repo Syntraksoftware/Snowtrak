@@ -2,6 +2,24 @@ from fastapi import status
 
 from middleware.auth import get_current_user, get_optional_user
 
+# Shared shape for the visibility tests -- only id, user_id, and visibility
+# vary between rows, so those are set per-test.
+BASE = {
+    "activity_type": "ski",
+    "name": "Morning Run",
+    "description": "Fresh powder",
+    "distance_meters": 1200.0,
+    "duration_seconds": 600,
+    "elevation_gain_meters": 100.0,
+    "processing_status": "ready",
+    "map_activity_id": None,
+    "storage_key": None,
+    "created_at": "2026-01-01T00:00:00Z",
+    "start_time": "2026-01-01T00:00:00Z",
+    "end_time": "2026-01-01T00:10:00Z",
+    "gps_path": [],
+}
+
 
 def _activity_payload():
     return {
@@ -149,3 +167,128 @@ class TestActivityEndpoints:
         response = client.post("/api/v1/activities", json=_activity_payload())
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_anonymous_activity_list_returns_only_public(client, stub_client):
+    stub_client.activities = [
+        {**BASE, "id": "a-public", "user_id": "u-1", "visibility": "public"},
+        {**BASE, "id": "a-private", "user_id": "u-1", "visibility": "private"},
+        {**BASE, "id": "a-followers", "user_id": "u-1", "visibility": "followers"},
+    ]
+    ids = {i["id"] for i in client.get("/api/v1/activities/").json()["items"]}
+    assert ids == {"a-public"}
+
+
+def test_a_follower_sees_the_followers_tier(client, stub_client, as_user):
+    as_user("u-2")
+    stub_client.follows = {("u-2", "u-1")}
+    stub_client.activities = [
+        {**BASE, "id": "a-public", "user_id": "u-1", "visibility": "public"},
+        {**BASE, "id": "a-followers", "user_id": "u-1", "visibility": "followers"},
+        {**BASE, "id": "a-private", "user_id": "u-1", "visibility": "private"},
+    ]
+    ids = {i["id"] for i in client.get("/api/v1/activities/").json()["items"]}
+    assert ids == {"a-public", "a-followers"}
+
+
+def test_the_owner_sees_their_own_private_activity(client, stub_client, as_user):
+    as_user("u-1")
+    stub_client.activities = [
+        {**BASE, "id": "a-private", "user_id": "u-1", "visibility": "private"},
+    ]
+    ids = {i["id"] for i in client.get("/api/v1/activities/").json()["items"]}
+    assert ids == {"a-private"}
+
+
+def test_comments_on_an_invisible_activity_are_refused(client, stub_client):
+    stub_client.activities = [
+        {**BASE, "id": "a-1", "user_id": "u-1", "visibility": "private"},
+    ]
+    assert client.get("/api/v1/activities/a-1/comments").status_code == 404
+
+
+def test_comments_on_a_public_activity_are_open(client, stub_client):
+    stub_client.activities = [
+        {**BASE, "id": "a-1", "user_id": "u-1", "visibility": "public"},
+    ]
+    assert client.get("/api/v1/activities/a-1/comments").status_code == 200
+
+
+def test_comments_on_a_followers_activity_are_open_to_a_follower(client, stub_client, as_user):
+    as_user("u-2")
+    stub_client.follows = {("u-2", "u-1")}
+    stub_client.activities = [
+        {**BASE, "id": "a-1", "user_id": "u-1", "visibility": "followers"},
+    ]
+    assert client.get("/api/v1/activities/a-1/comments").status_code == 200
+
+
+def test_add_comment_on_an_invisible_activity_is_refused(client, stub_client, as_user):
+    as_user("u-2")
+    stub_client.activities = [
+        {**BASE, "id": "a-1", "user_id": "u-1", "visibility": "private"},
+    ]
+    response = client.post("/api/v1/activities/a-1/comments", json={"content": "hi"})
+    assert response.status_code == 404
+
+
+def test_kudos_on_an_invisible_activity_are_refused(client, stub_client, as_user):
+    as_user("u-2")
+    stub_client.activities = [
+        {**BASE, "id": "a-1", "user_id": "u-1", "visibility": "private"},
+    ]
+    assert client.post("/api/v1/activities/a-1/kudos").status_code == 404
+
+
+def test_share_on_an_invisible_activity_is_refused(client, stub_client, as_user):
+    as_user("u-2")
+    stub_client.activities = [
+        {**BASE, "id": "a-1", "user_id": "u-1", "visibility": "private"},
+    ]
+    assert client.post("/api/v1/activities/a-1/share").status_code == 404
+
+
+def test_hidden_and_missing_activities_return_the_same_404(client, stub_client, as_user):
+    """A private activity's existence is itself private -- both 404s must match.
+
+    Compares code/message/details rather than the full body: request_id and
+    timestamp are expected to differ per request and carry no information
+    about which activity was asked for.
+    """
+    as_user("u-2")
+    stub_client.activities = [
+        {**BASE, "id": "a-1", "user_id": "u-1", "visibility": "private"},
+    ]
+    hidden = client.post("/api/v1/activities/a-1/kudos")
+    missing = client.post("/api/v1/activities/does-not-exist/kudos")
+    assert hidden.status_code == missing.status_code == 404
+    for field in ("code", "message", "details"):
+        assert hidden.json()[field] == missing.json()[field]
+
+
+def test_get_me_reaches_the_list_handler_not_the_detail_one(client, stub_client):
+    """GET /activities/me must resolve as "list my activities", not as a
+    detail lookup for an activity literally named "me".
+
+    Router registration order matters here: activities_management_router owns
+    GET /{activity_id}, a single-segment wildcard that matches the literal
+    string "me" just as readily as a real id. If activities_list_router (which
+    owns GET /me) is registered after it, this request never reaches the list
+    handler at all -- it is swallowed by the wildcard first. This test asserts
+    on the response shape, not on which router matched, so it stays valid
+    across a routing refactor.
+    """
+    stub_client.activities = [
+        {**BASE, "id": "activity-1", "user_id": "user-1", "visibility": "public"},
+    ]
+    response = client.get("/api/v1/activities/me")
+
+    assert response.status_code == 200
+    body = response.json()
+    # Only the list handler returns a paginated ListResponse envelope
+    # ("items" plus "meta.pagination"); the detail handler returns a single
+    # FrontendActivityResponse and would 404 here, since no activity is
+    # actually named "me".
+    assert "items" in body
+    assert body["meta"]["pagination"]["total"] == 1
+    assert body["items"][0]["id"] == "activity-1"

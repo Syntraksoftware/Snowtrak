@@ -662,6 +662,20 @@
         "title": "CommunitySubthreadResponse",
         "type": "object"
       },
+      "FollowResultResponse": {
+        "description": "What tapping Follow actually did.\n\nA private account turns a follow into a request, and the client cannot\nguess which happened. A status code is a worse place to put that than a\nbody, which is why this endpoint no longer answers 204.",
+        "properties": {
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "title": "FollowResultResponse",
+        "type": "object"
+      },
       "FollowStatsResponse": {
         "description": "Counts plus the viewing user's relationship to this profile.",
         "properties": {
@@ -675,6 +689,11 @@
             "title": "Following Count",
             "type": "integer"
           },
+          "has_requested": {
+            "default": false,
+            "title": "Has Requested",
+            "type": "boolean"
+          },
           "is_followed_by": {
             "default": false,
             "title": "Is Followed By",
@@ -683,6 +702,11 @@
           "is_following": {
             "default": false,
             "title": "Is Following",
+            "type": "boolean"
+          },
+          "is_private": {
+            "default": false,
+            "title": "Is Private",
             "type": "boolean"
           }
         },
@@ -1552,6 +1576,185 @@
         ]
       }
     },
+    "/api/v1/follows/me/requests": {
+      "get": {
+        "description": "People asking to follow you, newest first.",
+        "operationId": "list_my_requests_api_v1_follows_me_requests_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List My Requests",
+        "tags": [
+          "follows"
+        ]
+      }
+    },
+    "/api/v1/follows/me/requests/{user_id}": {
+      "delete": {
+        "description": "Refuse a request. Succeeds even if there was none.",
+        "operationId": "deny_request_api_v1_follows_me_requests__user_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Deny Request",
+        "tags": [
+          "follows"
+        ]
+      }
+    },
+    "/api/v1/follows/me/requests/{user_id}/approve": {
+      "post": {
+        "description": "Let somebody in. 404 when there was no request to approve.",
+        "operationId": "approve_request_api_v1_follows_me_requests__user_id__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approve Request",
+        "tags": [
+          "follows"
+        ]
+      }
+    },
     "/api/v1/follows/{user_id}": {
       "delete": {
         "description": "Unfollow somebody. Succeeds even if you were not following them.",
@@ -1605,7 +1808,7 @@
         ]
       },
       "post": {
-        "description": "Follow somebody. Idempotent.",
+        "description": "Follow somebody, or ask to. Idempotent either way.\n\nThe privacy flag is read fresh on every call, never from cache. The\ncached follow_stats can be up to CACHE_FOLLOW_STATS_TTL_SECONDS stale,\nbut that only mislabels the button -- the decision made here is not\nallowed to come from a cache.",
         "operationId": "follow_user_api_v1_follows__user_id__post",
         "parameters": [
           {
@@ -1636,7 +1839,14 @@
           }
         ],
         "responses": {
-          "204": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowResultResponse"
+                }
+              }
+            },
             "description": "Successful Response"
           },
           "422": {
@@ -1692,6 +1902,22 @@
               "minimum": 0,
               "title": "Offset",
               "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
             }
           }
         ],
@@ -1760,6 +1986,22 @@
               "title": "Offset",
               "type": "integer"
             }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
           }
         ],
         "responses": {
@@ -1785,6 +2027,59 @@
           }
         },
         "summary": "List Following",
+        "tags": [
+          "follows"
+        ]
+      }
+    },
+    "/api/v1/follows/{user_id}/request": {
+      "delete": {
+        "description": "Take back a request you sent. Succeeds even if there was none.",
+        "operationId": "withdraw_request_api_v1_follows__user_id__request_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Withdraw Request",
         "tags": [
           "follows"
         ]

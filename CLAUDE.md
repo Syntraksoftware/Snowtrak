@@ -297,9 +297,18 @@ is a bug anywhere outside `theme.dart` — with three exceptions.
 3. Developer-only surfaces, like the debug log overlay in
    `core/logging/app_logger.dart`.
 
-**Do not sweep.** ~268 call sites still bypass the palette. Convert a file when
-you are already editing it, or convert one module deliberately — never open a
-repo-wide find-and-replace. The phased plan is in the doc.
+**The conversion is done, and a test keeps it that way.** Every call site in
+`lib/` reads `context.colors`; zero raw hex and zero Material colours remain
+outside the three exceptions above. The guard test at
+`frontend/test/core/design_system_guard_test.dart` fails the build on a new
+one, and names the file and line.
+
+That test is the authority, not this paragraph. If it trips, the fix is
+essentially never to widen its allowlist.
+
+`const` data that needs a role stores the **role** and resolves it at build
+time — a `const` cannot read a `BuildContext`, and holding the `Color` instead
+freezes it. See `ChallengeAccent` in `screens/groups/active_tab_widgets.dart`.
 
 Needing a colour with no role is a design-system change, not a screen change.
 Say so rather than inventing a hex.
