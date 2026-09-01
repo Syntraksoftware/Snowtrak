@@ -2,18 +2,28 @@
 
 ## [0.0.5] - 2026-09-01
 
-_Notifications are now pending follow requests and nothing else. The
-`/api/v1/notifications/*` routes still exist and still share one queue between
-all users; the app no longer reads them._
+_Apply `018_follow_stats_requests_you.sql` before deploying; without it
+`requests_you` is absent and Accept/Decline never appears. Notifications are
+pending follow requests and nothing else — the `/api/v1/notifications/*` routes
+are gone, and `send_notification.sh` with them._
 
 ### Changed
 
+- **Breaking:** answer `GET /api/v1/posts/user/{id}` with nothing at all for a private account the viewer does not follow, where it used to serve that account's public posts ([`e964a25`](https://github.com/Syntraksoftware/Snowtrak/commit/e964a25))
+- Report `requests_you` from `/follows/{id}/stats`, the mirror of `has_requested` ([`e964a25`](https://github.com/Syntraksoftware/Snowtrak/commit/e964a25))
 - Build the notification list from pending follow requests, so tapping one opens the requester's profile ([`5b244bc`](https://github.com/Syntraksoftware/Snowtrak/commit/5b244bc))
+
+### Added
+
+- Approve or deny a follow request from the requester's own profile, instead of only from the requests screen ([`e964a25`](https://github.com/Syntraksoftware/Snowtrak/commit/e964a25))
+- Tell a viewer a profile is private, rather than showing them an account that appears to have posted nothing ([`e964a25`](https://github.com/Syntraksoftware/Snowtrak/commit/e964a25))
 
 ### Removed
 
+- Delete `/api/v1/notifications/*`, a global in-memory queue with no user id and no auth that delivered any notification written to whoever polled next ([`76ec2ce`](https://github.com/Syntraksoftware/Snowtrak/commit/76ec2ce))
 - Delete the nine placeholder notifications the list fell back to whenever the backend returned nothing ([`5b244bc`](https://github.com/Syntraksoftware/Snowtrak/commit/5b244bc))
 - Stop polling `/api/v1/notifications/pending` every two seconds, a request per user per two seconds that carried no notification anyone had sent ([`5b244bc`](https://github.com/Syntraksoftware/Snowtrak/commit/5b244bc))
+- Delete `scripts/send_notification.sh` and `scripts/notification_demo.sh`, which existed only to write into that queue ([`76ec2ce`](https://github.com/Syntraksoftware/Snowtrak/commit/76ec2ce))
 
 ### Fixed
 
