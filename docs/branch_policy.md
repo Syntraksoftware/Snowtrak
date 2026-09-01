@@ -6,6 +6,7 @@
 |---|---|
 | `main` | Production. What ships. Release tags (`v*`) are cut from here. |
 | `develop` | Integration. Feature branches land here first. |
+| `stage` | Code only. Holds the latest merged tree and builds nothing. |
 | `feat/*`, `fix/*`, `docs/*`, `chore/*` | Short-lived work branches. Merge into `develop` via PR. |
 | `wip/*` | Personal or backup branches for experiments. Never pushed to `develop` directly. |
 
@@ -15,6 +16,33 @@ the abbreviated form (`feat/`, not `feature/`).
 
 The flow is `feat/* → develop → main`. A merge to `main` is a release
 decision, not an integration step.
+
+## Why `stage` exists
+
+`develop` publishes. A push there builds and pushes four Docker images
+(`docker-images.yml`) and uploads a build to TestFlight (`ios-testflight.yml`).
+Both are durable and externally visible, which is right for an integration
+branch and wrong when the only thing wanted is a copy of the current code.
+
+`stage` is that copy. Created 2026-09-01 from `develop`. No workflow names it:
+
+| Workflow | Fires on `stage`? |
+|---|---|
+| `tests.yml`, `ios-dev.yml` | No — `[main, develop]` |
+| `docker-images.yml` | No — `[main, develop, restructure]` |
+| `ios-testflight.yml` | No — `[develop]` |
+| `flutter-release.yml` | No — `v*` tags |
+| `deploy-backend-vps.yml` | No — `workflow_dispatch` |
+| `backend-ci.yml` | **On a PR into it, yes.** Its `pull_request:` has no branch filter, deliberately: see the comment at the top of that file. It runs tests and publishes nothing. |
+
+So `stage` produces no artifact. It is also **not protected** — the ruleset in
+`.github/rulesets/protected-branches.json` names `refs/heads/main` and
+`refs/heads/develop` exactly — so it accepts direct pushes, force-pushes and
+deletion. That is the trade for having no ceremony on it.
+
+It is a mirror, not a stage in the flow. Nothing merges *out of* it, and it
+drifts the moment somebody forgets to update it. If it is ever used to decide
+anything, give it protection and a required check first.
 
 ## Why `develop` exists
 
