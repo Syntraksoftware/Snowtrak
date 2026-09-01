@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.0.5] - 2026-09-01
+
+_Notifications are now pending follow requests and nothing else. The
+`/api/v1/notifications/*` routes still exist and still share one queue between
+all users; the app no longer reads them._
+
+### Changed
+
+- Build the notification list from pending follow requests, so tapping one opens the requester's profile ([`5b244bc`](https://github.com/Syntraksoftware/Snowtrak/commit/5b244bc))
+
+### Removed
+
+- Delete the nine placeholder notifications the list fell back to whenever the backend returned nothing ([`5b244bc`](https://github.com/Syntraksoftware/Snowtrak/commit/5b244bc))
+- Stop polling `/api/v1/notifications/pending` every two seconds, a request per user per two seconds that carried no notification anyone had sent ([`5b244bc`](https://github.com/Syntraksoftware/Snowtrak/commit/5b244bc))
+
+### Fixed
+
+- Land on the home screen after registering, instead of on the submitted sign-up form ([`ac66ab1`](https://github.com/Syntraksoftware/Snowtrak/commit/ac66ab1))
+
+[0.0.5]: https://github.com/Syntraksoftware/Snowtrak/releases/tag/v0.0.5
+
 ## [0.0.4] - 2026-08-27
 
 _Following a private account is now a request. Existing followers are kept
