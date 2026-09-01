@@ -84,7 +84,7 @@ class _SnowtrakAppState extends State<SnowtrakApp> {
           create: (_) => sl<ActivitiesContextRepository>(),
         ),
         ChangeNotifierProvider(
-          create: (_) => NotificationProvider(notificationsRepository: sl())
+          create: (_) => NotificationProvider(followService: sl())
             ..loadNotifications(),
         ),
       ],
