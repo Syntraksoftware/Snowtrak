@@ -80,6 +80,21 @@ duel — would become an HTTP call to activity-backend for a score. Scoring is
 the expensive half and the graph read is the cheap half, so the feature sits
 with the scores. Still read-only; the writes stay in community-backend.
 
+### activity-backend reads `user_info` (2026-09-02)
+
+main-backend owns users. activity-backend reads `user_info` to put a name on
+a leaderboard row and on a duel card.
+
+The obvious place for a display name is `profiles`, and it is the wrong one:
+that table is empty and stays empty, because `profiles.id` references
+Supabase auth's `users` while registration writes `user_info`. main-backend
+renders profiles from `user_info` at read time for exactly this reason.
+`user_info.country_code`, which decides the country boards, lives there for
+the same reason and is written only by `PUT /api/v1/users/me/country`.
+
+One `in_` read per page, never one per row. Read-only; the writes stay in
+main-backend.
+
 ## Future Direction
 
 If notification throughput or channel complexity grows, split notifications

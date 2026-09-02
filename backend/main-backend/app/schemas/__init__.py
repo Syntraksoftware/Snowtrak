@@ -78,12 +78,6 @@ class ProfileBase(BaseModel):
     push_token: str | None = None
     ski_level: str | None = None
     home: str | None = None
-    country_code: str | None = Field(
-        None,
-        min_length=2,
-        max_length=2,
-        description="ISO 3166-1 alpha-2, for the country leaderboard",
-    )
 
 
 class ProfileUpdate(BaseModel):
@@ -96,12 +90,6 @@ class ProfileUpdate(BaseModel):
     push_token: str | None = None
     ski_level: str | None = None
     home: str | None = None
-    country_code: str | None = Field(
-        None,
-        min_length=2,
-        max_length=2,
-        description="ISO 3166-1 alpha-2, for the country leaderboard",
-    )
 
 
 class ProfileResponse(BaseModel):

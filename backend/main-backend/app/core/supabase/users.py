@@ -164,6 +164,39 @@ class UserOperations(SupabaseBase):
             logger.exception(f"Failed to set is_private for user {id}: {exc}")
             return False
 
+    def set_user_country(self, id: str, country_code: str | None) -> bool:
+        """Set or clear which country leaderboard this user appears on.
+
+        Lives on `user_info` rather than `profiles` for the same reason
+        `is_private` does: `profiles.id` references Supabase auth's users,
+        registration writes `user_info`, so a profiles row is never created
+        and a value written there would be lost. See
+        backend/db/migrations/021_competition_on_user_info.sql.
+
+        Args:
+            id: The user.
+            country_code: ISO 3166-1 alpha-2, or None to leave the country
+                boards and appear only on the global one.
+
+        Returns:
+            True when a row was updated.
+        """
+        if not self.is_configured():
+            logger.warning("Supabase not configured; skipping set_user_country.")
+            return False
+        client = self._client
+        if client is None:
+            return False
+        # Stored upper-case so the board's scope filter is an equality test
+        # rather than a case-insensitive one.
+        value = country_code.upper() if country_code else None
+        try:
+            resp = client.table("user_info").update({"country_code": value}).eq("id", id).execute()
+            return bool(getattr(resp, "data", None))
+        except Exception as exc:
+            logger.exception(f"Failed to set country_code for user {id}: {exc}")
+            return False
+
     def email_exists(self, email: str) -> bool:
         """Check if email already exists in user_info table."""
         if not self.is_configured():

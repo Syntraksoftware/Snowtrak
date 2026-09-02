@@ -20,6 +20,11 @@ logger = logging.getLogger(__name__)
 GLOBAL_SCOPE = "global"
 FRIENDS_SCOPE = "friends"
 
+#: Shown for a user with no name and no email handle. One placeholder, used
+#: by the board and by duel cards, so an unknown player reads the same way in
+#: both places.
+UNKNOWN_PLAYER = "Skier"
+
 #: A board page. Deep paging into a leaderboard is not a use anyone has;
 #: someone looking for their own row uses `placing` instead.
 DEFAULT_LIMIT = 50
@@ -56,7 +61,11 @@ def get_leaderboard_operations() -> LeaderboardOperations:
 class LeaderboardOperations:
     """Board reads and the weekly snapshot write."""
 
-    _PROFILE_COLUMNS = "id,full_name,username,avatar_url,country_code"
+    # `user_info`, not `profiles`. That table is empty and stays empty:
+    # `profiles.id` references Supabase auth's users while registration
+    # writes `user_info`, so create_profile fails with 23503 every time.
+    # main-backend renders profiles from `user_info` for the same reason.
+    _USER_COLUMNS = "id,first_name,last_name,email,country_code"
 
     def __init__(self, client) -> None:
         self._client = client
@@ -260,7 +269,7 @@ class LeaderboardOperations:
                 "rank": row["rank"],
                 "user_id": row["user_id"],
                 "value": row["value"],
-                **_display(profiles.get(row["user_id"], {})),
+                **display_fields(profiles.get(row["user_id"], {})),
             }
             for row in rows
         ]
@@ -270,10 +279,7 @@ class LeaderboardOperations:
             return {}
         try:
             response = (
-                self._client.table("profiles")
-                .select(self._PROFILE_COLUMNS)
-                .in_("id", ids)
-                .execute()
+                self._client.table("user_info").select(self._USER_COLUMNS).in_("id", ids).execute()
             )
         except Exception as exception:
             logger.exception("Failed to read board profiles: %s", exception)
@@ -284,16 +290,29 @@ class LeaderboardOperations:
         return {str(row["id"]): row for row in data if row.get("id")}
 
 
-def _display(profile: dict[str, Any]) -> dict[str, Any]:
-    """The public half of a profile, for a board row.
+def display_fields(user: dict[str, Any]) -> dict[str, Any]:
+    """The public half of a user, for a board row or a duel card.
 
-    A board shows a name, a picture and a country. It never shows an
-    activity, which is what lets a private activity count towards a total
-    without leaking anything about itself.
+    A board shows a name and a country. It never shows an activity, which is
+    what lets a private activity count towards a total without leaking
+    anything about itself.
+
+    Name, then email handle, then a placeholder -- the same ladder the follow
+    request list already uses, so one person is named the same way in both.
+
+    ponytail: avatar_url is always null. Uploaded avatars are written to
+    `profiles.avatar_url`, and that row never exists, so no avatar URL is
+    persisted anywhere in this database. Fill it in when profiles is
+    repaired; do not invent a second place to keep it.
     """
+    first = (user.get("first_name") or "").strip()
+    last = (user.get("last_name") or "").strip()
+    full = " ".join(part for part in (first, last) if part)
+    email = (user.get("email") or "").strip()
+    handle = email.split("@")[0] if "@" in email else None
     return {
-        "display_name": profile.get("full_name") or profile.get("username") or "Skier",
-        "username": profile.get("username"),
-        "avatar_url": profile.get("avatar_url"),
-        "country_code": profile.get("country_code"),
+        "display_name": full or handle or UNKNOWN_PLAYER,
+        "username": handle,
+        "avatar_url": None,
+        "country_code": user.get("country_code"),
     }

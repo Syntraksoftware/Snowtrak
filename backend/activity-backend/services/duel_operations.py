@@ -25,6 +25,7 @@ from domain.competition.duel import (
     resolve_winner,
 )
 from domain.competition.metrics import Duration, Metric, duel_window
+from services.leaderboard_operations import display_fields
 
 logger = logging.getLogger(__name__)
 
@@ -155,17 +156,21 @@ class DuelOperations:
         per card is the N+1 that takes down a list screen, so it is fetched
         per page instead.
 
+        Reads `user_info`, not `profiles`: that table is empty and stays
+        empty, so a name taken from it would always be the placeholder.
+
         Returns:
-            User id to `{display_name, username, avatar_url}`. Missing ids
-            simply do not appear; the caller falls back to a placeholder.
+            User id to `{display_name, username, avatar_url, country_code}`.
+            Missing ids simply do not appear; the caller falls back to a
+            placeholder.
         """
         ids = sorted({duel.challenger_id for duel in duels} | {duel.opponent_id for duel in duels})
         if not ids:
             return {}
         try:
             response = (
-                self._client.table("profiles")
-                .select("id,full_name,username,avatar_url")
+                self._client.table("user_info")
+                .select("id,first_name,last_name,email")
                 .in_("id", ids)
                 .execute()
             )
@@ -175,15 +180,7 @@ class DuelOperations:
         rows = getattr(response, "data", None)
         if not isinstance(rows, list):
             return {}
-        return {
-            str(row["id"]): {
-                "display_name": row.get("full_name") or row.get("username") or "Skier",
-                "username": row.get("username"),
-                "avatar_url": row.get("avatar_url"),
-            }
-            for row in rows
-            if row.get("id")
-        }
+        return {str(row["id"]): display_fields(row) for row in rows if row.get("id")}
 
     def score(self, user_id: str, metric: Metric, start: datetime, end: datetime) -> float:
         """One player's score over one window.

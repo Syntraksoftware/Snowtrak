@@ -71,6 +71,13 @@ class DuelResponse(BaseModel):
     opponent_value: float | None = None
     winner_id: str | None = None
     settled_at: str | None = None
+    # Filled from one profiles read per page, so a list of duels never
+    # becomes a profile fetch per card. Never null: a player with no
+    # profiles row gets the placeholder in duel_routes.
+    challenger_name: str | None = None
+    challenger_avatar_url: str | None = None
+    opponent_name: str | None = None
+    opponent_avatar_url: str | None = None
 
 
 class DuelsListResponse(BaseModel):

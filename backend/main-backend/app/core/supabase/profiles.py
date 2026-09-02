@@ -159,7 +159,6 @@ class ProfileOperations(SupabaseBase):
         push_token: str | None = None,
         ski_level: str | None = None,
         home: str | None = None,
-        country_code: str | None = None,
     ) -> dict[str, Any] | None:
         """
         Update profile fields.
@@ -176,8 +175,6 @@ class ProfileOperations(SupabaseBase):
         - push_token: Optional[str], the push token of the user
         - ski_level: Optional[str], the ski level of the user
         - home: Optional[str], the home of the user
-        - country_code: Optional[str], ISO 3166-1 alpha-2, which
-          country leaderboard the user appears on
 
         Expected Return:
         - Optional[Dict[str, Any]]: the profile data for the user, or None if not found
@@ -207,10 +204,6 @@ class ProfileOperations(SupabaseBase):
             update_data["ski_level"] = ski_level
         if home is not None:
             update_data["home"] = home
-        if country_code is not None:
-            # Stored upper-case so the board's scope filter is an equality
-            # test rather than a case-insensitive one.
-            update_data["country_code"] = country_code.upper()
 
         if not update_data:
             logger.warning("No fields to update provided")

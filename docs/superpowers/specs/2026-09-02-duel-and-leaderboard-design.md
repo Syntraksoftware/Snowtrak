@@ -56,9 +56,17 @@ over and the previous week's numbers are lost, so a snapshot is the only way
 past weeks survive. Storing every participant instead would grow at
 participants x 52 rows a year and need a retention policy.
 
-**Country is user-selected.** A new `country_code` on `profiles`, chosen in
-settings. Inferring it from GPS would reclassify a user who takes one trip
-abroad.
+**Country is user-selected.** A new `country_code` on `user_info`, chosen in
+settings and written by `PUT /api/v1/users/me/country`. Inferring it from GPS
+would reclassify a user who takes one trip abroad.
+
+It sits on `user_info`, not on `profiles`, and so does every display name the
+board and the duel cards read. `profiles` is empty and stays empty:
+`profiles.id` references Supabase auth's `users` while registration writes
+`user_info`, so main-backend's `create_profile` fails with 23503 every time
+and no row is ever made. main-backend already renders profiles from
+`user_info` at read time for the same reason. Migration 019 got this wrong;
+021 corrects it.
 
 **Three scopes, one predicate.** `global`, `friends` and a country code are
 decided by a single SQL function, `leaderboard_in_scope`, called by the
@@ -98,7 +106,8 @@ create index activities_leaderboard_idx
   where on_leaderboard;
 
 -- ISO 3166-1 alpha-2. Null means the user has not chosen; global board only.
-alter table profiles add column country_code char(2);
+-- On user_info, not profiles -- see the decision above.
+alter table user_info add column country_code char(2);
 
 -- Weekly settlement snapshot: top 100 per metric per scope.
 create table leaderboard_weeks (

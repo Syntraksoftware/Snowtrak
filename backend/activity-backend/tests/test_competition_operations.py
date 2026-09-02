@@ -277,18 +277,48 @@ class TestRecord:
 
 
 class TestLeaderboard:
-    def test_a_board_page_costs_one_profile_query_not_one_per_row(self):
+    def test_a_board_page_costs_one_name_query_not_one_per_row(self):
         client = _FakeClient()
         client.rpc_results["leaderboard_top"] = [
             {"rank": index, "user_id": f"user-{index}", "value": 100.0 - index}
             for index in range(1, 26)
         ]
-        client.rows["profiles"] = []
+        client.rows["user_info"] = []
 
         entries = LeaderboardOperations(client).top(Metric.VERTICAL, GLOBAL_SCOPE, NOW)
 
         assert len(entries) == 25
-        assert len(client.queries_on("profiles")) == 1
+        assert len(client.queries_on("user_info")) == 1
+        # `profiles` is empty in this database and always will be; reading it
+        # would name every skier "Skier".
+        assert client.queries_on("profiles") == []
+
+    def test_a_board_row_names_a_user_from_user_info(self):
+        client = _FakeClient()
+        client.rpc_results["leaderboard_top"] = [{"rank": 1, "user_id": ALEX, "value": 900.0}]
+        client.rows["user_info"] = [
+            {
+                "id": ALEX,
+                "first_name": "Alpha",
+                "last_name": "Tester",
+                "email": "alpha@example.com",
+                "country_code": "CH",
+            }
+        ]
+
+        entry = LeaderboardOperations(client).top(Metric.VERTICAL, GLOBAL_SCOPE, NOW)[0]
+
+        assert entry["display_name"] == "Alpha Tester"
+        assert entry["country_code"] == "CH"
+
+    def test_a_nameless_user_falls_back_to_their_email_handle(self):
+        client = _FakeClient()
+        client.rpc_results["leaderboard_top"] = [{"rank": 1, "user_id": ALEX, "value": 900.0}]
+        client.rows["user_info"] = [{"id": ALEX, "email": "skier@example.com"}]
+
+        entry = LeaderboardOperations(client).top(Metric.VERTICAL, GLOBAL_SCOPE, NOW)[0]
+
+        assert entry["display_name"] == "skier"
 
     def test_the_board_window_is_the_monday_of_that_week(self):
         client = _FakeClient()

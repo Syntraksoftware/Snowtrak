@@ -24,22 +24,22 @@ from services.duel_operations import (
     NotEligible,
     get_duel_operations,
 )
+from services.leaderboard_operations import UNKNOWN_PLAYER
 from services.offload import offload
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/duels", tags=["duels"])
 
 
-def _response(duel: Duel, players: dict[str, dict] | None = None) -> DuelResponse:
-    """One duel, with display fields when the caller has already read them.
+def _response(duel: Duel, players: dict[str, dict]) -> DuelResponse:
+    """One duel, with the display fields its caller already read.
 
-    `players` is optional so a single-duel handler does not pay for a
-    profiles round trip it has no use for; the list handler passes one map
-    for the whole page.
+    `players` is required, not optional. It was optional, and every handler
+    that forgot it returned a duel with null names -- silently, because a
+    null name renders as a blank rather than as an error.
     """
-    people = players or {}
-    challenger = people.get(duel.challenger_id, {})
-    opponent = people.get(duel.opponent_id, {})
+    challenger = players.get(duel.challenger_id) or {}
+    opponent = players.get(duel.opponent_id) or {}
     return DuelResponse(
         id=duel.id,
         challenger_id=duel.challenger_id,
@@ -54,27 +54,34 @@ def _response(duel: Duel, players: dict[str, dict] | None = None) -> DuelRespons
         opponent_value=duel.opponent_value,
         winner_id=duel.winner_id,
         settled_at=duel.settled_at.isoformat() if duel.settled_at else None,
-        challenger_name=challenger.get("display_name"),
+        challenger_name=challenger.get("display_name") or UNKNOWN_PLAYER,
         challenger_avatar_url=challenger.get("avatar_url"),
-        opponent_name=opponent.get("display_name"),
+        opponent_name=opponent.get("display_name") or UNKNOWN_PLAYER,
         opponent_avatar_url=opponent.get("avatar_url"),
     )
 
 
-async def _visible_duel(duel_id: str, viewer_id: str) -> Duel:
-    """Loads a duel the caller is a player in.
+async def _visible_duel(duel_id: str, viewer_id: str) -> tuple[Duel, dict[str, dict]]:
+    """Loads a duel the caller is a player in, with both players' names.
 
     404 rather than 403 for someone else's duel: who is challenging whom is
     not a stranger's business, so "not yours" and "does not exist" look the
     same from outside.
 
+    Returns:
+        The duel and its player lookup. Answering a duel does not change who
+        is in it, so the handlers reuse this map rather than reading profiles
+        again after the write.
+
     Raises:
         HTTPException: 404 if it is missing or not the caller's.
     """
-    duel = await offload(get_duel_operations().get, duel_id)
+    operations = get_duel_operations()
+    duel = await offload(operations.get, duel_id)
     if duel is None or not duel.involves(viewer_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Duel not found")
-    return duel
+    players = await offload(operations.players, [duel])
+    return duel, players
 
 
 @router.post("", response_model=DuelResponse, status_code=status.HTTP_201_CREATED)
@@ -90,9 +97,10 @@ async def create_duel(payload: DuelCreate, user_id: str = Depends(get_current_us
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="You cannot duel yourself",
         )
+    operations = get_duel_operations()
     try:
         duel = await offload(
-            get_duel_operations().create,
+            operations.create,
             user_id,
             payload.opponent_id,
             payload.metric,
@@ -108,7 +116,8 @@ async def create_duel(payload: DuelCreate, user_id: str = Depends(get_current_us
             status_code=status.HTTP_409_CONFLICT,
             detail="A duel between you two is already under way",
         ) from None
-    return _response(duel)
+    players = await offload(operations.players, [duel])
+    return _response(duel, players)
 
 
 @router.get("", response_model=DuelsListResponse)
@@ -119,8 +128,11 @@ async def list_duels(
     user_id: str = Depends(get_current_user),
 ):
     """The caller's duels, newest first."""
-    duels = await offload(get_duel_operations().list_for, user_id, duel_status, limit, offset)
-    items = [_response(duel) for duel in duels]
+    operations = get_duel_operations()
+    duels = await offload(operations.list_for, user_id, duel_status, limit, offset)
+    # One profiles read for the whole page, never one per card.
+    players = await offload(operations.players, duels)
+    items = [_response(duel, players) for duel in duels]
     return DuelsListResponse(items=items, total=len(items))
 
 
@@ -132,12 +144,11 @@ async def get_duel(duel_id: str, user_id: str = Depends(get_current_user)):
     opening a finished duel should see the result rather than a countdown
     that has already run out.
     """
-    duel = await _visible_duel(duel_id, user_id)
+    duel, players = await _visible_duel(duel_id, user_id)
     if duel.is_decidable_at(datetime.now(UTC)):
         settled = await offload(get_duel_operations().settle, duel)
         if settled is not None:
             duel = settled
-    players = await offload(get_duel_operations().players, [duel])
     return _response(duel, players)
 
 
@@ -149,7 +160,7 @@ async def accept_duel(duel_id: str, user_id: str = Depends(get_current_user)):
         HTTPException: 409 if the caller may not accept -- not theirs to
             answer, already answered, or lapsed.
     """
-    duel = await _visible_duel(duel_id, user_id)
+    duel, players = await _visible_duel(duel_id, user_id)
     if not duel.may_accept(user_id, datetime.now(UTC)):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -161,7 +172,7 @@ async def accept_duel(duel_id: str, user_id: str = Depends(get_current_user)):
             status_code=status.HTTP_409_CONFLICT,
             detail="This challenge can no longer be accepted",
         )
-    return _response(accepted)
+    return _response(accepted, players)
 
 
 @router.post("/{duel_id}/decline", response_model=DuelResponse)
@@ -172,7 +183,7 @@ async def decline_duel(duel_id: str, user_id: str = Depends(get_current_user)):
         HTTPException: 409 if it is not the caller's to refuse, or no longer
             pending.
     """
-    duel = await _visible_duel(duel_id, user_id)
+    duel, players = await _visible_duel(duel_id, user_id)
     if not duel.may_decline(user_id, datetime.now(UTC)):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -184,7 +195,7 @@ async def decline_duel(duel_id: str, user_id: str = Depends(get_current_user)):
             status_code=status.HTTP_409_CONFLICT,
             detail="This challenge can no longer be declined",
         )
-    return _response(declined)
+    return _response(declined, players)
 
 
 @router.delete("/{duel_id}", response_model=DuelResponse)
@@ -195,7 +206,7 @@ async def cancel_duel(duel_id: str, user_id: str = Depends(get_current_user)):
         HTTPException: 409 once it has been accepted -- an active duel is
             played out, not taken back.
     """
-    duel = await _visible_duel(duel_id, user_id)
+    duel, players = await _visible_duel(duel_id, user_id)
     if not duel.may_cancel(user_id):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -207,4 +218,4 @@ async def cancel_duel(duel_id: str, user_id: str = Depends(get_current_user)):
             status_code=status.HTTP_409_CONFLICT,
             detail="Only a pending challenge can be withdrawn",
         )
-    return _response(cancelled)
+    return _response(cancelled, players)
