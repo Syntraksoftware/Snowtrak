@@ -302,8 +302,8 @@ def display_fields(user: dict[str, Any]) -> dict[str, Any]:
 
     ponytail: avatar_url is always null. Uploaded avatars are written to
     `profiles.avatar_url`, and that row never exists, so no avatar URL is
-    persisted anywhere in this database. Fill it in when profiles is
-    repaired; do not invent a second place to keep it.
+    persisted anywhere in this database -- issue #43. Fill it in when that is
+    fixed; do not invent a second place to keep it.
     """
     first = (user.get("first_name") or "").strip()
     last = (user.get("last_name") or "").strip()

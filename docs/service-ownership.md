@@ -95,6 +95,10 @@ the same reason and is written only by `PUT /api/v1/users/me/country`.
 One `in_` read per page, never one per row. Read-only; the writes stay in
 main-backend.
 
+Repairing `profiles` is tracked in issue #43. If it lands, this read can move
+back to `profiles`; until then `user_info` is the only table with a name in
+it.
+
 ## Future Direction
 
 If notification throughput or channel complexity grows, split notifications

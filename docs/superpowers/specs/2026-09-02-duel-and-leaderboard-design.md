@@ -66,7 +66,8 @@ board and the duel cards read. `profiles` is empty and stays empty:
 `user_info`, so main-backend's `create_profile` fails with 23503 every time
 and no row is ever made. main-backend already renders profiles from
 `user_info` at read time for the same reason. Migration 019 got this wrong;
-021 corrects it.
+021 corrects it. The underlying breakage is issue #43; the missing country
+picker is issue #44.
 
 **Three scopes, one predicate.** `global`, `friends` and a country code are
 decided by a single SQL function, `leaderboard_in_scope`, called by the

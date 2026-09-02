@@ -13,8 +13,8 @@
 -- `activities.user_id` references and is therefore always present.
 --
 -- `profiles.country_code` from 019 is left in place rather than dropped. It
--- is unread and on an empty table; a drop buys nothing and a future profiles
--- repair may want it back. Nothing should write to it.
+-- is unread and on an empty table; a drop buys nothing and the profiles
+-- repair tracked in issue #43 may want it back. Nothing should write to it.
 
 begin;
 
