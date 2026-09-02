@@ -19,6 +19,7 @@ from routes.competition_models import (
 )
 from services.leaderboard_operations import (
     DEFAULT_LIMIT,
+    FRIENDS_SCOPE,
     GLOBAL_SCOPE,
     MAX_LIMIT,
     get_leaderboard_operations,
@@ -33,21 +34,21 @@ def _scope(value: str) -> str:
     """Validates a scope.
 
     Args:
-        value: `'global'` or an ISO 3166-1 alpha-2 code.
+        value: `'global'`, `'friends'`, or an ISO 3166-1 alpha-2 code.
 
     Returns:
         The scope, upper-cased when it is a country.
 
     Raises:
-        HTTPException: 422 if it is neither.
+        HTTPException: 422 if it is none of those.
     """
-    if value == GLOBAL_SCOPE:
+    if value in (GLOBAL_SCOPE, FRIENDS_SCOPE):
         return value
     if len(value) == 2 and value.isalpha():
         return value.upper()
     raise HTTPException(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        detail="scope must be 'global' or a two-letter country code",
+        detail="scope must be 'global', 'friends' or a two-letter country code",
     )
 
 
@@ -104,12 +105,17 @@ async def current_board(
     metric: Metric = Query(Metric.VERTICAL),
     scope: str = Query(GLOBAL_SCOPE),
     limit: int = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
-    _: str = Depends(get_current_user),
+    user_id: str = Depends(get_current_user),
 ):
-    """This week's live board, best first."""
+    """This week's live board, best first.
+
+    `scope=friends` ranks the caller against the people they mutually
+    follow. That is the board the Challenge button lives on, because a duel
+    needs a mutual follow to be offered at all.
+    """
     resolved = _scope(scope)
     operations = get_leaderboard_operations()
-    rows = await offload(operations.top, metric, resolved, None, limit)
+    rows = await offload(operations.top, metric, resolved, None, limit, user_id)
     return LeaderboardResponse(
         metric=metric,
         scope=resolved,

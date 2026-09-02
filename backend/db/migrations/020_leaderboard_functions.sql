@@ -17,6 +17,41 @@
 
 begin;
 
+-- Which rows a scope admits. One definition, three callers -- the board, the
+-- placing and the snapshot must agree on who is on a board, and repeating
+-- this predicate three times is how they would stop agreeing.
+--
+-- ponytail: the friends clause is a correlated exists per grouped user. It
+-- is two indexed lookups on a two-column table; make it a join against a
+-- materialised mutual-follow set if the board gets slow.
+create or replace function public.leaderboard_in_scope(
+  p_scope text,
+  p_viewer uuid,
+  p_user uuid,
+  p_country char(2)
+) returns boolean
+language sql
+stable
+as $$
+  select case
+    when p_scope = 'global' then true
+    when p_scope = 'friends' then
+      p_viewer is not null and (
+        p_user = p_viewer
+        or exists (
+          select 1
+          from follows outbound
+          join follows inbound
+            on inbound.follower_id = outbound.followee_id
+           and inbound.followee_id = outbound.follower_id
+          where outbound.follower_id = p_viewer
+            and outbound.followee_id = p_user
+        )
+      )
+    else p_country = p_scope
+  end;
+$$;
+
 -- One user's score over one window. The duel settler's whole read.
 create or replace function public.activity_total(
   p_user uuid,
@@ -51,7 +86,8 @@ create or replace function public.leaderboard_top(
   p_scope text,
   p_start timestamptz,
   p_end timestamptz,
-  p_limit int default 50
+  p_limit int default 50,
+  p_viewer uuid default null
 ) returns table (rank int, user_id uuid, value double precision)
 language sql
 stable
@@ -73,7 +109,9 @@ as $$
     where a.on_leaderboard
       and a.start_time >= p_start
       and a.start_time <  p_end
-      and (p_scope = 'global' or p.country_code = p_scope)
+      and public.leaderboard_in_scope(
+            p_scope, p_viewer, a.user_id, p.country_code
+          )
     group by a.user_id
   ) t
   -- A null value means the metric had nothing to read; a zero means the
@@ -91,7 +129,8 @@ create or replace function public.leaderboard_placing(
   p_metric text,
   p_scope text,
   p_start timestamptz,
-  p_end timestamptz
+  p_end timestamptz,
+  p_viewer uuid default null
 ) returns table (rank int, value double precision)
 language sql
 stable
@@ -109,7 +148,9 @@ as $$
     where a.on_leaderboard
       and a.start_time >= p_start
       and a.start_time <  p_end
-      and (p_scope = 'global' or p.country_code = p_scope)
+      and public.leaderboard_in_scope(
+            p_scope, p_viewer, a.user_id, p.country_code
+          )
     group by a.user_id
   ),
   ranked as (

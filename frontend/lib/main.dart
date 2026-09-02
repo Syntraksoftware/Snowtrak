@@ -9,6 +9,7 @@ import 'package:snowtrak/features/activities/data/activities_context_repository.
 import 'package:snowtrak/features/auth/data/auth_session_store.dart';
 import 'package:snowtrak/providers/auth_provider.dart';
 import 'package:snowtrak/providers/activity_provider.dart';
+import 'package:snowtrak/providers/duel_provider.dart';
 import 'package:snowtrak/providers/notification_provider.dart';
 import 'package:snowtrak/screens/auth/login_screen.dart';
 import 'package:snowtrak/screens/home/home_screen.dart';
@@ -82,8 +83,15 @@ class _SnowtrakAppState extends State<SnowtrakApp> {
           create: (_) => sl<ActivitiesContextRepository>(),
         ),
         ChangeNotifierProvider(
-          create: (_) => NotificationProvider(followService: sl())
-            ..loadNotifications(),
+          // No viewer id yet: auth has not resolved at this point, so the
+          // eager load reads follow requests only. The notifications screen
+          // reloads with the viewer and picks up duels then.
+          create: (_) =>
+              NotificationProvider(followService: sl(), duelService: sl())
+                ..loadNotifications(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => DuelProvider(duelService: sl()),
         ),
       ],
       child: MaterialApp(

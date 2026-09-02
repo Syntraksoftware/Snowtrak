@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:snowtrak/core/theme.dart';
 import 'package:snowtrak/models/notification.dart';
+import 'package:snowtrak/providers/auth_provider.dart';
 import 'package:snowtrak/providers/notification_provider.dart';
+import 'package:snowtrak/screens/leaderboard/duel_detail_screen.dart';
 import 'package:snowtrak/screens/profile/user_profile_screen.dart';
 import 'package:snowtrak/services/notification_service.dart';
 
@@ -18,9 +20,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   void initState() {
     super.initState();
     // Load notifications when screen opens
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<NotificationProvider>().loadNotifications();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _reload());
   }
 
   @override
@@ -198,7 +198,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
             const SizedBox(height: SnowtrakSpacing.lg),
             ElevatedButton(
-              onPressed: () => provider.loadNotifications(),
+              onPressed: _reload,
               child: const Text('Retry'),
             ),
           ],
@@ -207,19 +207,40 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
+  /// Rebuilds the list, telling the provider who is looking.
+  ///
+  /// A pending duel is only a notification for the person being challenged;
+  /// without the viewer the provider cannot tell those apart and reads
+  /// follow requests alone.
+  Future<void> _reload() async {
+    final viewerId = context.read<AuthProvider>().user?.id;
+    await context
+        .read<NotificationProvider>()
+        .loadNotifications(viewerId: viewerId);
+  }
+
   Future<void> _handleNotificationTap(AppNotification notification) async {
     context.read<NotificationProvider>().markAsRead(notification.id);
 
-    // Every notification is a follow request today, so the tap goes to the
-    // requester's profile -- where the Follow button and their runs are, which
-    // is what you need to decide whether to approve.
-    final userId = notification.metadata?['user_id'] as String? ?? '';
-    if (userId.isEmpty) return;
-
-    await openUserProfile(context, userId, displayName: notification.senderName);
-    // Approving or denying from the profile clears the request, so the list
-    // behind this screen is stale exactly on the way back.
-    if (mounted) await context.read<NotificationProvider>().loadNotifications();
+    // Two kinds, two destinations. A duel opens the duel -- the accept and
+    // decline buttons are there. A follow request opens the requester's
+    // profile, where the Follow button and their runs are, which is what you
+    // need to decide whether to approve.
+    final duelId = notification.metadata?['duel_id'] as String? ?? '';
+    if (duelId.isNotEmpty) {
+      await openDuel(context, duelId);
+    } else {
+      final userId = notification.metadata?['user_id'] as String? ?? '';
+      if (userId.isEmpty) return;
+      await openUserProfile(
+        context,
+        userId,
+        displayName: notification.senderName,
+      );
+    }
+    // Answering either one clears it, so the list behind this screen is
+    // stale exactly on the way back.
+    if (mounted) await _reload();
   }
 
   void _handleNotificationDismiss(AppNotification notification) {

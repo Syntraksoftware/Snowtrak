@@ -1,23 +1,31 @@
 import 'package:flutter/foundation.dart';
 import 'package:snowtrak/core/errors/app_result.dart';
+import 'package:snowtrak/models/duel.dart';
 import 'package:snowtrak/models/notification.dart';
+import 'package:snowtrak/services/duel_service.dart';
 import 'package:snowtrak/services/follow_service.dart';
 
 /// Notification state.
 ///
-/// Every notification here is *derived* from a pending follow request, not
-/// stored: `/api/v1/follows/me/requests` is the only real notification-shaped
-/// event the backend has today. `/api/v1/notifications/*` is a single global
-/// in-memory queue with no user id and no auth, so reading it would have shown
-/// every user each other's notifications -- this provider no longer touches it.
+/// Every notification here is *derived*, not stored: from a pending follow
+/// request, and from a duel challenge waiting on the viewer's answer. Those
+/// are the two notification-shaped events the backend actually has.
+/// `/api/v1/notifications/*` was a single global in-memory queue with no user
+/// id and no auth, so reading it would have shown every user each other's
+/// notifications -- this provider does not touch it.
 ///
-/// ponytail: derive instead of persist. When a second real event exists
-/// (kudos, comments), give notifications their own table and read that.
+/// ponytail: derive instead of persist. At a third source, or the first one
+/// that is not a list the user can already see somewhere else, give
+/// notifications their own table and read that.
 class NotificationProvider extends ChangeNotifier {
-  NotificationProvider({required FollowService followService})
-      : _followService = followService;
+  NotificationProvider({
+    required FollowService followService,
+    required DuelService duelService,
+  })  : _followService = followService,
+        _duelService = duelService;
 
   final FollowService _followService;
+  final DuelService _duelService;
 
   List<AppNotification> _notifications = [];
   bool _isLoading = false;
@@ -65,25 +73,45 @@ class NotificationProvider extends ChangeNotifier {
     return grouped;
   }
 
-  /// Rebuild the list from the pending follow requests.
+  /// Rebuilds the list from pending follow requests and pending duels.
   ///
-  /// ponytail: one page, so it stops at 20 -- the same ceiling the profile
-  /// header's badge already accepts.
-  Future<void> loadNotifications() async {
+  /// [viewerId] decides which duels count: a pending duel the viewer *sent*
+  /// is not a notification, it is something they are waiting on. Without it
+  /// only follow requests are read, which is the case at app start before
+  /// auth has resolved.
+  ///
+  /// ponytail: one page of each, so it stops at 20 apiece -- the same
+  /// ceiling the profile header's badge already accepts.
+  Future<void> loadNotifications({String? viewerId}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
-    final result = await _followService.getRequests(limit: 20);
+    final requests = await _followService.getRequests(limit: 20);
+    final duels = (viewerId == null || viewerId.isEmpty)
+        ? null
+        : await _duelService.list(status: DuelStatus.pending, limit: 20);
 
-    switch (result) {
+    final combined = <AppNotification>[];
+    switch (requests) {
       case AppSuccess(:final value):
-        _notifications = value.map(_followRequestNotification).toList();
+        combined.addAll(value.map(_followRequestNotification));
         _error = null;
       case AppFailure(:final error):
         _error = error.userMessage;
     }
+    if (duels case AppSuccess(:final value)) {
+      combined.addAll(
+        value
+            .where((duel) => duel.awaitingAnswerFrom(viewerId!))
+            .map(_duelNotification),
+      );
+    }
+    // Newest first across both sources; each source is already ordered, but
+    // interleaving them is the whole point of merging.
+    combined.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
+    _notifications = combined;
     _isLoading = false;
     notifyListeners();
   }
@@ -142,6 +170,25 @@ class NotificationProvider extends ChangeNotifier {
       createdAt: createdAt ?? DateTime.now(),
       senderName: name,
       metadata: {'user_id': userId},
+    );
+  }
+
+  /// One pending duel, as a notification.
+  ///
+  /// `metadata['duel_id']` is what the tap handler opens. The duel screen
+  /// handles every state, so a challenge that was answered from another
+  /// device still opens to something truthful rather than to a dead accept
+  /// button.
+  static AppNotification _duelNotification(Duel duel) {
+    final name = duel.challengerName ?? 'Someone';
+    return AppNotification(
+      id: 'duel:${duel.id}',
+      type: NotificationType.challenge,
+      title: 'Battle challenge',
+      message: '$name challenged you to ${duel.metric.label}',
+      createdAt: duel.createdAt,
+      senderName: name,
+      metadata: {'duel_id': duel.id},
     );
   }
 

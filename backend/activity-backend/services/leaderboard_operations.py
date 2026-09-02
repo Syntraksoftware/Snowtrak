@@ -18,6 +18,7 @@ from domain.competition.metrics import Metric, week_bounds, week_start
 logger = logging.getLogger(__name__)
 
 GLOBAL_SCOPE = "global"
+FRIENDS_SCOPE = "friends"
 
 #: A board page. Deep paging into a leaderboard is not a use anyone has;
 #: someone looking for their own row uses `placing` instead.
@@ -66,14 +67,18 @@ class LeaderboardOperations:
         scope: str,
         moment: datetime | None = None,
         limit: int = DEFAULT_LIMIT,
+        viewer_id: str | None = None,
     ) -> list[dict[str, Any]]:
         """The live board for the week containing `moment`.
 
         Args:
             metric: What the board measures.
-            scope: `GLOBAL_SCOPE` or an ISO-2 country code.
+            scope: `GLOBAL_SCOPE`, `FRIENDS_SCOPE`, or an ISO-2 country
+                code.
             moment: Any instant in the week to read. Defaults to now.
             limit: Rows to return, capped at `MAX_LIMIT`.
+            viewer_id: Required by `FRIENDS_SCOPE`, which is relative to
+                whoever is asking; ignored by the others.
 
         Returns:
             Rows of `{rank, user_id, value, display_name, avatar_url}`,
@@ -82,7 +87,7 @@ class LeaderboardOperations:
             standings is worse than one that shows none.
         """
         start, end = week_bounds(moment or datetime.now(UTC))
-        rows = self._rank(metric, scope, start, end, min(limit, MAX_LIMIT))
+        rows = self._rank(metric, scope, start, end, min(limit, MAX_LIMIT), viewer_id)
         return self._with_profiles(rows)
 
     def placing(
@@ -108,6 +113,10 @@ class LeaderboardOperations:
                     "p_scope": scope,
                     "p_start": start.isoformat(),
                     "p_end": end.isoformat(),
+                    # A friends board is relative to whoever is asking, and
+                    # the only person asking about their own placing is
+                    # themselves.
+                    "p_viewer": user_id,
                 },
             ).execute()
         except Exception as exception:
@@ -163,6 +172,9 @@ class LeaderboardOperations:
         start, end = week_bounds(moment)
         week = week_start(moment)
         written = 0
+        # Only boards that mean the same thing to everyone get snapshotted.
+        # A friends board is a different board per viewer, so there is no
+        # single week to write down.
         for scope in [GLOBAL_SCOPE, *self._scopes(start, end)]:
             for metric in Metric:
                 rows = self._rank(metric, scope, start, end, SNAPSHOT_DEPTH)
@@ -178,6 +190,7 @@ class LeaderboardOperations:
         start: datetime,
         end: datetime,
         limit: int,
+        viewer_id: str | None = None,
     ) -> list[dict[str, Any]]:
         try:
             response = self._client.rpc(
@@ -188,6 +201,7 @@ class LeaderboardOperations:
                     "p_start": start.isoformat(),
                     "p_end": end.isoformat(),
                     "p_limit": limit,
+                    "p_viewer": viewer_id,
                 },
             ).execute()
         except Exception as exception:

@@ -321,3 +321,31 @@ def _row(status="pending"):
         "status": status,
         "created_at": NOW.isoformat(),
     }
+
+
+class TestScopes:
+    def test_a_friends_board_is_relative_to_whoever_is_asking(self):
+        # Without the viewer the SQL cannot resolve "friends" at all, and a
+        # board that silently fell back to global would show strangers a
+        # Challenge button they cannot use.
+        client = _FakeClient()
+
+        LeaderboardOperations(client).top(Metric.VERTICAL, "friends", NOW, 50, viewer_id=ALEX)
+
+        _, params = client.rpc_calls[-1]
+        assert params["p_scope"] == "friends"
+        assert params["p_viewer"] == ALEX
+
+    def test_a_friends_board_is_never_snapshotted(self):
+        # It is a different board per viewer, so there is no single week to
+        # write down.
+        client = _FakeClient()
+        client.rpc_results["leaderboard_top"] = [{"rank": 1, "user_id": ALEX, "value": 900.0}]
+        client.rpc_results["leaderboard_scopes"] = [{"scope": "CH"}]
+
+        LeaderboardOperations(client).settle_week(NOW)
+
+        scopes = {
+            params["p_scope"] for name, params in client.rpc_calls if name == "leaderboard_top"
+        }
+        assert scopes == {GLOBAL_SCOPE, "CH"}

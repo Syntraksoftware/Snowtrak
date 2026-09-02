@@ -148,6 +148,43 @@ class DuelOperations:
             "recent": self._recent(user_id),
         }
 
+    def players(self, duels: list[Duel]) -> dict[str, dict[str, Any]]:
+        """Display fields for everyone in `duels`, in one round trip.
+
+        A duel row shows the other player's name and picture. Fetching that
+        per card is the N+1 that takes down a list screen, so it is fetched
+        per page instead.
+
+        Returns:
+            User id to `{display_name, username, avatar_url}`. Missing ids
+            simply do not appear; the caller falls back to a placeholder.
+        """
+        ids = sorted({duel.challenger_id for duel in duels} | {duel.opponent_id for duel in duels})
+        if not ids:
+            return {}
+        try:
+            response = (
+                self._client.table("profiles")
+                .select("id,full_name,username,avatar_url")
+                .in_("id", ids)
+                .execute()
+            )
+        except Exception as exception:
+            logger.exception("Failed to read duel players: %s", exception)
+            return {}
+        rows = getattr(response, "data", None)
+        if not isinstance(rows, list):
+            return {}
+        return {
+            str(row["id"]): {
+                "display_name": row.get("full_name") or row.get("username") or "Skier",
+                "username": row.get("username"),
+                "avatar_url": row.get("avatar_url"),
+            }
+            for row in rows
+            if row.get("id")
+        }
+
     def score(self, user_id: str, metric: Metric, start: datetime, end: datetime) -> float:
         """One player's score over one window.
 

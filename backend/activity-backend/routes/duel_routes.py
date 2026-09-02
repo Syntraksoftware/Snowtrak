@@ -30,7 +30,16 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/duels", tags=["duels"])
 
 
-def _response(duel: Duel) -> DuelResponse:
+def _response(duel: Duel, players: dict[str, dict] | None = None) -> DuelResponse:
+    """One duel, with display fields when the caller has already read them.
+
+    `players` is optional so a single-duel handler does not pay for a
+    profiles round trip it has no use for; the list handler passes one map
+    for the whole page.
+    """
+    people = players or {}
+    challenger = people.get(duel.challenger_id, {})
+    opponent = people.get(duel.opponent_id, {})
     return DuelResponse(
         id=duel.id,
         challenger_id=duel.challenger_id,
@@ -45,6 +54,10 @@ def _response(duel: Duel) -> DuelResponse:
         opponent_value=duel.opponent_value,
         winner_id=duel.winner_id,
         settled_at=duel.settled_at.isoformat() if duel.settled_at else None,
+        challenger_name=challenger.get("display_name"),
+        challenger_avatar_url=challenger.get("avatar_url"),
+        opponent_name=opponent.get("display_name"),
+        opponent_avatar_url=opponent.get("avatar_url"),
     )
 
 
@@ -124,7 +137,8 @@ async def get_duel(duel_id: str, user_id: str = Depends(get_current_user)):
         settled = await offload(get_duel_operations().settle, duel)
         if settled is not None:
             duel = settled
-    return _response(duel)
+    players = await offload(get_duel_operations().players, [duel])
+    return _response(duel, players)
 
 
 @router.post("/{duel_id}/accept", response_model=DuelResponse)

@@ -60,6 +60,11 @@ participants x 52 rows a year and need a retention policy.
 settings. Inferring it from GPS would reclassify a user who takes one trip
 abroad.
 
+**Three scopes, one predicate.** `global`, `friends` and a country code are
+decided by a single SQL function, `leaderboard_in_scope`, called by the
+board, the placing and the snapshot. Repeating the predicate in three places
+is how those three would stop agreeing about who is on a board.
+
 **Win/loss record only.** No points, no tiers, no ladder in phase 1.
 
 ## Out of scope
@@ -178,9 +183,17 @@ GET /api/v1/leaderboard/me?metric=&scope=
 GET /api/v1/leaderboard/weeks/{week_start}?metric=&scope=
 ```
 
-`metric` is `vertical | speed | distance`; `scope` is `global` or an ISO-2
-code. Every query takes a `LIMIT` and an explicit ordering; the default page
-is 50 and the cap is 100.
+`metric` is `vertical | speed | distance`; `scope` is `global`, `friends`, or
+an ISO-2 code.
+
+`friends` ranks the caller against the people they mutually follow. It is a
+different board for every viewer, which is why it is never snapshotted --
+there is no single week to write down -- and why the Challenge button lives
+only there: a duel needs a mutual follow to be offered at all, so the friends
+board is exactly the set of people who can be challenged.
+
+Every query takes a `LIMIT` and an explicit ordering; the default page is 50
+and the cap is 100.
 
 `/leaderboard/me` exists because a user outside the top 100 still needs to
 see their own rank, and paging to find it is not acceptable.
@@ -321,12 +334,17 @@ New files:
 screens/leaderboard/  leaderboard_tab.dart
                       duel_terms_screen.dart
                       duel_detail_screen.dart
-                      incoming_duel_screen.dart
+                      duel_formatting.dart
 services/             leaderboard_service.dart, duel_service.dart
 services/apis/        leaderboard_api.dart, duel_api.dart
 providers/            duel_provider.dart
-models/               leaderboard_entry.dart, duel.dart, duel_record.dart
+models/               leaderboard_entry.dart, duel.dart
 ```
+
+There is no separate screen for an incoming challenge. `duel_detail_screen`
+renders every state, so a notification tap has one destination: a challenge
+answered on another device opens to the result rather than to a dead Accept
+button.
 
 The `Challenge` button appears only on the **Friends** board, never on
 Global, because a duel requires a mutual follow.
