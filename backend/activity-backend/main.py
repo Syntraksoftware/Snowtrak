@@ -18,6 +18,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from supabase import create_client
 
 # Add backend directory to path for shared imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -28,7 +29,13 @@ from shared.rate_limiter import add_redis_rate_limiter
 
 from config import get_config
 from routes.activities import router as activities_router
+from routes.duel_record_routes import router as duel_record_router
+from routes.duel_routes import router as duel_router
+from routes.leaderboard_routes import router as leaderboard_router
+from services.duel_operations import initialize_duel_operations
+from services.leaderboard_operations import initialize_leaderboard_operations
 from services.pipeline_worker import PipelineWorker
+from services.settlement_worker import SettlementWorker
 from services.supabase_client import initialize_activity_client
 from services.user_stats_service import initialize_stats_service
 
@@ -66,8 +73,8 @@ def _get_rate_limit_policies() -> list[dict]:
 def _log_owned_domains_banner() -> None:
     """Log owned domains and canonical routes at startup."""
     logger.info("SERVICE OWNERSHIP: activity-backend")
-    logger.info("domains: activities")
-    logger.info("routes: /api/v1/activities")
+    logger.info("domains: activities, competition")
+    logger.info("routes: /api/v1/activities, /api/v1/leaderboard, /api/v1/duels")
 
 
 @asynccontextmanager
@@ -78,19 +85,28 @@ async def lifespan(app: FastAPI):
 
     initialize_activity_client()
     initialize_stats_service()
+    # Duels and the board aggregate `activities` and read `profiles`, so they
+    # take the raw client rather than ActivitySupabaseClient's activity-shaped
+    # surface. One client, two singletons.
+    competition_client = create_client(config.SUPABASE_URL, config.SUPABASE_SERVICE_ROLE_KEY)
+    initialize_duel_operations(competition_client)
+    initialize_leaderboard_operations(competition_client)
     _log_owned_domains_banner()
 
-    worker = PipelineWorker()
-    worker_task = asyncio.create_task(worker.run_forever())
+    workers = [PipelineWorker(), SettlementWorker()]
+    tasks = [asyncio.create_task(worker.run_forever()) for worker in workers]
 
     yield
 
-    worker.stop()
-    worker_task.cancel()
+    for worker in workers:
+        worker.stop()
+    for task in tasks:
+        task.cancel()
     # cancel() always surfaces as CancelledError here; awaiting is only to let
-    # the task finish unwinding before the process exits.
-    with contextlib.suppress(asyncio.CancelledError):
-        await worker_task
+    # the tasks finish unwinding before the process exits.
+    for task in tasks:
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
     logger.info("Shutting down Activity Backend")
 
 
@@ -146,6 +162,9 @@ app.add_middleware(
 
 # Routers
 app.include_router(activities_router)
+app.include_router(leaderboard_router)
+app.include_router(duel_router)
+app.include_router(duel_record_router)
 
 
 @app.get("/")

@@ -173,6 +173,7 @@ def map_activity_to_frontend_payload(
         "max_pace": activity_record.get("max_pace"),
         "calories": activity_record.get("calories"),
         "is_public": activity_record.get("visibility") == "public",
+        "on_leaderboard": bool(activity_record.get("on_leaderboard")),
         "created_at": created_at_value,
         "locations": convert_to_frontend_locations(activity_record.get("id"), gps_path_records),
         "map_activity_id": activity_record.get("map_activity_id"),

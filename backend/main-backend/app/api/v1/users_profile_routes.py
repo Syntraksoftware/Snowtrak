@@ -53,6 +53,7 @@ def _profile_from_user_info(user_id: str) -> dict[str, Any] | None:
         "push_token": None,
         "ski_level": None,
         "home": None,
+        "country_code": None,
         # user_info.created_at is nullable even though it defaults to now().
         "created_at": user.get("created_at") or datetime.now(UTC),
         "updated_at": user.get("updated_at"),
@@ -174,6 +175,7 @@ def update_current_user_profile_endpoint(
             push_token=profile_update.push_token,
             ski_level=profile_update.ski_level,
             home=profile_update.home,
+            country_code=profile_update.country_code,
         )
         if updated_profile is None:
             raise HTTPException(

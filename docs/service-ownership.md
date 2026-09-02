@@ -9,6 +9,7 @@ One specific backend for each service (activity-related, main-backend handling u
 - notifications: main-backend
 - weather: main-backend
 - activities: activity-backend
+- competition (duels, leaderboard): activity-backend
 - community (subthreads/posts/comments): community-backend
 - follows (social graph): community-backend
 
@@ -22,7 +23,7 @@ One specific backend for each service (activity-related, main-backend handling u
 
 - main-backend: /api/v1/auth, /api/v1/users, /api/v1/notifications, /api/v1/weather
   - notification is not yet being implemented
-- activity-backend: /api/v1/activities
+- activity-backend: /api/v1/activities, /api/v1/leaderboard, /api/v1/duels
 - community-backend: /api/subthreads, /api/posts, /api/comments, /api/v1/follows
 
 ## Migration Decision (2026-03-20)
@@ -66,6 +67,18 @@ activity list.
 An HTTP hop would put two more round trips — roughly 880ms — in front of
 every activity list, for one indexed read of a two-column table whose shape
 is settled. The read is allowed; a write from activity-backend is not.
+
+### activity-backend reads `follows` for duels (2026-09-02)
+
+The same exception, extended by one caller. A duel is offered on a mutual
+follow, so `DuelOperations.create` asks `shared.follow_graph` whether both
+edges exist before it writes anything.
+
+The alternative was to put duels in community-backend, which owns the graph.
+That service does not own `activities`, so every settlement — two players per
+duel — would become an HTTP call to activity-backend for a score. Scoring is
+the expensive half and the graph read is the cheap half, so the feature sits
+with the scores. Still read-only; the writes stay in community-backend.
 
 ## Future Direction
 

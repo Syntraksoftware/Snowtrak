@@ -194,7 +194,15 @@ class StubActivityClient:
             return self._private_activity
         return None
 
-    def update_activity(self, activity_id, user_id, name=None, description=None, visibility=None):
+    def update_activity(
+        self,
+        activity_id,
+        user_id,
+        name=None,
+        description=None,
+        visibility=None,
+        on_leaderboard=None,
+    ):
         if activity_id != "activity-1":
             return None
         updated = dict(self._activity)
@@ -204,6 +212,8 @@ class StubActivityClient:
             updated["description"] = description
         if visibility is not None:
             updated["visibility"] = visibility
+        if on_leaderboard is not None:
+            updated["on_leaderboard"] = on_leaderboard
         return updated
 
     def delete_activity(self, activity_id, user_id):
