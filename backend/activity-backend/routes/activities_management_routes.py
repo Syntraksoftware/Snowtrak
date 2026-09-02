@@ -175,6 +175,7 @@ async def update_activity(
             name=data.name,
             description=data.description,
             visibility=visibility_value,
+            on_leaderboard=data.on_leaderboard,
         )
 
         if not updated_activity:

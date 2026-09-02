@@ -49,3 +49,50 @@ def following_ids(client, user_id: str) -> list[str]:
     except Exception as exception:
         logger.exception("Failed to list follows for %s: %s", user_id, exception)
         return []
+
+
+def follows_each_other(client, first_id: str, second_id: str) -> bool:
+    """Whether two accounts follow each other.
+
+    A duel is offered on a mutual follow, which is the closest thing this
+    schema has to a friendship. Reading it here rather than inventing a
+    second relationship keeps the privacy rule in one place: if the pair
+    cannot see each other's profile, they cannot duel.
+
+    One query for both directions -- the pair is small enough that two
+    `in_` filters beat two round trips.
+
+    Args:
+        client: A configured `supabase.Client`.
+        first_id: One account.
+        second_id: The other.
+
+    Returns:
+        True only when both edges exist. False on failure, which fails
+        closed: a challenge is refused rather than allowed on a bad read.
+    """
+    if not first_id or not second_id or first_id == second_id:
+        return False
+    pair = [first_id, second_id]
+    try:
+        response = (
+            client.table("follows")
+            .select("follower_id,followee_id")
+            .in_("follower_id", pair)
+            .in_("followee_id", pair)
+            .limit(4)
+            .execute()
+        )
+        data = getattr(response, "data", None)
+        if not isinstance(data, list):
+            return False
+        edges = {(row.get("follower_id"), row.get("followee_id")) for row in data}
+        return (first_id, second_id) in edges and (second_id, first_id) in edges
+    except Exception as exception:
+        logger.exception(
+            "Failed to check mutual follow between %s and %s: %s",
+            first_id,
+            second_id,
+            exception,
+        )
+        return False

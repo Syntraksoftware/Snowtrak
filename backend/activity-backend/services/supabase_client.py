@@ -251,14 +251,17 @@ class ActivitySupabaseClient:
         name: str | None = None,
         description: str | None = None,
         visibility: str | None = None,
+        on_leaderboard: bool | None = None,
     ) -> dict[str, Any] | None:
-        update_fields = {}
+        update_fields: dict[str, Any] = {}
         if name is not None:
             update_fields["name"] = name
         if description is not None:
             update_fields["description"] = description
         if visibility is not None:
             update_fields["visibility"] = visibility
+        if on_leaderboard is not None:
+            update_fields["on_leaderboard"] = on_leaderboard
         if not update_fields:
             return self.get_activity_by_id(activity_id)
 

@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.api.dependencies import get_current_user
 from app.core.profile_cache import get_profile, invalidate_profile, set_profile
@@ -53,6 +53,9 @@ def _profile_from_user_info(user_id: str) -> dict[str, Any] | None:
         "push_token": None,
         "ski_level": None,
         "home": None,
+        # The one field on this fallback that is real: it lives on user_info,
+        # written by PUT /me/country. See migration 021.
+        "country_code": user.get("country_code"),
         # user_info.created_at is nullable even though it defaults to now().
         "created_at": user.get("created_at") or datetime.now(UTC),
         "updated_at": user.get("updated_at"),
@@ -192,6 +195,44 @@ def update_current_user_profile_endpoint(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user profile",
         ) from None
+
+
+class CountrySetting(BaseModel):
+    """Which country leaderboard this account appears on."""
+
+    country_code: str | None = Field(
+        None,
+        min_length=2,
+        max_length=2,
+        description="ISO 3166-1 alpha-2, or null for the global board only",
+    )
+
+
+@router.put("/me/country", response_model=CountrySetting)
+def set_my_country(
+    setting: CountrySetting,
+    current_user: User = Depends(get_current_user),
+) -> CountrySetting:
+    """Choose the country leaderboard to appear on.
+
+    Its own route rather than a field on PUT /me/profile, for the same
+    reason /me/privacy is: that route writes `profiles`, which has no row
+    for anyone, so the value would be accepted and lost.
+
+    Null clears it -- the user then appears on the global board only. It is
+    read at query time, so a change takes effect on the next board read; no
+    backfill and nothing to invalidate beyond the profile cache.
+    """
+    _ensure_database_configured()
+
+    if not supabase_client.set_user_country(current_user.id, setting.country_code):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        ) from None
+
+    invalidate_profile(current_user.id)
+    return setting
 
 
 @router.get("/{user_id}/profile", response_model=ProfileResponse)
