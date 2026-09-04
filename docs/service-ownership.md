@@ -18,6 +18,10 @@ One specific backend for each service (activity-related, main-backend handling u
 - A domain is exposed by exactly one service.
 - No duplicate route ownership across services.
 - Frontend routes by domain, not by implementation details.
+- display identity: `user_info`. A user's chosen `username` is what every
+  surface shows, so it lives beside `is_private` and `country_code` rather
+  than in `profiles`. The rule: `user_info` holds what other services read,
+  `profiles` holds what only the profile screen reads.
 
 ## Canonical Base Paths
 
