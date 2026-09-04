@@ -152,8 +152,6 @@ class ProfileOperations(SupabaseBase):
         self,
         user_id: str,
         *,
-        full_name: str | None = None,
-        username: str | None = None,
         bio: str | None = None,
         avatar_url: str | None = None,
         push_token: str | None = None,
@@ -166,10 +164,12 @@ class ProfileOperations(SupabaseBase):
         Only updates provided fields (partial update).
         Returns updated profile dict on success, or None on failure.
 
+        `full_name` and `username` are not here: both moved to `user_info` in
+        migration 022, and `set_username` on `UserOperations` is how a
+        handle is written now.
+
         Arguments:
         - user_id: str, the id of the user to update the profile for
-        - full_name: Optional[str], the full name of the user
-        - username: Optional[str], the username of the user
         - bio: Optional[str], the bio of the user
         - avatar_url: Optional[str], the avatar url of the user
         - push_token: Optional[str], the push token of the user
@@ -190,10 +190,6 @@ class ProfileOperations(SupabaseBase):
 
         # Build update payload with only provided fields
         update_data: dict[str, Any] = {}
-        if full_name is not None:
-            update_data["full_name"] = full_name
-        if username is not None:
-            update_data["username"] = username
         if bio is not None:
             update_data["bio"] = bio
         if avatar_url is not None:
@@ -222,38 +218,6 @@ class ProfileOperations(SupabaseBase):
         except Exception as exc:
             logger.exception(f"Failed to update profile for user {user_id}: {exc}")
             return None
-
-    def username_exists(self, username: str, exclude_user_id: str | None = None) -> bool:
-        """
-        Check if username already exists (excluding a specific user if provided).
-
-        Arguments:
-        - username: str, the username to check if it exists
-        - exclude_user_id: Optional[str], the id of the user to exclude from the check
-
-        Expected Return:
-        - bool: True if the username exists, False if it does not
-        """
-        if not self.is_configured():
-            return False
-
-        client = self._client
-        if client is None:
-            return False
-
-        try:
-            query = client.table("profiles").select("id").eq("username", username)
-            if exclude_user_id:
-                query = query.neq("id", exclude_user_id)
-                # neq = not equal to, exclude the user_id from the check
-            # `resp` = response from the database query
-            resp = query.limit(1).execute()
-            # `data` = data returned from the database query
-            data = getattr(resp, "data", None)
-            return isinstance(data, list) and len(data) > 0
-        except Exception as exc:
-            logger.exception(f"Error checking username existence: {exc}")
-            return False
 
     def upload_avatar(
         self,

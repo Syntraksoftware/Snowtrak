@@ -45,6 +45,7 @@ class _StubSupabase:
                 "is_private": False,
             }
         }
+        self.taken_usernames: set[str] = set()
 
     def is_configured(self) -> bool:
         return True
@@ -57,6 +58,16 @@ class _StubSupabase:
         if row is None:
             return False
         row["is_private"] = is_private
+        return True
+
+    def username_exists(self, username: str, exclude_user_id: str | None = None) -> bool:
+        return username in self.taken_usernames
+
+    def set_username(self, id: str, username: str | None) -> bool:
+        row = self.user_info.get(id)
+        if row is None:
+            return False
+        row["username"] = username
         return True
 
 
@@ -72,6 +83,8 @@ def stub_supabase(monkeypatch, app):
     monkeypatch.setattr(supabase_client, "is_configured", stub.is_configured)
     monkeypatch.setattr(supabase_client, "get_user_info_by_id", stub.get_user_info_by_id)
     monkeypatch.setattr(supabase_client, "set_user_privacy", stub.set_user_privacy)
+    monkeypatch.setattr(supabase_client, "username_exists", stub.username_exists)
+    monkeypatch.setattr(supabase_client, "set_username", stub.set_username)
 
     def _current_user() -> User:
         # is_private lives on the raw user_info row, not on the User model.

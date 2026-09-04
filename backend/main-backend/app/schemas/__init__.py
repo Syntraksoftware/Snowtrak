@@ -83,13 +83,27 @@ class ProfileBase(BaseModel):
 class ProfileUpdate(BaseModel):
     """Schema for profile updates."""
 
-    full_name: str | None = None
-    username: str | None = None
     bio: str | None = None
     avatar_url: str | None = None
     push_token: str | None = None
     ski_level: str | None = None
     home: str | None = None
+
+
+class UsernameSetting(BaseModel):
+    """The handle this account is known by.
+
+    Lower case only, so `@snowking` has exactly one spelling and the mention
+    parser has one thing to match. Null clears it; the display falls back to
+    the user's name.
+    """
+
+    username: str | None = Field(
+        None,
+        min_length=3,
+        max_length=20,
+        pattern=r"^[a-zA-Z0-9_]+$",
+    )
 
 
 class ProfileResponse(BaseModel):

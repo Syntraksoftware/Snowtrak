@@ -11,7 +11,7 @@ from app.api.dependencies import get_current_user
 from app.core.profile_cache import get_profile, invalidate_profile, set_profile
 from app.core.storage import User
 from app.core.supabase import supabase_client
-from app.schemas import ProfileResponse, ProfileUpdate
+from app.schemas import ProfileResponse, ProfileUpdate, UsernameSetting
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -42,12 +42,11 @@ def _profile_from_user_info(user_id: str) -> dict[str, Any] | None:
 
     first = (user.get("first_name") or "").strip()
     last = (user.get("last_name") or "").strip()
-    email = (user.get("email") or "").strip()
 
     return {
         "id": user_id,
         "full_name": " ".join(p for p in (first, last) if p) or None,
-        "username": email.split("@")[0] if "@" in email else None,
+        "username": user.get("username"),
         "bio": None,
         "avatar_url": None,
         "push_token": None,
@@ -150,28 +149,20 @@ def update_current_user_profile_endpoint(
     profile_update: ProfileUpdate,
     current_user: User = Depends(get_current_user),
 ) -> ProfileResponse:
-    """Update current user's profile details."""
+    """Update current user's profile details.
+
+    `full_name` and `username` are not settable here -- both moved to
+    `user_info` in migration 022. Use PUT /me/username for the handle; the
+    full name is derived from `user_info.first_name`/`last_name`.
+    """
     _ensure_database_configured()
     try:
-        if profile_update.username is not None:
-            is_username_taken = supabase_client.username_exists(
-                profile_update.username,
-                exclude_user_id=current_user.id,
-            )
-            if is_username_taken:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="Username already taken",
-                ) from None
-
         existing_profile = supabase_client.get_profile_by_id(current_user.id)
         if existing_profile is None:
             supabase_client.create_profile(user_id=current_user.id)
 
         updated_profile = supabase_client.update_profile(
             user_id=current_user.id,
-            full_name=profile_update.full_name,
-            username=profile_update.username,
             bio=profile_update.bio,
             avatar_url=profile_update.avatar_url,
             push_token=profile_update.push_token,
@@ -233,6 +224,44 @@ def set_my_country(
 
     invalidate_profile(current_user.id)
     return setting
+
+
+@router.put("/me/username", response_model=UsernameSetting)
+def set_my_username(
+    setting: UsernameSetting,
+    current_user: User = Depends(get_current_user),
+) -> UsernameSetting:
+    """Choose the handle this account is known by.
+
+    Its own route rather than a field on PUT /me/profile, for the same
+    reason /me/privacy and /me/country are: those write `user_info`, and
+    that is where a name has to live for a feed to read it.
+
+    Stored lower-cased so `@snowking` has one spelling. Null clears it and
+    the display falls back to the user's name.
+
+    Raises:
+        HTTPException: 409 if another account already has the handle, 404 if
+            the user is gone.
+    """
+    _ensure_database_configured()
+
+    handle = setting.username.lower() if setting.username else None
+
+    if handle and supabase_client.username_exists(handle, exclude_user_id=current_user.id):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="That username is taken",
+        ) from None
+
+    if not supabase_client.set_username(current_user.id, handle):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        ) from None
+
+    invalidate_profile(current_user.id)
+    return UsernameSetting(username=handle)
 
 
 @router.get("/{user_id}/profile", response_model=ProfileResponse)
