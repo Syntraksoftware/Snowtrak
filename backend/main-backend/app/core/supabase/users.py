@@ -218,7 +218,9 @@ class UserOperations(SupabaseBase):
         if client is None:
             return False
         try:
-            query = client.table("user_info").select("id").ilike("username", username)
+            # eq, not ilike: the route lowercases before writing, so an exact match is
+            # already case-insensitive, and ilike would read `_` in a handle as a wildcard.
+            query = client.table("user_info").select("id").eq("username", username)
             if exclude_user_id:
                 query = query.neq("id", exclude_user_id)
             resp = query.limit(1).execute()

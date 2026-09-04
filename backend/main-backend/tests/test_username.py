@@ -28,6 +28,14 @@ class TestSetUsername:
 
         assert response.status_code == status.HTTP_409_CONFLICT
 
+    def test_resubmitting_your_own_handle_is_not_a_conflict(self, client, stub_supabase):
+        stub_supabase.user_info["user-1"]["username"] = "snowking"
+
+        response = client.put("/api/v1/users/me/username", json={"username": "snowking"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["username"] == "snowking"
+
     def test_null_clears_it(self, client, stub_supabase):
         response = client.put("/api/v1/users/me/username", json={"username": None})
 

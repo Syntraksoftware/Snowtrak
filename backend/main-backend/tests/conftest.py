@@ -61,7 +61,16 @@ class _StubSupabase:
         return True
 
     def username_exists(self, username: str, exclude_user_id: str | None = None) -> bool:
-        return username in self.taken_usernames
+        if username in self.taken_usernames:
+            return True
+        # Also honour a handle already sitting on some other user's row, so
+        # an implementation that dropped exclude_user_id would fail a test
+        # that resubmits the current user's own handle.
+        return any(
+            row.get("username") == username
+            for uid, row in self.user_info.items()
+            if uid != exclude_user_id
+        )
 
     def set_username(self, id: str, username: str | None) -> bool:
         row = self.user_info.get(id)
@@ -87,8 +96,10 @@ def stub_supabase(monkeypatch, app):
     monkeypatch.setattr(supabase_client, "set_username", stub.set_username)
 
     def _current_user() -> User:
-        # is_private lives on the raw user_info row, not on the User model.
-        row = {k: v for k, v in stub.user_info["user-1"].items() if k != "is_private"}
+        # is_private and username live on the raw user_info row, not on the
+        # User model.
+        excluded = {"is_private", "username"}
+        row = {k: v for k, v in stub.user_info["user-1"].items() if k not in excluded}
         return User(**row)  # type: ignore[arg-type]
 
     app.dependency_overrides[get_current_user] = _current_user

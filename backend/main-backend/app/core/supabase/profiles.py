@@ -17,8 +17,6 @@ class ProfileOperations(SupabaseBase):
 
     Handles CRUD operations for the profiles table (Create, Read, Update, Delete):
     - id (uuid, primary key, foreign key to auth.users)
-    - full_name (text, nullable)
-    - username (text, unique, nullable)
     - bio (text, nullable)
     - avatar_url (text, nullable)
     - push_token (text, nullable): push notification token for backend to send notifications to the user
@@ -79,8 +77,6 @@ class ProfileOperations(SupabaseBase):
         self,
         user_id: str,
         *,
-        full_name: str | None = None,
-        username: str | None = None,
         bio: str | None = None,
         avatar_url: str | None = None,
         push_token: str | None = None,
@@ -95,8 +91,6 @@ class ProfileOperations(SupabaseBase):
 
         Arguments:
         - user_id: str, the id of the user to create the profile for
-        - full_name: Optional[str], the full name of the user
-        - username: Optional[str], the username of the user
         - bio: Optional[str], the bio of the user
         - avatar_url: Optional[str], the avatar url of the user
         - push_token: Optional[str], the push token of the user
@@ -105,7 +99,7 @@ class ProfileOperations(SupabaseBase):
 
         Expected Return:
         - Optional[Dict[str, Any]]: the profile data for the user, or None if not found
-        - e.g. [{'id': '123', 'full_name': 'John Doe', 'username': 'johndoe', 'bio': 'I am a software engineer', 'avatar_url': 'https://example.com/avatar.jpg', 'push_token': '1234567890', 'ski_level': 'beginner', 'home': 'New York', 'created_at': '2021-01-01 12:00:00', 'updated_at': '2021-01-01 12:00:00'}]
+        - e.g. [{'id': '123', 'bio': 'I am a software engineer', 'avatar_url': 'https://example.com/avatar.jpg', 'push_token': '1234567890', 'ski_level': 'beginner', 'home': 'New York', 'created_at': '2021-01-01 12:00:00', 'updated_at': '2021-01-01 12:00:00'}]
         """
         if not self.is_configured():
             logger.warning("Supabase not configured; skipping create_profile.")
@@ -120,10 +114,6 @@ class ProfileOperations(SupabaseBase):
             payload: dict[str, Any] = {
                 "id": user_id,
             }
-            if full_name is not None:
-                payload["full_name"] = full_name
-            if username is not None:
-                payload["username"] = username
             if bio is not None:
                 payload["bio"] = bio
             if avatar_url is not None:

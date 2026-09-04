@@ -61,16 +61,6 @@ def _profile_from_user_info(user_id: str) -> dict[str, Any] | None:
     }
 
 
-def _build_default_full_name(current_user: User) -> str | None:
-    if current_user.first_name and current_user.last_name:
-        return f"{current_user.first_name} {current_user.last_name}"
-    if current_user.first_name:
-        return current_user.first_name
-    if current_user.last_name:
-        return current_user.last_name
-    return None
-
-
 @router.get("/me/profile", response_model=ProfileResponse)
 def get_current_user_profile_endpoint(
     current_user: User = Depends(get_current_user),
@@ -82,10 +72,7 @@ def get_current_user_profile_endpoint(
         if profile_data is None:
             profile_data = supabase_client.get_profile_by_id(current_user.id)
             if profile_data is None:
-                profile_data = supabase_client.create_profile(
-                    user_id=current_user.id,
-                    full_name=_build_default_full_name(current_user),
-                )
+                profile_data = supabase_client.create_profile(user_id=current_user.id)
             if profile_data is None:
                 profile_data = _profile_from_user_info(current_user.id)
             if profile_data is None:
