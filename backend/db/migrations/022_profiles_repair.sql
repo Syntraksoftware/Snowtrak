@@ -17,6 +17,10 @@
 
 begin;
 
+-- Deliberately strict: if this constraint is named something else, the
+-- transaction must abort. `if exists` would no-op and leave the old FK to
+-- auth.users in place beside the new one, and inserts would keep failing
+-- 23503 while the migration looked like it worked.
 alter table profiles drop constraint profiles_id_fkey;
 alter table profiles add constraint profiles_id_fkey
   foreign key (id) references user_info(id) on delete cascade;
@@ -30,7 +34,7 @@ select id from user_info
 on conflict (id) do nothing;
 
 -- The second source for a name, removed before anything can write to it.
-alter table profiles drop column full_name;
+alter table profiles drop column if exists full_name;
 
 -- The displayed identity moves to where every service already reads. Unique
 -- on lower(username) so SnowKing and snowking cannot both exist, and partial
@@ -39,6 +43,6 @@ alter table user_info add column if not exists username text;
 create unique index if not exists user_info_username_key
   on user_info (lower(username)) where username is not null;
 
-alter table profiles drop column username;
+alter table profiles drop column if exists username;
 
 commit;
