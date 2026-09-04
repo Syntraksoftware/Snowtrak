@@ -25,39 +25,54 @@ def _ensure_database_configured() -> None:
         ) from None
 
 
-def _profile_from_user_info(user_id: str) -> dict[str, Any] | None:
-    """Build a profile for a user who has no row in `profiles`.
+def _profile_with_identity(
+    user_id: str,
+    profile: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    """Merge a `profiles` row with the identity fields `user_info` owns.
 
-    Most users have none. `profiles.id` carries a foreign key to Supabase
-    auth's `users` table, but registration writes to `user_info`, so every
-    insert in `create_profile` fails with 23503 and the row is never made.
+    The overlay is unconditional, not a not-found fallback. Migration 022
+    dropped `profiles.full_name` and moved `username` to `user_info`;
+    `country_code` moved there in 021. A `profiles` row therefore carries
+    none of the three, so a response built from that row alone would show no
+    name at all -- which is exactly what applying 022 would do to the 41
+    users it gives a row to.
 
-    `user_info` is always present -- it is what `posts.user_id` and
-    `activities.user_id` reference -- so it is enough to render a profile
-    from. Nothing is written: this is a read-time fallback, not a repair.
+    `profile` may be None. `user_info` is always present for a live user --
+    it is what `posts.user_id` and `activities.user_id` reference -- so it is
+    enough to render a profile from on its own. Nothing is written here.
+
+    Args:
+        user_id: The user being rendered.
+        profile: Their `profiles` row, or None if they have none yet.
+
+    Returns:
+        A full profile payload, or None when neither table has the user.
     """
     user = supabase_client.get_user_info_by_id(user_id)
-    if user is None:
+    if user is None and profile is None:
         return None
 
+    user = user or {}
+    row = profile or {}
     first = (user.get("first_name") or "").strip()
     last = (user.get("last_name") or "").strip()
 
     return {
         "id": user_id,
+        # Presentation: profiles owns these.
+        "bio": row.get("bio"),
+        "avatar_url": row.get("avatar_url"),
+        "push_token": row.get("push_token"),
+        "ski_level": row.get("ski_level"),
+        "home": row.get("home"),
+        # Identity: user_info owns these, since migrations 021 and 022.
         "full_name": " ".join(p for p in (first, last) if p) or None,
         "username": user.get("username"),
-        "bio": None,
-        "avatar_url": None,
-        "push_token": None,
-        "ski_level": None,
-        "home": None,
-        # The one field on this fallback that is real: it lives on user_info,
-        # written by PUT /me/country. See migration 021.
         "country_code": user.get("country_code"),
         # user_info.created_at is nullable even though it defaults to now().
-        "created_at": user.get("created_at") or datetime.now(UTC),
-        "updated_at": user.get("updated_at"),
+        "created_at": row.get("created_at") or user.get("created_at") or datetime.now(UTC),
+        "updated_at": row.get("updated_at") or user.get("updated_at"),
     }
 
 
@@ -70,11 +85,12 @@ def get_current_user_profile_endpoint(
     try:
         profile_data = get_profile(current_user.id)
         if profile_data is None:
-            profile_data = supabase_client.get_profile_by_id(current_user.id)
-            if profile_data is None:
-                profile_data = supabase_client.create_profile(user_id=current_user.id)
-            if profile_data is None:
-                profile_data = _profile_from_user_info(current_user.id)
+            row = supabase_client.get_profile_by_id(current_user.id)
+            if row is None:
+                row = supabase_client.create_profile(user_id=current_user.id)
+            # Overlaid before caching: a row cached without its identity
+            # fields would serve a nameless profile for the whole TTL.
+            profile_data = _profile_with_identity(current_user.id, row)
             if profile_data is None:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -162,9 +178,13 @@ def update_current_user_profile_endpoint(
                 detail="Failed to update profile",
             ) from None
 
+        # The write returns a bare `profiles` row, which no longer holds a
+        # name -- overlay it or the save reads back blank.
+        profile_data = _profile_with_identity(current_user.id, updated_profile) or updated_profile
+
         invalidate_profile(current_user.id)
         logger.info(f"User {current_user.id} profile updated")
-        return ProfileResponse(**updated_profile)
+        return ProfileResponse(**profile_data)
     except HTTPException:
         raise
     except Exception as exception:
@@ -261,9 +281,10 @@ def get_user_profile_by_id(
     try:
         profile_data = get_profile(user_id)
         if profile_data is None:
-            profile_data = supabase_client.get_profile_by_id(user_id)
-            if profile_data is None:
-                profile_data = _profile_from_user_info(user_id)
+            # Overlaid before caching, for the same reason as /me/profile.
+            profile_data = _profile_with_identity(
+                user_id, supabase_client.get_profile_by_id(user_id)
+            )
             if profile_data is None:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,

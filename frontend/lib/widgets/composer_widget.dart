@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:snowtrak/core/theme.dart';
 import 'package:provider/provider.dart';
 import 'package:snowtrak/providers/auth_provider.dart';
+import 'package:snowtrak/screens/community/mappers/community_author_mapper.dart';
 
 class ComposerWidget extends StatefulWidget {
   final Function(String text) onPost;
@@ -99,24 +100,23 @@ class _ComposerWidgetState extends State<ComposerWidget> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // The `@handle` line under this one is gone: the only
+                    // handle available here was the email local part, which
+                    // is a handle nobody chose.
+                    // TODO(#43): show the real one once `User` carries a
+                    // username -- that needs the auth payload to send it.
                     Text(
-                      user?.firstName != null && user?.lastName != null
-                          ? '${user!.firstName} ${user.lastName}'
-                          : (user?.email ?? 'User').split('@')[0],
+                      CommunityAuthorMapper.authorDisplayName(
+                        firstName: user?.firstName,
+                        lastName: user?.lastName,
+                        fallback: user?.email ?? '',
+                      ),
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: context.colors.textPrimary,
                       ),
                     ),
-                    if (user != null && user.email.isNotEmpty)
-                      Text(
-                        '@${user.email.split('@')[0]}',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: context.colors.textSecondary,
-                        ),
-                      ),
                   ],
                 ),
               ),

@@ -69,10 +69,13 @@ class UserResponse(BaseModel):
 
 
 class ProfileBase(BaseModel):
-    """Shared profile properties."""
+    """Shared profile properties.
 
-    full_name: str | None = None
-    username: str | None = None
+    No `full_name` or `username`: migration 022 dropped the first and moved
+    the second to `user_info`. Both are read back on a profile response, but
+    neither is a profile property to declare here.
+    """
+
     bio: str | None = None
     avatar_url: str | None = None
     push_token: str | None = None

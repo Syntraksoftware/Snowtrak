@@ -22,7 +22,6 @@ class ProfileRepository {
   }
 
   Future<Profile> updateProfile({
-    String? fullName,
     String? bio,
     String? avatarUrl,
     String? pushToken,
@@ -30,7 +29,6 @@ class ProfileRepository {
     String? home,
   }) {
     return _api.updateProfile(
-      fullName: fullName,
       bio: bio,
       avatarUrl: avatarUrl,
       pushToken: pushToken,

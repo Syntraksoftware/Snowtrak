@@ -96,9 +96,8 @@ def stub_supabase(monkeypatch, app):
     monkeypatch.setattr(supabase_client, "set_username", stub.set_username)
 
     def _current_user() -> User:
-        # is_private and username live on the raw user_info row, not on the
-        # User model.
-        excluded = {"is_private", "username"}
+        # These live on the raw user_info row, not on the User model.
+        excluded = {"is_private", "username", "country_code"}
         row = {k: v for k, v in stub.user_info["user-1"].items() if k not in excluded}
         return User(**row)  # type: ignore[arg-type]
 

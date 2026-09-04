@@ -27,6 +27,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _isSaving = false;
   String? _error;
   String _loadedUsername = '';
+  String _loadedFullName = '';
 
   @override
   void initState() {
@@ -70,7 +71,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           final profile = value;
           if (!mounted) return;
 
-          _fullNameController.text = profile.fullName ?? '';
+          _loadedFullName = profile.fullName ?? '';
+          _fullNameController.text = _loadedFullName;
           _loadedUsername = profile.username ?? '';
           _usernameController.text = _loadedUsername;
           _bioController.text = profile.bio ?? '';
@@ -111,7 +113,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
 
       final saveResult = await _profileService.updateProfile(
-        fullName: _fullNameController.text.trim(),
         bio: _bioController.text.trim(),
         skiLevel: _skiLevelController.text.trim(),
         home: _homeController.text.trim(),
@@ -129,6 +130,34 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           return;
         case AppSuccess():
           break;
+      }
+
+      // The name lives on user_info, not on profiles, so it goes to
+      // PUT /users/me. Sending it as `full_name` on the profile update was
+      // accepted and dropped: the field looked saved and never was.
+      final newFullName = _fullNameController.text.trim();
+      if (newFullName != _loadedFullName) {
+        final parts = newFullName.split(' ');
+        final nameResult = await _profileService.updateUserProfile(
+          firstName: parts.first,
+          // Everything after the first space, so "Anne Marie de Vries" keeps
+          // its tail. Empty for a one-word name, which clears the last name.
+          lastName: parts.skip(1).join(' '),
+        );
+
+        if (!mounted) {
+          return;
+        }
+
+        switch (nameResult) {
+          case AppFailure(:final error):
+            setState(() {
+              _error = error.userMessage;
+            });
+            return;
+          case AppSuccess():
+            _loadedFullName = newFullName;
+        }
       }
 
       final newUsername = _usernameController.text.trim();

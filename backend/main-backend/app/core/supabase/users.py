@@ -106,10 +106,14 @@ class UserOperations(SupabaseBase):
             return None
         try:
             normalized_email = email.strip().lower()
+            # eq, not ilike: addresses are stored lower-cased, so an exact match is
+            # already case-insensitive, and ilike would read `%` and `_` -- both legal
+            # in a local part -- as wildcards on an attacker-supplied login address.
             resp = (
                 client.table("user_info")
                 .select("*")
-                .ilike("email", normalized_email)
+                .eq("email", normalized_email)
+                .order("id")
                 .limit(1)
                 .execute()
             )

@@ -16,7 +16,7 @@ class ProfileOperations(SupabaseBase):
     Profile table operations.
 
     Handles CRUD operations for the profiles table (Create, Read, Update, Delete):
-    - id (uuid, primary key, foreign key to auth.users)
+    - id (uuid, primary key, foreign key to user_info.id -- see migration 022)
     - bio (text, nullable)
     - avatar_url (text, nullable)
     - push_token (text, nullable): push notification token for backend to send notifications to the user
@@ -25,8 +25,15 @@ class ProfileOperations(SupabaseBase):
     - created_at (timestamptz, default now())
     - updated_at (timestamptz, default now(), updated via trigger)
 
-    The id serves as both primary key and foreign key reference to auth.users.
+    The id serves as both primary key and foreign key reference to user_info.
+    It pointed at Supabase auth's `users` until migration 022, which is why
+    every insert failed with 23503 and the table held no rows.
+
     The one-to-one relationship ensures each authenticated user has exactly one profile.
+
+    `full_name` and `username` are not columns here: 022 dropped the first
+    and moved the second to `user_info`, where every service already reads
+    names. A profile response overlays both from there.
     """
 
     def get_profile_by_id(self, user_id: str) -> dict[str, Any] | None:
@@ -39,7 +46,7 @@ class ProfileOperations(SupabaseBase):
         Expected Return:
         - Optional[Dict[str, Any]]: the profile data for the user, or None if not found
 
-        - e.g. [{'id': '123', 'full_name': 'John Doe', 'username': 'johndoe', 'bio': 'I am a software engineer', 'avatar_url': 'https://example.com/avatar.jpg', 'push_token': '1234567890', 'ski_level': 'beginner', 'home': 'New York', 'created_at': '2021-01-01 12:00:00', 'updated_at': '2021-01-01 12:00:00'}]
+        - e.g. [{'id': '123', 'bio': 'I am a software engineer', 'avatar_url': 'https://example.com/avatar.jpg', 'push_token': '1234567890', 'ski_level': 'beginner', 'home': 'New York', 'created_at': '2021-01-01 12:00:00', 'updated_at': '2021-01-01 12:00:00'}]
         """
 
         if not self.is_configured():
@@ -168,7 +175,7 @@ class ProfileOperations(SupabaseBase):
 
         Expected Return:
         - Optional[Dict[str, Any]]: the profile data for the user, or None if not found
-        - e.g. [{'id': '123', 'full_name': 'John Doe', 'username': 'johndoe', 'bio': 'I am a software engineer', 'avatar_url': 'https://example.com/avatar.jpg', 'push_token': '1234567890', 'ski_level': 'beginner', 'home': 'New York', 'created_at': '2021-01-01 12:00:00', 'updated_at': '2021-01-01 12:00:00'}]
+        - e.g. [{'id': '123', 'bio': 'I am a software engineer', 'avatar_url': 'https://example.com/avatar.jpg', 'push_token': '1234567890', 'ski_level': 'beginner', 'home': 'New York', 'created_at': '2021-01-01 12:00:00', 'updated_at': '2021-01-01 12:00:00'}]
         """
         if not self.is_configured():
             logger.warning("Supabase not configured; skipping update_profile.")

@@ -128,7 +128,7 @@ class CommunityFollowRequestOperations:
                 .select(
                     "requester_id, created_at, "
                     "user_info!follow_requests_requester_id_fkey"
-                    "(email, first_name, last_name)"
+                    "(email, first_name, last_name, username)"
                 )
                 .eq("target_id", target_id)
                 .order("created_at", desc=True)
@@ -148,6 +148,7 @@ class CommunityFollowRequestOperations:
                         "email": info.get("email"),
                         "first_name": info.get("first_name"),
                         "last_name": info.get("last_name"),
+                        "username": info.get("username"),
                         "created_at": row.get("created_at"),
                     }
                 )

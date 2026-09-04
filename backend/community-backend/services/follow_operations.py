@@ -217,7 +217,7 @@ class CommunityFollowOperations:
         try:
             response = (
                 self._client.table(FOLLOWS)
-                .select(f"{id_field}, created_at, {join}(email, first_name, last_name)")
+                .select(f"{id_field}, created_at, {join}(email, first_name, last_name, username)")
                 .eq(match_field, user_id)
                 .order("created_at", desc=True)
                 .range(offset, offset + limit - 1)
@@ -236,6 +236,7 @@ class CommunityFollowOperations:
                         "email": info.get("email"),
                         "first_name": info.get("first_name"),
                         "last_name": info.get("last_name"),
+                        "username": info.get("username"),
                         "created_at": row.get("created_at"),
                     }
                 )

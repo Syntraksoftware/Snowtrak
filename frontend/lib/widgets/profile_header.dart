@@ -8,6 +8,7 @@ import 'package:snowtrak/core/errors/app_result.dart';
 import 'package:snowtrak/core/theme.dart';
 import 'package:snowtrak/models/profile.dart';
 import 'package:snowtrak/providers/auth_provider.dart';
+import 'package:snowtrak/screens/community/mappers/community_author_mapper.dart';
 import 'package:snowtrak/screens/profile/follow_requests_screen.dart';
 import 'package:snowtrak/widgets/follow_button.dart';
 import 'package:snowtrak/models/follow_stats.dart';
@@ -163,11 +164,16 @@ class _ProfileHeaderState extends State<ProfileHeader> {
     }
 
     final fallbackName = isOwnProfile && authUser != null
-        ? authUser.fullName
+        ? CommunityAuthorMapper.authorDisplayName(
+            firstName: authUser.firstName,
+            lastName: authUser.lastName,
+            fallback: authUser.email,
+          )
         : widget.fallbackName ?? 'User';
-    final fallbackUsername = isOwnProfile && authUser != null
-        ? authUser.email.split('@').first
-        : widget.fallbackUsername ?? '';
+    // No handle invented from the email local part: an `@` marks a chosen
+    // handle and never a person. Blank until the profile itself arrives with
+    // the real one, which is the only place it exists.
+    final fallbackUsername = widget.fallbackUsername ?? '';
 
     return _withError(
       _buildHeader(

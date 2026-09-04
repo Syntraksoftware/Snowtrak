@@ -32,7 +32,6 @@ class ProfileService {
   }
 
   Future<AppResult<Profile>> updateProfile({
-    String? fullName,
     String? bio,
     String? avatarUrl,
     String? pushToken,
@@ -40,7 +39,6 @@ class ProfileService {
     String? home,
   }) {
     return _run(() => _profileRepository.updateProfile(
-          fullName: fullName,
           bio: bio,
           avatarUrl: avatarUrl,
           pushToken: pushToken,

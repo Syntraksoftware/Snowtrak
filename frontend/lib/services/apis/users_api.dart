@@ -27,8 +27,12 @@ class UsersApi {
     return Profile.fromJson(response.data);
   }
 
+  /// Updates the presentation fields `profiles` owns.
+  ///
+  /// No `full_name`: migration 022 dropped that column, so the field was
+  /// accepted, dropped by Pydantic and answered 200 -- a save that did
+  /// nothing. The name is written through [updateUserProfile].
   Future<Profile> updateProfile({
-    String? fullName,
     String? bio,
     String? avatarUrl,
     String? pushToken,
@@ -36,7 +40,6 @@ class UsersApi {
     String? home,
   }) async {
     final response = await _dio.put('/users/me/profile', data: {
-      if (fullName != null) 'full_name': fullName,
       if (bio != null) 'bio': bio,
       if (avatarUrl != null) 'avatar_url': avatarUrl,
       if (pushToken != null) 'push_token': pushToken,

@@ -137,12 +137,17 @@ class FollowResultResponse(BaseModel):
 
 
 class FollowUserResponse(BaseModel):
-    """One row in a followers or following list."""
+    """One row in a followers, following or follow-request list.
+
+    Raw name fields rather than a finished name, matching the community feed:
+    the client resolves the display ladder in `CommunityAuthorMapper`.
+    """
 
     user_id: str
     email: str | None = None
     first_name: str | None = None
     last_name: str | None = None
+    username: str | None = None
     created_at: str | None = None
 
 
