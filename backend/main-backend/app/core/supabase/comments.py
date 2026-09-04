@@ -75,7 +75,9 @@ class CommentOperations(SupabaseBase):
         try:
             resp = (
                 client.table("comments")
-                .select("*, user_info!comments_user_id_fkey(email, first_name, last_name)")
+                .select(
+                    "*, user_info!comments_user_id_fkey(email, first_name, last_name, username)"
+                )
                 .eq("id", comment_id)
                 .limit(1)
                 .execute()
@@ -89,6 +91,7 @@ class CommentOperations(SupabaseBase):
                     comment["author_email"] = author.get("email")
                     comment["author_first_name"] = author.get("first_name")
                     comment["author_last_name"] = author.get("last_name")
+                    comment["author_username"] = author.get("username")
                 return comment
             return None
         except Exception as exc:
@@ -108,7 +111,9 @@ class CommentOperations(SupabaseBase):
         try:
             resp = (
                 client.table("comments")
-                .select("*, user_info!comments_user_id_fkey(email, first_name, last_name)")
+                .select(
+                    "*, user_info!comments_user_id_fkey(email, first_name, last_name, username)"
+                )
                 .eq("post_id", post_id)
                 .order("created_at", desc=False)
                 .execute()
@@ -122,6 +127,7 @@ class CommentOperations(SupabaseBase):
                         comment["author_email"] = author.get("email")
                         comment["author_first_name"] = author.get("first_name")
                         comment["author_last_name"] = author.get("last_name")
+                        comment["author_username"] = author.get("username")
                 return data
             return []
         except Exception as exc:

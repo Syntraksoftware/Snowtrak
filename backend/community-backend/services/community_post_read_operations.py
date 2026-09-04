@@ -190,7 +190,7 @@ class CommunityPostReadOperations:
                     self._client.table("posts")
                     .select(
                         "post_id, user_id, title, content, created_at, "
-                        "user_info!posts_user_id_fkey(email, first_name, last_name)"
+                        "user_info!posts_user_id_fkey(email, first_name, last_name, username)"
                     )
                     .in_("post_id", unique_ids)
                     .or_(expression)
@@ -276,7 +276,7 @@ class CommunityPostReadOperations:
                     self._client.table("comments")
                     .select(
                         "id, user_id, post_id, content, created_at, "
-                        "user_info!comments_user_id_fkey(email, first_name, last_name)"
+                        "user_info!comments_user_id_fkey(email, first_name, last_name, username)"
                     )
                     .in_("id", unique_ids)
                     .execute()
@@ -318,7 +318,7 @@ class CommunityPostReadOperations:
             expression, _ = self._visible_posts(current_user_id)
             response = (
                 self._client.table("posts")
-                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name)")
+                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name, username)")
                 .eq("post_id", post_id)
                 .or_(expression)
                 .limit(1)
@@ -345,7 +345,7 @@ class CommunityPostReadOperations:
         try:
             response = (
                 self._client.table("posts")
-                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name)")
+                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name, username)")
                 .eq("subthread_id", subthread_id)
                 .or_(self._visible_posts(current_user_id)[0])
                 .order("created_at", desc=True)
@@ -375,7 +375,7 @@ class CommunityPostReadOperations:
         try:
             response = (
                 self._client.table("posts")
-                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name)")
+                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name, username)")
                 .eq("user_id", user_id)
                 .or_(self._visible_posts(current_user_id)[0])
                 .order("created_at", desc=True)
@@ -385,11 +385,7 @@ class CommunityPostReadOperations:
             response_data = getattr(response, "data", None)
             if isinstance(response_data, list):
                 for post in response_data:
-                    if "user_info" in post and post["user_info"]:
-                        author = post.pop("user_info")
-                        post["author_email"] = author.get("email")
-                        post["author_first_name"] = author.get("first_name")
-                        post["author_last_name"] = author.get("last_name")
+                    flatten_user_info(post)
                 return self._hydrate(response_data, current_user_id=current_user_id)
             return []
         except Exception as exception:
@@ -422,7 +418,7 @@ class CommunityPostReadOperations:
         try:
             response = (
                 self._client.table("posts")
-                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name)")
+                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name, username)")
                 .or_(self._visible_posts(current_user_id)[0])
                 .order("created_at", desc=True)
                 .range(offset, offset + limit - 1)
@@ -431,11 +427,7 @@ class CommunityPostReadOperations:
             response_data = getattr(response, "data", None)
             if isinstance(response_data, list):
                 for post in response_data:
-                    if "user_info" in post and post["user_info"]:
-                        author = post.pop("user_info")
-                        post["author_email"] = author.get("email")
-                        post["author_first_name"] = author.get("first_name")
-                        post["author_last_name"] = author.get("last_name")
+                    flatten_user_info(post)
                 return self._hydrate(response_data, current_user_id=current_user_id)
             return []
         except Exception as exception:

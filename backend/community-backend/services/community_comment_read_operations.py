@@ -17,7 +17,9 @@ class CommunityCommentReadOperations:
         try:
             response = (
                 self._client.table("comments")
-                .select("*, user_info!comments_user_id_fkey(email, first_name, last_name)")
+                .select(
+                    "*, user_info!comments_user_id_fkey(email, first_name, last_name, username)"
+                )
                 .eq("id", comment_id)
                 .limit(1)
                 .execute()
@@ -110,7 +112,9 @@ class CommunityCommentReadOperations:
         try:
             response = (
                 self._client.table("comments")
-                .select("*, user_info!comments_user_id_fkey(email, first_name, last_name)")
+                .select(
+                    "*, user_info!comments_user_id_fkey(email, first_name, last_name, username)"
+                )
                 .eq("post_id", post_id)
                 .order("created_at", desc=False)
                 .execute()
@@ -159,7 +163,9 @@ class CommunityCommentReadOperations:
         try:
             response = (
                 self._client.table("comments")
-                .select("*, user_info!comments_user_id_fkey(email, first_name, last_name)")
+                .select(
+                    "*, user_info!comments_user_id_fkey(email, first_name, last_name, username)"
+                )
                 .in_("post_id", readable_ids)
                 .execute()
             )

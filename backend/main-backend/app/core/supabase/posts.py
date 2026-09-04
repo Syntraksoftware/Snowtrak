@@ -74,7 +74,7 @@ class PostOperations(SupabaseBase):
         try:
             resp = (
                 client.table("posts")
-                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name)")
+                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name, username)")
                 .eq("post_id", post_id)
                 .limit(1)
                 .execute()
@@ -88,6 +88,7 @@ class PostOperations(SupabaseBase):
                     post["author_email"] = author.get("email")
                     post["author_first_name"] = author.get("first_name")
                     post["author_last_name"] = author.get("last_name")
+                    post["author_username"] = author.get("username")
                 return post
             return None
         except Exception as exc:
@@ -112,7 +113,7 @@ class PostOperations(SupabaseBase):
         try:
             resp = (
                 client.table("posts")
-                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name)")
+                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name, username)")
                 .eq("subthread_id", subthread_id)
                 .order("created_at", desc=True)
                 .range(offset, offset + limit - 1)
@@ -127,6 +128,7 @@ class PostOperations(SupabaseBase):
                         post["author_email"] = author.get("email")
                         post["author_first_name"] = author.get("first_name")
                         post["author_last_name"] = author.get("last_name")
+                        post["author_username"] = author.get("username")
                 return data
             return []
         except Exception as exc:
@@ -173,7 +175,7 @@ class PostOperations(SupabaseBase):
         try:
             resp = (
                 client.table("posts")
-                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name)")
+                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name, username)")
                 .eq("user_id", user_id)
                 .order("created_at", desc=True)
                 .range(offset, offset + limit - 1)
@@ -188,6 +190,7 @@ class PostOperations(SupabaseBase):
                         post["author_email"] = author.get("email")
                         post["author_first_name"] = author.get("first_name")
                         post["author_last_name"] = author.get("last_name")
+                        post["author_username"] = author.get("username")
                 return data
             return []
         except Exception as exc:
