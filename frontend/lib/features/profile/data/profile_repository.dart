@@ -23,7 +23,6 @@ class ProfileRepository {
 
   Future<Profile> updateProfile({
     String? fullName,
-    String? username,
     String? bio,
     String? avatarUrl,
     String? pushToken,
@@ -32,13 +31,16 @@ class ProfileRepository {
   }) {
     return _api.updateProfile(
       fullName: fullName,
-      username: username,
       bio: bio,
       avatarUrl: avatarUrl,
       pushToken: pushToken,
       skiLevel: skiLevel,
       home: home,
     );
+  }
+
+  Future<String?> setUsername(String? username) {
+    return _api.setUsername(username);
   }
 
   Future<Profile> getProfileById(String userId) {

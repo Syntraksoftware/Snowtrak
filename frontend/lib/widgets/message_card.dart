@@ -376,7 +376,7 @@ class _ThreadsMetaRow extends StatelessWidget {
             children: [
               Flexible(
                 child: Text(
-                  post.author.username,
+                  post.author.displayName,
                   style: (compact
                           ? SnowtrakTypography.labelMedium
                           : SnowtrakTypography.labelLarge)

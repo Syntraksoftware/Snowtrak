@@ -26,6 +26,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _isLoading = true;
   bool _isSaving = false;
   String? _error;
+  String _loadedUsername = '';
 
   @override
   void initState() {
@@ -70,7 +71,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           if (!mounted) return;
 
           _fullNameController.text = profile.fullName ?? '';
-          _usernameController.text = profile.username ?? '';
+          _loadedUsername = profile.username ?? '';
+          _usernameController.text = _loadedUsername;
           _bioController.text = profile.bio ?? '';
           _skiLevelController.text = profile.skiLevel ?? '';
           _homeController.text = profile.home ?? '';
@@ -110,15 +112,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       final saveResult = await _profileService.updateProfile(
         fullName: _fullNameController.text.trim(),
-        username: _usernameController.text.trim(),
         bio: _bioController.text.trim(),
         skiLevel: _skiLevelController.text.trim(),
         home: _homeController.text.trim(),
       );
 
+      if (!mounted) {
+        return;
+      }
+
       switch (saveResult) {
         case AppFailure(:final error):
-          if (!mounted) return;
           setState(() {
             _error = error.userMessage;
           });
@@ -127,8 +131,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           break;
       }
 
-      if (!mounted) {
-        return;
+      final newUsername = _usernameController.text.trim();
+      if (newUsername != _loadedUsername) {
+        final usernameResult = await _profileService.setUsername(
+          newUsername.isEmpty ? null : newUsername,
+        );
+
+        if (!mounted) {
+          return;
+        }
+
+        switch (usernameResult) {
+          case AppFailure(:final error):
+            setState(() {
+              _error = error.userMessage;
+            });
+            return;
+          case AppSuccess(:final value):
+            _loadedUsername = value ?? '';
+        }
       }
 
       ScaffoldMessenger.of(context).showSnackBar(

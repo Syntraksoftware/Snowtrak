@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:snowtrak/core/errors/app_error.dart';
 import 'package:snowtrak/core/errors/app_result.dart';
 import 'package:snowtrak/features/profile/data/profile_repository.dart';
@@ -32,7 +33,6 @@ class ProfileService {
 
   Future<AppResult<Profile>> updateProfile({
     String? fullName,
-    String? username,
     String? bio,
     String? avatarUrl,
     String? pushToken,
@@ -41,13 +41,37 @@ class ProfileService {
   }) {
     return _run(() => _profileRepository.updateProfile(
           fullName: fullName,
-          username: username,
           bio: bio,
           avatarUrl: avatarUrl,
           pushToken: pushToken,
           skiLevel: skiLevel,
           home: home,
         ));
+  }
+
+  /// Sets or clears the caller's chosen handle.
+  ///
+  /// Catches here, not in [_run], because a taken handle needs its own
+  /// user-facing message rather than the generic 4xx copy `AppError.from`
+  /// gives every other failure -- the same shape `AuthService.register`
+  /// uses for its own 409.
+  Future<AppResult<String?>> setUsername(String? username) async {
+    try {
+      return AppSuccess(await _profileRepository.setUsername(username));
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 409) {
+        return AppFailure(
+          AppError(
+            userMessage: 'That username is taken',
+            cause: e,
+            retryable: false,
+          ),
+        );
+      }
+      return AppFailure(AppError.from(e));
+    } catch (e, st) {
+      return AppFailure(AppError.from(e, st));
+    }
   }
 
   Future<AppResult<Profile>> getProfileById(String userId) {
