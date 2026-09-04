@@ -1,17 +1,25 @@
 import 'package:snowtrak/models/post.dart';
 import 'package:snowtrak/models/user.dart';
+import 'package:snowtrak/screens/community/mappers/community_author_mapper.dart';
 
 class CommunityDraftBuilders {
   CommunityDraftBuilders._();
 
+  // TODO(#43): a chosen handle cannot reach an optimistic draft -- `User`
+  // has no username field, so a draft shows the name rung and the
+  // refreshed post shows @handle. Fix needs `username` on the auth
+  // payload.
   static PostAuthor buildAuthor(User user) {
-    final displayName = user.firstName != null && user.lastName != null
-        ? '${user.firstName} ${user.lastName}'
-        : user.email.split('@')[0];
+    final displayName = CommunityAuthorMapper.authorDisplayName(
+      username: null,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      fallback: user.email,
+    );
     return PostAuthor(
       id: user.id,
       displayName: displayName,
-      username: user.email.split('@')[0],
+      username: '',
       avatarUrl: null,
     );
   }
