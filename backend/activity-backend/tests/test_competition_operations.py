@@ -320,6 +320,24 @@ class TestLeaderboard:
 
         assert entry["display_name"] == "skier"
 
+    def test_a_chosen_username_is_what_the_board_shows(self):
+        client = _FakeClient()
+        client.rpc_results["leaderboard_top"] = [{"rank": 1, "user_id": ALEX, "value": 900.0}]
+        client.rows["user_info"] = [
+            {
+                "id": ALEX,
+                "username": "snowking",
+                "first_name": "Alpha",
+                "last_name": "Tester",
+                "email": "alpha@example.com",
+            }
+        ]
+
+        entry = LeaderboardOperations(client).top(Metric.VERTICAL, GLOBAL_SCOPE, NOW)[0]
+
+        assert entry["display_name"] == "@snowking"
+        assert entry["username"] == "snowking"
+
     def test_the_board_window_is_the_monday_of_that_week(self):
         client = _FakeClient()
         LeaderboardOperations(client).top(Metric.SPEED, GLOBAL_SCOPE, NOW)

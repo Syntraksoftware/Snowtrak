@@ -9,6 +9,7 @@ import logging
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from shared.display_name import UNKNOWN_PLAYER
 
 from domain.competition.duel import Duel, DuelStatus
 from middleware.auth import get_current_user
@@ -24,7 +25,6 @@ from services.duel_operations import (
     NotEligible,
     get_duel_operations,
 )
-from services.leaderboard_operations import UNKNOWN_PLAYER
 from services.offload import offload
 
 logger = logging.getLogger(__name__)
