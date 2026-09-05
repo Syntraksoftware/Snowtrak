@@ -5,7 +5,7 @@ import 'package:snowtrak/screens/community/mappers/community_author_mapper.dart'
 class CommunityDraftBuilders {
   CommunityDraftBuilders._();
 
-  // TODO(#43): a chosen handle cannot reach an optimistic draft -- `User`
+  // TODO(#53): a chosen handle cannot reach an optimistic draft -- `User`
   // has no username field, so a draft shows the name rung and the
   // refreshed post shows @handle. Fix needs `username` on the auth
   // payload.

@@ -103,7 +103,7 @@ class _ComposerWidgetState extends State<ComposerWidget> {
                     // The `@handle` line under this one is gone: the only
                     // handle available here was the email local part, which
                     // is a handle nobody chose.
-                    // TODO(#43): show the real one once `User` carries a
+                    // TODO(#53): show the real one once `User` carries a
                     // username -- that needs the auth payload to send it.
                     Text(
                       CommunityAuthorMapper.authorDisplayName(
