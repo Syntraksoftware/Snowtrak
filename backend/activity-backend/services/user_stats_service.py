@@ -32,6 +32,14 @@ def get_stats_service() -> UserStatsService:
 class UserStatsService:
 
     _STATS_COLUMNS = "start_time,duration_seconds,distance_meters,elevation_gain_meters"
+    # ponytail: a full recompute genuinely needs every activity, but
+    # GET /me/stats now runs this on a cache miss (a request path), so an
+    # unconditional SELECT * is no longer acceptable per CLAUDE.md Rule 3.
+    # 5,000 rows ordered newest-first caps memory and query time; an account
+    # past that ceiling gets an all-time total missing its oldest activities
+    # rather than an unbounded query landing on every profile-open. Revisit
+    # with real pagination if this cap is ever hit in practice.
+    _MAX_ACTIVITIES_FOR_RECOMPUTE = 5000
 
     def __init__(self, client) -> None:
         self._client = client
@@ -69,6 +77,8 @@ class UserStatsService:
             .select(self._STATS_COLUMNS)
             .eq("user_id", user_id)
             .not_.in_("processing_status", ["pending", "uploading", "processing"])
+            .order("start_time", desc=True)
+            .limit(self._MAX_ACTIVITIES_FOR_RECOMPUTE)
             .execute()
         )
         return getattr(resp, "data", None) or []

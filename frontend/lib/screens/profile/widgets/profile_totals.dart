@@ -1,26 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:snowtrak/core/theme.dart';
-import 'package:snowtrak/models/activity.dart';
+import 'package:snowtrak/models/user_stats.dart';
 import 'package:snowtrak/screens/home/home_stats.dart';
 import 'package:snowtrak/ui/st/st.dart';
 
 /// The lifetime numbers, in the same 4-up strip the design uses on Home.
 ///
-/// [activities] is null when the totals are not knowable — someone else's
-/// profile, whose activities the app cannot read. That renders as `—` rather
-/// than as zeroes, because "0 sessions" claims they have never skied and an
-/// em dash only claims we do not know.
+/// Reads `stats.allTime*` rather than folding over whatever page of
+/// activities happens to be loaded -- `ActivityProvider` only ever holds one
+/// page, so a fold silently stopped growing past the page size (#70).
+///
+/// [stats] is null when the totals are not knowable -- someone else's
+/// profile, whose stats the app cannot read, or the signed-in user's own
+/// stats before the first fetch lands. That renders as `—` rather than as
+/// zeroes, because "0 sessions" claims they have never skied and an em dash
+/// only claims we do not know. A user with genuinely zero activities gets a
+/// non-null [stats] with zero counts, and reads as zeros.
 class ProfileTotals extends StatelessWidget {
-  const ProfileTotals({super.key, required this.activities});
+  const ProfileTotals({super.key, required this.stats});
 
-  final List<Activity>? activities;
+  final UserStats? stats;
 
   @override
   Widget build(BuildContext context) {
-    final activities = this.activities;
+    final stats = this.stats;
 
-    String value(String Function(List<Activity>) format) =>
-        activities == null ? '—' : format(activities);
+    String value(String Function(UserStats) format) =>
+        stats == null ? '—' : format(stats);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -34,37 +40,29 @@ class ProfileTotals extends StatelessWidget {
           children: [
             Expanded(
               child: StStatTile(
-                value: value((a) => '${a.length}'),
+                value: value((s) => '${s.allTimeSessionCount}'),
                 label: 'Sessions',
               ),
             ),
             Expanded(
               child: StStatTile(
-                value: value(
-                  (a) => Imperial.vertical(
-                    a.fold(0.0, (sum, x) => sum + x.elevationGain),
-                  ),
-                ),
+                // Already metres -- no conversion, unlike the two below.
+                value: value((s) => Imperial.vertical(s.allTimeElevGain)),
                 label: 'Vert ft',
               ),
             ),
             Expanded(
               child: StStatTile(
-                value: value(
-                  (a) => Imperial.distance(
-                    a.fold(0.0, (sum, x) => sum + x.distance),
-                  ),
-                ),
+                // allTimeDistanceKm is kilometres; Imperial.distance takes
+                // metres.
+                value: value((s) => Imperial.distance(s.allTimeDistanceKm * 1000)),
                 label: 'Distance',
               ),
             ),
             Expanded(
               child: StStatTile(
-                value: value(
-                  (a) => Imperial.duration(
-                    a.fold(0, (sum, x) => sum + x.duration),
-                  ),
-                ),
+                // allTimeTimeMin is minutes; Imperial.duration takes seconds.
+                value: value((s) => Imperial.duration(s.allTimeTimeMin * 60)),
                 label: 'Time',
               ),
             ),

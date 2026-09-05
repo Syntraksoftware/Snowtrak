@@ -15,13 +15,21 @@ router = APIRouter()
 
 @router.get("/me/stats", response_model=UserStatsResponse)
 async def get_my_stats(user_id: str = Depends(get_current_user)):
-    """Return cached stats for the authenticated user.
+    """Return the authenticated user's stats, recomputing on a cache miss.
 
-    No cached row means the user has no activities yet — returns zeros without
-    touching the DB. The cache is first written when they create an activity.
+    A missing row in `user_stats` means nobody has written one yet — it does
+    not mean the user has no activities. `recompute_and_upsert` only fires on
+    activity create/update/delete and pipeline completion, so an account
+    seeded straight into `activities` (bypassing those paths) has real
+    activities and no cached row. A cache miss recomputes from the activities
+    table and persists the result, self-healing that account on this request.
+    Zeros are returned only when the recompute itself finds nothing.
     """
     stats_service = get_stats_service()
     stats = stats_service.get_stats(user_id)
+
+    if stats is None:
+        stats = stats_service.recompute_and_upsert(user_id)
 
     if stats is None:
         today = date.today()

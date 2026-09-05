@@ -207,8 +207,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     // provider's data really is this person's.
     final isOwnProfile =
         widget.userId == null || widget.userId == authUser?.id;
-    final activities =
-        isOwnProfile ? context.watch<ActivityProvider>().activities : null;
+    // ActivityProvider only ever holds the signed-in user's own stats -- no
+    // per-user stats endpoint exists yet (see ProfileHomeContent) -- so a
+    // viewed stranger's totals stay null and render as "unknown" rather than
+    // borrowing the viewer's own numbers.
+    final totalsStats =
+        isOwnProfile ? context.watch<ActivityProvider>().stats : null;
 
     return Scaffold(
       backgroundColor: context.colors.background,
@@ -246,7 +250,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       ),
                     ),
                     SliverToBoxAdapter(
-                      child: ProfileTotals(activities: activities),
+                      child: ProfileTotals(stats: totalsStats),
                     ),
                     if (_isLocked(isOwnProfile))
                       const SliverToBoxAdapter(child: _PrivateAccountNotice())
