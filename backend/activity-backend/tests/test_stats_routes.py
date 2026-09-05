@@ -13,11 +13,18 @@ import routes.stats_routes as stats_routes
 
 
 class FakeStatsService:
-    """Stands in for `UserStatsService`: no DB, calls recorded."""
+    """Stands in for `UserStatsService`: no DB, calls recorded.
 
-    def __init__(self, cached=None, recomputed=None):
+    `persist_recompute=True` mimics the real service's fix for a
+    zero-activity user: a recompute now persists a row (see
+    `UserStatsService.recompute_and_upsert`), so the *next* `get_stats` call
+    is a hit rather than another miss.
+    """
+
+    def __init__(self, cached=None, recomputed=None, persist_recompute=False):
         self._cached = cached
         self._recomputed = recomputed
+        self._persist_recompute = persist_recompute
         self.recompute_calls: list[str] = []
 
     def get_stats(self, user_id):
@@ -25,6 +32,8 @@ class FakeStatsService:
 
     def recompute_and_upsert(self, user_id):
         self.recompute_calls.append(user_id)
+        if self._persist_recompute:
+            self._cached = self._recomputed
         return self._recomputed
 
 
@@ -69,8 +78,14 @@ def test_cache_miss_with_real_activities_recomputes_instead_of_zeros(client, app
     assert fake_service.recompute_calls == ["user-1"]
 
 
-def test_cache_miss_with_no_activities_still_returns_zeros(client, app, monkeypatch):
-    """A genuinely activity-less account still reads as zero, not an error."""
+def test_cache_miss_with_a_failed_recompute_still_returns_zeros(client, app, monkeypatch):
+    """If the recompute itself can't run (e.g. DB unreachable), fall back to zero.
+
+    A genuinely zero-activity user does *not* hit this path any more -- the
+    real service persists a zeros row instead of returning None (see
+    `test_user_stats_service.py`), so `None` here now stands for "the
+    recompute failed", not "the user has no activities".
+    """
     fake_service = FakeStatsService(cached=None, recomputed=None)
     monkeypatch.setattr(stats_routes, "get_stats_service", lambda: fake_service)
 
@@ -80,6 +95,32 @@ def test_cache_miss_with_no_activities_still_returns_zeros(client, app, monkeypa
     body = response.json()
     assert body["all_time_session_count"] == 0
     assert body["all_time_distance_km"] == 0
+    assert fake_service.recompute_calls == ["user-1"]
+
+
+def test_second_request_for_a_zero_activity_user_is_not_a_second_recompute(
+    client, app, monkeypatch
+):
+    """A zero-activity user must not re-run the full recompute on every request.
+
+    Before the fix, a recompute that found no activities deleted the row
+    instead of persisting one, so there was never a row for the next
+    request to hit -- every single `/me/stats` call for that account
+    re-ran `_fetch_all_activities` (and re-issued a `DELETE`) forever. This
+    pins the route-level contract: once a recompute has run, a second
+    consecutive request must not trigger another one.
+    """
+    zeros = _stats_row(all_time_session_count=0, all_time_distance_km=0)
+    fake_service = FakeStatsService(cached=None, recomputed=zeros, persist_recompute=True)
+    monkeypatch.setattr(stats_routes, "get_stats_service", lambda: fake_service)
+
+    first = client.get("/api/v1/activities/me/stats")
+    second = client.get("/api/v1/activities/me/stats")
+
+    assert first.status_code == status.HTTP_200_OK
+    assert second.status_code == status.HTTP_200_OK
+    assert first.json()["all_time_session_count"] == 0
+    assert second.json()["all_time_session_count"] == 0
     assert fake_service.recompute_calls == ["user-1"]
 
 

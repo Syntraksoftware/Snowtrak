@@ -23,7 +23,9 @@ async def get_my_stats(user_id: str = Depends(get_current_user)):
     seeded straight into `activities` (bypassing those paths) has real
     activities and no cached row. A cache miss recomputes from the activities
     table and persists the result, self-healing that account on this request.
-    Zeros are returned only when the recompute itself finds nothing.
+    A user with genuinely no activities gets a persisted zeros row from
+    the recompute, so the in-route zero fallback below only fires when
+    the recompute itself fails (e.g. the DB is unreachable).
     """
     stats_service = get_stats_service()
     stats = stats_service.get_stats(user_id)

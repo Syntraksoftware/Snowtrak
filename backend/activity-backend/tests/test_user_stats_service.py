@@ -5,6 +5,12 @@ CLAUDE.md Rule 3. It must carry an explicit ordering and a cap.
 The fake below applies `.eq`, `.not_.in_`, `.order` and `.limit` the way
 PostgREST does, so a missing `.order()` or `.limit()` shows up as the wrong
 rows coming back -- not an un-asserted call on a mock.
+
+`_FakeClient` also backs a `user_stats` table with a plain dict, so
+`recompute_and_upsert` and `get_stats` can be exercised end to end: a
+zero-activity user must come back from a recompute with a persisted row,
+not a deleted one, or every request for that account re-runs the full
+recompute forever.
 """
 
 from typing import Any
@@ -73,11 +79,52 @@ class _Query:
         return _Response(rows)
 
 
-class _FakeClient:
-    def __init__(self, rows):
-        self._rows = rows
+class _UserStatsTable:
+    """The slice of PostgREST that `get_stats`/`_upsert`/`_upsert` use.
 
-    def table(self, _name):
+    Backed by a plain dict keyed on `user_id`, shared with whoever
+    constructed this table, so a row written by one call is visible to the
+    next -- the thing a real Postgres table gives you for free and a
+    stateless fake would hide.
+    """
+
+    def __init__(self, store: dict[str, Any]):
+        self._store = store
+        self._eq_user_id: str | None = None
+        self._pending_upsert: dict[str, Any] | None = None
+
+    def select(self, *_args, **_kwargs):
+        self._pending_upsert = None
+        return self
+
+    def eq(self, column, value):
+        assert column == "user_id"
+        self._eq_user_id = value
+        return self
+
+    def upsert(self, stats, on_conflict="user_id"):
+        assert on_conflict == "user_id"
+        self._pending_upsert = stats
+        return self
+
+    def execute(self):
+        if self._pending_upsert is not None:
+            self._store[self._pending_upsert["user_id"]] = self._pending_upsert
+            return _Response([self._pending_upsert])
+        row = self._store.get(self._eq_user_id)
+        return _Response([row] if row else [])
+
+
+class _FakeClient:
+    def __init__(self, rows, user_stats_store: dict[str, Any] | None = None):
+        self._rows = rows
+        self._user_stats_store: dict[str, Any] = (
+            user_stats_store if user_stats_store is not None else {}
+        )
+
+    def table(self, name):
+        if name == "user_stats":
+            return _UserStatsTable(self._user_stats_store)
         return _Query(self._rows)
 
 
@@ -118,3 +165,55 @@ def test_caps_at_the_configured_ceiling(monkeypatch):
     # Capped *after* ordering newest-first, so a user over the ceiling loses
     # their oldest activities, not an arbitrary slice.
     assert [row["id"] for row in result] == ["newest", "mid"]
+
+
+def test_zero_activities_persists_a_zeros_row_instead_of_deleting():
+    """A recompute that finds nothing must leave a row behind to hit.
+
+    Before the fix, this branch deleted the row and returned `None`, so
+    there was never anything for the next `get_stats` call to find -- a
+    zero-activity account (overwhelmingly new signups, since the route now
+    recomputes on every cache miss) re-ran the full recompute on every
+    single request, forever.
+    """
+    store: dict[str, Any] = {}
+    service = UserStatsService(_FakeClient([], user_stats_store=store))
+
+    result = service.recompute_and_upsert("user-1")
+
+    assert result is not None
+    assert result["all_time_session_count"] == 0
+    assert result["all_time_distance_km"] == 0
+
+
+def test_second_get_stats_after_a_zero_activity_recompute_is_a_cache_hit():
+    """Pins the point of the fix: the row a zero-activity recompute writes
+    is the same row the very next `get_stats` call reads back -- so a
+    caller (the route) never needs to recompute twice in a row.
+    """
+    store: dict[str, Any] = {}
+    service = UserStatsService(_FakeClient([], user_stats_store=store))
+
+    recomputed = service.recompute_and_upsert("user-1")
+    cached = service.get_stats("user-1")
+
+    assert cached == recomputed
+
+
+def test_logs_a_warning_when_the_fetch_lands_exactly_on_the_cap(monkeypatch, caplog):
+    """Truncation at the cap must be greppable, not silent.
+
+    A wrong lifetime total for a heavy user should not ship unnoticed --
+    the `ponytail:` comment on `_MAX_ACTIVITIES_FOR_RECOMPUTE` names the
+    ceiling, and this is what makes hitting it detectable in production.
+    """
+    import logging
+
+    monkeypatch.setattr(UserStatsService, "_MAX_ACTIVITIES_FOR_RECOMPUTE", 3)
+    store: dict[str, Any] = {}
+    service = UserStatsService(_FakeClient(ROWS, user_stats_store=store))
+
+    with caplog.at_level(logging.WARNING, logger="services.user_stats_service"):
+        service.recompute_and_upsert("user-1")
+
+    assert any("user-1" in record.message and "3" in record.message for record in caplog.records)
