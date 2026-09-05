@@ -1,5 +1,11 @@
 default_platform(:ios)
 
+# Resolved once, at load, while the working directory is still frontend/ios --
+# fastlane passes a *relative* __FILE__ ("fastlane/Fastfile"), so expanding it
+# later, from inside Dir.chdir(flutter_root), resolved against the new working
+# directory and produced /Users/<you>/Desktop/ios/ExportOptions.plist.
+FLUTTER_ROOT = File.expand_path("../..", File.dirname(__FILE__))
+
 platform :ios do
   # fastlane runs lanes with the working directory set to this fastlane folder,
   # not the Flutter project root. That is not a detail: `flutter pub get` walks
@@ -8,7 +14,7 @@ platform :ios do
   # "No issues found!", a quality gate that passed without looking at the app.
   # Anchor on this file's own location instead of the process directory.
   def flutter_root
-    File.expand_path("../..", File.dirname(__FILE__))
+    FLUTTER_ROOT
   end
 
   def app_identifier
@@ -48,7 +54,8 @@ platform :ios do
     end
   end
 
-  def flutter_build_ipa(target:, app_env:, map_features_enabled:)
+  def flutter_build_ipa(target:, app_env:, map_features_enabled:, build_number:)
+    started_at = Time.now
     Dir.chdir(flutter_root) do
       sh([
         "flutter",
@@ -56,6 +63,10 @@ platform :ios do
         "ipa",
         "-t",
         target,
+        "--build-number",
+        build_number.to_s,
+        "--export-options-plist",
+        File.join(flutter_root, "ios/ExportOptions.plist"),
         *flutter_define_args(app_env: app_env, map_features_enabled: map_features_enabled),
       ].join(" "))
     end
@@ -65,7 +76,17 @@ platform :ios do
     ipa_files = Dir[File.join(flutter_root, "build/ios/ipa/*.ipa")]
     UI.user_error!("No IPA produced by flutter build") if ipa_files.empty?
 
-    ipa_files.max_by { |path| File.mtime(path) }
+    ipa = ipa_files.max_by { |path| File.mtime(path) }
+
+    # `flutter build ipa` exits 0 even when exportArchive fails, leaving the
+    # previous run's IPA in place -- once, that shipped a three-month-old
+    # binary to Apple, which only caught it because the build number collided.
+    # Take the mtime as proof this run actually produced the file.
+    if File.mtime(ipa) < started_at
+      UI.user_error!("Stale IPA at #{ipa} (#{File.mtime(ipa)}); the export failed, see the log above")
+    end
+
+    ipa
   end
 
   def asc_api_key
@@ -78,6 +99,19 @@ platform :ios do
       issuer_id: ENV["ASC_ISSUER_ID"],
       key_filepath: asc_key_path
     )
+  end
+
+  # App Store Connect rejects a build number it has already seen, and pubspec
+  # pins `version: 1.0.0+1` -- a constant. Builds 1-7 are already uploaded, so
+  # every further upload of that constant is a duplicate. Ask Apple what the
+  # last one was rather than tracking it in the repo, where two branches would
+  # race for the same number anyway.
+  def next_build_number(api_key)
+    latest_testflight_build_number(
+      api_key: api_key,
+      app_identifier: app_identifier,
+      initial_build_number: 0
+    ).to_i + 1
   end
 
   # `flutter analyze` crashes on Flutter 3.38.6 (the version pinned in CI): its
@@ -123,6 +157,7 @@ platform :ios do
       target: "lib/main_staging.dart",
       app_env: "staging",
       map_features_enabled: true,
+      build_number: next_build_number(api_key),
     )
     upload_to_testflight(
       api_key: api_key,
@@ -144,6 +179,7 @@ platform :ios do
       target: "lib/main_prod.dart",
       app_env: "prod",
       map_features_enabled: true,
+      build_number: next_build_number(api_key),
     )
     deliver(
       api_key: api_key,
