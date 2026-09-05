@@ -108,6 +108,46 @@ cd frontend/ios && bundle exec fastlane staging
 loads it automatically. The CI-only signing bootstrap is skipped when `CI` is
 unset, so the lane uses your own keychain and installed profile.
 
+## What changed on 2026-09-06, and what you have to do differently
+
+Two habits are now wrong.
+
+**A merge to `develop` no longer ships to testers.** It publishes the Docker
+images and nothing else. If you want a build on TestFlight, ask for one:
+`gh workflow run ios-testflight.yml --ref <branch>`. This is not a temporary
+state while something is repaired — it is the point. Every merged PR used to
+spend a TestFlight processing slot and push a new binary at testers, most of
+which no tester needed to see, and a routine merge could not be done without
+also publishing.
+
+**`flutter run --release` on a physical device no longer works.** The Release
+configuration signs against an App Store profile, and an App Store profile
+cannot install on a device. Use `--profile`, which is what you wanted for a
+timing or performance check anyway. Debug and Profile still sign
+automatically, so `flutter run` and `flutter run --profile` are unchanged.
+
+Nothing else about day-to-day work changes. `bundle exec fastlane staging`
+still works from a laptop and now runs the same code path CI does.
+
+### Why the workflow had never once succeeded
+
+Twenty-one runs between 2026-06-01 and 2026-09-05, zero successes, always the
+same error:
+
+```
+Error (Xcode): No Accounts: Add a new account in Accounts settings.
+```
+
+The Runner target archived with `CODE_SIGN_STYLE = Automatic`, which resolves
+the profile by asking Xcode, which asks the signed-in Apple account. A runner
+has no account.
+
+It worked on a laptop only because Xcode there is signed in. That difference
+does not appear anywhere in the repository, which is why "it works locally"
+was worthless as evidence for three months, and why the Release configuration
+is now manual: a runner and a laptop run identical commands, or the next
+difference will hide just as well.
+
 ## When it breaks
 
 `flutter build ipa` **exits 0 even when `exportArchive` fails**, leaving the

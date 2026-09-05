@@ -50,7 +50,7 @@ are still current. Each is spelled out in
 | Production backend deploy | `v*` tags only. Pauses for a reviewer. |
 | Staging backend deploy | A `v*` tag, or a 40-character commit SHA. No reviewer. |
 | App Store upload | Final versions only (`v1.2.3`, not `v1.2.3-rc1`). Pauses for a reviewer. |
-| TestFlight | Automatic on every push to `develop`. |
+| TestFlight | Manual. Actions -> iOS Staging -> Run workflow, any branch. |
 | What runs in production | The exact image digest CI built and Trivy scanned. The VPS never builds. |
 
 ## Routine release, start to finish
@@ -62,8 +62,15 @@ review afterwards is 1–3 days and is not counted here.
 
 Open a PR into `develop`, wait for the 8 required checks, merge.
 
-Merging to `develop` automatically starts a TestFlight build (~15–25 min). No
-action needed unless you want to test on device.
+Merging to `develop` builds and publishes the Docker images. It no longer
+uploads to TestFlight — putting a build in front of testers is a decision, so
+it is a separate click. When you want one:
+
+```bash
+gh workflow run ios-testflight.yml --ref develop
+```
+
+~15–25 min. See [docs/ios_release_pipeline.md](docs/ios_release_pipeline.md).
 
 ### 2. Promote `develop` to `main`
 
