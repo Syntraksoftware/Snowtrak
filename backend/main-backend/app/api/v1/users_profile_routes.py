@@ -1,17 +1,16 @@
 """Profile routes for authenticated and public user profile access."""
 
 import logging
-from datetime import UTC, datetime
-from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.api.dependencies import get_current_user
 from app.core.profile_cache import get_profile, invalidate_profile, set_profile
+from app.core.profile_identity import profile_with_identity
 from app.core.storage import User
 from app.core.supabase import supabase_client
-from app.schemas import ProfileResponse, ProfileUpdate
+from app.schemas import ProfileResponse, ProfileUpdate, UsernameSetting
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -25,53 +24,6 @@ def _ensure_database_configured() -> None:
         ) from None
 
 
-def _profile_from_user_info(user_id: str) -> dict[str, Any] | None:
-    """Build a profile for a user who has no row in `profiles`.
-
-    Most users have none. `profiles.id` carries a foreign key to Supabase
-    auth's `users` table, but registration writes to `user_info`, so every
-    insert in `create_profile` fails with 23503 and the row is never made.
-
-    `user_info` is always present -- it is what `posts.user_id` and
-    `activities.user_id` reference -- so it is enough to render a profile
-    from. Nothing is written: this is a read-time fallback, not a repair.
-    """
-    user = supabase_client.get_user_info_by_id(user_id)
-    if user is None:
-        return None
-
-    first = (user.get("first_name") or "").strip()
-    last = (user.get("last_name") or "").strip()
-    email = (user.get("email") or "").strip()
-
-    return {
-        "id": user_id,
-        "full_name": " ".join(p for p in (first, last) if p) or None,
-        "username": email.split("@")[0] if "@" in email else None,
-        "bio": None,
-        "avatar_url": None,
-        "push_token": None,
-        "ski_level": None,
-        "home": None,
-        # The one field on this fallback that is real: it lives on user_info,
-        # written by PUT /me/country. See migration 021.
-        "country_code": user.get("country_code"),
-        # user_info.created_at is nullable even though it defaults to now().
-        "created_at": user.get("created_at") or datetime.now(UTC),
-        "updated_at": user.get("updated_at"),
-    }
-
-
-def _build_default_full_name(current_user: User) -> str | None:
-    if current_user.first_name and current_user.last_name:
-        return f"{current_user.first_name} {current_user.last_name}"
-    if current_user.first_name:
-        return current_user.first_name
-    if current_user.last_name:
-        return current_user.last_name
-    return None
-
-
 @router.get("/me/profile", response_model=ProfileResponse)
 def get_current_user_profile_endpoint(
     current_user: User = Depends(get_current_user),
@@ -81,14 +33,12 @@ def get_current_user_profile_endpoint(
     try:
         profile_data = get_profile(current_user.id)
         if profile_data is None:
-            profile_data = supabase_client.get_profile_by_id(current_user.id)
-            if profile_data is None:
-                profile_data = supabase_client.create_profile(
-                    user_id=current_user.id,
-                    full_name=_build_default_full_name(current_user),
-                )
-            if profile_data is None:
-                profile_data = _profile_from_user_info(current_user.id)
+            row = supabase_client.get_profile_by_id(current_user.id)
+            if row is None:
+                row = supabase_client.create_profile(user_id=current_user.id)
+            # Overlaid before caching: a row cached without its identity
+            # fields would serve a nameless profile for the whole TTL.
+            profile_data = profile_with_identity(current_user.id, row)
             if profile_data is None:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -150,28 +100,20 @@ def update_current_user_profile_endpoint(
     profile_update: ProfileUpdate,
     current_user: User = Depends(get_current_user),
 ) -> ProfileResponse:
-    """Update current user's profile details."""
+    """Update current user's profile details.
+
+    `full_name` and `username` are not settable here -- both moved to
+    `user_info` in migration 022. Use PUT /me/username for the handle; the
+    full name is derived from `user_info.first_name`/`last_name`.
+    """
     _ensure_database_configured()
     try:
-        if profile_update.username is not None:
-            is_username_taken = supabase_client.username_exists(
-                profile_update.username,
-                exclude_user_id=current_user.id,
-            )
-            if is_username_taken:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="Username already taken",
-                ) from None
-
         existing_profile = supabase_client.get_profile_by_id(current_user.id)
         if existing_profile is None:
             supabase_client.create_profile(user_id=current_user.id)
 
         updated_profile = supabase_client.update_profile(
             user_id=current_user.id,
-            full_name=profile_update.full_name,
-            username=profile_update.username,
             bio=profile_update.bio,
             avatar_url=profile_update.avatar_url,
             push_token=profile_update.push_token,
@@ -184,9 +126,13 @@ def update_current_user_profile_endpoint(
                 detail="Failed to update profile",
             ) from None
 
+        # The write returns a bare `profiles` row, which no longer holds a
+        # name -- overlay it or the save reads back blank.
+        profile_data = profile_with_identity(current_user.id, updated_profile) or updated_profile
+
         invalidate_profile(current_user.id)
         logger.info(f"User {current_user.id} profile updated")
-        return ProfileResponse(**updated_profile)
+        return ProfileResponse(**profile_data)
     except HTTPException:
         raise
     except Exception as exception:
@@ -235,6 +181,44 @@ def set_my_country(
     return setting
 
 
+@router.put("/me/username", response_model=UsernameSetting)
+def set_my_username(
+    setting: UsernameSetting,
+    current_user: User = Depends(get_current_user),
+) -> UsernameSetting:
+    """Choose the handle this account is known by.
+
+    Its own route rather than a field on PUT /me/profile, for the same
+    reason /me/privacy and /me/country are: those write `user_info`, and
+    that is where a name has to live for a feed to read it.
+
+    Stored lower-cased so `@snowking` has one spelling. Null clears it and
+    the display falls back to the user's name.
+
+    Raises:
+        HTTPException: 409 if another account already has the handle, 404 if
+            the user is gone.
+    """
+    _ensure_database_configured()
+
+    handle = setting.username.lower() if setting.username else None
+
+    if handle and supabase_client.username_exists(handle, exclude_user_id=current_user.id):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="That username is taken",
+        ) from None
+
+    if not supabase_client.set_username(current_user.id, handle):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        ) from None
+
+    invalidate_profile(current_user.id)
+    return UsernameSetting(username=handle)
+
+
 @router.get("/{user_id}/profile", response_model=ProfileResponse)
 def get_user_profile_by_id(
     user_id: str,
@@ -245,9 +229,10 @@ def get_user_profile_by_id(
     try:
         profile_data = get_profile(user_id)
         if profile_data is None:
-            profile_data = supabase_client.get_profile_by_id(user_id)
-            if profile_data is None:
-                profile_data = _profile_from_user_info(user_id)
+            # Overlaid before caching, for the same reason as /me/profile.
+            profile_data = profile_with_identity(
+                user_id, supabase_client.get_profile_by_id(user_id)
+            )
             if profile_data is None:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,

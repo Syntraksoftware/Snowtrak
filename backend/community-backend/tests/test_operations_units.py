@@ -868,3 +868,25 @@ def test_a_private_account_reads_its_own_profile(harness):
 def test_a_public_account_stays_open(harness):
     assert harness.can_read_account("user-1", "user-2") is True
     assert harness.can_read_account("user-1", None) is True
+
+
+def test_the_author_username_reaches_the_client():
+    # The feed resolves the display ladder in Dart, so the handle has to be
+    # on the row. Without it a user who set @snowking still shows as their
+    # real name in every post.
+    from services.mappers.community_row_mappers import flatten_user_info
+
+    row = {
+        "post_id": "p1",
+        "user_info": {
+            "email": "matthew@example.com",
+            "first_name": "Matthew",
+            "last_name": "Ng",
+            "username": "snowking",
+        },
+    }
+
+    flatten_user_info(row)
+
+    assert row["author_username"] == "snowking"
+    assert row["author_first_name"] == "Matthew"

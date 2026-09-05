@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:snowtrak/core/errors/app_result.dart';
 import 'package:snowtrak/models/duel.dart';
 import 'package:snowtrak/models/notification.dart';
+import 'package:snowtrak/screens/community/mappers/community_author_mapper.dart';
 import 'package:snowtrak/services/duel_service.dart';
 import 'package:snowtrak/services/follow_service.dart';
 
@@ -160,7 +161,12 @@ class NotificationProvider extends ChangeNotifier {
   /// and survives the list being rebuilt.
   static AppNotification _followRequestNotification(Map<String, dynamic> row) {
     final userId = (row['user_id'] as String?)?.trim() ?? '';
-    final name = _displayName(row);
+    final name = CommunityAuthorMapper.authorDisplayName(
+      username: row['username'] as String?,
+      firstName: row['first_name'] as String?,
+      lastName: row['last_name'] as String?,
+      fallback: row['email'] as String? ?? '',
+    );
     final createdAt = DateTime.tryParse(row['created_at'] as String? ?? '');
     return AppNotification(
       id: 'follow_request:$userId',
@@ -190,15 +196,5 @@ class NotificationProvider extends ChangeNotifier {
       senderName: name,
       metadata: {'duel_id': duel.id},
     );
-  }
-
-  static String _displayName(Map<String, dynamic> row) {
-    final first = (row['first_name'] as String?)?.trim() ?? '';
-    final last = (row['last_name'] as String?)?.trim() ?? '';
-    final full = [first, last].where((s) => s.isNotEmpty).join(' ');
-    if (full.isNotEmpty) return full;
-    final email = (row['email'] as String?)?.trim() ?? '';
-    if (email.contains('@')) return email.split('@').first;
-    return 'Someone';
   }
 }

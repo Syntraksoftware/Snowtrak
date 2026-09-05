@@ -39,7 +39,7 @@ class QuotedPostEmbed extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                post.author.username,
+                post.author.displayName,
                 style: SnowtrakTypography.labelMedium.copyWith(
                   fontWeight: FontWeight.w700,
                   color: context.colors.textPrimary,

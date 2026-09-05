@@ -5,6 +5,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.dependencies import get_current_user
+from app.core.profile_cache import invalidate_profile
 from app.core.storage import User
 from app.core.supabase import supabase_client
 from app.schemas import UserResponse, UserUpdate
@@ -63,6 +64,10 @@ def update_current_user_profile(
         if user_update.last_name is not None:
             current_user.last_name = user_update.last_name
         logger.warning("Supabase not configured; user profile updated locally only")
+
+    # The profile response overlays its name from user_info, so a name
+    # written here has to drop the cached profile with it.
+    invalidate_profile(current_user.id)
 
     return UserResponse(
         id=current_user.id,

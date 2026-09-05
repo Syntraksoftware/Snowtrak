@@ -51,6 +51,7 @@ class CommunityCommentTreeMapper {
     final createdAt =
         DateTime.tryParse((comment['created_at'] ?? '').toString()) ?? DateTime.now();
     final authorName = CommunityAuthorMapper.authorDisplayName(
+      username: comment['author_username']?.toString(),
       firstName: comment['author_first_name']?.toString(),
       lastName: comment['author_last_name']?.toString(),
       fallback: comment['author_email']?.toString() ??
@@ -65,10 +66,7 @@ class CommunityCommentTreeMapper {
       author: PostAuthor(
         id: (comment['user_id'] ?? '').toString(),
         displayName: authorName,
-        username: CommunityAuthorMapper.usernameFromEmailOrId(
-          comment['author_email']?.toString(),
-          comment['user_id']?.toString(),
-        ),
+        username: (comment['author_username'] ?? '').toString(),
       ),
       text: (comment['content'] ?? '').toString(),
       subthreadId: threadSubthreadId,

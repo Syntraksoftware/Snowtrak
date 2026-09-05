@@ -4,6 +4,7 @@ import 'package:snowtrak/core/di/service_locator.dart';
 import 'package:snowtrak/core/errors/app_error.dart';
 import 'package:snowtrak/core/errors/app_result.dart';
 import 'package:snowtrak/core/theme.dart';
+import 'package:snowtrak/screens/community/mappers/community_author_mapper.dart';
 import 'package:snowtrak/screens/profile/widgets/profile_layout_primitives.dart';
 import 'package:snowtrak/services/follow_service.dart';
 import 'package:snowtrak/ui/st/st.dart';
@@ -320,23 +321,23 @@ class _RequestRow extends StatelessWidget {
   final VoidCallback onApprove;
   final VoidCallback onDeny;
 
+  /// The one display ladder, same as every other author line.
+  ///
+  /// There is no second `@handle` line under it: the ladder already puts the
+  /// `@` on a chosen handle, and the email local part that used to fill that
+  /// line was a handle nobody picked.
   String get _name {
-    final first = (request['first_name'] as String?)?.trim() ?? '';
-    final last = (request['last_name'] as String?)?.trim() ?? '';
-    final full = [first, last].where((s) => s.isNotEmpty).join(' ');
-    return full.isNotEmpty ? full : 'User';
-  }
-
-  String get _handle {
-    final email = (request['email'] as String?)?.trim() ?? '';
-    if (!email.contains('@')) return '';
-    return '@${email.split('@').first}';
+    return CommunityAuthorMapper.authorDisplayName(
+      username: request['username'] as String?,
+      firstName: request['first_name'] as String?,
+      lastName: request['last_name'] as String?,
+      fallback: request['email'] as String? ?? '',
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final name = _name;
-    final handle = _handle;
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -367,12 +368,6 @@ class _RequestRow extends StatelessWidget {
                     color: context.colors.textPrimary,
                   ),
                 ),
-                if (handle.isNotEmpty)
-                  Text(
-                    handle,
-                    style: SnowtrakTypography.bodySmall
-                        .copyWith(color: context.colors.textSecondary),
-                  ),
               ],
             ),
           ),

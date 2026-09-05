@@ -45,6 +45,7 @@ class _StubSupabase:
                 "is_private": False,
             }
         }
+        self.taken_usernames: set[str] = set()
 
     def is_configured(self) -> bool:
         return True
@@ -57,6 +58,25 @@ class _StubSupabase:
         if row is None:
             return False
         row["is_private"] = is_private
+        return True
+
+    def username_exists(self, username: str, exclude_user_id: str | None = None) -> bool:
+        if username in self.taken_usernames:
+            return True
+        # Also honour a handle already sitting on some other user's row, so
+        # an implementation that dropped exclude_user_id would fail a test
+        # that resubmits the current user's own handle.
+        return any(
+            row.get("username") == username
+            for uid, row in self.user_info.items()
+            if uid != exclude_user_id
+        )
+
+    def set_username(self, id: str, username: str | None) -> bool:
+        row = self.user_info.get(id)
+        if row is None:
+            return False
+        row["username"] = username
         return True
 
 
@@ -72,10 +92,13 @@ def stub_supabase(monkeypatch, app):
     monkeypatch.setattr(supabase_client, "is_configured", stub.is_configured)
     monkeypatch.setattr(supabase_client, "get_user_info_by_id", stub.get_user_info_by_id)
     monkeypatch.setattr(supabase_client, "set_user_privacy", stub.set_user_privacy)
+    monkeypatch.setattr(supabase_client, "username_exists", stub.username_exists)
+    monkeypatch.setattr(supabase_client, "set_username", stub.set_username)
 
     def _current_user() -> User:
-        # is_private lives on the raw user_info row, not on the User model.
-        row = {k: v for k, v in stub.user_info["user-1"].items() if k != "is_private"}
+        # These live on the raw user_info row, not on the User model.
+        excluded = {"is_private", "username", "country_code"}
+        row = {k: v for k, v in stub.user_info["user-1"].items() if k not in excluded}
         return User(**row)  # type: ignore[arg-type]
 
     app.dependency_overrides[get_current_user] = _current_user

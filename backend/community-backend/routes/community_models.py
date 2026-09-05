@@ -34,6 +34,7 @@ class CommunityQuotedPostPreview(BaseModel):
     author_email: str | None = None
     author_first_name: str | None = None
     author_last_name: str | None = None
+    author_username: str | None = None
 
 
 class CommunityQuotedCommentPreview(BaseModel):
@@ -46,6 +47,7 @@ class CommunityQuotedCommentPreview(BaseModel):
     author_email: str | None = None
     author_first_name: str | None = None
     author_last_name: str | None = None
+    author_username: str | None = None
 
 
 class PostUpdate(BaseModel):
@@ -91,6 +93,7 @@ class CommunityPostResponse(BaseModel):
     author_email: str | None = None
     author_first_name: str | None = None
     author_last_name: str | None = None
+    author_username: str | None = None
     like_count: int = 0
     liked_by_current_user: bool = False
     repost_count: int = 0
@@ -134,12 +137,17 @@ class FollowResultResponse(BaseModel):
 
 
 class FollowUserResponse(BaseModel):
-    """One row in a followers or following list."""
+    """One row in a followers, following or follow-request list.
+
+    Raw name fields rather than a finished name, matching the community feed:
+    the client resolves the display ladder in `CommunityAuthorMapper`.
+    """
 
     user_id: str
     email: str | None = None
     first_name: str | None = None
     last_name: str | None = None
+    username: str | None = None
     created_at: str | None = None
 
 
@@ -156,6 +164,7 @@ class CommunityCommentResponse(BaseModel):
     author_email: str | None = None
     author_first_name: str | None = None
     author_last_name: str | None = None
+    author_username: str | None = None
     repost_count: int = 0
     reposted_by_current_user: bool = False
     media_urls: list[str] = Field(default_factory=list)

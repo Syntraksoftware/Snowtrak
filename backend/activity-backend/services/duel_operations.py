@@ -170,7 +170,7 @@ class DuelOperations:
         try:
             response = (
                 self._client.table("user_info")
-                .select("id,first_name,last_name,email")
+                .select("id,username,first_name,last_name,email")
                 .in_("id", ids)
                 .execute()
             )

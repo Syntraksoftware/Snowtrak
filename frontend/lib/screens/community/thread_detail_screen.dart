@@ -59,7 +59,8 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
   }
 
   void _handleReplyTo(Post target) {
-    final mention = '@${target.author.username} ';
+    final handle = target.author.username.trim();
+    final mention = handle.isEmpty ? '' : '@$handle ';
     final current = _replyController.text;
     if (!current.startsWith(mention)) {
       _replyController.text = '$mention$current'.trimRight();
@@ -301,6 +302,14 @@ class _ThreadOriginalPostCard extends StatelessWidget {
     final initial = post.author.displayName.isNotEmpty
         ? post.author.displayName[0].toUpperCase()
         : 'U';
+    final topic = (post.topic ?? '').trim();
+    final handle = post.author.username.trim();
+    // Falls to an empty label rather than a bare "@" when the author has no
+    // topic and no chosen handle -- the common case now that a real, often
+    // empty, username replaces the always-populated invented one.
+    final secondaryLine = topic.isNotEmpty
+        ? topic
+        : (handle.isNotEmpty ? '@$handle' : '');
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Column(
@@ -350,9 +359,7 @@ class _ThreadOriginalPostCard extends StatelessWidget {
                           ),
                           Flexible(
                             child: Text(
-                              (post.topic ?? '').trim().isNotEmpty
-                                  ? post.topic!.trim()
-                                  : '@${post.author.username}',
+                              secondaryLine,
                               style: TextStyle(
                                 fontSize: 14,
                                 color: context.colors.textSecondary,

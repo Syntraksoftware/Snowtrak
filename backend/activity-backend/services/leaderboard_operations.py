@@ -13,17 +13,14 @@ import logging
 from datetime import UTC, date, datetime
 from typing import Any
 
+from shared.display_name import display_name
+
 from domain.competition.metrics import Metric, week_bounds, week_start
 
 logger = logging.getLogger(__name__)
 
 GLOBAL_SCOPE = "global"
 FRIENDS_SCOPE = "friends"
-
-#: Shown for a user with no name and no email handle. One placeholder, used
-#: by the board and by duel cards, so an unknown player reads the same way in
-#: both places.
-UNKNOWN_PLAYER = "Skier"
 
 #: A board page. Deep paging into a leaderboard is not a use anyone has;
 #: someone looking for their own row uses `placing` instead.
@@ -65,7 +62,7 @@ class LeaderboardOperations:
     # `profiles.id` references Supabase auth's users while registration
     # writes `user_info`, so create_profile fails with 23503 every time.
     # main-backend renders profiles from `user_info` for the same reason.
-    _USER_COLUMNS = "id,first_name,last_name,email,country_code"
+    _USER_COLUMNS = "id,username,first_name,last_name,email,country_code"
 
     def __init__(self, client) -> None:
         self._client = client
@@ -297,22 +294,20 @@ def display_fields(user: dict[str, Any]) -> dict[str, Any]:
     what lets a private activity count towards a total without leaking
     anything about itself.
 
-    Name, then email handle, then a placeholder -- the same ladder the follow
-    request list already uses, so one person is named the same way in both.
-
     ponytail: avatar_url is always null. Uploaded avatars are written to
-    `profiles.avatar_url`, and that row never exists, so no avatar URL is
-    persisted anywhere in this database -- issue #43. Fill it in when that is
-    fixed; do not invent a second place to keep it.
+    `profiles.avatar_url`, and until migration 022 that row never existed --
+    issue #43. Fill it in when the community payload carries an avatar; do
+    not invent a second place to keep it.
     """
-    first = (user.get("first_name") or "").strip()
-    last = (user.get("last_name") or "").strip()
-    full = " ".join(part for part in (first, last) if part)
-    email = (user.get("email") or "").strip()
-    handle = email.split("@")[0] if "@" in email else None
+    username = (user.get("username") or "").strip() or None
     return {
-        "display_name": full or handle or UNKNOWN_PLAYER,
-        "username": handle,
+        "display_name": display_name(
+            username=username,
+            first_name=user.get("first_name"),
+            last_name=user.get("last_name"),
+            email=user.get("email"),
+        ),
+        "username": username,
         "avatar_url": None,
         "country_code": user.get("country_code"),
     }

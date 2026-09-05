@@ -1,6 +1,6 @@
 # Supabase schema
 
-What the live database contains, as of 2026-08-27.
+What the live database contains, as of 2026-09-05.
 
 **This is a record, not a migration.** It is not runnable and must never
 be treated as something to apply. Changing the database means changing it
@@ -34,13 +34,13 @@ defines them and no test asserts their shape.
 | `name` | text | yes |  |  |
 | `description` | text | yes |  |  |
 | `distance_meters` | numeric | no | `0` |  |
-| `duration_seconds` | int32 | no | `0` |  |
+| `duration_seconds` | integer | no | `0` |  |
 | `elevation_gain_meters` | numeric | no | `0` |  |
 | `start_time` | timestamp with time zone | no |  |  |
 | `end_time` | timestamp with time zone | no |  |  |
 | `average_pace` | numeric | yes | `0` |  |
 | `max_pace` | numeric | yes | `0` |  |
-| `calories` | int32 | yes |  |  |
+| `calories` | integer | yes |  |  |
 | `created_at` | timestamp with time zone | no | `now()` |  |
 | `updated_at` | timestamp with time zone | no | `now()` |  |
 | `gps_path` | json[] | no |  |  |
@@ -49,6 +49,7 @@ defines them and no test asserts their shape.
 | `storage_key` | text | yes |  |  |
 | `processing_status` | text | no | `ready` |  |
 | `thumbnail_url` | text | yes |  |  |
+| `on_leaderboard` | boolean | no | `false` |  |
 
 ### `activity_comments`
 
@@ -82,7 +83,7 @@ defines them and no test asserts their shape.
 | `accuracy` | numeric | yes |  |  |
 | `speed` | numeric | yes |  |  |
 | `timestamp` | timestamp with time zone | no |  |  |
-| `sequence_order` | int32 | no |  |  |
+| `sequence_order` | integer | no |  |  |
 | `created_at` | timestamp with time zone | no | `now()` |  |
 
 ### `activity_shares`
@@ -128,13 +129,31 @@ defines them and no test asserts their shape.
 | `created_at` | timestamp with time zone | no | `now()` |  |
 | `updated_at` | timestamp with time zone | no | `now()` |  |
 
+### `duels`
+
+| Column | Type | Null | Default | Key |
+|---|---|---|---|---|
+| `id` | uuid | no | `gen_random_uuid()` | PK |
+| `challenger_id` | uuid | no |  | FK → `user_info.id` |
+| `opponent_id` | uuid | no |  | FK → `user_info.id` |
+| `metric` | text | no |  |  |
+| `duration` | text | no |  |  |
+| `status` | text | no | `pending` |  |
+| `starts_at` | timestamp with time zone | yes |  |  |
+| `ends_at` | timestamp with time zone | yes |  |  |
+| `challenger_value` | double precision | yes |  |  |
+| `opponent_value` | double precision | yes |  |  |
+| `winner_id` | uuid | yes |  | FK → `user_info.id` |
+| `created_at` | timestamp with time zone | no | `now()` |  |
+| `settled_at` | timestamp with time zone | yes |  |  |
+
 ### `follow_counts`
 
 | Column | Type | Null | Default | Key |
 |---|---|---|---|---|
 | `user_id` | uuid | no |  | PK |
-| `follower_count` | int32 | no | `0` |  |
-| `following_count` | int32 | no | `0` |  |
+| `follower_count` | integer | no | `0` |  |
+| `following_count` | integer | no | `0` |  |
 
 ### `follow_requests`
 
@@ -151,6 +170,17 @@ defines them and no test asserts their shape.
 | `follower_id` | uuid | no |  | PK |
 | `followee_id` | uuid | no |  | PK |
 | `created_at` | timestamp with time zone | no | `now()` |  |
+
+### `leaderboard_weeks`
+
+| Column | Type | Null | Default | Key |
+|---|---|---|---|---|
+| `week_start` | date | no |  | PK |
+| `metric` | text | no |  | PK |
+| `scope` | text | no |  | PK |
+| `rank` | integer | no |  | PK |
+| `user_id` | uuid | no |  | FK → `user_info.id` |
+| `value` | double precision | no |  |  |
 
 ### `post_likes`
 
@@ -194,8 +224,6 @@ defines them and no test asserts their shape.
 | Column | Type | Null | Default | Key |
 |---|---|---|---|---|
 | `id` | uuid | no |  | PK |
-| `full_name` | text | yes |  |  |
-| `username` | text | yes |  |  |
 | `bio` | text | yes |  |  |
 | `avatar_url` | text | yes |  |  |
 | `push_token` | text | yes |  |  |
@@ -203,6 +231,7 @@ defines them and no test asserts their shape.
 | `home` | text | yes |  |  |
 | `created_at` | timestamp with time zone | yes | `now()` |  |
 | `updated_at` | timestamp with time zone | yes | `now()` |  |
+| `country_code` | character | yes |  |  |
 
 ### `subthreads`
 
@@ -227,6 +256,8 @@ defines them and no test asserts their shape.
 | `last_login_at` | timestamp with time zone | yes |  |  |
 | `hashed_password` | text | no |  |  |
 | `is_private` | boolean | no | `false` |  |
+| `country_code` | character | yes |  |  |
+| `username` | text | yes |  |  |
 
 ### `user_stats`
 
@@ -235,20 +266,20 @@ defines them and no test asserts their shape.
 | `user_id` | uuid | no |  | PK |
 | `week_start` | date | no |  |  |
 | `weekly_distance_km` | double precision | no | `0` |  |
-| `weekly_time_min` | int32 | no | `0` |  |
+| `weekly_time_min` | integer | no | `0` |  |
 | `weekly_elev_gain_m` | double precision | no | `0` |  |
-| `weekly_session_count` | int32 | no | `0` |  |
-| `last_week_session_count` | int32 | no | `0` |  |
+| `weekly_session_count` | integer | no | `0` |  |
+| `last_week_session_count` | integer | no | `0` |  |
 | `yearly_distance_km` | double precision | no | `0` |  |
-| `yearly_time_min` | int32 | no | `0` |  |
+| `yearly_time_min` | integer | no | `0` |  |
 | `yearly_elev_gain_m` | double precision | no | `0` |  |
-| `yearly_session_count` | int32 | no | `0` |  |
+| `yearly_session_count` | integer | no | `0` |  |
 | `all_time_distance_km` | double precision | no | `0` |  |
-| `all_time_time_min` | int32 | no | `0` |  |
+| `all_time_time_min` | integer | no | `0` |  |
 | `all_time_elev_gain_m` | double precision | no | `0` |  |
-| `all_time_session_count` | int32 | no | `0` |  |
-| `current_streak_weeks` | int32 | no | `0` |  |
-| `longest_streak_weeks` | int32 | no | `0` |  |
+| `all_time_session_count` | integer | no | `0` |  |
+| `current_streak_weeks` | integer | no | `0` |  |
+| `longest_streak_weeks` | integer | no | `0` |  |
 | `activity_days` | text[] | no |  |  |
 | `best_efforts` | jsonb | no |  |  |
 | `updated_at` | timestamp with time zone | no | `now()` |  |
@@ -262,7 +293,7 @@ revision, not in the dashboard.
 
 | Column | Type | Null | Default | Key |
 |---|---|---|---|---|
-| `id` | int64 | no |  | PK |
+| `id` | bigint | no |  | PK |
 | `location` | public.geography(Point,4326) | no |  |  |
 | `elevation_meters` | double precision | no |  |  |
 | `source` | text | no | `google_elevation` |  |
@@ -272,12 +303,12 @@ revision, not in the dashboard.
 
 | Column | Type | Null | Default | Key |
 |---|---|---|---|---|
-| `id` | int64 | no |  | PK |
+| `id` | bigint | no |  | PK |
 | `cache_key` | text | no |  |  |
 | `center` | public.geography(Point,4326) | no |  |  |
-| `zoom` | int32 | no |  |  |
-| `width` | int32 | no |  |  |
-| `height` | int32 | no |  |  |
+| `zoom` | integer | no |  |  |
+| `width` | integer | no |  |  |
+| `height` | integer | no |  |  |
 | `provider` | text | no | `google_static_maps` |  |
 | `static_url` | text | no |  |  |
 | `expires_at` | timestamp with time zone | yes |  |  |
