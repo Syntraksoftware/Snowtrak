@@ -5,7 +5,7 @@
 | Branch | Role |
 |---|---|
 | `main` | Production. What ships. Release tags (`v*`) are cut from here. |
-| `develop` | Integration. Feature branches land here first. |
+| `develop` | Integration, and the **default branch**. Feature branches land here first. |
 | `stage` | Code only. Holds the latest merged tree and builds nothing. |
 | `feat/*`, `fix/*`, `docs/*`, `chore/*` | Short-lived work branches. Merge into `develop` via PR. |
 | `wip/*` | Personal or backup branches for experiments. Never pushed to `develop` directly. |
@@ -72,6 +72,24 @@ If the branches drift apart again, the fix is the same: open a `main` →
 `develop` PR. It cannot be a fast-forward, because `develop`'s tip is not an
 ancestor of `main`, so it costs exactly one merge commit. That is the floor —
 rebase-and-merge would rewrite every commit, and force-push is blocked.
+
+## Why `develop` is the default branch
+
+Changed from `main` on 2026-09-06. `main` is still production; the default
+branch is a GitHub setting, not a statement about which branch matters.
+
+GitHub closes an issue from a `Closes #123` trailer **only** when the PR merges
+into the default branch. With `main` as the default, every work branch merged
+into `develop`, so no trailer ever fired and issues were closed by hand or
+forgotten. Pointing the default at `develop` puts the automation where the
+merges actually happen.
+
+Two other things follow from it, both wanted: a fresh clone checks out
+`develop`, and a new PR defaults to `develop` as its base — including the
+branch GitHub creates from an issue.
+
+`main` still needs a PR of its own, and merging into it is still a release
+decision.
 
 ## Protection
 
