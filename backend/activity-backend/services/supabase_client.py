@@ -218,6 +218,24 @@ class ActivitySupabaseClient:
         start_date: str | None = None,
         end_date: str | None = None,
     ) -> dict[str, Any]:
+        """One user's own activities, newest first.
+
+        Unlike `list_activities` this needs no visibility filter: every row
+        it can reach is already the caller's own.
+
+        Args:
+            user_id: Whose activities to return.
+            limit: Max rows to return.
+            offset: Rows to skip, for pagination.
+            search: Case-insensitive substring match on the name.
+            activity_type: Exact match on the activity type.
+            start_date: Inclusive lower bound on `created_at`.
+            end_date: Inclusive upper bound on `created_at`.
+
+        Returns:
+            `{"items": [...], "total": n}` -- `total` counts all matching
+            rows, not just the returned page.
+        """
         query = (
             self._client.table("activities")
             .select("*", count=CountMethod.exact)
@@ -231,7 +249,11 @@ class ActivitySupabaseClient:
             query = query.gte("created_at", start_date)
         if end_date:
             query = query.lte("created_at", end_date)
-        query = query.range(offset, offset + limit - 1)
+        # Explicit ordering, not decoration: `range` paginates an unordered
+        # result set, so without this a row can appear on two pages or on
+        # none. Matches `list_activities`, which the caller may page against
+        # interchangeably.
+        query = query.order("created_at", desc=True).range(offset, offset + limit - 1)
         resp = query.execute()
         data = getattr(resp, "data", []) or []
         total = getattr(resp, "count", 0) or 0

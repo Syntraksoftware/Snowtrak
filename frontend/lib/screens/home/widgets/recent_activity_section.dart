@@ -6,9 +6,11 @@ import 'package:snowtrak/ui/st/st.dart';
 
 /// Compact activity rows under the statistics carousel — 74pt cards, per
 /// `07 · Screens — Home`.
-// ponytail: the design calls this "Friends' Recent Activity"; there is no
-// following-feed endpoint yet, so it shows the activities feed we do have.
-// Rename + swap the source when the social feed lands.
+// ponytail: the design calls this "Friends' Recent Activity". There is no
+// following-feed endpoint, so it shows the viewer's own activities and says
+// so. It used to show the public feed instead, which put strangers under a
+// heading that reads as personal (#58). Rename and swap the source back
+// when the following feed lands (#59).
 class RecentActivitySection extends StatelessWidget {
   const RecentActivitySection({
     super.key,
@@ -27,7 +29,7 @@ class RecentActivitySection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         StSectionHeader(
-          title: 'Recent activity',
+          title: 'Your recent activity',
           actionLabel: 'See all',
           onAction: onSeeAll,
         ),

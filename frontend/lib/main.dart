@@ -76,8 +76,18 @@ class _SnowtrakAppState extends State<SnowtrakApp> {
             return previous;
           },
         ),
-        ChangeNotifierProvider<ActivityProvider>(
+        // Proxied on auth, not a plain provider: ActivityProvider holds the
+        // signed-in user's own activities, so it has to be told whose and
+        // to drop the last account's when that changes. AuthProvider
+        // notifies on sign-in, sign-out and a restored session, which is
+        // every moment the answer moves.
+        ChangeNotifierProxyProvider<AuthProvider, ActivityProvider>(
           create: (_) => sl<ActivityProvider>(),
+          update: (_, auth, previous) {
+            final activities = previous ?? sl<ActivityProvider>();
+            unawaited(activities.setOwner(auth.user?.id));
+            return activities;
+          },
         ),
         Provider<ActivitiesContextRepository>(
           create: (_) => sl<ActivitiesContextRepository>(),
