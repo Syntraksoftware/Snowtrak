@@ -11,6 +11,9 @@ Use this together with [docs/vps_setup.md](vps_setup.md), [docs/branch_policy.md
 - `feature/*` branches should merge into `develop` through PRs.
 - The backend runs on a DigitalOcean VPS with Docker Compose and Caddy.
 - The frontend uses lane-based iOS builds: `dev`, `staging`, and `production`.
+- TestFlight uploads are dispatched by hand, from any branch, and are the one
+  thing a merge does not do for you. See
+  [docs/ios_release_pipeline.md](ios_release_pipeline.md).
 
 ## 2. What a new developer needs
 
@@ -108,7 +111,14 @@ and `production`), not repository-wide:
 Keep the App Store Connect and build secrets in GitHub **repository** secrets --
 they are the same for every lane, so there is nothing to scope per environment:
 `ASC_KEY_BASE64`, `ASC_KEY_ID`, `ASC_ISSUER_ID`, `APP_IDENTIFIER`,
-`PROV_PROFILE_NAME`, `FASTLANE_APPLE_ID`, `MAPTILER_API_KEY`.
+`IOS_DIST_CERT_BASE64`, `IOS_DIST_CERT_PASSWORD`, `FASTLANE_APPLE_ID`,
+`MAPTILER_API_KEY`.
+
+`IOS_DIST_CERT_BASE64` carries a private key, which is why it is a secret at
+all: the App Store Connect API hands back the provisioning profile but never a
+key. Rotating it is in
+[docs/ios_release_pipeline.md](ios_release_pipeline.md). `PROV_PROFILE_NAME` is
+no longer read by anything and can be deleted.
 
 Keep backend runtime secrets in the per-service VPS env files, one per
 backend, in each environment's own checkout:

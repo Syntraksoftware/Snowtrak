@@ -1,4 +1,12 @@
+require "tmpdir"
+
 default_platform(:ios)
+
+# Resolved once, at load, while the working directory is still frontend/ios --
+# fastlane passes a *relative* __FILE__ ("fastlane/Fastfile"), so expanding it
+# later, from inside Dir.chdir(flutter_root), resolved against the new working
+# directory and produced /Users/<you>/Desktop/ios/ExportOptions.plist.
+FLUTTER_ROOT = File.expand_path("../..", File.dirname(__FILE__))
 
 platform :ios do
   # fastlane runs lanes with the working directory set to this fastlane folder,
@@ -8,19 +16,57 @@ platform :ios do
   # "No issues found!", a quality gate that passed without looking at the app.
   # Anchor on this file's own location instead of the process directory.
   def flutter_root
-    File.expand_path("../..", File.dirname(__FILE__))
+    FLUTTER_ROOT
   end
 
   def app_identifier
     ENV.fetch("APP_IDENTIFIER", "com.syntrak.snowtrak.app")
   end
 
+  # Read out of ExportOptions.plist rather than duplicated here or held in a
+  # secret. xcodebuild reads that file at export time, so a name that disagreed
+  # with the profile sigh downloaded would only fail at the very last step.
   def provisioning_profile_name
-    ENV.fetch("PROV_PROFILE_NAME", "Snowtrak App Store Profile")
+    @provisioning_profile_name ||= begin
+      plist = File.join(flutter_root, "ios/ExportOptions.plist")
+      name = `/usr/libexec/PlistBuddy -c 'Print :provisioningProfiles:#{app_identifier}' "#{plist}"`.strip
+      UI.user_error!("No profile for #{app_identifier} in #{plist}") if name.empty?
+      name
+    end
   end
 
   def asc_key_path
     ENV.fetch("ASC_KEY_PATH", "/tmp/AuthKey.p8")
+  end
+
+  # A GitHub runner has no login keychain, no distribution certificate and no
+  # provisioning profile, which is the whole reason every CI upload has failed
+  # with "No Accounts: Add a new account in Accounts settings". None of this
+  # runs locally, where all three already exist.
+  def setup_ci_signing(api_key)
+    return unless ENV["CI"]
+
+    setup_ci
+
+    cert_path = ENV.fetch("IOS_DIST_CERT_PATH", "/tmp/dist.p12")
+    UI.user_error!("Distribution certificate not found at #{cert_path}") unless File.exist?(cert_path)
+    import_certificate(
+      certificate_path: cert_path,
+      certificate_password: ENV.fetch("IOS_DIST_CERT_PASSWORD", ""),
+      keychain_name: ENV.fetch("MATCH_KEYCHAIN_NAME", "fastlane_tmp_keychain"),
+      keychain_password: ENV.fetch("MATCH_KEYCHAIN_PASSWORD", "")
+    )
+
+    # Downloaded, not committed: this profile expires 2027-05-17, and a checked-in
+    # copy is a time bomb nobody notices until a release fails. readonly, so a
+    # typo in the name fails here instead of silently creating a second profile.
+    get_provisioning_profile(
+      api_key: api_key,
+      app_identifier: app_identifier,
+      provisioning_name: provisioning_profile_name,
+      readonly: true,
+      output_path: Dir.tmpdir
+    )
   end
 
   def flutter_define_args(app_env:, map_features_enabled:)
@@ -48,7 +94,8 @@ platform :ios do
     end
   end
 
-  def flutter_build_ipa(target:, app_env:, map_features_enabled:)
+  def flutter_build_ipa(target:, app_env:, map_features_enabled:, build_number:)
+    started_at = Time.now
     Dir.chdir(flutter_root) do
       sh([
         "flutter",
@@ -56,6 +103,10 @@ platform :ios do
         "ipa",
         "-t",
         target,
+        "--build-number",
+        build_number.to_s,
+        "--export-options-plist",
+        File.join(flutter_root, "ios/ExportOptions.plist"),
         *flutter_define_args(app_env: app_env, map_features_enabled: map_features_enabled),
       ].join(" "))
     end
@@ -65,7 +116,17 @@ platform :ios do
     ipa_files = Dir[File.join(flutter_root, "build/ios/ipa/*.ipa")]
     UI.user_error!("No IPA produced by flutter build") if ipa_files.empty?
 
-    ipa_files.max_by { |path| File.mtime(path) }
+    ipa = ipa_files.max_by { |path| File.mtime(path) }
+
+    # `flutter build ipa` exits 0 even when exportArchive fails, leaving the
+    # previous run's IPA in place -- once, that shipped a three-month-old
+    # binary to Apple, which only caught it because the build number collided.
+    # Take the mtime as proof this run actually produced the file.
+    if File.mtime(ipa) < started_at
+      UI.user_error!("Stale IPA at #{ipa} (#{File.mtime(ipa)}); the export failed, see the log above")
+    end
+
+    ipa
   end
 
   def asc_api_key
@@ -80,6 +141,19 @@ platform :ios do
     )
   end
 
+  # App Store Connect rejects a build number it has already seen, and pubspec
+  # pins `version: 1.0.0+1` -- a constant. Builds 1-7 are already uploaded, so
+  # every further upload of that constant is a duplicate. Ask Apple what the
+  # last one was rather than tracking it in the repo, where two branches would
+  # race for the same number anyway.
+  def next_build_number(api_key)
+    latest_testflight_build_number(
+      api_key: api_key,
+      app_identifier: app_identifier,
+      initial_build_number: 0
+    ).to_i + 1
+  end
+
   # `flutter analyze` crashes on Flutter 3.38.6 (the version pinned in CI): its
   # flutter_tools looks for analysis_server.dart.snapshot, but the bundled Dart
   # SDK 3.10.7 ships only analysis_server_aot.dart.snapshot, so the launch fails
@@ -91,18 +165,6 @@ platform :ios do
       sh("dart analyze")
       sh("flutter test")
     end
-  end
-
-  def build_release_ipa
-    build_app(
-      scheme: "Runner",
-      export_method: "app-store",
-      export_options: {
-        provisioningProfiles: {
-          app_identifier => provisioning_profile_name
-        }
-      }
-    )
   end
 
   desc "Validate and build a development iOS artifact locally"
@@ -119,10 +181,12 @@ platform :ios do
   lane :staging do
     flutter_quality_gate
     api_key = asc_api_key
+    setup_ci_signing(api_key)
     ipa_path = flutter_build_ipa(
       target: "lib/main_staging.dart",
       app_env: "staging",
       map_features_enabled: true,
+      build_number: next_build_number(api_key),
     )
     upload_to_testflight(
       api_key: api_key,
@@ -140,10 +204,12 @@ platform :ios do
   lane :production do
     flutter_quality_gate
     api_key = asc_api_key
+    setup_ci_signing(api_key)
     ipa_path = flutter_build_ipa(
       target: "lib/main_prod.dart",
       app_env: "prod",
       map_features_enabled: true,
+      build_number: next_build_number(api_key),
     )
     deliver(
       api_key: api_key,

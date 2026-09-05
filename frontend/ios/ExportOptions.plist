@@ -2,14 +2,29 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <!-- Manual, not automatic. Automatic signing asks Xcode for a profile at
+         export time, which needs an Apple account logged into Xcode: that is
+         why CI has never produced an IPA ("No Accounts"), and why the local
+         export started failing too ("Runner.app requires a provisioning
+         profile"). Naming the profile removes the account from the path. -->
     <key>method</key>
-    <string>app-store</string>
+    <string>app-store-connect</string>
     <key>teamID</key>
     <string>AZ44KR5D43</string>
     <key>signingStyle</key>
-    <string>automatic</string>
-    <key>uploadBitcode</key>
-    <false/>
+    <string>manual</string>
+    <key>provisioningProfiles</key>
+    <dict>
+        <key>com.syntrak.snowtrak.app</key>
+        <string>com.syntrak.snowtrak.app App Store Profile</string>
+    </dict>
+    <!-- By SHA-1, not by name: two "iPhone Distribution: SYNTRAK LIMITED"
+         identities are installed and xcodebuild picks by name, so it kept
+         choosing the one this profile does not contain. -->
+    <key>signingCertificate</key>
+    <string>FB096BB99795EFCFC4DBE90954CEA28AEB12CF11</string>
+    <key>stripSwiftSymbols</key>
+    <true/>
     <key>uploadSymbols</key>
     <true/>
 </dict>
