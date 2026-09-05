@@ -76,6 +76,7 @@ async def create_activity(
             duration_seconds=duration_seconds,
             distance_meters=computed_metrics["distance_meters"],
             elevation_gain_meters=computed_metrics["elevation_gain_meters"],
+            max_pace=computed_metrics["max_pace"],
             visibility=visibility_value,
             description=data.description,
             map_activity_id=data.map_activity_id,

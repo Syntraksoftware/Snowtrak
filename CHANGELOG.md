@@ -24,7 +24,9 @@ fails and follower lists render empty, with no error anywhere. A chosen
 username now lives on `user_info`; `profiles.full_name` and
 `profiles.username` are gone, and `full_name` is no longer accepted by
 `PUT /api/v1/users/me/profile` — send `first_name` and `last_name` to
-`PUT /api/v1/users/me` instead._
+`PUT /api/v1/users/me` instead. The speed leaderboard starts filling from
+activities recorded after this release; existing rows carry no top speed and
+are not backfilled._
 
 ### Changed
 
@@ -52,6 +54,9 @@ username now lives on `user_info`; `profiles.full_name` and
 
 ### Fixed
 
+- Record a top speed on every activity, where the column the speed leaderboard ranks on was never written and the board came back empty for every user, in every scope, in every week ([`9c8c545`](https://github.com/Syntraksoftware/Snowtrak/commit/9c8c545))
+- Show your own activities on Home, Profile and Progress, where all three rendered the public discovery feed and presented other people's runs as yours ([#65](https://github.com/Syntraksoftware/Snowtrak/pull/65))
+- Order `GET /activities/me` before paging it, where an unordered slice could return one activity on two pages and another on none ([#65](https://github.com/Syntraksoftware/Snowtrak/pull/65))
 - Write to `profiles` at all — its foreign key pointed at a table registration never populates, so every insert failed with 23503 and the table held no rows for 41 users ([`0328087`](https://github.com/Syntraksoftware/Snowtrak/commit/0328087))
 - Create a profile row before an avatar upload writes to it, instead of answering 500 and leaving the uploaded image orphaned in storage ([`c8870f8`](https://github.com/Syntraksoftware/Snowtrak/commit/c8870f8))
 - Return the uploader's name from a successful avatar upload, which answered with a null name and blanked it in the client ([`c8870f8`](https://github.com/Syntraksoftware/Snowtrak/commit/c8870f8))

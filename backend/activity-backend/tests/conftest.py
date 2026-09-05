@@ -141,6 +141,7 @@ class StubActivityClient:
                 "map_activity_id": kwargs.get("map_activity_id"),
                 "processing_status": kwargs.get("processing_status", "ready"),
                 "storage_key": kwargs.get("storage_key"),
+                "max_pace": kwargs.get("max_pace"),
             }
         )
         if kwargs.get("activity_id"):

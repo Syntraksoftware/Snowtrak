@@ -7,6 +7,7 @@ from typing import Any
 from fastapi import Request
 from shared import ListMeta, ListResponse, PaginationMeta, get_request_id
 
+from domain.pace import pace_from_speed_kmh, top_speed_kmh_from_samples
 from models import FrontendActivityResponse, LocationPoint
 
 
@@ -40,8 +41,19 @@ def calculate_haversine_distance_meters(
     return earth_radius_meters * central_angle
 
 
-def compute_metrics_from_locations(location_records: list[dict[str, Any]]) -> dict[str, float]:
-    """Compute distance and elevation gain from ordered location records."""
+def compute_metrics_from_locations(
+    location_records: list[dict[str, Any]],
+) -> dict[str, float | None]:
+    """Compute distance, elevation gain and top pace from ordered locations.
+
+    Args:
+        location_records: Frontend location dicts, ordered by timestamp.
+
+    Returns:
+        `distance_meters` and `elevation_gain_meters`, plus `max_pace` in
+        seconds per kilometre -- None when no point carried a speed, which
+        is what the leaderboard reads as "no reading".
+    """
     total_distance_meters = 0.0
     total_elevation_gain_meters = 0.0
 
@@ -65,6 +77,11 @@ def compute_metrics_from_locations(location_records: list[dict[str, Any]]) -> di
     return {
         "distance_meters": total_distance_meters,
         "elevation_gain_meters": total_elevation_gain_meters,
+        "max_pace": pace_from_speed_kmh(
+            top_speed_kmh_from_samples(
+                location_record.get("speed") for location_record in location_records
+            )
+        ),
     }
 
 
