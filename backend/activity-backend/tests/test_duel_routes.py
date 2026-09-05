@@ -6,7 +6,7 @@ duels they returned had null names. Nothing failed -- a null name renders
 as a blank. The route is the only layer where that is visible.
 """
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -14,7 +14,10 @@ import services.duel_operations as duel_operations
 from domain.competition.duel import Duel, DuelStatus
 from domain.competition.metrics import Duration, Metric
 
-NOW = datetime(2026, 9, 2, 12, 0, tzinfo=UTC)
+# An hour ago, not a literal date: `accept_duel` only allows a PENDING invite
+# whose `created_at` is inside `INVITE_TTL` (48h) of the real clock, so a
+# fixed calendar date rots the moment the suite runs more than 48h later.
+NOW = datetime.now(UTC) - timedelta(hours=1)
 
 
 def _duel(status=DuelStatus.PENDING, **overrides) -> Duel:
@@ -49,7 +52,10 @@ class _StubOperations:
         return self._players
 
     def accept(self, duel, now=None):
-        return _duel(status=DuelStatus.ACTIVE, starts_at=NOW, ends_at=NOW)
+        # A week-long window that just opened, not one that already ended --
+        # an `ends_at` in the past would make `get_duel` settle this duel on
+        # the spot the next time it is fetched.
+        return _duel(status=DuelStatus.ACTIVE, starts_at=NOW, ends_at=NOW + timedelta(days=7))
 
 
 @pytest.fixture
