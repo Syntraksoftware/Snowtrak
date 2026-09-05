@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.0.8] - 2026-09-06
+
+_The git tag is now the version. Cut `v0.0.8` and the App Store sees `0.0.8`;
+`pubspec.yaml` is no longer bumped by hand. Production refuses a `-rc` tag from
+here on, so promote a candidate by cutting the final tag._
+
+### Changed
+
+- **Breaking:** deploy only a final `v1.2.3` tag to the production backend, where any `v*` tag was accepted and a release candidate served production for 11 days ([#75](https://github.com/Syntraksoftware/Snowtrak/pull/75))
+- Take the App Store marketing version from the release tag rather than `pubspec.yaml`, which had read `1.0.0` since May ([#75](https://github.com/Syntraksoftware/Snowtrak/pull/75))
+
+### Fixed
+
+- Deliver an uploaded build to testers without a manual click — every build stalled on Missing Compliance because `Info.plist` answered no export-compliance question ([#75](https://github.com/Syntraksoftware/Snowtrak/pull/75))
+
+[0.0.8]: https://github.com/Syntraksoftware/Snowtrak/releases/tag/v0.0.8
+
 ## [0.0.7] - 2026-09-06
 
 _A merge no longer reaches testers. Ask for a TestFlight build with
