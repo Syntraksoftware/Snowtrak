@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.0.7] - 2026-09-06
+
+_A merge no longer reaches testers. Ask for a TestFlight build with
+`gh workflow run ios-testflight.yml --ref <branch>`, or from Actions -> iOS
+Staging. `flutter run --release` on a device stops working; use `--profile`._
+
+### Changed
+
+- **Breaking:** upload to TestFlight only when asked, where every push to `develop` published a build to testers ([#72](https://github.com/Syntraksoftware/Snowtrak/pull/72))
+- **Breaking:** sign release builds against a named App Store profile, so a build needs no Apple account and `flutter run --release` no longer installs on a device ([#72](https://github.com/Syntraksoftware/Snowtrak/pull/72))
+
+### Fixed
+
+- Produce a TestFlight build from CI at all — the archive asked Xcode for a provisioning profile, and a runner has no account to ask ([#72](https://github.com/Syntraksoftware/Snowtrak/pull/72))
+
+[0.0.7]: https://github.com/Syntraksoftware/Snowtrak/releases/tag/v0.0.7
+
 ## [0.0.6] - 2026-09-05
 
 _Apply `019` through `022` before deploying. Without `022` every author read
