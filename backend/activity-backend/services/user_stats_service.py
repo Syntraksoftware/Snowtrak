@@ -32,6 +32,14 @@ def get_stats_service() -> UserStatsService:
 class UserStatsService:
 
     _STATS_COLUMNS = "start_time,duration_seconds,distance_meters,elevation_gain_meters"
+    # ponytail: a full recompute genuinely needs every activity, but
+    # GET /me/stats now runs this on a cache miss (a request path), so an
+    # unconditional SELECT * is no longer acceptable per CLAUDE.md Rule 3.
+    # 5,000 rows ordered newest-first caps memory and query time; an account
+    # past that ceiling gets an all-time total missing its oldest activities
+    # rather than an unbounded query landing on every profile-open. Revisit
+    # with real pagination if this cap is ever hit in practice.
+    _MAX_ACTIVITIES_FOR_RECOMPUTE = 5000
 
     def __init__(self, client) -> None:
         self._client = client
@@ -49,14 +57,21 @@ class UserStatsService:
     def recompute_and_upsert(self, user_id: str) -> dict[str, Any] | None:
         """Recompute stats from all activities and persist.
 
-        If no activities remain (e.g. user deleted their last one), removes the
-        stale row so the route returns zeros without a spurious DB read.
+        A user with no activities still gets a persisted zeros row, not a
+        deleted one -- without a row to hit, a cache miss for a zero-activity
+        account (overwhelmingly new signups, since this now runs on every
+        `GET /me/stats` cache miss) would re-run this full recompute on
+        every single request forever. A zeros row is also the correct answer
+        for someone who deletes their last activity.
         """
         try:
             activities = self._fetch_all_activities(user_id)
-            if not activities:
-                self._delete_row(user_id)
-                return None
+            if len(activities) == self._MAX_ACTIVITIES_FOR_RECOMPUTE:
+                logger.warning(
+                    "User %s has >= %d activities; all-time stats are truncated",
+                    user_id,
+                    self._MAX_ACTIVITIES_FOR_RECOMPUTE,
+                )
             stats = _compute_stats(user_id, activities)
             return self._upsert(stats)
         except Exception:
@@ -69,6 +84,8 @@ class UserStatsService:
             .select(self._STATS_COLUMNS)
             .eq("user_id", user_id)
             .not_.in_("processing_status", ["pending", "uploading", "processing"])
+            .order("start_time", desc=True)
+            .limit(self._MAX_ACTIVITIES_FOR_RECOMPUTE)
             .execute()
         )
         return getattr(resp, "data", None) or []
@@ -81,9 +98,6 @@ class UserStatsService:
         )
         data = getattr(resp, "data", None)
         return data[0] if data else None
-
-    def _delete_row(self, user_id: str) -> None:
-        self._client.table("user_stats").delete().eq("user_id", user_id).execute()
 
 
 def _compute_stats(user_id: str, activities: list[dict[str, Any]]) -> dict[str, Any]:

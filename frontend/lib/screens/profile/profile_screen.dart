@@ -111,15 +111,14 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 }
 
-/// Feeds [ProfileTotals] from the signed-in user's activities.
+/// Feeds [ProfileTotals] from the signed-in user's lifetime stats.
 class _OwnTotals extends StatelessWidget {
   const _OwnTotals();
 
   @override
   Widget build(BuildContext context) {
     return Consumer<ActivityProvider>(
-      builder: (context, provider, _) =>
-          ProfileTotals(activities: provider.activities),
+      builder: (context, provider, _) => ProfileTotals(stats: provider.stats),
     );
   }
 }

@@ -27,7 +27,7 @@ void main() {
           ),
           body: ListView(
             children: const [
-              ProfileTotals(activities: null),
+              ProfileTotals(stats: null),
               ProfileHomeContent(isOwnProfile: false),
             ],
           ),
