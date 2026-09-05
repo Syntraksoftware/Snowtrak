@@ -1,8 +1,12 @@
 # iOS release pipeline
 
-A push to `develop` builds the app and uploads it to TestFlight. Nothing else
-triggers a TestFlight build: `main` releases through `v*` tags, and `stage`
-builds nothing at all. See [branch_policy.md](branch_policy.md).
+Nothing reaches TestFlight on its own. The build is dispatched by hand:
+**Actions -> iOS Staging -> Run workflow**, pick a branch, go. It used to fire
+on every push to `develop`, which spent a build slot and pushed a new binary at
+testers for every merged PR, including the ones no tester needed to see.
+
+`main` still releases through `v*` tags; see
+[branch_policy.md](branch_policy.md).
 
 ## What runs
 

@@ -20,9 +20,9 @@ decision, not an integration step.
 ## Why `stage` exists
 
 `develop` publishes. A push there builds and pushes four Docker images
-(`docker-images.yml`) and uploads a build to TestFlight (`ios-testflight.yml`).
-Both are durable and externally visible, which is right for an integration
-branch and wrong when the only thing wanted is a copy of the current code.
+(`docker-images.yml`). That is durable and externally visible, which is right
+for an integration branch and wrong when the only thing wanted is a copy of the
+current code.
 
 `stage` is that copy. Created 2026-09-01 from `develop`. No workflow names it:
 
@@ -30,7 +30,7 @@ branch and wrong when the only thing wanted is a copy of the current code.
 |---|---|
 | `tests.yml`, `ios-dev.yml` | No — `[main, develop]` |
 | `docker-images.yml` | No — `[main, develop, restructure]` |
-| `ios-testflight.yml` | No — `[develop]` |
+| `ios-testflight.yml` | No — manual only, from any branch |
 | `flutter-release.yml` | No — `v*` tags |
 | `deploy-backend-vps.yml` | No — `workflow_dispatch` |
 | `backend-ci.yml` | **On a PR into it, yes.** Its `pull_request:` has no branch filter, deliberately: see the comment at the top of that file. It runs tests and publishes nothing. |
@@ -52,13 +52,14 @@ CI is built around it, not just convention:
 |---|---|
 | `tests.yml`, `backend-ci.yml`, `docker-images.yml` | push + PR to `main` and `develop` |
 | `ios-dev.yml` | PRs into `main` and `develop` |
-| `ios-testflight.yml` | **push to `develop` only** |
+| `ios-testflight.yml` | **manual only** (`workflow_dispatch`) |
 | `flutter-release.yml` | `v*` tags |
 | `deploy-backend-vps.yml` | manual (`workflow_dispatch`) |
 
-`develop` is where a build reaches TestFlight. `main` releases through tags.
-Merging a feature straight into `main` skips the TestFlight step entirely,
-which is the practical reason the flow matters.
+`main` releases through tags. TestFlight is not on the flow at all: it is
+dispatched by hand from whichever branch is worth putting in front of testers,
+because shipping to testers is a decision and not a side effect of merging.
+See [ios_release_pipeline.md](ios_release_pipeline.md).
 
 ## Resynced 2026-08-27
 

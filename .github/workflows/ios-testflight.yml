@@ -1,11 +1,12 @@
 name: iOS Staging
 
 on:
+  # Manual only, deliberately. This ran on every push to develop, which meant
+  # every merged PR spent a TestFlight build slot and pushed a new binary at
+  # testers whether or not it was worth their time. A release to testers is a
+  # decision, so it takes a click: Actions -> iOS Staging -> Run workflow, and
+  # pick the branch. Nothing else uploads to TestFlight.
   workflow_dispatch:
-  push:
-    # develop only. main releases through v* tags, so a merge to main used to
-    # produce a redundant TestFlight build of the same code.
-    branches: [ develop ]
 
 permissions:
   contents: read
