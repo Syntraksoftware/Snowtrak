@@ -94,7 +94,17 @@ platform :ios do
     end
   end
 
-  def flutter_build_ipa(target:, app_env:, map_features_enabled:, build_number:)
+  # The version Apple shows comes from the git tag, not pubspec.yaml -- that
+  # line has read 1.0.0 since May, so every release so far was labelled 1.0.0
+  # and two of them were distinguishable only by build number. Returns nil for
+  # a workflow_dispatch run, where GITHUB_REF_NAME holds a branch: no
+  # --build-name is passed and pubspec supplies the number, as before.
+  def release_build_name
+    ref = ENV["GITHUB_REF_NAME"].to_s
+    ref =~ /\Av(\d+\.\d+\.\d+)\z/ ? Regexp.last_match(1) : nil
+  end
+
+  def flutter_build_ipa(target:, app_env:, map_features_enabled:, build_number:, build_name: nil)
     started_at = Time.now
     Dir.chdir(flutter_root) do
       sh([
@@ -105,6 +115,7 @@ platform :ios do
         target,
         "--build-number",
         build_number.to_s,
+        *(build_name ? ["--build-name", build_name] : []),
         "--export-options-plist",
         File.join(flutter_root, "ios/ExportOptions.plist"),
         *flutter_define_args(app_env: app_env, map_features_enabled: map_features_enabled),
@@ -210,6 +221,7 @@ platform :ios do
       app_env: "prod",
       map_features_enabled: true,
       build_number: next_build_number(api_key),
+      build_name: release_build_name,
     )
     deliver(
       api_key: api_key,

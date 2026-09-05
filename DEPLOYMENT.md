@@ -47,7 +47,7 @@ are still current. Each is spelled out in
 | Landing code | PR only. No direct pushes to `main` or `develop`. No force-push. |
 | Merging | 8 checks must pass. No approval required — you may merge your own PR. |
 | Creating a `v*` tag | Repository admins only. |
-| Production backend deploy | `v*` tags only. Pauses for a reviewer. |
+| Production backend deploy | Final `v1.2.3` tags only, never `-rc`. Pauses for a reviewer. |
 | Staging backend deploy | A `v*` tag, or a 40-character commit SHA. No reviewer. |
 | App Store upload | Final versions only (`v1.2.3`, not `v1.2.3-rc1`). Pauses for a reviewer. |
 | TestFlight | Manual. Actions -> iOS Staging -> Run workflow, any branch. |
@@ -96,6 +96,9 @@ The tag starts two things at once:
   (~3–5 min). If Trivy finds a fixable CRITICAL/HIGH, nothing is published.
 - **iOS Production Release** builds the app, then **waits for your approval**
   before uploading to Apple.
+
+The tag is also the version number: `v1.2.3` ships to Apple as `1.2.3`. There
+is no `pubspec.yaml` bump to remember, and nothing else to keep in step.
 
 ### 4. Approve the App Store upload
 
@@ -187,8 +190,8 @@ Three things to know:
   data one — a like made on staging is a real like.
 - A feature branch cannot be deployed. Images are published only for `main`,
   `develop` and `v*` tags, so merge to `develop` first and deploy its SHA.
-- An `-rc` tag is safe. It deploys to staging but does **not** reach the App
-  Store, because the iOS release only matches final version numbers.
+- An `-rc` tag is safe. It deploys to staging but reaches neither production
+  nor the App Store — both gates match final version numbers only.
 
 ## Rolling back
 
@@ -217,7 +220,7 @@ Takes the same ~3–5 min as a deploy.
 | Symptom | Cause | Fix |
 |---|---|---|
 | Deploy fails pulling, `denied` | Packages are private | Make them public — see the top of this file |
-| Deploy rejects your ref | Production takes `v*` tags only; a raw SHA is staging-only | Deploy a tag |
+| Deploy rejects your ref | Production takes a final `v1.2.3` tag; `-rc` tags and raw SHAs are staging-only | Cut a final tag, or deploy to staging |
 | `could not resolve ...:v1.2.3` | Docker Images did not publish for that tag | Check the Docker Images run for that tag; a failed Trivy gate blocks publishing |
 | Tag push rejected | You are not a repository admin | Ask an admin to cut the tag |
 | PR will not merge | One of the 8 required checks has not passed | Check the PR's checks; `Build, Scan, Push` and `Validate iOS` do not block |
