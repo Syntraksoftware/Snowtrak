@@ -1,5 +1,49 @@
 # Changelog
 
+## [0.0.6] - 2026-09-05
+
+_Apply `019` through `022` before deploying. Without `022` every author read
+fails and follower lists render empty, with no error anywhere. A chosen
+username now lives on `user_info`; `profiles.full_name` and
+`profiles.username` are gone, and `full_name` is no longer accepted by
+`PUT /api/v1/users/me/profile` — send `first_name` and `last_name` to
+`PUT /api/v1/users/me` instead._
+
+### Changed
+
+- **Breaking:** stop accepting `full_name` and `username` on `PUT /api/v1/users/me/profile`, which now writes only the fields `profiles` still holds ([`66bd7eb`](https://github.com/Syntraksoftware/Snowtrak/commit/66bd7eb))
+- Point `profiles.id` at `user_info` and cascade with it, so a profile row can exist at all ([`0328087`](https://github.com/Syntraksoftware/Snowtrak/commit/0328087))
+- Keep a chosen username on `user_info`, unique on `lower(username)`, where every service already reads ([`08b0f0b`](https://github.com/Syntraksoftware/Snowtrak/commit/08b0f0b))
+- Resolve a displayed name through one ladder — chosen handle, then real name, then email handle, then a placeholder ([`3a128f1`](https://github.com/Syntraksoftware/Snowtrak/commit/3a128f1))
+- Show a chosen username on every community surface, so the name on a post matches the name on its author's profile ([`9bfa994`](https://github.com/Syntraksoftware/Snowtrak/commit/9bfa994))
+- Read `full_name`, `username` and `country_code` from `user_info` on every profile response, since those columns no longer live on `profiles` ([`d9dfd98`](https://github.com/Syntraksoftware/Snowtrak/commit/d9dfd98))
+- Serve the leaderboard and duels from activity-backend, beside the activities they score ([`f4c9db1`](https://github.com/Syntraksoftware/Snowtrak/commit/f4c9db1))
+- Read competitor names and countries from `user_info` rather than from the empty `profiles` table ([`9bbe9ba`](https://github.com/Syntraksoftware/Snowtrak/commit/9bbe9ba))
+- Drop the banner callback that the deleted notification poller used to feed ([`061af9b`](https://github.com/Syntraksoftware/Snowtrak/commit/061af9b))
+
+### Added
+
+- Set your username from Edit Profile through `PUT /api/v1/users/me/username`, which answers 409 when somebody else holds it ([`08b0f0b`](https://github.com/Syntraksoftware/Snowtrak/commit/08b0f0b))
+- Carry `author_username` on every post and comment, so a client can render a handle without a second read ([`dce94c4`](https://github.com/Syntraksoftware/Snowtrak/commit/dce94c4))
+- Add the duel and leaderboard schema, the weekly snapshot, and the rule that inverts pace into speed ([`7824ef1`](https://github.com/Syntraksoftware/Snowtrak/commit/7824ef1))
+- Challenge someone who follows you back, and rank against the world, your country or your friends ([`4b27512`](https://github.com/Syntraksoftware/Snowtrak/commit/4b27512))
+
+### Removed
+
+- Delete `usernameFromEmailOrId` and the four hand-rolled fallbacks beside it, which minted an `@handle` from an email address and leaked the real name of anyone who chose a handle to hide it ([`9bfa994`](https://github.com/Syntraksoftware/Snowtrak/commit/9bfa994))
+- Drop `profiles.full_name`, a second source for a name the feed already read from `user_info` ([`0328087`](https://github.com/Syntraksoftware/Snowtrak/commit/0328087))
+
+### Fixed
+
+- Write to `profiles` at all — its foreign key pointed at a table registration never populates, so every insert failed with 23503 and the table held no rows for 41 users ([`0328087`](https://github.com/Syntraksoftware/Snowtrak/commit/0328087))
+- Create a profile row before an avatar upload writes to it, instead of answering 500 and leaving the uploaded image orphaned in storage ([`c8870f8`](https://github.com/Syntraksoftware/Snowtrak/commit/c8870f8))
+- Return the uploader's name from a successful avatar upload, which answered with a null name and blanked it in the client ([`c8870f8`](https://github.com/Syntraksoftware/Snowtrak/commit/c8870f8))
+- Match a login address exactly, where `ilike` read `_` and `%` in an email as wildcards and could match an unrelated account ([`66bd7eb`](https://github.com/Syntraksoftware/Snowtrak/commit/66bd7eb))
+- Name the author of an optimistic draft with the same ladder the server uses, so a post no longer changes its name on refresh ([`e35b40a`](https://github.com/Syntraksoftware/Snowtrak/commit/e35b40a))
+- Anchor the duel-accept test to the real clock, where a hardcoded date meant it only passed within 48 hours of being written ([`2ede917`](https://github.com/Syntraksoftware/Snowtrak/commit/2ede917))
+
+[0.0.6]: https://github.com/Syntraksoftware/Snowtrak/releases/tag/v0.0.6
+
 ## [0.0.5] - 2026-09-01
 
 _Apply `018_follow_stats_requests_you.sql` before deploying; without it
