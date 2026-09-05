@@ -42,6 +42,25 @@ class ActivitiesService {
     }
   }
 
+  /// The signed-in user's own activities, newest first.
+  ///
+  /// Paged the same way as [getActivities] so a caller can hold one or the
+  /// other without knowing which; the endpoint underneath takes an offset.
+  Future<AppResult<List<Activity>>> getMyActivities({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    try {
+      final list = await _activitiesRepository.getMyActivities(
+        limit: limit,
+        offset: (page - 1) * limit,
+      );
+      return AppSuccess(list);
+    } catch (e, st) {
+      return AppFailure(AppError.from(e, st));
+    }
+  }
+
   Future<AppResult<Activity>> getActivity(String id) async {
     try {
       final activity = await _activitiesRepository.getActivity(id);

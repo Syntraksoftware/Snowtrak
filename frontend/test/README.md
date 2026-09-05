@@ -15,7 +15,8 @@ test/
 │   └── test_storage_service.dart
 ├── providers/
 │   ├── test_auth_provider.dart
-│   └── test_activity_provider.dart
+│   ├── activity_provider_test.dart
+│   └── notification_provider_test.dart
 ├── widgets/
 │   └── test_login_screen.dart
 └── widget_test.dart         # Basic app test

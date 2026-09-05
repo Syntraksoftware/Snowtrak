@@ -153,8 +153,11 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                         const SizedBox(height: SnowtrakSpacing.md),
                         RecentActivitySection(
                           activities: activities,
+                          // Profile, not Community: the section lists the
+                          // viewer's own activities, and Profile's
+                          // Activities tab is where all of them live.
                           onSeeAll: () =>
-                              HomeTabScope.selectTabOrNull(context, HomeTab.community),
+                              HomeTabScope.selectTabOrNull(context, HomeTab.profile),
                           onOpenActivity: _openActivity,
                         ),
                       ],
