@@ -60,6 +60,11 @@ contain.
 | `MAPTILER_API_KEY` | baked in via `--dart-define`; without it the build falls back to keyless tiles |
 | `FASTLANE_APPLE_ID` | read by `Appfile`, kept out of this public repo |
 
+Both workflows need all of these. `ios-testflight.yml` and
+`flutter-release.yml` run the same signing helper, so a secret wired into one
+and not the other fails at `import_certificate` with
+`Distribution certificate not found at /tmp/dist.p12`.
+
 The provisioning profile is **not** a secret. `fastlane` downloads it at build
 time through the API key, so it cannot go stale in a secret nobody looks at.
 The private key is the one thing Apple's API will never hand back, which is
@@ -117,6 +122,29 @@ which no CI run can do.
 `false` holds while the only cryptography in the app is platform HTTPS/TLS,
 which is exempt. Bundle a cipher, ship your own key exchange, or do anything
 beyond ATS, and the key has to be revisited before the next upload.
+
+## Re-running a release that failed
+
+A tag push runs the workflow file **as it stood when the tag was cut**. Fixing
+the file on `main` afterwards does nothing for the run that already failed, and
+re-running the job replays the same broken copy.
+
+The way back is a dispatch, which reads the current file:
+
+```
+Actions -> iOS Production Release -> Run workflow
+  branch:  main
+  version: 0.0.8     <- the tag's version, without the v
+```
+
+`version` exists only for this. A dispatch has a branch in `GITHUB_REF_NAME`,
+not a tag, so without it the build falls back to `pubspec.yaml` and ships the
+wrong marketing version. Leave it empty on any run where that fallback is what
+you want.
+
+Do not move the tag instead. `v0.0.8` names the commit whose images production
+is running; re-pointing it would rebuild those images under new digests and
+leave the tag describing something the box never ran.
 
 ## Running it locally
 
