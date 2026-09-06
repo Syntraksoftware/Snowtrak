@@ -8,7 +8,9 @@ from typing import Any
 from uuid import uuid4
 
 from postgrest import CountMethod
+from shared.follow_graph import following_ids as _following_ids
 from shared.pipeline_enums import ProcessingStatus
+from shared.visibility import visible_rows_expression
 from supabase import Client, create_client
 
 from config import get_config
@@ -156,10 +158,49 @@ class ActivitySupabaseClient:
     def download_storage_object(self, bucket: str, storage_key: str) -> bytes:
         return self._client.storage.from_(bucket).download(storage_key)
 
-    def list_activities(self, limit: int = 20, offset: int = 0) -> dict[str, Any]:
+    def following_ids(self, user_id: str) -> list[str]:
+        """Ids `user_id` follows, for the visibility filter.
+
+        Reads community-backend's table directly. An HTTP hop would put two
+        more round trips in front of every activity list; see
+        backend/shared/follow_graph.py. Reads only -- writes stay there.
+
+        Args:
+            user_id: The viewer whose follow graph to read.
+
+        Returns:
+            Ids of accounts `user_id` follows. Empty on failure or when
+            `user_id` is falsy.
+        """
+        return _following_ids(self._client, user_id)
+
+    def list_activities(
+        self,
+        viewer_id: str | None = None,
+        following: list[str] | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> dict[str, Any]:
+        """Activities this viewer may see, newest first.
+
+        This used to be an unfiltered select. It returned every private GPS
+        track in the database to an unauthenticated caller.
+
+        Args:
+            viewer_id: The caller, or `None` for an anonymous request.
+            following: Ids `viewer_id` follows, for the followers-tier clause.
+            limit: Max rows to return.
+            offset: Rows to skip, for pagination.
+
+        Returns:
+            `{"items": [...], "total": n}` -- `total` counts all visible
+            rows, not just the returned page.
+        """
         resp = (
             self._client.table("activities")
             .select("*", count=CountMethod.exact)
+            .or_(visible_rows_expression(viewer_id, following))
+            .order("created_at", desc=True)
             .range(offset, offset + limit - 1)
             .execute()
         )
@@ -177,6 +218,24 @@ class ActivitySupabaseClient:
         start_date: str | None = None,
         end_date: str | None = None,
     ) -> dict[str, Any]:
+        """One user's own activities, newest first.
+
+        Unlike `list_activities` this needs no visibility filter: every row
+        it can reach is already the caller's own.
+
+        Args:
+            user_id: Whose activities to return.
+            limit: Max rows to return.
+            offset: Rows to skip, for pagination.
+            search: Case-insensitive substring match on the name.
+            activity_type: Exact match on the activity type.
+            start_date: Inclusive lower bound on `created_at`.
+            end_date: Inclusive upper bound on `created_at`.
+
+        Returns:
+            `{"items": [...], "total": n}` -- `total` counts all matching
+            rows, not just the returned page.
+        """
         query = (
             self._client.table("activities")
             .select("*", count=CountMethod.exact)
@@ -190,7 +249,11 @@ class ActivitySupabaseClient:
             query = query.gte("created_at", start_date)
         if end_date:
             query = query.lte("created_at", end_date)
-        query = query.range(offset, offset + limit - 1)
+        # Explicit ordering, not decoration: `range` paginates an unordered
+        # result set, so without this a row can appear on two pages or on
+        # none. Matches `list_activities`, which the caller may page against
+        # interchangeably.
+        query = query.order("created_at", desc=True).range(offset, offset + limit - 1)
         resp = query.execute()
         data = getattr(resp, "data", []) or []
         total = getattr(resp, "count", 0) or 0
@@ -210,14 +273,17 @@ class ActivitySupabaseClient:
         name: str | None = None,
         description: str | None = None,
         visibility: str | None = None,
+        on_leaderboard: bool | None = None,
     ) -> dict[str, Any] | None:
-        update_fields = {}
+        update_fields: dict[str, Any] = {}
         if name is not None:
             update_fields["name"] = name
         if description is not None:
             update_fields["description"] = description
         if visibility is not None:
             update_fields["visibility"] = visibility
+        if on_leaderboard is not None:
+            update_fields["on_leaderboard"] = on_leaderboard
         if not update_fields:
             return self.get_activity_by_id(activity_id)
 

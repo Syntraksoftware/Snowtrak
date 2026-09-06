@@ -22,9 +22,9 @@ class ProgressWeeklyOverview extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: SnowtrakSpacing.md),
       padding: const EdgeInsets.all(SnowtrakSpacing.md),
       decoration: BoxDecoration(
-        color: SnowtrakColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
-        border: Border.all(color: SnowtrakColors.divider),
+        border: Border.all(color: context.colors.divider),
         boxShadow: SnowtrakElevation.sm,
       ),
       child: Column(
@@ -33,7 +33,7 @@ class ProgressWeeklyOverview extends StatelessWidget {
           Text(
             'This week',
             style: SnowtrakTypography.headlineMedium.copyWith(
-              color: SnowtrakColors.textPrimary,
+              color: context.colors.textPrimary,
             ),
           ),
           const SizedBox(height: SnowtrakSpacing.md),
@@ -41,19 +41,19 @@ class ProgressWeeklyOverview extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               Expanded(
-                child: _statItem(
+                child: _statItem(context, 
                   'Distance',
                   '${(weeklyStats['distance'] as num).toStringAsFixed(1)} km',
                 ),
               ),
               Expanded(
-                child: _statItem(
+                child: _statItem(context, 
                   'Time',
                   formatDurationMinutes(weeklyStats['time'] as int),
                 ),
               ),
               Expanded(
-                child: _statItem(
+                child: _statItem(context, 
                   'Elev Gain',
                   formatElevation((weeklyStats['elevGain'] as num).toDouble()),
                 ),
@@ -64,7 +64,7 @@ class ProgressWeeklyOverview extends StatelessWidget {
           Text(
             'Past 12 weeks',
             style: SnowtrakTypography.bodyLarge.copyWith(
-              color: SnowtrakColors.textPrimary,
+              color: context.colors.textPrimary,
             ),
           ),
           const SizedBox(height: SnowtrakSpacing.sm),
@@ -77,14 +77,14 @@ class ProgressWeeklyOverview extends StatelessWidget {
     );
   }
 
-  Widget _statItem(String label, String value) {
+  Widget _statItem(BuildContext context, String label, String value) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           value,
           style: SnowtrakTypography.headlineSmall.copyWith(
-            color: SnowtrakColors.textPrimary,
+            color: context.colors.textPrimary,
           ),
           textAlign: TextAlign.center,
           maxLines: 1,
@@ -94,7 +94,7 @@ class ProgressWeeklyOverview extends StatelessWidget {
         Text(
           label,
           style: SnowtrakTypography.labelSmall.copyWith(
-            color: SnowtrakColors.textTertiary,
+            color: context.colors.textTertiary,
           ),
           textAlign: TextAlign.center,
           maxLines: 1,
@@ -140,7 +140,11 @@ class TwelveWeekSparkline extends StatelessWidget {
           height: 100,
           width: double.infinity,
           child: CustomPaint(
-            painter: ProgressWeeklyGraphPainter(weeks),
+            painter: ProgressWeeklyGraphPainter(
+              weeks,
+              lineColor: context.colors.primary,
+              gridColor: context.colors.textPrimary.withValues(alpha: 0.3),
+            ),
           ),
         ),
         const SizedBox(height: SnowtrakSpacing.xs),
@@ -153,21 +157,21 @@ class TwelveWeekSparkline extends StatelessWidget {
                 Text(
                   DateFormat('MMM').format(weeks[0]['date'] as DateTime),
                   style: SnowtrakTypography.labelSmall.copyWith(
-                    color: SnowtrakColors.textTertiary,
+                    color: context.colors.textTertiary,
                   ),
                 ),
               if (weeks.length > 6)
                 Text(
                   DateFormat('MMM').format(weeks[6]['date'] as DateTime),
                   style: SnowtrakTypography.labelSmall.copyWith(
-                    color: SnowtrakColors.textTertiary,
+                    color: context.colors.textTertiary,
                   ),
                 ),
               if (weeks.length > 11)
                 Text(
                   DateFormat('MMM').format(weeks[11]['date'] as DateTime),
                   style: SnowtrakTypography.labelSmall.copyWith(
-                    color: SnowtrakColors.textTertiary,
+                    color: context.colors.textTertiary,
                   ),
                 ),
             ],

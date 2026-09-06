@@ -1,21 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:snowtrak/core/theme.dart';
 
 /// Line chart for weekly distance buckets (12 weeks).
 class ProgressWeeklyGraphPainter extends CustomPainter {
-  ProgressWeeklyGraphPainter(this.weeks);
+  ProgressWeeklyGraphPainter(
+    this.weeks, {
+    required this.lineColor,
+    required this.gridColor,
+  });
 
   final List<Map<String, dynamic>> weeks;
+
+  /// A painter has no BuildContext, so the theme is read by the widget
+  /// that builds it and handed over here.
+  final Color lineColor;
+  final Color gridColor;
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = SnowtrakColors.primary
+      ..color = lineColor
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
     final pointPaint = Paint()
-      ..color = SnowtrakColors.primary
+      ..color = lineColor
       ..style = PaintingStyle.fill;
 
     final distances = weeks.map((w) => w['count'] as double).toList();
@@ -56,12 +64,12 @@ class ProgressWeeklyGraphPainter extends CustomPainter {
       final lastPoint = points.last;
       if (lastPoint.dx.isFinite && lastPoint.dy.isFinite) {
         final highlightPaint = Paint()
-          ..color = SnowtrakColors.primary
+          ..color = lineColor
           ..style = PaintingStyle.fill;
         canvas.drawCircle(lastPoint, 6, highlightPaint);
 
         final linePaint = Paint()
-          ..color = SnowtrakColors.textPrimary.withOpacity(0.3)
+          ..color = gridColor
           ..strokeWidth = 1;
         canvas.drawLine(
           Offset(lastPoint.dx, 0),
@@ -74,5 +82,7 @@ class ProgressWeeklyGraphPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant ProgressWeeklyGraphPainter oldDelegate) =>
-      oldDelegate.weeks != weeks;
+      oldDelegate.weeks != weeks ||
+      oldDelegate.lineColor != lineColor ||
+      oldDelegate.gridColor != gridColor;
 }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:snowtrak/core/theme.dart';
-import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 /// Compact label + value row used in profile section placeholders.
 class ProfileInfoRow extends StatelessWidget {
@@ -21,20 +20,20 @@ class ProfileInfoRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: SnowtrakSpacing.xs),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: SnowtrakColors.textTertiary),
+          Icon(icon, size: 18, color: context.colors.textTertiary),
           const SizedBox(width: SnowtrakSpacing.sm),
           Expanded(
             child: Text(
               label,
               style: SnowtrakTypography.bodyMedium.copyWith(
-                color: SnowtrakColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
           ),
           Text(
             value,
             style: SnowtrakTypography.labelLarge.copyWith(
-              color: SnowtrakColors.textPrimary,
+              color: context.colors.textPrimary,
             ),
           ),
         ],
@@ -62,13 +61,13 @@ class ProfileMetricTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = accentColor ?? SnowtrakAuthTheme.brand;
+    final accent = accentColor ?? context.colors.primary;
 
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(SnowtrakSpacing.sm),
         decoration: BoxDecoration(
-          color: SnowtrakColors.surfaceVariant,
+          color: context.colors.surfaceVariant,
           borderRadius: BorderRadius.circular(SnowtrakRadius.md),
         ),
         child: Column(
@@ -79,14 +78,14 @@ class ProfileMetricTile extends StatelessWidget {
             Text(
               label,
               style: SnowtrakTypography.labelSmall.copyWith(
-                color: SnowtrakColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
             const SizedBox(height: 2),
             RichText(
               text: TextSpan(
                 style: SnowtrakTypography.metricMedium.copyWith(
-                  color: SnowtrakColors.textPrimary,
+                  color: context.colors.textPrimary,
                   fontSize: 18,
                 ),
                 children: [
@@ -95,7 +94,7 @@ class ProfileMetricTile extends StatelessWidget {
                     TextSpan(
                       text: ' $unit',
                       style: SnowtrakTypography.labelMedium.copyWith(
-                        color: SnowtrakColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                 ],
@@ -153,11 +152,11 @@ class ProfileChip extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: selected
-            ? SnowtrakColors.primary.withValues(alpha: 0.12)
-            : SnowtrakColors.surfaceVariant,
+            ? context.colors.primary.withValues(alpha: 0.12)
+            : context.colors.surfaceVariant,
         borderRadius: BorderRadius.circular(SnowtrakRadius.round),
         border: Border.all(
-          color: selected ? SnowtrakColors.primary : SnowtrakColors.divider,
+          color: selected ? context.colors.primary : context.colors.divider,
         ),
       ),
       child: Row(
@@ -167,14 +166,14 @@ class ProfileChip extends StatelessWidget {
             Icon(
               icon,
               size: 14,
-              color: selected ? SnowtrakColors.primary : SnowtrakColors.textSecondary,
+              color: selected ? context.colors.primary : context.colors.textSecondary,
             ),
             const SizedBox(width: 4),
           ],
           Text(
             label,
             style: SnowtrakTypography.labelMedium.copyWith(
-              color: selected ? SnowtrakColors.primary : SnowtrakColors.textSecondary,
+              color: selected ? context.colors.primary : context.colors.textSecondary,
             ),
           ),
         ],
@@ -198,27 +197,37 @@ class ProfilePlaceholderBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: height,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: SnowtrakColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(SnowtrakRadius.md),
-        border: Border.all(color: SnowtrakColors.divider),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 28, color: SnowtrakColors.textTertiary),
-          const SizedBox(height: SnowtrakSpacing.xs),
-          Text(
-            label,
-            style: SnowtrakTypography.bodySmall.copyWith(
-              color: SnowtrakColors.textTertiary,
+    return ConstrainedBox(
+      // A floor, not a fixed height. These labels wrap at narrow widths, and a
+      // hard height clipped them into a RenderFlex overflow instead of letting
+      // the block grow. Blocks whose label fits still render at `height`.
+      constraints: BoxConstraints(minHeight: height),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: context.colors.surfaceVariant,
+          borderRadius: BorderRadius.circular(SnowtrakRadius.md),
+          border: Border.all(color: context.colors.divider),
+        ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: SnowtrakSpacing.sm,
+          vertical: SnowtrakSpacing.sm,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 28, color: context.colors.textTertiary),
+            const SizedBox(height: SnowtrakSpacing.xs),
+            Text(
+              label,
+              style: SnowtrakTypography.bodySmall.copyWith(
+                color: context.colors.textTertiary,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

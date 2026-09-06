@@ -190,6 +190,20 @@
         "title": "NotificationType",
         "type": "string"
       },
+      "PrivacySetting": {
+        "description": "Whether this account approves its followers.",
+        "properties": {
+          "is_private": {
+            "title": "Is Private",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "is_private"
+        ],
+        "title": "PrivacySetting",
+        "type": "object"
+      },
       "ProfileResponse": {
         "description": "Profile data returned to API clients (frontend).",
         "properties": {
@@ -1549,6 +1563,53 @@
           }
         ],
         "summary": "Update Current User Profile",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/v1/users/me/privacy": {
+      "put": {
+        "description": "Turn follower approval on or off.\n\nExisting followers are kept. Turning private does not retroactively hide\nfollowers-only content from people who already follow you -- the escape\nhatch for that is DELETE /api/v1/follows/me/followers/{id}.\n\ncommunity-backend caches follow_stats, which carries this flag, for\nCACHE_FOLLOW_STATS_TTL_SECONDS. No invalidation is wired across the\nservice boundary for one field.\n\n# ponytail: up to 120s of stale is_private in another viewer's cached\n# stats. POST /follows/{id} re-reads it fresh, so only the button's\n# label lags, never the gate. If that becomes visible, bump the\n# follow-stats cache version from here.",
+        "operationId": "set_my_privacy_api_v1_users_me_privacy_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrivacySetting"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrivacySetting"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Set My Privacy",
         "tags": [
           "Users"
         ]

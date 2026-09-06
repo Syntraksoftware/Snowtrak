@@ -151,6 +151,7 @@ class CommunityApi {
     String? quotedCommentId,
     String? repostOfCommentId,
     List<String>? mediaUrls,
+    String visibility = 'public',
   }) async {
     // Trailing slash required: POST /api/v1/posts -> 307 to /api/v1/posts/ and Dio
     // mishandles POST body on redirect, breaking creates from the app.
@@ -169,6 +170,7 @@ class CommunityApi {
         if (repostOfCommentId != null && repostOfCommentId.isNotEmpty)
           'repost_of_comment_id': repostOfCommentId,
         if (mediaUrls != null && mediaUrls.isNotEmpty) 'media_urls': mediaUrls,
+        'visibility': visibility,
       },
     );
 

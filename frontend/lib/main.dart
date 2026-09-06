@@ -7,13 +7,12 @@ import 'package:snowtrak/core/logging/app_logger.dart';
 import 'package:snowtrak/core/theme.dart';
 import 'package:snowtrak/features/activities/data/activities_context_repository.dart';
 import 'package:snowtrak/features/auth/data/auth_session_store.dart';
-import 'package:snowtrak/models/notification.dart'; // notification model
 import 'package:snowtrak/providers/auth_provider.dart';
 import 'package:snowtrak/providers/activity_provider.dart';
+import 'package:snowtrak/providers/duel_provider.dart';
 import 'package:snowtrak/providers/notification_provider.dart';
 import 'package:snowtrak/screens/auth/login_screen.dart';
 import 'package:snowtrak/screens/home/home_screen.dart';
-import 'package:snowtrak/services/notification_service.dart';
 import 'package:snowtrak/services/storage_service.dart';
 
 Future<void> main() async {
@@ -77,15 +76,32 @@ class _SnowtrakAppState extends State<SnowtrakApp> {
             return previous;
           },
         ),
-        ChangeNotifierProvider<ActivityProvider>(
+        // Proxied on auth, not a plain provider: ActivityProvider holds the
+        // signed-in user's own activities, so it has to be told whose and
+        // to drop the last account's when that changes. AuthProvider
+        // notifies on sign-in, sign-out and a restored session, which is
+        // every moment the answer moves.
+        ChangeNotifierProxyProvider<AuthProvider, ActivityProvider>(
           create: (_) => sl<ActivityProvider>(),
+          update: (_, auth, previous) {
+            final activities = previous ?? sl<ActivityProvider>();
+            unawaited(activities.setOwner(auth.user?.id));
+            return activities;
+          },
         ),
         Provider<ActivitiesContextRepository>(
           create: (_) => sl<ActivitiesContextRepository>(),
         ),
         ChangeNotifierProvider(
-          create: (_) => NotificationProvider(notificationsRepository: sl())
-            ..loadNotifications(),
+          // No viewer id yet: auth has not resolved at this point, so the
+          // eager load reads follow requests only. The notifications screen
+          // reloads with the viewer and picks up duels then.
+          create: (_) =>
+              NotificationProvider(followService: sl(), duelService: sl())
+                ..loadNotifications(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => DuelProvider(duelService: sl()),
         ),
       ],
       child: MaterialApp(
@@ -110,32 +126,6 @@ class _AppWrapper extends StatefulWidget {
 }
 
 class _AppWrapperState extends State<_AppWrapper> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _setupNotificationCallback();
-    });
-  }
-
-  void _setupNotificationCallback() {
-    final notificationProvider = context.read<NotificationProvider>();
-    notificationProvider.onNewNotification = (AppNotification notification) {
-      if (mounted) {
-        NotificationService.showBanner(
-          context,
-          notification: notification,
-          onTap: () {
-            NotificationService.showToast(
-              context,
-              'Tapped: ${notification.title}',
-            );
-          },
-        );
-      }
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(

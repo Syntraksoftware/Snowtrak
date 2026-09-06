@@ -12,11 +12,11 @@ class TrailListCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: SnowtrakSpacing.md),
       decoration: BoxDecoration(
-        color: SnowtrakColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(10),
+            color: context.colors.textPrimary.withAlpha(10),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -72,8 +72,8 @@ class TrailListCard extends StatelessWidget {
                       child: Center(
                         child: Text(
                           trail.difficulty.icon,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: context.colors.textOnPrimary,
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
@@ -97,14 +97,14 @@ class TrailListCard extends StatelessWidget {
                               Icon(
                                 Icons.place,
                                 size: 14,
-                                color: SnowtrakColors.textSecondary,
+                                color: context.colors.textSecondary,
                               ),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
                                   '${trail.resort}, ${trail.country}',
                                   style: SnowtrakTypography.bodySmall.copyWith(
-                                    color: SnowtrakColors.textSecondary,
+                                    color: context.colors.textSecondary,
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -121,20 +121,20 @@ class TrailListCard extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.amber.withAlpha(30),
+                          color: context.colors.warning.withAlpha(30),
                           borderRadius: BorderRadius.circular(SnowtrakRadius.sm),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.star,
-                                color: Colors.amber, size: 16),
+                            Icon(Icons.star,
+                                color: context.colors.warning, size: 16),
                             const SizedBox(width: 4),
                             Text(
                               trail.rating!.toStringAsFixed(1),
                               style: SnowtrakTypography.labelMedium.copyWith(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.amber.shade800,
+                                color: context.colors.warning,
                               ),
                             ),
                           ],
@@ -166,7 +166,7 @@ class TrailListCard extends StatelessWidget {
                           TrailBadge(
                             icon: Icons.ac_unit,
                             label: 'Groomed',
-                            color: SnowtrakColors.info,
+                            color: context.colors.info,
                           ),
                       ],
                     ),
@@ -175,7 +175,7 @@ class TrailListCard extends StatelessWidget {
                       Text(
                         trail.description!,
                         style: SnowtrakTypography.bodySmall.copyWith(
-                          color: SnowtrakColors.textSecondary,
+                          color: context.colors.textSecondary,
                           height: 1.4,
                         ),
                         maxLines: 2,
@@ -196,7 +196,7 @@ class TrailListCard extends StatelessWidget {
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: SnowtrakColors.surfaceVariant,
+                                    color: context.colors.surfaceVariant,
                                     borderRadius: BorderRadius.circular(
                                         SnowtrakRadius.round),
                                   ),
@@ -204,7 +204,7 @@ class TrailListCard extends StatelessWidget {
                                     f,
                                     style:
                                         SnowtrakTypography.labelSmall.copyWith(
-                                      color: SnowtrakColors.textSecondary,
+                                      color: context.colors.textSecondary,
                                     ),
                                   ),
                                 ))
@@ -238,7 +238,7 @@ class TrailStatItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: SnowtrakColors.textTertiary),
+        Icon(icon, size: 18, color: context.colors.textTertiary),
         const SizedBox(width: 6),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -247,13 +247,13 @@ class TrailStatItem extends StatelessWidget {
               value,
               style: SnowtrakTypography.labelLarge.copyWith(
                 fontWeight: FontWeight.w600,
-                color: SnowtrakColors.textPrimary,
+                color: context.colors.textPrimary,
               ),
             ),
             Text(
               label,
               style: SnowtrakTypography.labelSmall.copyWith(
-                color: SnowtrakColors.textTertiary,
+                color: context.colors.textTertiary,
               ),
             ),
           ],

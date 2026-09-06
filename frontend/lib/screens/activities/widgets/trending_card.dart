@@ -5,7 +5,6 @@ import 'package:snowtrak/screens/activities/widgets/home_section_card.dart';
 import 'package:snowtrak/screens/activities/widgets/home_section_spacing.dart';
 import 'package:snowtrak/screens/home/home_tab_scope.dart';
 import 'package:snowtrak/ui/liquid/auth_primary_button.dart';
-import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 class TrendingCard extends StatefulWidget {
   const TrendingCard({super.key});
@@ -35,7 +34,7 @@ class _TrendingCardState extends State<TrendingCard> {
         icon: Icons.trending_up,
         title: 'Trending now',
         subtitle: 'Tap to preview, explore below',
-        iconColor: SnowtrakAuthTheme.brand,
+        iconColor: context.colors.primary,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -53,7 +52,7 @@ class _TrendingCardState extends State<TrendingCard> {
             const SizedBox(height: SnowtrakSpacing.sm),
             AuthPrimaryButton(
               label: 'Explore community',
-              onPressed: () => HomeTabScope.selectTabOrNull(context, 1),
+              onPressed: () => HomeTabScope.selectTabOrNull(context, HomeTab.community),
             ),
           ],
         ),

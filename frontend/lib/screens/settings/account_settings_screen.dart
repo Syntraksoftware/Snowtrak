@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snowtrak/core/theme.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:snowtrak/providers/auth_provider.dart';
@@ -22,9 +23,9 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     final email = user?.email ?? 'Not set';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7),
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF2F2F7),
+        backgroundColor: context.colors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -42,7 +43,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           const SizedBox(height: 24),
 
           // Contact Information
-          SettingsIosSectionHeader('CONTACT INFORMATION'),
+          const SettingsIosSectionHeader('CONTACT INFORMATION'),
           SettingsIosGroup(
             dividerLeadingPadding: 16,
             children: [
@@ -63,7 +64,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           const SizedBox(height: 24),
 
           // Security
-          SettingsIosSectionHeader('SECURITY'),
+          const SettingsIosSectionHeader('SECURITY'),
           SettingsIosGroup(
             dividerLeadingPadding: 16,
             children: [
@@ -88,7 +89,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           const SizedBox(height: 24),
 
           // Connected Accounts
-          SettingsIosSectionHeader('CONNECTED ACCOUNTS'),
+          const SettingsIosSectionHeader('CONNECTED ACCOUNTS'),
           SettingsIosGroup(
             dividerLeadingPadding: 16,
             children: [
@@ -113,7 +114,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           const SizedBox(height: 24),
 
           // Sessions
-          SettingsIosSectionHeader('SESSIONS'),
+          const SettingsIosSectionHeader('SESSIONS'),
           SettingsIosGroup(
             dividerLeadingPadding: 16,
             children: [
@@ -132,7 +133,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
             children: [
               SettingsIosActionRow(
                 label: 'Sign Out of All Devices',
-                textColor: const Color(0xFF007AFF),
+                textColor: context.colors.primary,
                 onTap: () => _showLogoutAllConfirmation(),
               ),
             ],
@@ -148,15 +149,15 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: const Color(0xFF34C759).withAlpha(30),
+        color: context.colors.success.withAlpha(30),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: const Text(
+      child: Text(
         'Verified',
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w500,
-          color: Color(0xFF34C759),
+          color: context.colors.success,
         ),
       ),
     );
@@ -167,7 +168,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
       padding: const EdgeInsets.only(left: 32, right: 32, top: 6),
       child: Text(
         text,
-        style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+        style: TextStyle(fontSize: 13, color: context.colors.textSecondary),
       ),
     );
   }
@@ -177,8 +178,8 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
       context: context,
       builder: (context) => CupertinoAlertDialog(
         title: const Text('Change Email'),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 16),
+        content: const Padding(
+          padding: EdgeInsets.only(top: 16),
           child: CupertinoTextField(
             placeholder: 'New email address',
             keyboardType: TextInputType.emailAddress,
@@ -206,12 +207,12 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
       context: context,
       builder: (context) => CupertinoAlertDialog(
         title: const Text('Add Phone Number'),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 16),
+        content: const Padding(
+          padding: EdgeInsets.only(top: 16),
           child: CupertinoTextField(
             placeholder: 'Phone number',
             keyboardType: TextInputType.phone,
-            prefix: const Padding(
+            prefix: Padding(
               padding: EdgeInsets.only(left: 8),
               child: Text('+1'),
             ),
@@ -239,10 +240,10 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
       context: context,
       builder: (context) => CupertinoAlertDialog(
         title: const Text('Change Password'),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 16),
+        content: const Padding(
+          padding: EdgeInsets.only(top: 16),
           child: Column(
-            children: const [
+            children: [
               CupertinoTextField(
                 placeholder: 'Current password',
                 obscureText: true,

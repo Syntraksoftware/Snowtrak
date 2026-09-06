@@ -21,6 +21,7 @@ class CommunityPostMapper {
         DateTime.tryParse((rawPost['created_at'] ?? '').toString()) ??
             DateTime.now();
     final authorName = authorDisplayName(
+      username: rawPost['author_username']?.toString(),
       firstName: rawPost['author_first_name']?.toString(),
       lastName: rawPost['author_last_name']?.toString(),
       fallback: rawPost['author_email']?.toString() ??
@@ -58,10 +59,7 @@ class CommunityPostMapper {
       author: PostAuthor(
         id: (rawPost['user_id'] ?? '').toString(),
         displayName: authorName,
-        username: usernameFromEmailOrId(
-          rawPost['author_email']?.toString(),
-          rawPost['user_id']?.toString(),
-        ),
+        username: (rawPost['author_username'] ?? '').toString(),
       ),
       text: content.isNotEmpty
           ? content
@@ -82,6 +80,9 @@ class CommunityPostMapper {
       likedByCurrentUser: likedByCurrentUser,
       repostedByCurrentUser: repostedByCurrentUser,
       media: parseMediaUrls(rawPost['media_urls']),
+      visibility: (rawPost['visibility'] as String?)?.trim().isNotEmpty == true
+          ? rawPost['visibility'] as String
+          : 'public',
       replies: replies,
     );
   }
@@ -126,19 +127,17 @@ class CommunityPostMapper {
   }
 
   static String authorDisplayName({
+    String? username,
     String? firstName,
     String? lastName,
     required String fallback,
   }) {
     return CommunityAuthorMapper.authorDisplayName(
+      username: username,
       firstName: firstName,
       lastName: lastName,
       fallback: fallback,
     );
-  }
-
-  static String usernameFromEmailOrId(String? email, String? fallbackId) {
-    return CommunityAuthorMapper.usernameFromEmailOrId(email, fallbackId);
   }
 
   static String timestampLabel(DateTime createdAt) {

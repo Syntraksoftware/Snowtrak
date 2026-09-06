@@ -33,8 +33,56 @@ _main_spec = importlib.util.spec_from_file_location(
 assert _main_spec and _main_spec.loader
 activity_main = importlib.util.module_from_spec(_main_spec)
 _main_spec.loader.exec_module(activity_main)
+from shared.visibility import visible_rows_expression
+
 from middleware.auth import get_current_user, get_optional_user
 from routes import activities_list_routes, activities_management_routes, activities_social_routes
+
+
+def _split_top_level(expression):
+    """Split on commas that are not inside parentheses."""
+    parts, depth, current = [], 0, ""
+    for char in expression:
+        if char == "(":
+            depth += 1
+        elif char == ")":
+            depth -= 1
+        if char == "," and depth == 0:
+            parts.append(current)
+            current = ""
+        else:
+            current += char
+    if current:
+        parts.append(current)
+    return parts
+
+
+def _matches_clause(row, clause):
+    clause = clause.strip()
+    if clause.startswith("and("):
+        inner = clause[len("and(") : -1]
+        return all(_matches_clause(row, part) for part in _split_top_level(inner))
+    field, operator, value = clause.split(".", 2)
+    actual = row.get(field)
+    if operator == "eq":
+        return str(actual) == value
+    if operator == "in":
+        allowed = value.strip("()").split(",") if value.strip("()") else []
+        return str(actual) in allowed
+    raise AssertionError(f"fake does not implement PostgREST operator {operator!r}")
+
+
+def _matches_or(row, expression):
+    """Evaluate a PostgREST `or` expression against one row.
+
+    Copied from backend/community-backend/tests/test_operations_units.py --
+    service directories are hyphenated and not importable packages, so this
+    can't be shared by import. The visibility filter is the one place where a
+    wrong predicate leaks somebody's activity instead of raising, so getting
+    this evaluator subtly wrong would make the new tests pass against a
+    broken predicate. Keep it byte-for-byte identical to the original.
+    """
+    return any(_matches_clause(row, clause) for clause in _split_top_level(expression))
 
 
 class StubActivityClient:
@@ -75,6 +123,12 @@ class StubActivityClient:
             "id": "activity-private",
             "visibility": "private",
         }
+        # Backs list_activities: a list of raw rows, filtered per-viewer via
+        # the real shared.visibility.visible_rows_expression + the copied
+        # PostgREST evaluator above, not through self._activity.
+        self.activities = [self._activity]
+        # (follower_id, followee_id) pairs, mirroring the `follows` table.
+        self.follows: set[tuple[str, str]] = set()
 
     def create_activity(self, **kwargs):
         activity = dict(self._activity)
@@ -113,20 +167,42 @@ class StubActivityClient:
     def download_storage_object(self, bucket, storage_key):
         return b"<gpx></gpx>"
 
-    def list_activities(self, limit=20, offset=0):
-        return {"items": [self._activity], "total": 1}
+    def list_activities(self, viewer_id=None, following=None, limit=20, offset=0):
+        expression = visible_rows_expression(viewer_id, following)
+        visible = [row for row in self.activities if _matches_or(row, expression)]
+        visible.sort(key=lambda row: row.get("created_at", ""), reverse=True)
+        page = visible[offset : offset + limit]
+        return {"items": page, "total": len(visible)}
+
+    def following_ids(self, user_id):
+        return [followee for follower, followee in self.follows if follower == user_id]
 
     def list_user_activities(self, **kwargs):
         return {"items": [self._activity], "total": 1}
 
     def get_activity_by_id(self, activity_id):
+        # Checks self.activities first so tests that replace the list (as the
+        # visibility tests do) are honored; falls back to the two fixed rows
+        # so the pre-existing activity-1 / activity-private tests keep working
+        # without every test having to repopulate self.activities.
+        for row in self.activities:
+            if row["id"] == activity_id:
+                return row
         if activity_id == "activity-1":
             return self._activity
         if activity_id == "activity-private":
             return self._private_activity
         return None
 
-    def update_activity(self, activity_id, user_id, name=None, description=None, visibility=None):
+    def update_activity(
+        self,
+        activity_id,
+        user_id,
+        name=None,
+        description=None,
+        visibility=None,
+        on_leaderboard=None,
+    ):
         if activity_id != "activity-1":
             return None
         updated = dict(self._activity)
@@ -136,6 +212,8 @@ class StubActivityClient:
             updated["description"] = description
         if visibility is not None:
             updated["visibility"] = visibility
+        if on_leaderboard is not None:
+            updated["on_leaderboard"] = on_leaderboard
         return updated
 
     def delete_activity(self, activity_id, user_id):
@@ -207,3 +285,14 @@ def app(monkeypatch, stub_client):
 def client(app):
     with TestClient(app) as test_client:
         yield test_client
+
+
+@pytest.fixture
+def as_user(app):
+    """Override both auth dependencies to a given user id for one test."""
+
+    def _set(user_id):
+        app.dependency_overrides[get_current_user] = lambda: user_id
+        app.dependency_overrides[get_optional_user] = lambda: user_id
+
+    return _set

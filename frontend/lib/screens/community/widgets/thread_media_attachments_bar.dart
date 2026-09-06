@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:snowtrak/core/theme.dart';
 
 const int kThreadMediaMaxAttachments = 4;
 
@@ -41,9 +42,9 @@ class ThreadMediaPreviewStrip extends StatelessWidget {
                     File(f.path),
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => ColoredBox(
-                      color: Colors.grey.shade300,
+                      color: context.colors.divider,
                       child: Icon(Icons.insert_drive_file,
-                          color: Colors.grey.shade600),
+                          color: context.colors.textSecondary),
                     ),
                   ),
                 ),
@@ -52,14 +53,14 @@ class ThreadMediaPreviewStrip extends StatelessWidget {
                 top: -4,
                 right: -4,
                 child: Material(
-                  color: Colors.black87,
+                  color: context.colors.textPrimary,
                   shape: const CircleBorder(),
                   child: InkWell(
                     onTap: () => onRemove(i),
                     customBorder: const CircleBorder(),
-                    child: const Padding(
-                      padding: EdgeInsets.all(2),
-                      child: Icon(Icons.close, size: 16, color: Colors.white),
+                    child: Padding(
+                      padding: const EdgeInsets.all(2),
+                      child: Icon(Icons.close, size: 16, color: context.colors.textOnPrimary),
                     ),
                   ),
                 ),
@@ -95,12 +96,12 @@ class ThreadMediaAttachmentsBar extends StatelessWidget {
           IconButton(
             tooltip: 'Photo',
             onPressed: onAddImages,
-            icon: Icon(Icons.image_outlined, color: Colors.grey.shade700),
+            icon: Icon(Icons.image_outlined, color: context.colors.textSecondary),
           ),
           IconButton(
             tooltip: 'Video',
             onPressed: onAddVideo,
-            icon: Icon(Icons.videocam_outlined, color: Colors.grey.shade700),
+            icon: Icon(Icons.videocam_outlined, color: context.colors.textSecondary),
           ),
         ],
       );
@@ -116,13 +117,13 @@ class ThreadMediaAttachmentsBar extends StatelessWidget {
                 tooltip: 'Add photo',
                 onPressed: onAddImages,
                 icon: Icon(Icons.add_photo_alternate_outlined,
-                    color: Colors.grey.shade700, size: 22),
+                    color: context.colors.textSecondary, size: 22),
               ),
               IconButton(
                 tooltip: 'Add video',
                 onPressed: onAddVideo,
                 icon: Icon(Icons.video_call_outlined,
-                    color: Colors.grey.shade700, size: 22),
+                    color: context.colors.textSecondary, size: 22),
               ),
             ],
           ),

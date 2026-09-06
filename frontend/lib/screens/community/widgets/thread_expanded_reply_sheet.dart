@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:snowtrak/core/theme.dart';
 import 'package:snowtrak/screens/community/widgets/thread_media_attachments_bar.dart';
 
 Future<void> showThreadExpandedReplySheet({
@@ -15,7 +16,7 @@ Future<void> showThreadExpandedReplySheet({
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.white,
+    backgroundColor: context.colors.surface,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
     ),
@@ -35,17 +36,17 @@ Future<void> showThreadExpandedReplySheet({
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Reply',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 16,
-                        color: Colors.black87,
+                        color: context.colors.textPrimary,
                       ),
                     ),
                     IconButton(
                       onPressed: () => Navigator.of(ctx).pop(),
-                      icon: Icon(Icons.close, color: Colors.grey.shade800),
+                      icon: Icon(Icons.close, color: context.colors.textPrimary),
                     ),
                   ],
                 ),
@@ -60,15 +61,15 @@ Future<void> showThreadExpandedReplySheet({
                     controller: controller,
                     minLines: 4,
                     maxLines: 12,
-                    style: const TextStyle(
-                      color: Colors.black87,
+                    style: TextStyle(
+                      color: context.colors.textPrimary,
                       fontSize: 16,
                       height: 1.35,
                     ),
-                    cursorColor: Colors.black87,
+                    cursorColor: context.colors.textPrimary,
                     decoration: InputDecoration(
                       hintText: 'Add your reply...',
-                      hintStyle: TextStyle(color: Colors.grey.shade400),
+                      hintStyle: TextStyle(color: context.colors.textTertiary),
                       border: InputBorder.none,
                     ),
                   ),
@@ -84,16 +85,16 @@ Future<void> showThreadExpandedReplySheet({
                             onSubmit();
                           },
                     style: FilledButton.styleFrom(
-                      backgroundColor: Colors.black87,
-                      foregroundColor: Colors.white,
+                      backgroundColor: context.colors.textPrimary,
+                      foregroundColor: context.colors.textOnPrimary,
                     ),
                     child: isSubmitting
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.white,
+                              color: context.colors.textOnPrimary,
                             ),
                           )
                         : const Text('Reply'),

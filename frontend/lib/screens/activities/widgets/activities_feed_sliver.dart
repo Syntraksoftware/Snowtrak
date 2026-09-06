@@ -4,7 +4,6 @@ import 'package:snowtrak/models/user.dart';
 import 'package:snowtrak/providers/activity_provider.dart';
 import 'package:snowtrak/screens/activities/widgets/activity_feed_card.dart';
 import 'package:snowtrak/widgets/skeleton.dart';
-import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 class ActivitiesFeedSliver extends StatelessWidget {
   const ActivitiesFeedSliver({
@@ -45,20 +44,20 @@ class ActivitiesFeedSliver extends StatelessWidget {
                     Icon(
                       Icons.downhill_skiing,
                       size: 80,
-                      color: SnowtrakColors.textTertiary,
+                      color: context.colors.textTertiary,
                     ),
                     const SizedBox(height: SnowtrakSpacing.lg),
                     Text(
                       'No activities yet',
                       style: SnowtrakTypography.headlineMedium.copyWith(
-                        color: SnowtrakColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: SnowtrakSpacing.sm),
                     Text(
                       'Start recording your first skiing activity!',
                       style: SnowtrakTypography.bodyMedium.copyWith(
-                        color: SnowtrakColors.textTertiary,
+                        color: context.colors.textTertiary,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -87,20 +86,20 @@ class ActivitiesFeedSliver extends StatelessWidget {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: SnowtrakAuthTheme.brand.withValues(alpha: 0.12),
+                    color: context.colors.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(SnowtrakRadius.md),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.history,
                     size: 20,
-                    color: SnowtrakAuthTheme.brand,
+                    color: context.colors.primary,
                   ),
                 ),
                 const SizedBox(width: SnowtrakSpacing.sm),
                 Text(
                   'Your activities',
                   style: SnowtrakTypography.headlineSmall.copyWith(
-                    color: SnowtrakColors.textPrimary,
+                    color: context.colors.textPrimary,
                   ),
                 ),
               ],

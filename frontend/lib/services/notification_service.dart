@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snowtrak/widgets/notification_overlays.dart';
 import 'package:snowtrak/core/theme.dart';
 import 'package:snowtrak/models/notification.dart';
 
@@ -33,7 +34,7 @@ class NotificationService {
     _showSnackBar(
       context,
       message: message,
-      backgroundColor: SnowtrakColors.success,
+      backgroundColor: context.colors.success,
       icon: Icons.check_circle_outline,
       duration: duration,
       action: action,
@@ -50,7 +51,7 @@ class NotificationService {
     _showSnackBar(
       context,
       message: message,
-      backgroundColor: SnowtrakColors.error,
+      backgroundColor: context.colors.error,
       icon: Icons.error_outline,
       duration: duration,
       action: action,
@@ -67,7 +68,7 @@ class NotificationService {
     _showSnackBar(
       context,
       message: message,
-      backgroundColor: SnowtrakColors.info,
+      backgroundColor: context.colors.info,
       icon: Icons.info_outline,
       duration: duration,
       action: action,
@@ -84,7 +85,7 @@ class NotificationService {
     _showSnackBar(
       context,
       message: message,
-      backgroundColor: SnowtrakColors.warning,
+      backgroundColor: context.colors.warning,
       icon: Icons.warning_amber_outlined,
       duration: duration,
       action: action,
@@ -106,13 +107,13 @@ class NotificationService {
     final snackBar = SnackBar(
       content: Row(
         children: [
-          Icon(icon, color: Colors.white, size: 20),
+          Icon(icon, color: context.colors.textOnPrimary, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: context.colors.textOnPrimary,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
@@ -146,7 +147,7 @@ class NotificationService {
     late OverlayEntry overlayEntry;
 
     overlayEntry = OverlayEntry(
-      builder: (context) => _NotificationBanner(
+      builder: (context) => NotificationBanner(
         notification: notification,
         onTap: () {
           overlayEntry.remove();
@@ -173,7 +174,7 @@ class NotificationService {
     late OverlayEntry overlayEntry;
 
     overlayEntry = OverlayEntry(
-      builder: (context) => _ToastMessage(
+      builder: (context) => ToastMessage(
         message: message,
         onComplete: () => overlayEntry.remove(),
         duration: duration,
@@ -210,287 +211,28 @@ class NotificationService {
   }
 
   /// Get color for notification type
-  static Color getColorForType(NotificationType type) {
+  static Color getColorForType(BuildContext context, NotificationType type) {
     switch (type) {
       case NotificationType.kudos:
-        return const Color(0xFFE91E63); // Pink
+        return SnowtrakColors.notifyKudos;
       case NotificationType.comment:
-        return SnowtrakColors.primary;
+        return context.colors.primary;
       case NotificationType.follow:
         return SnowtrakColors.secondary;
       case NotificationType.friendActivity:
         return SnowtrakColors.accent;
       case NotificationType.challenge:
-        return const Color(0xFFFFD700); // Gold
+        return SnowtrakColors.notifyChallenge;
       case NotificationType.group:
-        return SnowtrakColors.info;
+        return context.colors.info;
       case NotificationType.weather:
-        return const Color(0xFF607D8B); // Blue grey
+        return SnowtrakColors.notifyWeather;
       case NotificationType.powderDay:
-        return const Color(0xFF00BCD4); // Cyan
+        return SnowtrakColors.notifyPowderDay;
       case NotificationType.achievement:
-        return const Color(0xFFFFD700); // Gold
+        return SnowtrakColors.notifyChallenge;
       case NotificationType.system:
-        return SnowtrakColors.textSecondary;
+        return context.colors.textSecondary;
     }
-  }
-}
-
-/// Animated notification banner widget
-class _NotificationBanner extends StatefulWidget {
-  final AppNotification notification;
-  final VoidCallback onTap;
-  final VoidCallback onDismiss;
-  final Duration duration;
-
-  const _NotificationBanner({
-    required this.notification,
-    required this.onTap,
-    required this.onDismiss,
-    required this.duration,
-  });
-
-  @override
-  State<_NotificationBanner> createState() => _NotificationBannerState();
-}
-
-class _NotificationBannerState extends State<_NotificationBanner>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _fadeAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, -1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    ));
-
-    _fadeAnimation = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    ));
-
-    // Start animation
-    _controller.forward();
-
-    // Auto dismiss after duration
-    Future.delayed(widget.duration, () {
-      if (mounted) {
-        _dismiss();
-      }
-    });
-  }
-
-  void _dismiss() async {
-    await _controller.reverse();
-    widget.onDismiss();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final notification = widget.notification;
-    final typeColor = NotificationService.getColorForType(notification.type);
-    final typeIcon = NotificationService.getIconForType(notification.type);
-
-    return Positioned(
-      top: MediaQuery.of(context).padding.top + 8,
-      left: 16,
-      right: 16,
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: GestureDetector(
-            onTap: widget.onTap,
-            onHorizontalDragEnd: (details) {
-              if (details.velocity.pixelsPerSecond.dx.abs() > 100) {
-                _dismiss();
-              }
-            },
-            child: Material(
-              elevation: 8,
-              borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
-              child: Container(
-                padding: const EdgeInsets.all(SnowtrakSpacing.md),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
-                  border: Border.all(
-                    color: typeColor.withOpacity(0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    // Icon or Avatar
-                    if (notification.avatarUrl != null)
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundImage: NetworkImage(notification.avatarUrl!),
-                      )
-                    else
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: typeColor.withOpacity(0.15),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          typeIcon,
-                          color: typeColor,
-                          size: 22,
-                        ),
-                      ),
-                    const SizedBox(width: 12),
-                    // Content
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            notification.title,
-                            style: SnowtrakTypography.labelLarge.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: SnowtrakColors.textPrimary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            notification.message,
-                            style: SnowtrakTypography.bodySmall.copyWith(
-                              color: SnowtrakColors.textSecondary,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Close button
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 18),
-                      onPressed: _dismiss,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      color: SnowtrakColors.textTertiary,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Simple toast message widget
-class _ToastMessage extends StatefulWidget {
-  final String message;
-  final VoidCallback onComplete;
-  final Duration duration;
-
-  const _ToastMessage({
-    required this.message,
-    required this.onComplete,
-    required this.duration,
-  });
-
-  @override
-  State<_ToastMessage> createState() => _ToastMessageState();
-}
-
-class _ToastMessageState extends State<_ToastMessage>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 200),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(_controller);
-
-    _controller.forward();
-
-    // Auto dismiss
-    Future.delayed(widget.duration, () async {
-      if (mounted) {
-        await _controller.reverse();
-        widget.onComplete();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      bottom: MediaQuery.of(context).padding.bottom + 100,
-      left: 40,
-      right: 40,
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: Center(
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 12,
-              ),
-              decoration: BoxDecoration(
-                color: SnowtrakColors.textPrimary.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(SnowtrakRadius.round),
-              ),
-              child: Text(
-                widget.message,
-                style: SnowtrakTypography.bodyMedium.copyWith(
-                  color: Colors.white,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }

@@ -27,9 +27,9 @@ class AuthSocialButton extends StatelessWidget {
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
-          backgroundColor: SnowtrakColors.surface,
-          foregroundColor: SnowtrakColors.textPrimary,
-          side: const BorderSide(color: SnowtrakAuthTheme.socialBorder),
+          backgroundColor: context.colors.surface,
+          foregroundColor: context.colors.textPrimary,
+          side: BorderSide(color: context.colors.border),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(SnowtrakAuthTheme.buttonRadius),
           ),

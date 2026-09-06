@@ -8,12 +8,57 @@ from services.community_comment_write_operations import CommunityCommentWriteOpe
 from services.community_post_read_operations import CommunityPostReadOperations
 from services.community_post_write_operations import CommunityPostWriteOperations
 from services.community_subthread_operations import CommunitySubthreadOperations
+from services.follow_operations import CommunityFollowOperations
+from services.follow_request_operations import CommunityFollowRequestOperations
 
 
 class FakeResponse:
     def __init__(self, data=None, count=None):
         self.data = data
         self.count = count
+
+
+def _split_top_level(expression):
+    """Split on commas that are not inside parentheses."""
+    parts, depth, current = [], 0, ""
+    for char in expression:
+        if char == "(":
+            depth += 1
+        elif char == ")":
+            depth -= 1
+        if char == "," and depth == 0:
+            parts.append(current)
+            current = ""
+        else:
+            current += char
+    if current:
+        parts.append(current)
+    return parts
+
+
+def _matches_clause(row, clause):
+    clause = clause.strip()
+    if clause.startswith("and("):
+        inner = clause[len("and(") : -1]
+        return all(_matches_clause(row, part) for part in _split_top_level(inner))
+    field, operator, value = clause.split(".", 2)
+    actual = row.get(field)
+    if operator == "eq":
+        return str(actual) == value
+    if operator == "in":
+        allowed = value.strip("()").split(",") if value.strip("()") else []
+        return str(actual) in allowed
+    raise AssertionError(f"fake does not implement PostgREST operator {operator!r}")
+
+
+def _matches_or(row, expression):
+    """Evaluate a PostgREST `or` expression against one row.
+
+    Real enough to be worth trusting: the visibility filter is the one place
+    where a wrong predicate leaks somebody's post instead of raising, so these
+    tests assert which rows come back, not that a filter was called.
+    """
+    return any(_matches_clause(row, clause) for clause in _split_top_level(expression))
 
 
 class FakeQuery:
@@ -48,12 +93,23 @@ class FakeQuery:
         self.operation = "delete"
         return self
 
+    def upsert(self, payload, on_conflict=None, ignore_duplicates=False):
+        self.operation = "upsert"
+        self.payload = payload
+        self.on_conflict = [f.strip() for f in (on_conflict or "").split(",") if f.strip()]
+        self.ignore_duplicates = ignore_duplicates
+        return self
+
     def eq(self, field, value):
         self.filters.append(("eq", field, value))
         return self
 
     def in_(self, field, values):
         self.filters.append(("in", field, list(values)))
+        return self
+
+    def or_(self, expression):
+        self.filters.append(("or", expression))
         return self
 
     def order(self, field, desc=False):
@@ -70,15 +126,7 @@ class FakeQuery:
         return self
 
     def _apply_filters(self, rows):
-        filtered = list(rows)
-        for item in self.filters:
-            if item[0] == "eq":
-                _, field, value = item
-                filtered = [row for row in filtered if row.get(field) == value]
-            elif item[0] == "in":
-                _, field, vals = item
-                filtered = [row for row in filtered if row.get(field) in vals]
-        return filtered
+        return [row for row in rows if self._row_matches_filters(row)]
 
     def _row_matches_filters(self, row):
         for item in self.filters:
@@ -90,10 +138,31 @@ class FakeQuery:
                 _, field, vals = item
                 if row.get(field) not in vals:
                     return False
+            elif item[0] == "or":
+                if not _matches_or(row, item[1]):
+                    return False
         return True
 
     def execute(self):
         table_rows = self.client.tables[self.table_name]
+
+        if self.operation == "upsert":
+            rows = self.client.tables.setdefault(self.table_name, [])
+            payloads = self.payload if isinstance(self.payload, list) else [self.payload]
+            for item in payloads:
+                match = next(
+                    (
+                        row
+                        for row in rows
+                        if all(row.get(k) == item.get(k) for k in self.on_conflict)
+                    ),
+                    None,
+                )
+                if match is None:
+                    rows.append(dict(item))
+                elif not self.ignore_duplicates:
+                    match.update(item)
+            return FakeResponse(data=payloads, count=None)
 
         if self.operation == "insert":
             payload = dict(self.payload)
@@ -101,6 +170,10 @@ class FakeQuery:
                 payload["id"] = f"sub-{uuid.uuid4().hex[:6]}"
             if self.table_name == "posts" and "post_id" not in payload:
                 payload["post_id"] = f"post-{uuid.uuid4().hex[:6]}"
+            # posts.visibility is `not null default 'public'`; a row without it
+            # cannot exist in the real table, so it must not exist here either.
+            if self.table_name == "posts" and "visibility" not in payload:
+                payload["visibility"] = "public"
             if (
                 self.table_name in {"comments", "post_likes", "post_votes", "comment_votes"}
                 and "id" not in payload
@@ -156,6 +229,7 @@ class FakeQuery:
 class FakeSupabaseClient:
     def __init__(self):
         self.tables = {
+            "follows": [],
             "subthreads": [
                 {
                     "id": "sub-1",
@@ -172,6 +246,7 @@ class FakeSupabaseClient:
                     "title": "First post",
                     "content": "Fresh snow",
                     "created_at": "2026-01-01T01:00:00Z",
+                    "visibility": "public",
                     "user_info": {
                         "email": "user@example.com",
                         "first_name": "Sky",
@@ -187,6 +262,7 @@ class FakeSupabaseClient:
                     "content": "Nice line",
                     "parent_id": None,
                     "created_at": "2026-01-01T02:00:00Z",
+                    "visibility": "public",
                     "user_info": {
                         "email": "friend@example.com",
                         "first_name": "Pow",
@@ -197,14 +273,85 @@ class FakeSupabaseClient:
             "post_likes": [],
             "post_votes": [],
             "comment_votes": [],
+            "follow_requests": [],
+            "user_info": [
+                {"id": "user-1", "is_private": False},
+                {"id": "user-2", "is_private": True},
+            ],
         }
 
     def table(self, table_name):
         return FakeQuery(self, table_name)
 
+    def rpc(self, name, params):
+        return FakeRpc(self, name, params)
+
+
+class FakeRpc:
+    """Just enough of the two functions the code calls.
+
+    The real ones live in backend/db/migrations/. Reimplementing them here
+    is a deliberate duplication: without it, approve and follow_stats have
+    no unit coverage at all, and both are load-bearing for privacy.
+    """
+
+    def __init__(self, client, name, params):
+        self.client = client
+        self.name = name
+        self.params = params
+
+    def execute(self):
+        if self.name == "approve_follow_request":
+            return FakeResponse(data=self._approve(), count=None)
+        if self.name == "follow_stats":
+            return FakeResponse(data=self._stats(), count=None)
+        raise AssertionError(f"fake does not implement rpc {self.name!r}")
+
+    def _approve(self):
+        target = self.params["target"]
+        requester = self.params["requester"]
+        requests = self.client.tables.setdefault("follow_requests", [])
+        before = len(requests)
+        requests[:] = [
+            r for r in requests if not (r["target_id"] == target and r["requester_id"] == requester)
+        ]
+        if len(requests) == before:
+            return False
+        follows = self.client.tables.setdefault("follows", [])
+        if not any(f["follower_id"] == requester and f["followee_id"] == target for f in follows):
+            follows.append({"follower_id": requester, "followee_id": target})
+        return True
+
+    def _stats(self):
+        target = self.params["target"]
+        viewer = self.params["viewer"]
+        follows = self.client.tables.get("follows", [])
+        requests = self.client.tables.get("follow_requests", [])
+        users = self.client.tables.get("user_info", [])
+        row = next((u for u in users if u["id"] == target), None)
+        return {
+            "follower_count": sum(1 for f in follows if f["followee_id"] == target),
+            "following_count": sum(1 for f in follows if f["follower_id"] == target),
+            "is_following": any(
+                f["follower_id"] == viewer and f["followee_id"] == target for f in follows
+            ),
+            "is_followed_by": any(
+                f["follower_id"] == target and f["followee_id"] == viewer for f in follows
+            ),
+            "is_private": bool(row and row.get("is_private")),
+            "has_requested": any(
+                r["requester_id"] == viewer and r["target_id"] == target for r in requests
+            ),
+            "requests_you": any(
+                r["requester_id"] == target and r["target_id"] == viewer for r in requests
+            ),
+        }
+
 
 class OperationHarness(
     CommunitySubthreadOperations,
+    CommunityFollowOperations,
+    CommunityFollowRequestOperations,
     CommunityPostReadOperations,
     CommunityPostWriteOperations,
     CommunityCommentReadOperations,
@@ -225,6 +372,11 @@ def patch_postgrest_count_method(monkeypatch):
 
 @pytest.fixture
 def operations_client():
+    return OperationHarness()
+
+
+@pytest.fixture
+def harness():
     return OperationHarness()
 
 
@@ -331,3 +483,410 @@ def test_count_comments_by_post(operations_client):
     total = operations_client.count_comments_by_post("post-1")
 
     assert total == 1
+
+
+# ---------------------------------------------------------------------------
+# Post visibility
+#
+# The only part of the follow feature with a privacy consequence, and the one
+# whose failure mode is silent: no error, no crash, the feed looks right, and
+# a stranger reads a post that was not for them. Every read path that can
+# return a post is asserted here, not just the feed.
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def visibility_client():
+    """One author with a post at each tier, one follower, one stranger."""
+    harness = OperationHarness()
+    harness._client.tables["posts"] = [
+        {
+            "post_id": "public-post",
+            "user_id": "author",
+            "subthread_id": "sub-1",
+            "title": "Public",
+            "content": "everyone",
+            "visibility": "public",
+            "created_at": "2026-01-01T03:00:00Z",
+        },
+        {
+            "post_id": "followers-post",
+            "user_id": "author",
+            "subthread_id": "sub-1",
+            "title": "Followers",
+            "content": "my followers",
+            "visibility": "followers",
+            "created_at": "2026-01-01T02:00:00Z",
+        },
+        {
+            "post_id": "private-post",
+            "user_id": "author",
+            "subthread_id": "sub-1",
+            "title": "Private",
+            "content": "just me",
+            "visibility": "private",
+            "created_at": "2026-01-01T01:00:00Z",
+        },
+    ]
+    harness._client.tables["follows"] = [
+        {"follower_id": "follower", "followee_id": "author"},
+    ]
+    return harness
+
+
+def _ids(posts):
+    return {post["post_id"] for post in posts}
+
+
+@pytest.mark.parametrize(
+    "viewer,expected",
+    [
+        (None, {"public-post"}),
+        ("stranger", {"public-post"}),
+        ("follower", {"public-post", "followers-post"}),
+        ("author", {"public-post", "followers-post", "private-post"}),
+    ],
+)
+def test_feed_returns_only_what_the_viewer_may_see(visibility_client, viewer, expected):
+    posts = visibility_client.list_recent_posts(limit=20, current_user_id=viewer)
+    assert _ids(posts) == expected
+
+
+@pytest.mark.parametrize(
+    "viewer,expected",
+    [
+        (None, {"public-post"}),
+        ("stranger", {"public-post"}),
+        ("follower", {"public-post", "followers-post"}),
+        ("author", {"public-post", "followers-post", "private-post"}),
+    ],
+)
+def test_profile_post_list_returns_only_what_the_viewer_may_see(
+    visibility_client, viewer, expected
+):
+    posts = visibility_client.list_posts_by_user_id("author", current_user_id=viewer)
+    assert _ids(posts) == expected
+
+
+@pytest.mark.parametrize(
+    "viewer,expected",
+    [
+        (None, {"public-post"}),
+        ("stranger", {"public-post"}),
+        ("follower", {"public-post", "followers-post"}),
+        ("author", {"public-post", "followers-post", "private-post"}),
+    ],
+)
+def test_subthread_post_list_returns_only_what_the_viewer_may_see(
+    visibility_client, viewer, expected
+):
+    posts = visibility_client.list_posts_by_subthread("sub-1", current_user_id=viewer)
+    assert _ids(posts) == expected
+
+
+@pytest.mark.parametrize(
+    "post_id,viewer,visible",
+    [
+        ("followers-post", None, False),
+        ("followers-post", "stranger", False),
+        ("followers-post", "follower", True),
+        ("followers-post", "author", True),
+        ("private-post", "follower", False),
+        ("private-post", "author", True),
+        ("public-post", None, True),
+    ],
+)
+def test_direct_post_link_respects_visibility(visibility_client, post_id, viewer, visible):
+    # A share link is a read path like any other. Filtering only the feed
+    # leaves this door open.
+    post = visibility_client.get_post_by_id(post_id, current_user_id=viewer)
+    assert (post is not None) == visible
+
+
+def test_unfollowing_hides_the_posts_again(visibility_client):
+    before = _ids(visibility_client.list_recent_posts(limit=20, current_user_id="follower"))
+    assert "followers-post" in before
+
+    visibility_client._client.tables["follows"] = []
+
+    after = _ids(visibility_client.list_recent_posts(limit=20, current_user_id="follower"))
+    assert "followers-post" not in after
+
+
+def test_a_post_with_no_visibility_column_is_treated_as_public(visibility_client):
+    # Rows written before the column existed default to public in the database;
+    # nothing should disappear from the feed because of the migration.
+    visibility_client._client.tables["posts"].append(
+        {
+            "post_id": "legacy-post",
+            "user_id": "author",
+            "subthread_id": "sub-1",
+            "title": "Legacy",
+            "content": "written before the column",
+            "visibility": "public",
+            "created_at": "2026-01-01T00:30:00Z",
+        }
+    )
+    posts = visibility_client.list_recent_posts(limit=20, current_user_id="stranger")
+    assert "legacy-post" in _ids(posts)
+
+
+def test_a_quoted_private_post_is_not_previewed_to_strangers(visibility_client):
+    # The nastiest leak in this feature: the post doing the quoting is public
+    # and belongs to somebody else, so the owner of the private post never
+    # chose to expose it.
+    visibility_client._client.tables["posts"].append(
+        {
+            "post_id": "quoting-post",
+            "user_id": "stranger",
+            "subthread_id": "sub-1",
+            "title": "Look at this",
+            "content": "quoting",
+            "visibility": "public",
+            "quoted_post_id": "followers-post",
+            "created_at": "2026-01-01T04:00:00Z",
+        }
+    )
+
+    seen_by_stranger = visibility_client.list_recent_posts(limit=20, current_user_id="stranger")
+    quoting = next(p for p in seen_by_stranger if p["post_id"] == "quoting-post")
+    assert quoting.get("quoted_post") is None
+
+    seen_by_follower = visibility_client.list_recent_posts(limit=20, current_user_id="follower")
+    quoting = next(p for p in seen_by_follower if p["post_id"] == "quoting-post")
+    assert quoting.get("quoted_post") is not None
+
+
+def test_comment_batch_returns_nothing_for_posts_the_viewer_cannot_see(visibility_client):
+    # The endpoint takes whatever post ids a client sends, so it cannot assume
+    # they came from a filtered list.
+    visibility_client._client.tables["comments"] = [
+        {
+            "id": "comment-on-private",
+            "post_id": "followers-post",
+            "user_id": "author",
+            "content": "for my followers",
+            "created_at": "2026-01-01T05:00:00Z",
+        }
+    ]
+
+    for_stranger = visibility_client.list_comments_by_post_ids(
+        ["followers-post"], current_user_id="stranger"
+    )
+    assert for_stranger["followers-post"] == []
+
+    for_follower = visibility_client.list_comments_by_post_ids(
+        ["followers-post"], current_user_id="follower"
+    )
+    assert len(for_follower["followers-post"]) == 1
+
+
+def test_visible_post_ids_denies_when_the_lookup_fails(visibility_client):
+    # A visibility check that fails open is not a visibility check.
+    def explode(_table_name):
+        raise RuntimeError("supabase is down")
+
+    visibility_client._client.table = explode
+    assert visibility_client.visible_post_ids(["public-post"], "visibility.eq.public") == set()
+
+
+def test_shared_visibility_expression_covers_all_three_tiers():
+    from shared.visibility import visible_rows_expression
+
+    anonymous = visible_rows_expression(None, [])
+    assert anonymous == "visibility.eq.public"
+
+    viewer = visible_rows_expression("user-1", ["user-2"])
+    assert "visibility.eq.public" in viewer
+    assert "user_id.eq.user-1" in viewer
+    assert "and(visibility.eq.followers,user_id.in.(user-2))" in viewer
+
+    # PostgREST rejects an empty in.(), so the clause must not be built.
+    alone = visible_rows_expression("user-1", [])
+    assert "in.()" not in alone
+
+
+# ---------------------------------------------------------------------------
+# Pending follow requests
+#
+# The single most important property of this design: a pending request must
+# never create a row in `follows`. Every visibility read path above depends
+# on `follows` meaning "accepted edge" and nothing else.
+# ---------------------------------------------------------------------------
+
+
+def test_following_a_private_account_creates_a_request_not_an_edge(harness):
+    assert harness.is_private_account("user-2") is True
+    assert harness.request_follow("user-1", "user-2") is True
+
+    assert harness._client.tables["follow_requests"] == [
+        {"requester_id": "user-1", "target_id": "user-2"}
+    ]
+    # The point of the separate table: no edge, so follow_counts and every
+    # visibility read stay correct without knowing requests exist.
+    assert harness._client.tables["follows"] == []
+
+
+def test_requesting_twice_leaves_one_row(harness):
+    harness.request_follow("user-1", "user-2")
+    harness.request_follow("user-1", "user-2")
+    assert len(harness._client.tables["follow_requests"]) == 1
+
+
+def test_approving_moves_the_row_into_follows(harness):
+    harness.request_follow("user-1", "user-2")
+    assert harness.approve_request("user-2", "user-1") is True
+
+    assert harness._client.tables["follow_requests"] == []
+    assert harness._client.tables["follows"] == [{"follower_id": "user-1", "followee_id": "user-2"}]
+
+
+def test_approving_something_never_requested_is_false(harness):
+    assert harness.approve_request("user-2", "user-1") is False
+    assert harness._client.tables["follows"] == []
+
+
+def test_withdrawing_leaves_no_edge(harness):
+    harness.request_follow("user-1", "user-2")
+    assert harness.withdraw_request("user-1", "user-2") is True
+    assert harness._client.tables["follow_requests"] == []
+    assert harness._client.tables["follows"] == []
+
+
+def test_a_pending_requester_cannot_read_followers_tier_posts(harness):
+    harness._client.tables["posts"].append(
+        {
+            "post_id": "post-private",
+            "user_id": "user-2",
+            "subthread_id": "sub-1",
+            "title": "Members only",
+            "content": "Secret line",
+            "created_at": "2026-01-02T00:00:00Z",
+            "visibility": "followers",
+        }
+    )
+    harness.request_follow("user-1", "user-2")
+
+    ids = {p["post_id"] for p in harness.list_recent_posts(current_user_id="user-1")}
+    assert "post-private" not in ids
+
+
+def test_a_private_accounts_public_post_stays_public(harness):
+    """The two axes are independent. This is the test that catches somebody
+    later 'fixing' the model into Instagram's ceiling, where a private
+    account's public post silently becomes followers-only."""
+    harness._client.tables["posts"].append(
+        {
+            "post_id": "post-open",
+            "user_id": "user-2",  # a private account
+            "subthread_id": "sub-1",
+            "title": "Open to all",
+            "content": "Anyone can read this",
+            "created_at": "2026-01-03T00:00:00Z",
+            "visibility": "public",
+        }
+    )
+
+    anonymous = {p["post_id"] for p in harness.list_recent_posts(current_user_id=None)}
+    assert "post-open" in anonymous
+
+
+def test_turning_private_keeps_existing_followers(harness):
+    harness.follow("user-1", "user-2")
+    harness._client.tables["user_info"][1]["is_private"] = True
+
+    # No demotion path exists, and that is the decision: Instagram keeps
+    # them. The escape hatch is remove-a-follower, which already ships.
+    assert harness.following_ids("user-1") == ["user-2"]
+
+
+def test_a_private_account_hides_its_profile_from_a_stranger(harness):
+    """The profile is gated as a whole, unlike the feed.
+
+    `test_a_private_accounts_public_post_stays_public` keeps the two axes
+    independent for `list_recent_posts`, and that still holds. On a profile
+    they are not independent: opening one is asking to read a person, and a
+    private account answers that with approval or nothing.
+    """
+    harness._client.tables["posts"].append(
+        {
+            "post_id": "post-open",
+            "user_id": "user-2",  # a private account
+            "subthread_id": "sub-1",
+            "title": "Open to all",
+            "content": "Anyone can read this",
+            "created_at": "2026-01-03T00:00:00Z",
+            "visibility": "public",
+        }
+    )
+
+    assert harness.list_posts_by_user_id("user-2", current_user_id="user-1") == []
+    assert harness.list_posts_by_user_id("user-2", current_user_id=None) == []
+
+
+def test_a_pending_request_does_not_open_the_profile(harness):
+    harness._client.tables["posts"].append(
+        {
+            "post_id": "post-open",
+            "user_id": "user-2",
+            "subthread_id": "sub-1",
+            "title": "Open to all",
+            "content": "Anyone can read this",
+            "created_at": "2026-01-03T00:00:00Z",
+            "visibility": "public",
+        }
+    )
+    harness.request_follow("user-1", "user-2")
+
+    assert harness.can_read_account("user-2", "user-1") is False
+    assert harness.list_posts_by_user_id("user-2", current_user_id="user-1") == []
+
+
+def test_approval_opens_the_profile(harness):
+    harness._client.tables["posts"].append(
+        {
+            "post_id": "post-open",
+            "user_id": "user-2",
+            "subthread_id": "sub-1",
+            "title": "Open to all",
+            "content": "Anyone can read this",
+            "created_at": "2026-01-03T00:00:00Z",
+            "visibility": "public",
+        }
+    )
+    harness.follow("user-1", "user-2")
+
+    assert harness.can_read_account("user-2", "user-1") is True
+    ids = {p["post_id"] for p in harness.list_posts_by_user_id("user-2", current_user_id="user-1")}
+    assert "post-open" in ids
+
+
+def test_a_private_account_reads_its_own_profile(harness):
+    assert harness.can_read_account("user-2", "user-2") is True
+
+
+def test_a_public_account_stays_open(harness):
+    assert harness.can_read_account("user-1", "user-2") is True
+    assert harness.can_read_account("user-1", None) is True
+
+
+def test_the_author_username_reaches_the_client():
+    # The feed resolves the display ladder in Dart, so the handle has to be
+    # on the row. Without it a user who set @snowking still shows as their
+    # real name in every post.
+    from services.mappers.community_row_mappers import flatten_user_info
+
+    row = {
+        "post_id": "p1",
+        "user_info": {
+            "email": "matthew@example.com",
+            "first_name": "Matthew",
+            "last_name": "Ng",
+            "username": "snowking",
+        },
+    }
+
+    flatten_user_info(row)
+
+    assert row["author_username"] == "snowking"
+    assert row["author_first_name"] == "Matthew"

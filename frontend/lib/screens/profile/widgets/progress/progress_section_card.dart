@@ -17,9 +17,9 @@ class ProgressSectionCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: SnowtrakSpacing.md),
       decoration: BoxDecoration(
-        color: SnowtrakColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(SnowtrakRadius.lg),
-        border: Border.all(color: SnowtrakColors.divider),
+        border: Border.all(color: context.colors.divider),
         boxShadow: SnowtrakElevation.sm,
       ),
       child: Column(
@@ -39,12 +39,12 @@ class ProgressSectionCard extends StatelessWidget {
                 Text(
                   title,
                   style: SnowtrakTypography.headlineSmall.copyWith(
-                    color: SnowtrakColors.textPrimary,
+                    color: context.colors.textPrimary,
                   ),
                 ),
                 Icon(
                   Icons.chevron_right,
-                  color: SnowtrakColors.textTertiary,
+                  color: context.colors.textTertiary,
                   size: 20,
                 ),
               ],

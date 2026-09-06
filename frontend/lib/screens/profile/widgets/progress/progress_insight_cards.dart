@@ -54,7 +54,7 @@ class _BestEffortsCard extends StatelessWidget {
               child: Text(
                 'No best efforts yet. Complete activities to see your records!',
                 style: SnowtrakTypography.bodyMedium.copyWith(
-                  color: SnowtrakColors.textTertiary,
+                  color: context.colors.textTertiary,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -103,13 +103,13 @@ class _BestEffortRow extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               color: isPR
-                  ? SnowtrakColors.accent.withOpacity(0.2)
-                  : SnowtrakColors.textTertiary.withOpacity(0.2),
+                  ? context.colors.primary.withValues(alpha:0.2)
+                  : context.colors.textTertiary.withValues(alpha:0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(
               isPR ? Icons.emoji_events : Icons.military_tech,
-              color: isPR ? SnowtrakColors.accent : SnowtrakColors.textTertiary,
+              color: isPR ? context.colors.primary : context.colors.textTertiary,
               size: 20,
             ),
           ),
@@ -123,7 +123,7 @@ class _BestEffortRow extends StatelessWidget {
                     Text(
                       isPR ? 'PR' : '2nd-fastest',
                       style: SnowtrakTypography.labelMedium.copyWith(
-                        color: SnowtrakColors.textPrimary,
+                        color: context.colors.textPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -132,7 +132,7 @@ class _BestEffortRow extends StatelessWidget {
                       child: Text(
                         type,
                         style: SnowtrakTypography.bodyMedium.copyWith(
-                          color: SnowtrakColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -143,7 +143,7 @@ class _BestEffortRow extends StatelessWidget {
                 Text(
                   DateFormat('d MMM yyyy').format(date),
                   style: SnowtrakTypography.bodySmall.copyWith(
-                    color: SnowtrakColors.textTertiary,
+                    color: context.colors.textTertiary,
                   ),
                 ),
               ],
@@ -152,7 +152,7 @@ class _BestEffortRow extends StatelessWidget {
           Text(
             value,
             style: SnowtrakTypography.bodyLarge.copyWith(
-              color: SnowtrakColors.textPrimary,
+              color: context.colors.textPrimary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -188,15 +188,15 @@ class _GoalsCard extends StatelessWidget {
                   child: CircularProgressIndicator(
                     value: weekly['current'] / weekly['target'],
                     strokeWidth: 4,
-                    backgroundColor: SnowtrakColors.surfaceVariant,
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      SnowtrakColors.primary,
+                    backgroundColor: context.colors.surfaceVariant,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      context.colors.primary,
                     ),
                   ),
                 ),
                 Icon(
                   Icons.downhill_skiing,
-                  color: SnowtrakColors.primary,
+                  color: context.colors.primary,
                   size: 24,
                 ),
               ],
@@ -209,7 +209,7 @@ class _GoalsCard extends StatelessWidget {
                   Text(
                     goals['description'] as String,
                     style: SnowtrakTypography.bodyMedium.copyWith(
-                      color: SnowtrakColors.textPrimary,
+                      color: context.colors.textPrimary,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -218,7 +218,7 @@ class _GoalsCard extends StatelessWidget {
                   Text(
                     '${weekly['current']}/${weekly['target']} activities',
                     style: SnowtrakTypography.bodySmall.copyWith(
-                      color: SnowtrakColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ],
@@ -226,7 +226,7 @@ class _GoalsCard extends StatelessWidget {
             ),
             Icon(
               Icons.chevron_right,
-              color: SnowtrakColors.textTertiary,
+              color: context.colors.textTertiary,
             ),
           ],
         ),
@@ -252,16 +252,16 @@ class _RelativeEffortCard extends StatelessWidget {
             _RelativeEffortRow(
               relativeEffort['current'] as int,
               relativeEffort['currentRange'] as String? ?? '',
-              SnowtrakColors.primary,
+              context.colors.primary,
             ),
             Divider(
               height: 1,
-              color: SnowtrakColors.divider,
+              color: context.colors.divider,
             ),
             _RelativeEffortRow(
               relativeEffort['previous'] as int,
               relativeEffort['lastRange'] as String? ?? '',
-              SnowtrakColors.textTertiary,
+              context.colors.textTertiary,
             ),
           ],
         ),
@@ -290,7 +290,7 @@ class _RelativeEffortRow extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha:0.2),
               borderRadius: BorderRadius.circular(SnowtrakRadius.md),
             ),
             child: Center(
@@ -308,7 +308,7 @@ class _RelativeEffortRow extends StatelessWidget {
             child: Text(
               dateRange,
               style: SnowtrakTypography.bodyMedium.copyWith(
-                color: SnowtrakColors.textPrimary,
+                color: context.colors.textPrimary,
               ),
             ),
           ),
@@ -342,7 +342,7 @@ class _TrainingLogCard extends StatelessWidget {
                   child: Text(
                     trainingLog['dateRange'] as String,
                     style: SnowtrakTypography.bodyMedium.copyWith(
-                      color: SnowtrakColors.textPrimary,
+                      color: context.colors.textPrimary,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -351,7 +351,7 @@ class _TrainingLogCard extends StatelessWidget {
                 Text(
                   '${trainingLog['distance']} km',
                   style: SnowtrakTypography.headlineSmall.copyWith(
-                    color: SnowtrakColors.textPrimary,
+                    color: context.colors.textPrimary,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -370,7 +370,7 @@ class _TrainingLogCard extends StatelessWidget {
                     height: 30,
                     decoration: BoxDecoration(
                       color: isActive
-                          ? SnowtrakColors.primary.withValues(alpha: 0.15)
+                          ? context.colors.primary.withValues(alpha: 0.15)
                           : Colors.transparent,
                       shape: BoxShape.circle,
                     ),
@@ -378,7 +378,7 @@ class _TrainingLogCard extends StatelessWidget {
                       child: Text(
                         labels[i],
                         style: SnowtrakTypography.labelSmall.copyWith(
-                          color: isActive ? SnowtrakColors.primary : SnowtrakColors.textTertiary,
+                          color: isActive ? context.colors.primary : context.colors.textTertiary,
                           fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
                         ),
                       ),

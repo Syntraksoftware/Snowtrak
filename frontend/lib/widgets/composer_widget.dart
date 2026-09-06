@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:snowtrak/core/theme.dart';
 import 'package:provider/provider.dart';
 import 'package:snowtrak/providers/auth_provider.dart';
+import 'package:snowtrak/screens/community/mappers/community_author_mapper.dart';
 
 class ComposerWidget extends StatefulWidget {
   final Function(String text) onPost;
@@ -55,10 +57,10 @@ class _ComposerWidgetState extends State<ComposerWidget> {
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         border: Border(
           bottom: BorderSide(
-            color: Colors.grey[200]!,
+            color: context.colors.divider,
             width: 0.5,
           ),
         ),
@@ -77,19 +79,19 @@ class _ComposerWidgetState extends State<ComposerWidget> {
                 },
                 child: CircleAvatar(
                   radius: 18,
-                  backgroundColor: Colors.grey[300],
+                  backgroundColor: context.colors.surfaceVariant,
                   backgroundImage: user?.firstName != null
                       ? null
                       : null, // TODO: Add avatar URL support
                   child: user?.firstName != null
                       ? Text(
                           user!.firstName![0].toUpperCase(),
-                          style: const TextStyle(
-                            color: Colors.black87,
+                          style: TextStyle(
+                            color: context.colors.textPrimary,
                             fontWeight: FontWeight.w600,
                           ),
                         )
-                      : const Icon(Icons.person, color: Colors.grey),
+                      : Icon(Icons.person, color: context.colors.textTertiary),
                 ),
               ),
               const SizedBox(width: 12),
@@ -98,24 +100,23 @@ class _ComposerWidgetState extends State<ComposerWidget> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // The `@handle` line under this one is gone: the only
+                    // handle available here was the email local part, which
+                    // is a handle nobody chose.
+                    // TODO(#53): show the real one once `User` carries a
+                    // username -- that needs the auth payload to send it.
                     Text(
-                      user?.firstName != null && user?.lastName != null
-                          ? '${user!.firstName} ${user.lastName}'
-                          : (user?.email ?? 'User').split('@')[0],
-                      style: const TextStyle(
+                      CommunityAuthorMapper.authorDisplayName(
+                        firstName: user?.firstName,
+                        lastName: user?.lastName,
+                        fallback: user?.email ?? '',
+                      ),
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: context.colors.textPrimary,
                       ),
                     ),
-                    if (user != null && user.email.isNotEmpty)
-                      Text(
-                        '@${user.email.split('@')[0]}',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[600],
-                        ),
-                      ),
                   ],
                 ),
               ),
@@ -128,15 +129,15 @@ class _ComposerWidgetState extends State<ComposerWidget> {
             focusNode: _focusNode,
             maxLines: null,
             maxLength: widget.maxCharacters,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
-              color: Colors.black87,
+              color: context.colors.textPrimary,
               height: 1.5,
             ),
             decoration: InputDecoration(
               hintText: "What's new?",
               hintStyle: TextStyle(
-                color: Colors.grey[400],
+                color: context.colors.textTertiary,
                 fontSize: 16,
               ),
               border: InputBorder.none,
@@ -153,7 +154,7 @@ class _ComposerWidgetState extends State<ComposerWidget> {
                 icon: Icon(
                   Icons.image_outlined,
                   size: 20,
-                  color: Colors.grey[600],
+                  color: context.colors.textSecondary,
                 ),
                 onPressed: () {
                   // TODO: Implement media picker
@@ -170,12 +171,12 @@ class _ComposerWidgetState extends State<ComposerWidget> {
                 Padding(
                   padding: const EdgeInsets.only(right: 12.0),
                   child: Text(
-                    '${_characterCount}/${widget.maxCharacters}',
+                    '$_characterCount/${widget.maxCharacters}',
                     style: TextStyle(
                       fontSize: 12,
                       color: _characterCount > widget.maxCharacters
-                          ? Colors.red
-                          : Colors.grey[600],
+                          ? context.colors.error
+                          : context.colors.textSecondary,
                     ),
                   ),
                 ),
@@ -186,10 +187,10 @@ class _ComposerWidgetState extends State<ComposerWidget> {
                     ? _handlePost
                     : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF4500),
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: Colors.grey[300],
-                  disabledForegroundColor: Colors.grey[600],
+                  backgroundColor: context.colors.primary,
+                  foregroundColor: context.colors.textOnPrimary,
+                  disabledBackgroundColor: context.colors.surfaceVariant,
+                  disabledForegroundColor: context.colors.textQuaternary,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 8,

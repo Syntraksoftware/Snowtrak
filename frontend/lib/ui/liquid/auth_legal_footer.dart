@@ -9,12 +9,12 @@ class AuthLegalFooter extends StatelessWidget {
   Widget build(BuildContext context) {
   return Text.rich(
       TextSpan(
-        style: SnowtrakAuthTheme.legalText,
+        style: SnowtrakAuthTheme.legalText(context),
         children: [
           const TextSpan(text: 'By continuing, you agree to our '),
           TextSpan(
             text: 'Terms of Service',
-            style: SnowtrakAuthTheme.legalText.copyWith(
+            style: SnowtrakAuthTheme.legalText(context).copyWith(
               decoration: TextDecoration.underline,
               fontWeight: FontWeight.w600,
             ),
@@ -26,7 +26,7 @@ class AuthLegalFooter extends StatelessWidget {
           const TextSpan(text: ' and '),
           TextSpan(
             text: 'Privacy Policy',
-            style: SnowtrakAuthTheme.legalText.copyWith(
+            style: SnowtrakAuthTheme.legalText(context).copyWith(
               decoration: TextDecoration.underline,
               fontWeight: FontWeight.w600,
             ),

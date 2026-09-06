@@ -16,9 +16,7 @@ class ProfileOperations(SupabaseBase):
     Profile table operations.
 
     Handles CRUD operations for the profiles table (Create, Read, Update, Delete):
-    - id (uuid, primary key, foreign key to auth.users)
-    - full_name (text, nullable)
-    - username (text, unique, nullable)
+    - id (uuid, primary key, foreign key to user_info.id -- see migration 022)
     - bio (text, nullable)
     - avatar_url (text, nullable)
     - push_token (text, nullable): push notification token for backend to send notifications to the user
@@ -27,8 +25,15 @@ class ProfileOperations(SupabaseBase):
     - created_at (timestamptz, default now())
     - updated_at (timestamptz, default now(), updated via trigger)
 
-    The id serves as both primary key and foreign key reference to auth.users.
+    The id serves as both primary key and foreign key reference to user_info.
+    It pointed at Supabase auth's `users` until migration 022, which is why
+    every insert failed with 23503 and the table held no rows.
+
     The one-to-one relationship ensures each authenticated user has exactly one profile.
+
+    `full_name` and `username` are not columns here: 022 dropped the first
+    and moved the second to `user_info`, where every service already reads
+    names. A profile response overlays both from there.
     """
 
     def get_profile_by_id(self, user_id: str) -> dict[str, Any] | None:
@@ -41,7 +46,7 @@ class ProfileOperations(SupabaseBase):
         Expected Return:
         - Optional[Dict[str, Any]]: the profile data for the user, or None if not found
 
-        - e.g. [{'id': '123', 'full_name': 'John Doe', 'username': 'johndoe', 'bio': 'I am a software engineer', 'avatar_url': 'https://example.com/avatar.jpg', 'push_token': '1234567890', 'ski_level': 'beginner', 'home': 'New York', 'created_at': '2021-01-01 12:00:00', 'updated_at': '2021-01-01 12:00:00'}]
+        - e.g. [{'id': '123', 'bio': 'I am a software engineer', 'avatar_url': 'https://example.com/avatar.jpg', 'push_token': '1234567890', 'ski_level': 'beginner', 'home': 'New York', 'created_at': '2021-01-01 12:00:00', 'updated_at': '2021-01-01 12:00:00'}]
         """
 
         if not self.is_configured():
@@ -79,8 +84,6 @@ class ProfileOperations(SupabaseBase):
         self,
         user_id: str,
         *,
-        full_name: str | None = None,
-        username: str | None = None,
         bio: str | None = None,
         avatar_url: str | None = None,
         push_token: str | None = None,
@@ -95,8 +98,6 @@ class ProfileOperations(SupabaseBase):
 
         Arguments:
         - user_id: str, the id of the user to create the profile for
-        - full_name: Optional[str], the full name of the user
-        - username: Optional[str], the username of the user
         - bio: Optional[str], the bio of the user
         - avatar_url: Optional[str], the avatar url of the user
         - push_token: Optional[str], the push token of the user
@@ -105,7 +106,7 @@ class ProfileOperations(SupabaseBase):
 
         Expected Return:
         - Optional[Dict[str, Any]]: the profile data for the user, or None if not found
-        - e.g. [{'id': '123', 'full_name': 'John Doe', 'username': 'johndoe', 'bio': 'I am a software engineer', 'avatar_url': 'https://example.com/avatar.jpg', 'push_token': '1234567890', 'ski_level': 'beginner', 'home': 'New York', 'created_at': '2021-01-01 12:00:00', 'updated_at': '2021-01-01 12:00:00'}]
+        - e.g. [{'id': '123', 'bio': 'I am a software engineer', 'avatar_url': 'https://example.com/avatar.jpg', 'push_token': '1234567890', 'ski_level': 'beginner', 'home': 'New York', 'created_at': '2021-01-01 12:00:00', 'updated_at': '2021-01-01 12:00:00'}]
         """
         if not self.is_configured():
             logger.warning("Supabase not configured; skipping create_profile.")
@@ -120,10 +121,6 @@ class ProfileOperations(SupabaseBase):
             payload: dict[str, Any] = {
                 "id": user_id,
             }
-            if full_name is not None:
-                payload["full_name"] = full_name
-            if username is not None:
-                payload["username"] = username
             if bio is not None:
                 payload["bio"] = bio
             if avatar_url is not None:
@@ -152,8 +149,6 @@ class ProfileOperations(SupabaseBase):
         self,
         user_id: str,
         *,
-        full_name: str | None = None,
-        username: str | None = None,
         bio: str | None = None,
         avatar_url: str | None = None,
         push_token: str | None = None,
@@ -166,10 +161,12 @@ class ProfileOperations(SupabaseBase):
         Only updates provided fields (partial update).
         Returns updated profile dict on success, or None on failure.
 
+        `full_name` and `username` are not here: both moved to `user_info` in
+        migration 022, and `set_username` on `UserOperations` is how a
+        handle is written now.
+
         Arguments:
         - user_id: str, the id of the user to update the profile for
-        - full_name: Optional[str], the full name of the user
-        - username: Optional[str], the username of the user
         - bio: Optional[str], the bio of the user
         - avatar_url: Optional[str], the avatar url of the user
         - push_token: Optional[str], the push token of the user
@@ -178,7 +175,7 @@ class ProfileOperations(SupabaseBase):
 
         Expected Return:
         - Optional[Dict[str, Any]]: the profile data for the user, or None if not found
-        - e.g. [{'id': '123', 'full_name': 'John Doe', 'username': 'johndoe', 'bio': 'I am a software engineer', 'avatar_url': 'https://example.com/avatar.jpg', 'push_token': '1234567890', 'ski_level': 'beginner', 'home': 'New York', 'created_at': '2021-01-01 12:00:00', 'updated_at': '2021-01-01 12:00:00'}]
+        - e.g. [{'id': '123', 'bio': 'I am a software engineer', 'avatar_url': 'https://example.com/avatar.jpg', 'push_token': '1234567890', 'ski_level': 'beginner', 'home': 'New York', 'created_at': '2021-01-01 12:00:00', 'updated_at': '2021-01-01 12:00:00'}]
         """
         if not self.is_configured():
             logger.warning("Supabase not configured; skipping update_profile.")
@@ -190,10 +187,6 @@ class ProfileOperations(SupabaseBase):
 
         # Build update payload with only provided fields
         update_data: dict[str, Any] = {}
-        if full_name is not None:
-            update_data["full_name"] = full_name
-        if username is not None:
-            update_data["username"] = username
         if bio is not None:
             update_data["bio"] = bio
         if avatar_url is not None:
@@ -222,38 +215,6 @@ class ProfileOperations(SupabaseBase):
         except Exception as exc:
             logger.exception(f"Failed to update profile for user {user_id}: {exc}")
             return None
-
-    def username_exists(self, username: str, exclude_user_id: str | None = None) -> bool:
-        """
-        Check if username already exists (excluding a specific user if provided).
-
-        Arguments:
-        - username: str, the username to check if it exists
-        - exclude_user_id: Optional[str], the id of the user to exclude from the check
-
-        Expected Return:
-        - bool: True if the username exists, False if it does not
-        """
-        if not self.is_configured():
-            return False
-
-        client = self._client
-        if client is None:
-            return False
-
-        try:
-            query = client.table("profiles").select("id").eq("username", username)
-            if exclude_user_id:
-                query = query.neq("id", exclude_user_id)
-                # neq = not equal to, exclude the user_id from the check
-            # `resp` = response from the database query
-            resp = query.limit(1).execute()
-            # `data` = data returned from the database query
-            data = getattr(resp, "data", None)
-            return isinstance(data, list) and len(data) > 0
-        except Exception as exc:
-            logger.exception(f"Error checking username existence: {exc}")
-            return False
 
     def upload_avatar(
         self,

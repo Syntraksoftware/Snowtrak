@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:snowtrak/features/activities/data/activities_context_repository.dart';
 import 'package:snowtrak/models/weather.dart';
 import 'package:snowtrak/providers/activity_provider.dart';
@@ -16,7 +17,7 @@ class ActivitiesScreenController {
     if (activityProvider.activities.isEmpty && !activityProvider.isLoading) {
       activityProvider.loadMockActivities();
     }
-    authProvider.refreshUserData();
+    unawaited(authProvider.refreshUserData());
     await _loadWeatherStaleWhileRevalidate(
       contextRepository: contextRepository,
       onWeatherLoaded: onWeatherLoaded,

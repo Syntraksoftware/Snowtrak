@@ -15,6 +15,7 @@ class CommunityQuoteMapper {
     final titleRaw = m['title']?.toString();
     final body = (m['content'] ?? '').toString();
     final authorName = CommunityAuthorMapper.authorDisplayName(
+      username: m['author_username']?.toString(),
       firstName: m['author_first_name']?.toString(),
       lastName: m['author_last_name']?.toString(),
       fallback: m['author_email']?.toString() ?? m['user_id']?.toString() ?? 'unknown',
@@ -24,10 +25,7 @@ class CommunityQuoteMapper {
       author: PostAuthor(
         id: (m['user_id'] ?? '').toString(),
         displayName: authorName,
-        username: CommunityAuthorMapper.usernameFromEmailOrId(
-          m['author_email']?.toString(),
-          m['user_id']?.toString(),
-        ),
+        username: (m['author_username'] ?? '').toString(),
       ),
       text: body.isNotEmpty ? body : (titleRaw ?? '').toString(),
       topic: CommunityPostFieldParsers.topicFromStructuredTitle(titleRaw),
@@ -53,6 +51,7 @@ class CommunityQuoteMapper {
         DateTime.tryParse((m['created_at'] ?? '').toString()) ?? DateTime.now();
     final body = (m['content'] ?? '').toString();
     final authorName = CommunityAuthorMapper.authorDisplayName(
+      username: m['author_username']?.toString(),
       firstName: m['author_first_name']?.toString(),
       lastName: m['author_last_name']?.toString(),
       fallback: m['author_email']?.toString() ?? m['user_id']?.toString() ?? 'unknown',
@@ -62,10 +61,7 @@ class CommunityQuoteMapper {
       author: PostAuthor(
         id: (m['user_id'] ?? '').toString(),
         displayName: authorName,
-        username: CommunityAuthorMapper.usernameFromEmailOrId(
-          m['author_email']?.toString(),
-          m['user_id']?.toString(),
-        ),
+        username: (m['author_username'] ?? '').toString(),
       ),
       text: body,
       isComment: true,

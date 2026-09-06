@@ -2,6 +2,24 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:snowtrak/core/theme.dart';
 
+/// Which status role paints a challenge badge.
+///
+/// The role is stored rather than the resolved [Color] because the list
+/// below is `const` and a `const` cannot read a `BuildContext`. Holding the
+/// value instead would freeze it at compile time, which is the one thing the
+/// palette exists to prevent.
+enum ChallengeAccent {
+  warning,
+  info,
+  error;
+
+  Color resolve(BuildContext context) => switch (this) {
+        ChallengeAccent.warning => context.colors.warning,
+        ChallengeAccent.info => context.colors.info,
+        ChallengeAccent.error => context.colors.error,
+      };
+}
+
 /// Mock challenge row for the Active tab.
 class GroupChallengeItem {
   const GroupChallengeItem({
@@ -10,7 +28,7 @@ class GroupChallengeItem {
     required this.description,
     required this.dateRange,
     required this.badgeText,
-    required this.badgeColor,
+    required this.accent,
     required this.icon,
   });
 
@@ -19,37 +37,37 @@ class GroupChallengeItem {
   final String description;
   final String dateRange;
   final String badgeText;
-  final Color badgeColor;
+  final ChallengeAccent accent;
   final IconData icon;
 }
 
 List<GroupChallengeItem> mockGroupChallenges() {
-  return const [
-    GroupChallengeItem(
+  return [
+    const GroupChallengeItem(
       id: '1',
       title: 'January Vertical Challenge',
       description: 'Accumulate 10,000m of vertical descent in January',
       dateRange: 'Jan 1, 2026 to Jan 31, 2026',
       badgeText: '10K',
-      badgeColor: Color(0xFFE65100),
+      accent: ChallengeAccent.warning,
       icon: Icons.terrain,
     ),
-    GroupChallengeItem(
+    const GroupChallengeItem(
       id: '2',
       title: 'Winter Explorer Challenge',
       description: 'Visit 5 different ski resorts this season',
       dateRange: 'Dec 1, 2025 to Mar 31, 2026',
       badgeText: '5',
-      badgeColor: Color(0xFF1565C0),
+      accent: ChallengeAccent.info,
       icon: Icons.explore,
     ),
-    GroupChallengeItem(
+    const GroupChallengeItem(
       id: '3',
       title: 'Speed Demon Challenge',
       description: 'Record a run with max speed over 80 km/h',
       dateRange: 'Jan 1, 2026 to Jan 31, 2026',
       badgeText: '80',
-      badgeColor: Color(0xFFC62828),
+      accent: ChallengeAccent.error,
       icon: Icons.speed,
     ),
   ];
@@ -78,7 +96,7 @@ class ActiveGroupChallengeCard extends StatelessWidget {
           children: [
             ActiveChallengeBadge(
               text: challenge.badgeText,
-              color: challenge.badgeColor,
+              color: challenge.accent.resolve(context),
               icon: challenge.icon,
             ),
             const SizedBox(width: SnowtrakSpacing.md),
@@ -90,7 +108,7 @@ class ActiveGroupChallengeCard extends StatelessWidget {
                     challenge.title,
                     style: SnowtrakTypography.bodyLarge.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: SnowtrakColors.textPrimary,
+                      color: context.colors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -99,14 +117,14 @@ class ActiveGroupChallengeCard extends StatelessWidget {
                       Icon(
                         challenge.icon,
                         size: 14,
-                        color: SnowtrakColors.textTertiary,
+                        color: context.colors.textTertiary,
                       ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
                           challenge.description,
                           style: SnowtrakTypography.bodySmall.copyWith(
-                            color: SnowtrakColors.textSecondary,
+                            color: context.colors.textSecondary,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -118,7 +136,7 @@ class ActiveGroupChallengeCard extends StatelessWidget {
                   Text(
                     challenge.dateRange,
                     style: SnowtrakTypography.labelSmall.copyWith(
-                      color: SnowtrakColors.textTertiary,
+                      color: context.colors.textTertiary,
                     ),
                   ),
                 ],
@@ -152,13 +170,13 @@ class ActiveChallengeBadge extends StatelessWidget {
         gradient: RadialGradient(
           colors: [
             color,
-            color.withOpacity(0.7),
+            color.withValues(alpha:0.7),
           ],
         ),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha:0.3),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -169,7 +187,7 @@ class ActiveChallengeBadge extends StatelessWidget {
         children: [
           CustomPaint(
             size: const Size(70, 70),
-            painter: ActiveStarburstPainter(color: Colors.white.withOpacity(0.15)),
+            painter: ActiveStarburstPainter(color: context.colors.textOnPrimary.withValues(alpha: 0.15)),
           ),
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -177,14 +195,14 @@ class ActiveChallengeBadge extends StatelessWidget {
               Text(
                 text,
                 style: SnowtrakTypography.headlineSmall.copyWith(
-                  color: Colors.white,
+                  color: context.colors.textOnPrimary,
                   fontWeight: FontWeight.w800,
                   fontSize: 18,
                 ),
               ),
               Icon(
                 icon,
-                color: Colors.white.withOpacity(0.9),
+                color: context.colors.textOnPrimary.withValues(alpha: 0.9),
                 size: 16,
               ),
             ],

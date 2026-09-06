@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:snowtrak/core/theme.dart';
-import 'package:snowtrak/screens/activities/activities_screen.dart';
-import 'package:snowtrak/screens/record/record_screen.dart';
-import 'package:snowtrak/screens/profile/profile_screen.dart';
-import 'package:snowtrak/screens/groups/groups_screen.dart';
 import 'package:snowtrak/screens/community/community_screen.dart';
+import 'package:snowtrak/screens/home/home_feed_screen.dart';
 import 'package:snowtrak/screens/home/home_tab_scope.dart';
 import 'package:snowtrak/screens/home/location_permission_dialog.dart';
+import 'package:snowtrak/screens/maps/maps_screen.dart';
+import 'package:snowtrak/screens/profile/profile_screen.dart';
+import 'package:snowtrak/screens/record/record_screen.dart';
 import 'package:snowtrak/services/location_service.dart';
 import 'package:snowtrak/services/storage_service.dart';
+import 'package:snowtrak/ui/st/st.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,17 +19,26 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 2; // Start on Home (Activities Feed)
+  int _currentIndex = HomeTab.home;
   final LocationService _locationService = LocationService();
   bool _hasCheckedPermission = false;
-  final PageController _pageController = PageController(initialPage: 2);
+  final PageController _pageController =
+      PageController(initialPage: HomeTab.home);
 
-  final List<Widget> _screens = [
-    const RecordScreen(),      // 0: Map (Record Activities)
-    const CommunityScreen(),   // 1: Community
-    const ActivitiesScreen(),  // 2: Home (Activities Feed)
-    const GroupsScreen(),      // 3: Groups/Activities
-    const ProfileScreen(),     // 4: You (Profile)
+  final List<Widget> _screens = const [
+    HomeFeedScreen(), // 0: Home
+    MapsScreen(), // 1: Map
+    RecordScreen(), // 2: Record
+    CommunityScreen(), // 3: Community
+    ProfileScreen(), // 4: Profile
+  ];
+
+  static const List<StNavItem> _items = [
+    StNavItem(icon: StIcons.home, label: 'Home'),
+    StNavItem(icon: StIcons.map, label: 'Map'),
+    StNavItem(icon: StIcons.ski, label: 'Record'),
+    StNavItem(icon: StIcons.messageChat, label: 'Community'),
+    StNavItem(icon: StIcons.profile, label: 'Profile'),
   ];
 
   @override
@@ -82,7 +91,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Ensure currentIndex is within bounds
     final safeIndex = _currentIndex.clamp(0, _screens.length - 1);
 
     return HomeTabScope(
@@ -93,48 +101,13 @@ class _HomeScreenState extends State<HomeScreen> {
           onPageChanged: (index) => setState(() => _currentIndex = index),
           children: _screens,
         ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: SnowtrakElevation.md,
-        ),
-        child: BottomNavigationBar(
+        bottomNavigationBar: StBottomNav(
+          items: _items,
           currentIndex: safeIndex,
+          recordIndex: HomeTab.record,
           onTap: _onTabTapped,
-          type: BottomNavigationBarType.fixed,
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
-          selectedFontSize: 11,
-          unselectedFontSize: 11,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.map_outlined),
-              activeIcon: Icon(Icons.map),
-              label: 'Map',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.forum_outlined),
-              activeIcon: Icon(Icons.forum),
-              label: 'Community',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.group_outlined),
-              activeIcon: Icon(Icons.group),
-              label: 'Groups',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'You',
-            ),
-          ],
         ),
       ),
-    ),
     );
   }
 }

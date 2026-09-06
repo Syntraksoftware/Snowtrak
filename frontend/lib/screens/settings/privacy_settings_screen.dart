@@ -1,5 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:snowtrak/core/di/service_locator.dart';
+import 'package:snowtrak/core/errors/app_result.dart';
+import 'package:snowtrak/core/theme.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:snowtrak/providers/auth_provider.dart';
+import 'package:snowtrak/services/apis/privacy_api.dart';
+import 'package:snowtrak/services/follow_service.dart';
 
 class PrivacySettingsScreen extends StatefulWidget {
   const PrivacySettingsScreen({super.key});
@@ -18,12 +27,66 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
   bool _discoverableByPhone = false;
   bool _hideFromLeaderboards = false;
 
+  // The account-privacy flag. Read from FollowStats (Task 9), not a second
+  // endpoint, so there is one source of truth for it -- see PrivacyApi.
+  bool _isPrivate = false;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadPrivacy());
+  }
+
+  Future<void> _loadPrivacy() async {
+    final myUserId = Provider.of<AuthProvider>(context, listen: false).user?.id;
+    if (myUserId == null) return;
+    final result = await sl<FollowService>().getStats(myUserId);
+    if (!mounted) return;
+    switch (result) {
+      case AppSuccess(:final value):
+        setState(() => _isPrivate = value.isPrivate);
+      case AppFailure():
+        // No fallback needed beyond the default: the switch just starts as
+        // public until the screen is reopened, rather than surfacing a
+        // second error banner on top of the rest of the page.
+        break;
+    }
+  }
+
+  Future<void> _setPrivate(bool value) async {
+    final previous = _isPrivate;
+    setState(() {
+      _isPrivate = value;
+      _busy = true;
+    });
+    try {
+      final settled = await sl<PrivacyApi>().setPrivate(value);
+      if (!mounted) return;
+      setState(() {
+        _isPrivate = settled;
+        _busy = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      // Fall back to what the server last told us rather than leaving the
+      // switch showing a change that did not happen.
+      setState(() {
+        _isPrivate = previous;
+        _busy = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not change your privacy setting')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7),
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF2F2F7),
+        backgroundColor: context.colors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -38,6 +101,33 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
       ),
       body: ListView(
         children: [
+          const SizedBox(height: 24),
+
+          // Account Privacy
+          _buildSectionHeader('ACCOUNT PRIVACY'),
+          _SettingsGroup(
+            children: [
+              SwitchListTile(
+                key: const Key('private-account-switch'),
+                value: _isPrivate,
+                onChanged: _busy ? null : _setPrivate,
+                title: Text(
+                  'Private account',
+                  style: SnowtrakTypography.bodyLarge.copyWith(
+                    color: context.colors.textPrimary,
+                  ),
+                ),
+                subtitle: Text(
+                  'People have to ask before they can follow you. '
+                  'Anyone already following you stays.',
+                  style: SnowtrakTypography.bodySmall.copyWith(
+                    color: context.colors.textSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
           const SizedBox(height: 24),
 
           // Profile Visibility
@@ -165,7 +255,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
         style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w400,
-          color: Colors.grey[600],
+          color: context.colors.textSecondary,
           letterSpacing: -0.1,
         ),
       ),
@@ -179,7 +269,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
         text,
         style: TextStyle(
           fontSize: 13,
-          color: Colors.grey[500],
+          color: context.colors.textSecondary,
         ),
       ),
     );
@@ -207,10 +297,10 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                       Text(option),
                       if (option == currentValue) ...[
                         const SizedBox(width: 8),
-                        const Icon(
+                        Icon(
                           CupertinoIcons.checkmark,
                           size: 18,
-                          color: Color(0xFF007AFF),
+                          color: context.colors.primary,
                         ),
                       ],
                     ],
@@ -247,7 +337,7 @@ class _SettingsGroup extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -260,7 +350,7 @@ class _SettingsGroup extends StatelessWidget {
                 child: Divider(
                   height: 0.5,
                   thickness: 0.5,
-                  color: Colors.grey[300],
+                  color: context.colors.divider,
                 ),
               ),
           ],
@@ -295,17 +385,17 @@ class _SettingsToggleRow extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w400,
-                    color: Colors.black,
+                    color: context.colors.textPrimary,
                   ),
                 ),
                 if (subtitle != null) ...[
                   const SizedBox(height: 2),
                   Text(
                     subtitle!,
-                    style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                    style: TextStyle(fontSize: 13, color: context.colors.textSecondary),
                   ),
                 ],
               ],
@@ -314,7 +404,7 @@ class _SettingsToggleRow extends StatelessWidget {
           CupertinoSwitch(
             value: value,
             onChanged: onChanged,
-            activeColor: const Color(0xFF34C759),
+            activeTrackColor: context.colors.success,
           ),
         ],
       ),
@@ -345,19 +435,19 @@ class _SettingsSelectionRow extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w400,
-                  color: Colors.black,
+                  color: context.colors.textPrimary,
                 ),
               ),
               const Spacer(),
               Text(
                 value,
-                style: TextStyle(fontSize: 17, color: Colors.grey[500]),
+                style: TextStyle(fontSize: 17, color: context.colors.textSecondary),
               ),
               const SizedBox(width: 4),
-              Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+              Icon(Icons.chevron_right, color: context.colors.textTertiary, size: 20),
             ],
           ),
         ),
@@ -389,20 +479,20 @@ class _SettingsNavigationRow extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w400,
-                  color: Colors.black,
+                  color: context.colors.textPrimary,
                 ),
               ),
               const Spacer(),
               if (value != null)
                 Text(
                   value!,
-                  style: TextStyle(fontSize: 17, color: Colors.grey[500]),
+                  style: TextStyle(fontSize: 17, color: context.colors.textSecondary),
                 ),
               const SizedBox(width: 4),
-              Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+              Icon(Icons.chevron_right, color: context.colors.textTertiary, size: 20),
             ],
           ),
         ),

@@ -1,45 +1,40 @@
 class CommunityAuthorMapper {
   CommunityAuthorMapper._();
 
-  static bool looksLikeUuid(String s) {
-    final t = s.trim();
-    return RegExp(
-      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
-    ).hasMatch(t);
-  }
-
-  static String usernameFromEmailOrId(String? email, String? fallbackId) {
-    final e = (email ?? '').trim();
-    if (e.contains('@')) {
-      return e.split('@').first;
-    }
-    final id = (fallbackId ?? '').trim();
-    if (id.isEmpty) {
-      return 'user';
-    }
-    if (looksLikeUuid(id)) {
-      return 'member';
-    }
-    return id.length > 12 ? id.substring(0, 12) : id;
-  }
-
+  /// The name to show for one author.
+  ///
+  /// Mirrors `backend/shared/display_name.py`'s `display_name` case for
+  /// case: a chosen handle wins and carries the `@`, then the full name,
+  /// then the fallback's email handle, then `fallback` itself when it
+  /// carries no `@` to split on. The community feed has no `deleted` bit to
+  /// check here -- a gone author never reaches this mapper with a row to
+  /// map in the first place.
   static String authorDisplayName({
+    String? username,
     String? firstName,
     String? lastName,
     required String fallback,
   }) {
+    // The @ marks a handle, never a person, so it appears here and nowhere
+    // further down the ladder.
+    final handle = (username ?? '').trim();
+    if (handle.isNotEmpty) {
+      return '@$handle';
+    }
     final first = (firstName ?? '').trim();
     final last = (lastName ?? '').trim();
-    if (first.isNotEmpty || last.isNotEmpty) {
-      return '$first $last'.trim();
+    final full = [first, last].where((part) => part.isNotEmpty).join(' ');
+    if (full.isNotEmpty) {
+      return full;
     }
     final fb = fallback.trim();
-    if (looksLikeUuid(fb)) {
-      return 'Member';
-    }
     if (fb.contains('@')) {
       return fb.split('@').first;
     }
-    return usernameFromEmailOrId(null, fb);
+    // Matches display_name.py's final rung exactly: a fallback with no `@`
+    // to split on -- blank, or a raw id with nothing else to show -- reads
+    // as "nothing to name this author by", same as the Python side's
+    // deleted-author case.
+    return 'Skier';
   }
 }

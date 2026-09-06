@@ -28,7 +28,7 @@ class ThreadsEmptyState extends StatelessWidget {
               message,
               textAlign: TextAlign.center,
               style: SnowtrakTypography.bodyMedium.copyWith(
-                color: SnowtrakColors.error,
+                color: context.colors.error,
               ),
             ),
             if (retryable) ...[
@@ -53,6 +53,7 @@ class ThreadsFeedBody extends StatelessWidget {
     required this.onComposerSubmit,
     required this.onComposeTap,
     required this.onPostTap,
+    required this.onAuthorTap,
     required this.onLike,
     required this.onRepost,
     required this.onReply,
@@ -64,6 +65,7 @@ class ThreadsFeedBody extends StatelessWidget {
   final Future<void> Function(String text) onComposerSubmit;
   final VoidCallback onComposeTap;
   final void Function(Post post) onPostTap;
+  final void Function(Post post) onAuthorTap;
   final void Function(Post post) onLike;
   final void Function(Post post) onRepost;
   final void Function(Post post) onReply;
@@ -73,7 +75,7 @@ class ThreadsFeedBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return RefreshIndicator(
       onRefresh: onRefresh,
-      color: SnowtrakColors.primary,
+      color: context.colors.primary,
       child: ListView.builder(
         padding: const EdgeInsets.only(bottom: SnowtrakSpacing.md),
         itemCount: posts.length + 1,
@@ -89,6 +91,7 @@ class ThreadsFeedBody extends StatelessWidget {
           return MessageCard(
             post: post,
             onTap: () => onPostTap(post),
+            onAvatarTap: onAuthorTap,
             onLike: onLike,
             onRepost: onRepost,
             onReply: onReply,

@@ -4,21 +4,58 @@ import 'package:snowtrak/core/auth/authenticated_session.dart';
 import 'package:snowtrak/core/di/service_locator.dart';
 import 'package:snowtrak/core/errors/app_error.dart';
 import 'package:snowtrak/core/errors/app_result.dart';
+import 'package:snowtrak/models/follow_stats.dart';
 import 'package:snowtrak/core/logging/app_logger.dart';
 import 'package:snowtrak/core/theme.dart';
 import 'package:snowtrak/services/community_service.dart';
 import 'package:snowtrak/models/post.dart';
+import 'package:snowtrak/providers/activity_provider.dart';
 import 'package:snowtrak/providers/auth_provider.dart';
 import 'package:snowtrak/screens/community/community_post_mapper.dart';
+import 'package:snowtrak/screens/profile/widgets/profile_home_content.dart';
+import 'package:snowtrak/screens/profile/widgets/profile_totals.dart';
+import 'package:snowtrak/ui/st/st.dart';
 import 'package:snowtrak/widgets/profile_header.dart';
 import 'package:snowtrak/widgets/message_card.dart';
+
+/// Opens [userId]'s profile.
+///
+/// Pushing a profile needs nothing but a context, so call sites use this
+/// instead of threading a callback back up to whatever owns the state. An
+/// empty id is ignored: the feed mapper falls back to `''` when a post has no
+/// `user_id`, and a profile screen for nobody is worse than no reaction.
+Future<void> openUserProfile(
+  BuildContext context,
+  String userId, {
+  String? displayName,
+  String? username,
+}) async {
+  if (userId.trim().isEmpty) return;
+  await Navigator.of(context).push<void>(
+    MaterialPageRoute<void>(
+      builder: (_) => UserProfileScreen(
+        userId: userId,
+        displayName: displayName,
+        username: username,
+      ),
+    ),
+  );
+}
 
 class UserProfileScreen extends StatefulWidget {
   final String? userId; // If null, shows current user's profile
 
+  /// What the caller already knows about this person, from the post they
+  /// tapped. Used for the page title and until the profile request lands, so
+  /// the screen never opens on a placeholder name.
+  final String? displayName;
+  final String? username;
+
   const UserProfileScreen({
     super.key,
     this.userId,
+    this.displayName,
+    this.username,
   });
 
   @override
@@ -27,7 +64,11 @@ class UserProfileScreen extends StatefulWidget {
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
   final CommunityService _communityService = sl<CommunityService>();
-  List<Post> _posts = [];
+  final List<Post> _posts = [];
+
+  /// From the header's follow button, which fetched them anyway. Null until
+  /// that call lands; a private account is not assumed either way before then.
+  FollowStats? _followStats;
   bool _isLoading = false; // Start as false - will be set when loading starts
   bool _isLoadingMore = false;
   String? _error;
@@ -161,112 +202,214 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    AppLogger.instance.debug('[UserProfileScreen] Building screen. isLoading: $_isLoading, error: $_error, posts: ${_posts.length}');
-    
+    final authUser = context.watch<AuthProvider>().user;
+    // Tapping your own avatar in the feed lands here too, and then the
+    // provider's data really is this person's.
+    final isOwnProfile =
+        widget.userId == null || widget.userId == authUser?.id;
+    // ActivityProvider only ever holds the signed-in user's own stats -- no
+    // per-user stats endpoint exists yet (see ProfileHomeContent) -- so a
+    // viewed stranger's totals stay null and render as "unknown" rather than
+    // borrowing the viewer's own numbers.
+    final totalsStats =
+        isOwnProfile ? context.watch<ActivityProvider>().stats : null;
+
     return Scaffold(
-      backgroundColor: SnowtrakColors.background,
-      appBar: AppBar(
-        title: const Text('Profile'),
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: RefreshIndicator(
-        onRefresh: _handleRefresh,
-        child: _isLoading && _posts.isEmpty
-            ? const Center(child: CircularProgressIndicator())
-            : _error != null && _posts.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          _error!,
-                          textAlign: TextAlign.center,
-                          style: SnowtrakTypography.bodyMedium.copyWith(
-                            color: SnowtrakColors.error,
-                          ),
-                        ),
-                        if (_errorRetryable) ...[
-                          const SizedBox(height: SnowtrakSpacing.md),
-                          ElevatedButton(
-                            onPressed: () => _loadPosts(refresh: true),
-                            child: const Text('Retry'),
-                          ),
-                        ],
-                      ],
-                    ),
-                  )
-                : CustomScrollView(
-                    slivers: [
-                      // Profile header as list header component
-                      SliverToBoxAdapter(
-                        child: ProfileHeader(userId: widget.userId),
+      backgroundColor: context.colors.background,
+      // StPageHeader is a plain container, not an AppBar -- it does not inset
+      // itself for the status bar, so as `appBar:` it drew under the notch.
+      // It belongs inside SafeArea, the way ProfileScreen uses it.
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            StPageHeader(
+              // The handle up here, the full name on the card below. Putting
+              // the name in both made the top of the page say it twice.
+              title: _headerTitle(),
+              leading: BackButton(color: context.colors.textPrimary),
+            ),
+            Expanded(
+              child: RefreshIndicator(
+                color: context.colors.primary,
+                onRefresh: _handleRefresh,
+                // Every section renders on every profile. A failed post load
+                // used to replace the whole page, so a working profile
+                // disappeared behind the error of one list.
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: ProfileHeader(
+                        userId: widget.userId,
+                        fallbackName: widget.displayName,
+                        fallbackUsername: widget.username,
+                        onFollowStats: (stats) {
+                          if (mounted) setState(() => _followStats = stats);
+                        },
                       ),
-                      // Posts list
-                      if (_posts.isEmpty && !_isLoading)
-                        SliverToBoxAdapter(
-                          child: Container(
-                            padding: const EdgeInsets.all(SnowtrakSpacing.xl),
-                            child: Center(
-                              child: Text(
-                                'No posts yet',
-                                style: SnowtrakTypography.bodyLarge.copyWith(
-                                  color: SnowtrakColors.textSecondary,
-                                ),
-                              ),
-                            ),
-                          ),
-                        )
-                      else
-                        SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              // Load more when reaching the end
-                              if (index == _posts.length - 1 && _hasMore && !_isLoadingMore) {
-                                // Trigger load more after a small delay to avoid rapid calls
-                                Future.delayed(const Duration(milliseconds: 100), () {
-                                  if (mounted && _hasMore && !_isLoadingMore) {
-                                    _loadPosts();
-                                  }
-                                });
-                              }
-                              
-                              if (index == _posts.length && _hasMore) {
-                                // Load more indicator
-                                return const Center(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(SnowtrakSpacing.md),
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                );
-                              }
-                              
-                              if (index >= _posts.length) {
-                                return const SizedBox.shrink();
-                              }
-                              
-                              final post = _posts[index];
-                              
-                              return MessageCard(
-                                post: post,
-                                onAvatarTap: () {
-                                  // Navigate to user profile
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => UserProfileScreen(
-                                        userId: post.author.id,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                            childCount: _posts.length + (_hasMore ? 1 : 0),
-                          ),
-                        ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: ProfileTotals(stats: totalsStats),
+                    ),
+                    if (_isLocked(isOwnProfile))
+                      const SliverToBoxAdapter(child: _PrivateAccountNotice())
+                    else ...[
+                      SliverToBoxAdapter(
+                        child: ProfileHomeContent(isOwnProfile: isOwnProfile),
+                      ),
+                      _postsSliver(),
                     ],
-                  ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Whether this profile withholds its content from this viewer.
+  ///
+  /// The server already returns nothing for a locked profile -- see
+  /// `can_read_account` in community-backend. This only decides which empty
+  /// state to draw, so that a private account does not read as an account with
+  /// nothing on it.
+  bool _isLocked(bool isOwnProfile) {
+    if (isOwnProfile) return false;
+    final stats = _followStats;
+    return stats != null && stats.isPrivate && !stats.isFollowing;
+  }
+
+  String _headerTitle() {
+    final username = widget.username?.trim() ?? '';
+    if (username.isNotEmpty) return '@$username';
+    final name = widget.displayName?.trim() ?? '';
+    return name.isNotEmpty ? name : 'Profile';
+  }
+
+  Widget _postsSliver() {
+    if (_isLoading && _posts.isEmpty) {
+      return const SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.all(SnowtrakSpacing.xl),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
+    if (_error != null && _posts.isEmpty) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.all(SnowtrakSpacing.xl),
+          child: Column(
+            children: [
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: SnowtrakTypography.bodyMedium.copyWith(
+                  color: context.colors.error,
+                ),
+              ),
+              if (_errorRetryable) ...[
+                const SizedBox(height: SnowtrakSpacing.md),
+                ElevatedButton(
+                  onPressed: () => _loadPosts(refresh: true),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_posts.isEmpty) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.all(SnowtrakSpacing.xl),
+          child: Center(
+            child: Text(
+              'No posts yet',
+              style: SnowtrakTypography.bodyLarge.copyWith(
+                color: context.colors.textSecondary,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          if (index == _posts.length) {
+            if (_hasMore && !_isLoadingMore) {
+              // Reached the tail: pull the next page in after this frame.
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted && _hasMore && !_isLoadingMore) _loadPosts();
+              });
+            }
+            return const Padding(
+              padding: EdgeInsets.all(SnowtrakSpacing.md),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          final post = _posts[index];
+          return MessageCard(
+            post: post,
+            onAvatarTap: (tapped) => openUserProfile(
+              context,
+              tapped.author.id,
+              displayName: tapped.author.displayName,
+              username: tapped.author.username,
+            ),
+          );
+        },
+        childCount: _posts.length + (_hasMore ? 1 : 0),
+      ),
+    );
+  }
+}
+
+/// What a private account shows a viewer it has not approved.
+///
+/// The counts and the follow button stay above this: knowing an account exists
+/// and how many followers it has is what lets somebody decide to ask. What it
+/// posted is the part approval buys.
+class _PrivateAccountNotice extends StatelessWidget {
+  const _PrivateAccountNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SnowtrakSpacing.xl,
+        vertical: SnowtrakSpacing.xxl,
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.lock_outline, size: 32, color: context.colors.textTertiary),
+          const SizedBox(height: SnowtrakSpacing.md),
+          Text(
+            'This account is private',
+            textAlign: TextAlign.center,
+            style: SnowtrakTypography.bodyLarge.copyWith(
+              color: context.colors.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: SnowtrakSpacing.xs),
+          Text(
+            'Follow this account to see what they post.',
+            textAlign: TextAlign.center,
+            style: SnowtrakTypography.bodyMedium.copyWith(
+              color: context.colors.textSecondary,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:snowtrak/core/theme.dart';
-import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 /// Compact tappable row for home section previews.
 class HomeActionRow extends StatelessWidget {
@@ -20,7 +19,7 @@ class HomeActionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: SnowtrakColors.surfaceVariant,
+      color: context.colors.surfaceVariant,
       borderRadius: BorderRadius.circular(SnowtrakRadius.md),
       child: InkWell(
         onTap: onTap,
@@ -39,7 +38,7 @@ class HomeActionRow extends StatelessWidget {
                     Text(
                       title,
                       style: SnowtrakTypography.labelLarge.copyWith(
-                        color: SnowtrakColors.textPrimary,
+                        color: context.colors.textPrimary,
                       ),
                     ),
                     if (subtitle != null) ...[
@@ -47,14 +46,14 @@ class HomeActionRow extends StatelessWidget {
                       Text(
                         subtitle!,
                         style: SnowtrakTypography.bodySmall.copyWith(
-                          color: SnowtrakColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                       ),
                     ],
                   ],
                 ),
               ),
-              Icon(icon, size: 18, color: SnowtrakAuthTheme.brand),
+              Icon(icon, size: 18, color: context.colors.primary),
             ],
           ),
         ),

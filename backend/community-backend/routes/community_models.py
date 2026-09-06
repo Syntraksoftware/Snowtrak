@@ -4,6 +4,7 @@ used for organizing and standardizing the data structures across different route
 """
 
 from pydantic import BaseModel, Field
+from shared.visibility import PUBLIC
 
 
 class PostCreate(BaseModel):
@@ -17,6 +18,9 @@ class PostCreate(BaseModel):
     quoted_comment_id: str | None = None
     repost_of_comment_id: str | None = None
     media_urls: list[str] | None = None
+    # public | followers | private. Defaults to public so a client that has
+    # not been updated keeps posting exactly as it did before.
+    visibility: str = PUBLIC
 
 
 class CommunityQuotedPostPreview(BaseModel):
@@ -30,6 +34,7 @@ class CommunityQuotedPostPreview(BaseModel):
     author_email: str | None = None
     author_first_name: str | None = None
     author_last_name: str | None = None
+    author_username: str | None = None
 
 
 class CommunityQuotedCommentPreview(BaseModel):
@@ -42,6 +47,7 @@ class CommunityQuotedCommentPreview(BaseModel):
     author_email: str | None = None
     author_first_name: str | None = None
     author_last_name: str | None = None
+    author_username: str | None = None
 
 
 class PostUpdate(BaseModel):
@@ -87,6 +93,7 @@ class CommunityPostResponse(BaseModel):
     author_email: str | None = None
     author_first_name: str | None = None
     author_last_name: str | None = None
+    author_username: str | None = None
     like_count: int = 0
     liked_by_current_user: bool = False
     repost_count: int = 0
@@ -99,6 +106,49 @@ class CommunityPostResponse(BaseModel):
     quoted_comment: CommunityQuotedCommentPreview | None = None
     repost_of_comment_id: str | None = None
     media_urls: list[str] = Field(default_factory=list)
+    visibility: str = "public"
+
+
+class FollowStatsResponse(BaseModel):
+    """Counts plus the viewing user's relationship to this profile."""
+
+    follower_count: int = 0
+    following_count: int = 0
+    is_following: bool = False
+    is_followed_by: bool = False
+    is_private: bool = False
+
+    # The two directions of a pending request. `has_requested` is the viewer
+    # waiting on this account; `requests_you` is this account waiting on the
+    # viewer, which is what puts Approve and Deny on their profile.
+    has_requested: bool = False
+    requests_you: bool = False
+
+
+class FollowResultResponse(BaseModel):
+    """What tapping Follow actually did.
+
+    A private account turns a follow into a request, and the client cannot
+    guess which happened. A status code is a worse place to put that than a
+    body, which is why this endpoint no longer answers 204.
+    """
+
+    state: str  # "following" | "requested"
+
+
+class FollowUserResponse(BaseModel):
+    """One row in a followers, following or follow-request list.
+
+    Raw name fields rather than a finished name, matching the community feed:
+    the client resolves the display ladder in `CommunityAuthorMapper`.
+    """
+
+    user_id: str
+    email: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    username: str | None = None
+    created_at: str | None = None
 
 
 class CommunityCommentResponse(BaseModel):
@@ -114,6 +164,7 @@ class CommunityCommentResponse(BaseModel):
     author_email: str | None = None
     author_first_name: str | None = None
     author_last_name: str | None = None
+    author_username: str | None = None
     repost_count: int = 0
     reposted_by_current_user: bool = False
     media_urls: list[str] = Field(default_factory=list)

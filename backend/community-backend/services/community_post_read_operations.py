@@ -2,9 +2,12 @@
 
 import logging
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
-from services.constants.community_tables import POST_LIKES
+from shared.visibility import visible_rows_expression
+
+from services.constants.community_tables import POST_LIKES, POSTS
 from services.mappers.community_row_mappers import flatten_user_info
 
 logger = logging.getLogger(__name__)
@@ -12,6 +15,67 @@ logger = logging.getLogger(__name__)
 
 class CommunityPostReadOperations:
     """Mixin containing read and count operations for posts."""
+
+    def _visible_posts(self, current_user_id: str | None) -> tuple[str, list[str]]:
+        """The visibility predicate for this viewer, and the ids behind it.
+
+        The ids come back too because rows that arrive without going through
+        the filter -- a quoted post's preview -- have to be checked in Python
+        against the same list.
+        """
+        following = self.following_ids(current_user_id) if current_user_id else []
+        return visible_rows_expression(current_user_id, following), following
+
+    def _hydrate(
+        self,
+        posts: list[dict[str, Any]],
+        current_user_id: str | None = None,
+        expression: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Attach engagement counts and quoted previews to `posts` in place.
+
+        The three stages are independent -- each reads the same post list and
+        writes its own keys -- so they run together rather than one after
+        another. Chained, they cost three round trips to a database on another
+        continent before the first byte reaches the client.
+        """
+        if not posts:
+            return posts
+
+        if expression is None:
+            expression, _ = self._visible_posts(current_user_id)
+
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            stages = [
+                pool.submit(self._attach_engagement_fields, posts, current_user_id),
+                pool.submit(self._hydrate_quoted_posts, posts, expression),
+                pool.submit(self._hydrate_quoted_comments, posts, expression),
+            ]
+            for stage in stages:
+                stage.result()
+
+        return posts
+
+    def _engagement_rows(
+        self,
+        table_name: str,
+        columns: str,
+        match_column: str,
+        post_ids: list[str],
+    ) -> list[dict[str, Any]]:
+        """One engagement read. A failure degrades the counts, never the posts."""
+        try:
+            response = (
+                self._client.table(table_name)
+                .select(columns)
+                .in_(match_column, post_ids)
+                .execute()
+            )
+            rows = getattr(response, "data", None)
+            return rows if isinstance(rows, list) else []
+        except Exception as exception:
+            logger.warning("Failed to read %s engagement rows: %s", table_name, exception)
+            return []
 
     def _attach_engagement_fields(
         self,
@@ -31,82 +95,56 @@ class CommunityPostReadOperations:
         liked_by_current_user: dict[str, bool] = defaultdict(bool)
         repost_counts: dict[str, int] = defaultdict(int)
         reposted_by_current_user: dict[str, bool] = defaultdict(bool)
+        duplicate_repost_counts: dict[str, int] = defaultdict(int)
 
-        try:
+        # Three independent reads, run together.
+        #
+        # They used to be four, one after another. Each is a round trip to a
+        # database on another continent (~440ms), and none of them depends on
+        # another's result, so the sequence was four times the latency for no
+        # reason. The fourth was the duplicate-repost query repeated with a
+        # user_id filter -- selecting user_id in the first one answers both.
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            likes = pool.submit(
+                self._engagement_rows, POST_LIKES, "post_id, user_id", "post_id", post_ids
+            )
+            reposts = pool.submit(
+                self._engagement_rows, "post_reposts", "post_id, user_id", "post_id", post_ids
+            )
+            duplicates = pool.submit(
+                self._engagement_rows,
+                POSTS,
+                "repost_of_post_id, user_id",
+                "repost_of_post_id",
+                post_ids,
+            )
+
             # A row in post_likes is a like; there is no value to weigh. This
             # read used to count post_votes rows with vote_value > 0, which was
             # a second implementation of the same feature over a second table.
-            like_response = (
-                self._client.table(POST_LIKES)
-                .select("post_id, user_id")
-                .in_("post_id", post_ids)
-                .execute()
-            )
-            like_rows = getattr(like_response, "data", None)
-            if isinstance(like_rows, list):
-                for row in like_rows:
-                    post_id = str(row.get("post_id", ""))
-                    if not post_id:
-                        continue
-                    like_counts[post_id] += 1
-                    if current_user_id and str(row.get("user_id", "")) == current_user_id:
-                        liked_by_current_user[post_id] = True
-        except Exception as exception:
-            logger.warning("Failed to hydrate post_likes engagement fields: %s", exception)
+            for row in likes.result():
+                post_id = str(row.get("post_id", ""))
+                if not post_id:
+                    continue
+                like_counts[post_id] += 1
+                if current_user_id and str(row.get("user_id", "")) == current_user_id:
+                    liked_by_current_user[post_id] = True
 
-        try:
-            repost_response = (
-                self._client.table("post_reposts")
-                .select("post_id, user_id")
-                .in_("post_id", post_ids)
-                .execute()
-            )
-            repost_rows = getattr(repost_response, "data", None)
-            if isinstance(repost_rows, list):
-                for row in repost_rows:
-                    post_id = str(row.get("post_id", ""))
-                    if not post_id:
-                        continue
-                    repost_counts[post_id] += 1
-                    if current_user_id and str(row.get("user_id", "")) == current_user_id:
-                        reposted_by_current_user[post_id] = True
-        except Exception as exception:
-            logger.warning("Failed to hydrate post_reposts engagement fields: %s", exception)
+            for row in reposts.result():
+                post_id = str(row.get("post_id", ""))
+                if not post_id:
+                    continue
+                repost_counts[post_id] += 1
+                if current_user_id and str(row.get("user_id", "")) == current_user_id:
+                    reposted_by_current_user[post_id] = True
 
-        duplicate_repost_counts: dict[str, int] = defaultdict(int)
-        try:
-            dup_response = (
-                self._client.table("posts")
-                .select("repost_of_post_id")
-                .in_("repost_of_post_id", post_ids)
-                .execute()
-            )
-            dup_rows = getattr(dup_response, "data", None)
-            if isinstance(dup_rows, list):
-                for row in dup_rows:
-                    pid = str(row.get("repost_of_post_id", "")).strip()
-                    if pid:
-                        duplicate_repost_counts[pid] += 1
-        except Exception as exception:
-            logger.warning("Failed to hydrate post duplicate repost counts: %s", exception)
-
-        try:
-            if current_user_id:
-                dup_user = (
-                    self._client.table("posts")
-                    .select("repost_of_post_id")
-                    .in_("repost_of_post_id", post_ids)
-                    .eq("user_id", current_user_id)
-                    .execute()
-                )
-                dup_user_rows = getattr(dup_user, "data", None)
-                if isinstance(dup_user_rows, list):
-                    for row in dup_user_rows:
-                        pid = str(row.get("repost_of_post_id", "")).strip()
-                        if pid:
-                            reposted_by_current_user[pid] = True
-        except Exception as exception:
-            logger.warning("Failed to hydrate user duplicate repost flags: %s", exception)
+            for row in duplicates.result():
+                post_id = str(row.get("repost_of_post_id", "")).strip()
+                if not post_id:
+                    continue
+                duplicate_repost_counts[post_id] += 1
+                if current_user_id and str(row.get("user_id", "")) == current_user_id:
+                    reposted_by_current_user[post_id] = True
 
         for post in posts:
             post_id = str(post.get("post_id", ""))
@@ -120,8 +158,17 @@ class CommunityPostReadOperations:
             post["share_count"] = int(post.get("share_count", 0) or 0)
         return posts
 
-    def _hydrate_quoted_posts(self, posts: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        """Attach nested quoted_post preview for rows with quoted_post_id."""
+    def _hydrate_quoted_posts(
+        self,
+        posts: list[dict[str, Any]],
+        expression: str,
+    ) -> list[dict[str, Any]]:
+        """Attach nested quoted_post preview for rows with quoted_post_id.
+
+        The preview is filtered like any other post read. A public post that
+        quotes a followers-only one would otherwise hand its text to everybody,
+        and the leak would be authored by somebody other than its owner.
+        """
         if not posts:
             return posts
 
@@ -143,9 +190,10 @@ class CommunityPostReadOperations:
                     self._client.table("posts")
                     .select(
                         "post_id, user_id, title, content, created_at, "
-                        "user_info!posts_user_id_fkey(email, first_name, last_name)"
+                        "user_info!posts_user_id_fkey(email, first_name, last_name, username)"
                     )
                     .in_("post_id", unique_ids)
+                    .or_(expression)
                     .execute()
                 )
                 rows = getattr(response, "data", None)
@@ -171,8 +219,42 @@ class CommunityPostReadOperations:
                 post["quoted_post"] = None
         return posts
 
-    def _hydrate_quoted_comments(self, posts: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        """Attach nested quoted_comment preview for rows with quoted_comment_id."""
+    def visible_post_ids(self, post_ids: list[str], expression: str) -> set[str]:
+        """Which of `post_ids` this viewer may read. One query.
+
+        For rows that are reached by something other than a post read -- a
+        comment, a quoted comment -- and therefore have to be gated by their
+        parent post rather than by themselves.
+        """
+        if not post_ids:
+            return set()
+        try:
+            response = (
+                self._client.table(POSTS)
+                .select("post_id")
+                .in_("post_id", list(dict.fromkeys(post_ids)))
+                .or_(expression)
+                .execute()
+            )
+            rows = getattr(response, "data", None)
+            if not isinstance(rows, list):
+                return set()
+            return {str(row.get("post_id", "")).strip() for row in rows if row.get("post_id")}
+        except Exception as exception:
+            logger.warning("Failed to resolve visible post ids: %s", exception)
+            # Deny on failure. A visibility check that fails open is not one.
+            return set()
+
+    def _hydrate_quoted_comments(
+        self,
+        posts: list[dict[str, Any]],
+        expression: str,
+    ) -> list[dict[str, Any]]:
+        """Attach nested quoted_comment preview for rows with quoted_comment_id.
+
+        A comment inherits the visibility of the post it sits under, so the
+        previews are gated by their parent rather than by themselves.
+        """
         if not posts:
             return posts
 
@@ -193,16 +275,20 @@ class CommunityPostReadOperations:
                 response = (
                     self._client.table("comments")
                     .select(
-                        "id, user_id, content, created_at, "
-                        "user_info!comments_user_id_fkey(email, first_name, last_name)"
+                        "id, user_id, post_id, content, created_at, "
+                        "user_info!comments_user_id_fkey(email, first_name, last_name, username)"
                     )
                     .in_("id", unique_ids)
                     .execute()
                 )
                 rows = getattr(response, "data", None)
                 if isinstance(rows, list):
+                    parents = [str(row.get("post_id", "")).strip() for row in rows]
+                    allowed = self.visible_post_ids([p for p in parents if p], expression)
                     for row in rows:
                         if not isinstance(row, dict):
+                            continue
+                        if str(row.get("post_id", "")).strip() not in allowed:
                             continue
                         preview = dict(row)
                         cid = str(preview.get("id", "")).strip()
@@ -229,10 +315,12 @@ class CommunityPostReadOperations:
     ) -> dict[str, Any] | None:
         """Get post by identifier with author information."""
         try:
+            expression, _ = self._visible_posts(current_user_id)
             response = (
                 self._client.table("posts")
-                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name)")
+                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name, username)")
                 .eq("post_id", post_id)
+                .or_(expression)
                 .limit(1)
                 .execute()
             )
@@ -240,8 +328,7 @@ class CommunityPostReadOperations:
             if isinstance(response_data, list) and response_data:
                 post = response_data[0]
                 flatten_user_info(post)
-                enriched = self._attach_engagement_fields([post], current_user_id=current_user_id)
-                return self._hydrate_quoted_comments(self._hydrate_quoted_posts(enriched))[0]
+                return self._hydrate([post], current_user_id=current_user_id)[0]
             return None
         except Exception as exception:
             logger.exception("Failed to get post %s: %s", post_id, exception)
@@ -258,8 +345,9 @@ class CommunityPostReadOperations:
         try:
             response = (
                 self._client.table("posts")
-                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name)")
+                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name, username)")
                 .eq("subthread_id", subthread_id)
+                .or_(self._visible_posts(current_user_id)[0])
                 .order("created_at", desc=True)
                 .range(offset, offset + limit - 1)
                 .execute()
@@ -268,14 +356,7 @@ class CommunityPostReadOperations:
             if isinstance(response_data, list):
                 for post in response_data:
                     flatten_user_info(post)
-                return self._hydrate_quoted_comments(
-                    self._hydrate_quoted_posts(
-                        self._attach_engagement_fields(
-                            response_data,
-                            current_user_id=current_user_id,
-                        )
-                    )
-                )
+                return self._hydrate(response_data, current_user_id=current_user_id)
             return []
         except Exception as exception:
             logger.exception("Failed to list posts for subthread %s: %s", subthread_id, exception)
@@ -289,11 +370,14 @@ class CommunityPostReadOperations:
         current_user_id: str | None = None,
     ) -> list[dict[str, Any]]:
         """List posts authored by a user with author information."""
+        if not self.can_read_account(user_id, current_user_id):
+            return []
         try:
             response = (
                 self._client.table("posts")
-                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name)")
+                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name, username)")
                 .eq("user_id", user_id)
+                .or_(self._visible_posts(current_user_id)[0])
                 .order("created_at", desc=True)
                 .range(offset, offset + limit - 1)
                 .execute()
@@ -301,19 +385,8 @@ class CommunityPostReadOperations:
             response_data = getattr(response, "data", None)
             if isinstance(response_data, list):
                 for post in response_data:
-                    if "user_info" in post and post["user_info"]:
-                        author = post.pop("user_info")
-                        post["author_email"] = author.get("email")
-                        post["author_first_name"] = author.get("first_name")
-                        post["author_last_name"] = author.get("last_name")
-                return self._hydrate_quoted_comments(
-                    self._hydrate_quoted_posts(
-                        self._attach_engagement_fields(
-                            response_data,
-                            current_user_id=current_user_id,
-                        )
-                    )
-                )
+                    flatten_user_info(post)
+                return self._hydrate(response_data, current_user_id=current_user_id)
             return []
         except Exception as exception:
             logger.exception("Failed to list posts for user %s: %s", user_id, exception)
@@ -345,7 +418,8 @@ class CommunityPostReadOperations:
         try:
             response = (
                 self._client.table("posts")
-                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name)")
+                .select("*, user_info!posts_user_id_fkey(email, first_name, last_name, username)")
+                .or_(self._visible_posts(current_user_id)[0])
                 .order("created_at", desc=True)
                 .range(offset, offset + limit - 1)
                 .execute()
@@ -353,19 +427,8 @@ class CommunityPostReadOperations:
             response_data = getattr(response, "data", None)
             if isinstance(response_data, list):
                 for post in response_data:
-                    if "user_info" in post and post["user_info"]:
-                        author = post.pop("user_info")
-                        post["author_email"] = author.get("email")
-                        post["author_first_name"] = author.get("first_name")
-                        post["author_last_name"] = author.get("last_name")
-                return self._hydrate_quoted_comments(
-                    self._hydrate_quoted_posts(
-                        self._attach_engagement_fields(
-                            response_data,
-                            current_user_id=current_user_id,
-                        )
-                    )
-                )
+                    flatten_user_info(post)
+                return self._hydrate(response_data, current_user_id=current_user_id)
             return []
         except Exception as exception:
             logger.exception("Failed to list recent posts: %s", exception)

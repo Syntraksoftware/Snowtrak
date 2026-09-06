@@ -10,6 +10,16 @@ import 'package:snowtrak/services/activities_service.dart';
 import 'package:snowtrak/services/feed/activities_feed_cache.dart';
 import 'package:snowtrak/services/feed/feed_rebase.dart';
 
+/// The signed-in user's own activities, and the stats derived from them.
+///
+/// Owner-scoped, and every reader depends on that: Home's carousel totals
+/// these, the profile's training block lists them, Progress builds streaks
+/// and a calendar from them, and the map draws their tracks. It used to
+/// hold `GET /activities/` -- the public discovery feed -- so all four
+/// showed strangers' skiing as the viewer's own (#58).
+///
+/// [setOwner] is not optional wiring. Nothing else drops the previous
+/// account's rows when somebody signs out on a shared device.
 class ActivityProvider extends ChangeNotifier {
   ActivityProvider(
     this._activitiesService,
@@ -33,6 +43,31 @@ class ActivityProvider extends ChangeNotifier {
   bool get hasMore => _hasMore;
   String? get error => _error;
   UserStats? get stats => _stats;
+
+  /// Points the provider at one account and forgets the last one.
+  ///
+  /// Wired to AuthProvider in `main.dart`, so sign-in, sign-out and a
+  /// restored session all reach it. Both stores have to be dropped: the
+  /// in-memory list is what the first frame after a switch paints, and the
+  /// cached pages are what the frame after that paints.
+  Future<void> setOwner(String? userId) async {
+    if (userId == _feedCache.owner) return;
+
+    // Cleared before the owner changes, so this removes the *outgoing*
+    // account's pages. It also yields, which keeps the notifyListeners
+    // below out of the build that triggered the change.
+    await _feedCache.clear();
+    _feedCache.owner = userId;
+
+    _activities = [];
+    _stats = null;
+    _currentPage = 1;
+    _hasMore = true;
+    _isLoading = false;
+    _isLoadingMore = false;
+    _error = null;
+    notifyListeners();
+  }
 
   Future<void> hydrateFromCache() async {
     final cached = await _feedCache.readPage(1);
@@ -72,7 +107,7 @@ class ActivityProvider extends ChangeNotifier {
     }
 
     final previousLocal = List<Activity>.from(_activities);
-    final result = await _activitiesService.getActivities(
+    final result = await _activitiesService.getMyActivities(
       page: 1,
       limit: _pageSize,
     );
@@ -136,7 +171,7 @@ class ActivityProvider extends ChangeNotifier {
     _isLoadingMore = true;
     notifyListeners();
 
-    final result = await _activitiesService.getActivities(
+    final result = await _activitiesService.getMyActivities(
       page: targetPage,
       limit: _pageSize,
     );
@@ -171,7 +206,7 @@ class ActivityProvider extends ChangeNotifier {
     final cached = await _feedCache.readPage(page);
     if (cached != null && cached.isNotEmpty) return;
 
-    final result = await _activitiesService.getActivities(
+    final result = await _activitiesService.getMyActivities(
       page: page,
       limit: _pageSize,
     );

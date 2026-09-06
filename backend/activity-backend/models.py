@@ -64,6 +64,7 @@ class ActivityUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
     visibility: str | None = None
+    on_leaderboard: bool | None = None
 
 
 class FrontendActivityUpdate(BaseModel):
@@ -72,6 +73,9 @@ class FrontendActivityUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
     is_public: bool | None = None
+    # Whether this activity counts towards the global leaderboard. Opt-in is
+    # per activity, so this is the only place it is ever set.
+    on_leaderboard: bool | None = None
 
 
 class ActivityResponse(BaseModel):
@@ -107,6 +111,7 @@ class FrontendActivityResponse(BaseModel):
     max_pace: float | None = None
     calories: int | None = None
     is_public: bool
+    on_leaderboard: bool = False
     created_at: str | None = None
     locations: list[FrontendLocation] = Field(default_factory=list)
     map_activity_id: str | None = None
@@ -204,7 +209,7 @@ class UserStatsResponse(BaseModel):
     """Cached user stats returned by GET /me/stats."""
 
     user_id: str
-    week_start: str                     # ISO date string (Monday)
+    week_start: str  # ISO date string (Monday)
 
     weekly_distance_km: float
     weekly_time_min: int
@@ -225,5 +230,5 @@ class UserStatsResponse(BaseModel):
     current_streak_weeks: int
     longest_streak_weeks: int
 
-    activity_days: list[str]            # Sorted ISO date strings
+    activity_days: list[str]  # Sorted ISO date strings
     best_efforts: list[BestEffort]

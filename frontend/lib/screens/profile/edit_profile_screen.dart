@@ -26,6 +26,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _isLoading = true;
   bool _isSaving = false;
   String? _error;
+  String _loadedUsername = '';
+  String _loadedFullName = '';
 
   @override
   void initState() {
@@ -69,8 +71,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           final profile = value;
           if (!mounted) return;
 
-          _fullNameController.text = profile.fullName ?? '';
-          _usernameController.text = profile.username ?? '';
+          _loadedFullName = profile.fullName ?? '';
+          _fullNameController.text = _loadedFullName;
+          _loadedUsername = profile.username ?? '';
+          _usernameController.text = _loadedUsername;
           _bioController.text = profile.bio ?? '';
           _skiLevelController.text = profile.skiLevel ?? '';
           _homeController.text = profile.home ?? '';
@@ -109,16 +113,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
 
       final saveResult = await _profileService.updateProfile(
-        fullName: _fullNameController.text.trim(),
-        username: _usernameController.text.trim(),
         bio: _bioController.text.trim(),
         skiLevel: _skiLevelController.text.trim(),
         home: _homeController.text.trim(),
       );
 
+      if (!mounted) {
+        return;
+      }
+
       switch (saveResult) {
         case AppFailure(:final error):
-          if (!mounted) return;
           setState(() {
             _error = error.userMessage;
           });
@@ -127,8 +132,53 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           break;
       }
 
-      if (!mounted) {
-        return;
+      // The name lives on user_info, not on profiles, so it goes to
+      // PUT /users/me. Sending it as `full_name` on the profile update was
+      // accepted and dropped: the field looked saved and never was.
+      final newFullName = _fullNameController.text.trim();
+      if (newFullName != _loadedFullName) {
+        final parts = newFullName.split(' ');
+        final nameResult = await _profileService.updateUserProfile(
+          firstName: parts.first,
+          // Everything after the first space, so "Anne Marie de Vries" keeps
+          // its tail. Empty for a one-word name, which clears the last name.
+          lastName: parts.skip(1).join(' '),
+        );
+
+        if (!mounted) {
+          return;
+        }
+
+        switch (nameResult) {
+          case AppFailure(:final error):
+            setState(() {
+              _error = error.userMessage;
+            });
+            return;
+          case AppSuccess():
+            _loadedFullName = newFullName;
+        }
+      }
+
+      final newUsername = _usernameController.text.trim();
+      if (newUsername != _loadedUsername) {
+        final usernameResult = await _profileService.setUsername(
+          newUsername.isEmpty ? null : newUsername,
+        );
+
+        if (!mounted) {
+          return;
+        }
+
+        switch (usernameResult) {
+          case AppFailure(:final error):
+            setState(() {
+              _error = error.userMessage;
+            });
+            return;
+          case AppSuccess(:final value):
+            _loadedUsername = value ?? '';
+        }
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -170,13 +220,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       Container(
                         padding: const EdgeInsets.all(SnowtrakSpacing.md),
                         decoration: BoxDecoration(
-                          color: SnowtrakColors.error.withValues(alpha: 0.08),
+                          color: context.colors.error.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(SnowtrakRadius.md),
                         ),
                         child: Text(
                           _error!,
                           style: SnowtrakTypography.bodyMedium.copyWith(
-                            color: SnowtrakColors.error,
+                            color: context.colors.error,
                           ),
                         ),
                       ),

@@ -15,7 +15,7 @@ class LocationPermissionDialog extends StatelessWidget {
     return showModalBottomSheet<bool>(
       context: context,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black26,
+      barrierColor: context.colors.scrim.withValues(alpha: 0.26),
       isDismissible: false,
       builder: (_) =>
           LocationPermissionDialog(locationService: locationService),
@@ -28,12 +28,12 @@ class LocationPermissionDialog extends StatelessWidget {
     if (!granted) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
+          SnackBar(
+            content: const Text(
               'We need your GPS service to record activities and show local weather. You can enable it later in Settings.',
             ),
-            duration: Duration(seconds: 5),
-            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 5),
+            backgroundColor: context.colors.warning,
           ),
         );
       }
@@ -43,9 +43,9 @@ class LocationPermissionDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 40),
       child: Column(
@@ -55,7 +55,7 @@ class LocationPermissionDialog extends StatelessWidget {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.black12,
+              color: context.colors.scrim.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -64,12 +64,12 @@ class LocationPermissionDialog extends StatelessWidget {
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: SnowtrakColors.primary.withValues(alpha: 0.1),
+              color: context.colors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.location_on,
-              color: SnowtrakColors.primary,
+              color: context.colors.primary,
               size: 36,
             ),
           ),
@@ -77,7 +77,7 @@ class LocationPermissionDialog extends StatelessWidget {
           Text(
             'Enable Location',
             style: SnowtrakTypography.headlineMedium.copyWith(
-              color: SnowtrakColors.textPrimary,
+              color: context.colors.textPrimary,
             ),
           ),
           const SizedBox(height: 10),
@@ -85,7 +85,7 @@ class LocationPermissionDialog extends StatelessWidget {
             'Snowtrak uses your GPS to draw your route, measure distance, calculate speed, and show local weather conditions.',
             textAlign: TextAlign.center,
             style: SnowtrakTypography.bodyMedium.copyWith(
-              color: SnowtrakColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
           const SizedBox(height: 32),
@@ -98,8 +98,8 @@ class LocationPermissionDialog extends StatelessWidget {
                 _handlePermissionRequest(context, granted);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: SnowtrakColors.primary,
-                foregroundColor: Colors.white,
+                backgroundColor: context.colors.primary,
+                foregroundColor: context.colors.textOnPrimary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
@@ -123,7 +123,7 @@ class LocationPermissionDialog extends StatelessWidget {
               child: Text(
                 'Not Now',
                 style: SnowtrakTypography.bodyMedium.copyWith(
-                  color: SnowtrakColors.textTertiary,
+                  color: context.colors.textTertiary,
                 ),
               ),
             ),

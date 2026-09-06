@@ -1,6 +1,6 @@
 # Supabase schema
 
-What the live database contains, as of 2026-08-25.
+What the live database contains, as of 2026-09-05.
 
 **This is a record, not a migration.** It is not runnable and must never
 be treated as something to apply. Changing the database means changing it
@@ -41,15 +41,15 @@ defines them and no test asserts their shape.
 | `average_pace` | numeric | yes | `0` |  |
 | `max_pace` | numeric | yes | `0` |  |
 | `calories` | integer | yes |  |  |
-| `is_public` | boolean | no | `true` |  |
 | `created_at` | timestamp with time zone | no | `now()` |  |
 | `updated_at` | timestamp with time zone | no | `now()` |  |
 | `gps_path` | json[] | no |  |  |
-| `visibility` | text | no |  |  |
+| `visibility` | text | no | `private` |  |
 | `map_activity_id` | uuid | yes |  |  |
 | `storage_key` | text | yes |  |  |
 | `processing_status` | text | no | `ready` |  |
 | `thumbnail_url` | text | yes |  |  |
+| `on_leaderboard` | boolean | no | `false` |  |
 
 ### `activity_comments`
 
@@ -129,6 +129,59 @@ defines them and no test asserts their shape.
 | `created_at` | timestamp with time zone | no | `now()` |  |
 | `updated_at` | timestamp with time zone | no | `now()` |  |
 
+### `duels`
+
+| Column | Type | Null | Default | Key |
+|---|---|---|---|---|
+| `id` | uuid | no | `gen_random_uuid()` | PK |
+| `challenger_id` | uuid | no |  | FK → `user_info.id` |
+| `opponent_id` | uuid | no |  | FK → `user_info.id` |
+| `metric` | text | no |  |  |
+| `duration` | text | no |  |  |
+| `status` | text | no | `pending` |  |
+| `starts_at` | timestamp with time zone | yes |  |  |
+| `ends_at` | timestamp with time zone | yes |  |  |
+| `challenger_value` | double precision | yes |  |  |
+| `opponent_value` | double precision | yes |  |  |
+| `winner_id` | uuid | yes |  | FK → `user_info.id` |
+| `created_at` | timestamp with time zone | no | `now()` |  |
+| `settled_at` | timestamp with time zone | yes |  |  |
+
+### `follow_counts`
+
+| Column | Type | Null | Default | Key |
+|---|---|---|---|---|
+| `user_id` | uuid | no |  | PK |
+| `follower_count` | integer | no | `0` |  |
+| `following_count` | integer | no | `0` |  |
+
+### `follow_requests`
+
+| Column | Type | Null | Default | Key |
+|---|---|---|---|---|
+| `requester_id` | uuid | no |  | PK |
+| `target_id` | uuid | no |  | PK |
+| `created_at` | timestamp with time zone | no | `now()` |  |
+
+### `follows`
+
+| Column | Type | Null | Default | Key |
+|---|---|---|---|---|
+| `follower_id` | uuid | no |  | PK |
+| `followee_id` | uuid | no |  | PK |
+| `created_at` | timestamp with time zone | no | `now()` |  |
+
+### `leaderboard_weeks`
+
+| Column | Type | Null | Default | Key |
+|---|---|---|---|---|
+| `week_start` | date | no |  | PK |
+| `metric` | text | no |  | PK |
+| `scope` | text | no |  | PK |
+| `rank` | integer | no |  | PK |
+| `user_id` | uuid | no |  | FK → `user_info.id` |
+| `value` | double precision | no |  |  |
+
 ### `post_likes`
 
 **Unused.** Nothing in backend/ or frontend/ references it, and nothing ever did -- `git log -S post_likes` is empty. The community backend uses `post_votes` instead. Holds rows anyway, most recent 2026-01-29, so something wrote them outside this repository. Superseded, not reserved.
@@ -146,16 +199,7 @@ defines them and no test asserts their shape.
 |---|---|---|---|---|
 | `id` | uuid | no | `gen_random_uuid()` | PK |
 | `post_id` | uuid | no |  | FK → `posts.post_id` |
-| `user_id` | text | no |  |  |
-
-### `post_votes`
-
-| Column | Type | Null | Default | Key |
-|---|---|---|---|---|
-| `id` | uuid | no | `gen_random_uuid()` | PK |
-| `post_id` | uuid | no |  | FK → `posts.post_id` |
-| `user_id` | text | no |  |  |
-| `vote_value` | smallint | no |  |  |
+| `user_id` | uuid | no |  | FK → `user_info.id` |
 
 ### `posts`
 
@@ -168,21 +212,18 @@ defines them and no test asserts their shape.
 | `title` | text | no |  |  |
 | `content` | text | no |  |  |
 | `reposted_post_id` | uuid | yes |  | FK → `posts.post_id` |
-| `like_count` | integer | no | `0` |  |
-| `repost_count` | integer | no | `0` |  |
 | `quoted_post_id` | uuid | yes |  | FK → `posts.post_id` |
 | `repost_of_post_id` | uuid | yes |  | FK → `posts.post_id` |
 | `quoted_comment_id` | uuid | yes |  | FK → `comments.id` |
 | `repost_of_comment_id` | uuid | yes |  | FK → `comments.id` |
 | `media_urls` | jsonb | no |  |  |
+| `visibility` | text | no | `public` |  |
 
 ### `profiles`
 
 | Column | Type | Null | Default | Key |
 |---|---|---|---|---|
 | `id` | uuid | no |  | PK |
-| `full_name` | text | yes |  |  |
-| `username` | text | yes |  |  |
 | `bio` | text | yes |  |  |
 | `avatar_url` | text | yes |  |  |
 | `push_token` | text | yes |  |  |
@@ -190,6 +231,7 @@ defines them and no test asserts their shape.
 | `home` | text | yes |  |  |
 | `created_at` | timestamp with time zone | yes | `now()` |  |
 | `updated_at` | timestamp with time zone | yes | `now()` |  |
+| `country_code` | character | yes |  |  |
 
 ### `subthreads`
 
@@ -213,6 +255,9 @@ defines them and no test asserts their shape.
 | `is_active` | boolean | no | `true` |  |
 | `last_login_at` | timestamp with time zone | yes |  |  |
 | `hashed_password` | text | no |  |  |
+| `is_private` | boolean | no | `false` |  |
+| `country_code` | character | yes |  |  |
+| `username` | text | yes |  |  |
 
 ### `user_stats`
 

@@ -28,7 +28,9 @@ from services.community_cache import (
     get_cached_json,
     post_comments_cache_key,
     set_cached_json,
+    user_posts_cache_key,
 )
+from services.offload import offload
 from services.supabase_client import get_community_client
 
 logger = logging.getLogger(__name__)
@@ -82,7 +84,8 @@ async def batch_post_comments(
                 missing_post_ids.append(post_id)
 
         if missing_post_ids:
-            loaded_by_post = community_client.list_comments_by_post_ids(
+            loaded_by_post = await offload(
+                community_client.list_comments_by_post_ids,
                 missing_post_ids,
                 current_user_id=current_user,
             )
@@ -135,12 +138,13 @@ async def list_feed_posts(
             post_records = cached_payload["items"]
             total_records = int(cached_payload.get("total", 0) or 0)
         else:
-            post_records = community_client.list_recent_posts(
+            post_records = await offload(
+                community_client.list_recent_posts,
                 limit=limit,
                 offset=offset,
                 current_user_id=current_user,
             )
-            total_records = community_client.count_all_posts()
+            total_records = await offload(community_client.count_all_posts)
             await set_cached_json(
                 cache_key,
                 {"items": post_records, "total": total_records},
@@ -197,15 +201,35 @@ async def list_posts_by_user(
     offset: int = Query(0, ge=0),
     current_user: str | None = Depends(get_optional_user),
 ):
-    """List posts by user identifier."""
+    """List posts by user identifier.
+
+    Cached like the feed. This runs on every profile open and the database is
+    a continent away, so an uncached hit costs a round trip that the reader
+    feels.
+    """
     community_client = get_community_client()
     try:
-        post_records = community_client.list_posts_by_user_id(
-            user_id=user_id,
-            limit=limit,
-            offset=offset,
-            current_user_id=current_user,
-        )
+        config = get_config()
+        version = await get_cache_version("user-posts")
+        cache_key = user_posts_cache_key(user_id, limit, offset, current_user, version)
+        cached_payload = await get_cached_json(cache_key)
+
+        if isinstance(cached_payload, dict) and isinstance(cached_payload.get("items"), list):
+            post_records = cached_payload["items"]
+        else:
+            post_records = await offload(
+                community_client.list_posts_by_user_id,
+                user_id=user_id,
+                limit=limit,
+                offset=offset,
+                current_user_id=current_user,
+            )
+            await set_cached_json(
+                cache_key,
+                {"items": post_records},
+                config.CACHE_USER_POSTS_TTL_SECONDS,
+            )
+
         total_records = len(post_records)
         post_items = [CommunityPostResponse(**post_record) for post_record in post_records]
 

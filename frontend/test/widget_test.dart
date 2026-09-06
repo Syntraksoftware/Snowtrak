@@ -18,7 +18,7 @@ void main() {
     // Mock SharedPreferences to prevent timeout timers
     // This makes SharedPreferences.getInstance() return immediately
     SharedPreferences.setMockInitialValues({});
-    sl.reset();
+    await sl.reset();
     await setupServiceLocatorWithEnvironment(environment: AppEnvironment.dev);
   });
 

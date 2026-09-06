@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snowtrak/core/theme.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:provider/provider.dart';
 import 'package:snowtrak/core/activity_helpers.dart';
@@ -9,6 +10,7 @@ import 'package:snowtrak/screens/activities/activity_detail_screen.dart';
 import 'package:snowtrak/services/apis/map_activities_api.dart';
 import 'package:snowtrak/services/location_service.dart';
 import 'package:snowtrak/services/map_config.dart';
+import 'package:snowtrak/ui/st/st.dart';
 
 class MapsScreen extends StatefulWidget {
   const MapsScreen({super.key});
@@ -45,6 +47,7 @@ class _MapsScreenState extends State<MapsScreen> {
 
       if (!hasPermission) {
         // Use default location if no permission
+        if (!mounted) return;
         setState(() {
           _initialCameraPosition = const CameraPosition(
             target: LatLng(37.7749, -122.4194), // San Francisco
@@ -61,6 +64,7 @@ class _MapsScreenState extends State<MapsScreen> {
           .timeout(const Duration(seconds: 10));
 
       if (position != null) {
+        if (!mounted) return;
         setState(() {
           _initialCameraPosition = CameraPosition(
             target: LatLng(position.latitude, position.longitude),
@@ -70,6 +74,7 @@ class _MapsScreenState extends State<MapsScreen> {
         });
       } else {
         // Fallback to default
+        if (!mounted) return;
         setState(() {
           _initialCameraPosition = const CameraPosition(
             target: LatLng(37.7749, -122.4194),
@@ -80,6 +85,10 @@ class _MapsScreenState extends State<MapsScreen> {
       }
     } catch (e) {
       debugPrint('[MapsScreen] Error initializing map: $e');
+      // The location lookup has a 10s timeout. Leaving the tab before it
+      // fires disposes this state, and the catch below used to setState on a
+      // dead widget -- an unhandled exception on every such exit.
+      if (!mounted) return;
       setState(() {
         _hasError = true;
         _errorMessage = 'Failed to initialize map';
@@ -142,12 +151,20 @@ class _MapsScreenState extends State<MapsScreen> {
     if (zoom < 11) return; // too zoomed out for trail detail
     try {
       final bounds = await controller.getVisibleRegion();
+      if (!_isUsableBbox(bounds)) return;
       final geojson = await sl<MapActivitiesApi>().getResortTrails(bounds);
       await controller.setGeoJsonSource(_trailSourceId, geojson);
     } catch (e) {
       debugPrint('[MapsScreen] Failed to refresh trails: $e');
     }
   }
+
+  /// The map reports a zero-area region before it has laid out, and a wrapped
+  /// one when the view crosses the antimeridian. The backend rejects both with
+  /// a 422, so there is nothing worth asking for.
+  bool _isUsableBbox(LatLngBounds bounds) =>
+      bounds.southwest.longitude < bounds.northeast.longitude &&
+      bounds.southwest.latitude < bounds.northeast.latitude;
 
   void _showActivityDetails(Activity activity) {
     Navigator.push(
@@ -212,12 +229,7 @@ class _MapsScreenState extends State<MapsScreen> {
   Widget build(BuildContext context) {
     if (_hasError && _initialCameraPosition == null) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Maps'),
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          elevation: 0,
-        ),
+        appBar: const StPageHeader(title: 'Map'),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
@@ -227,15 +239,15 @@ class _MapsScreenState extends State<MapsScreen> {
                 Icon(
                   Icons.map_outlined,
                   size: 80,
-                  color: Colors.grey[400],
+                  color: context.colors.textTertiary,
                 ),
                 const SizedBox(height: 24),
                 Text(
                   _errorMessage ?? 'Failed to load map',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey,
+                    color: context.colors.textTertiary,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -249,8 +261,8 @@ class _MapsScreenState extends State<MapsScreen> {
                     _initializeMap();
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF4500),
-                    foregroundColor: Colors.white,
+                    backgroundColor: context.colors.primary,
+                    foregroundColor: context.colors.textOnPrimary,
                   ),
                   child: const Text('Retry'),
                 ),
@@ -263,31 +275,23 @@ class _MapsScreenState extends State<MapsScreen> {
 
     if (_isLoading || _initialCameraPosition == null) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Maps'),
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          elevation: 0,
-        ),
-        body: const Center(
+        appBar: const StPageHeader(title: 'Map'),
+        body: Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF4500)),
+            valueColor: AlwaysStoppedAnimation<Color>(context.colors.primary),
           ),
         ),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Maps'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
+      appBar: StPageHeader(
+        title: 'Map',
         actions: [
-          IconButton(
-            icon: const Icon(Icons.my_location),
-            onPressed: _centerOnMyLocation,
+          StRoundButton(
+            icon: StIcons.pin,
             tooltip: 'Center on my location',
+            onTap: _centerOnMyLocation,
           ),
         ],
       ),
@@ -309,12 +313,17 @@ class _MapsScreenState extends State<MapsScreen> {
               left: 0,
               right: 0,
               child: Container(
-                height: 120,
+                // ponytail: the strip is a fixed height because a horizontal
+                // ListView needs a bounded one. 120 was 16px short of what
+                // _ActivityCard actually draws, which overflowed on every
+                // frame. If text scaling ever pushes past this, make the card
+                // size the strip instead of hard-coding it.
+                height: 148,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.colors.surface,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
+                      color: context.colors.textPrimary.withValues(alpha: 0.1),
                       blurRadius: 10,
                       offset: const Offset(0, -5),
                     ),
@@ -375,8 +384,8 @@ class _MapsScreenState extends State<MapsScreen> {
             bottom: _activities.isNotEmpty ? 140 : 24,
             child: FloatingActionButton.small(
               heroTag: 'maps-center-location',
-              backgroundColor: const Color(0xFF1A73E8),
-              foregroundColor: Colors.white,
+              backgroundColor: context.colors.primary,
+              foregroundColor: context.colors.textOnPrimary,
               onPressed: _centerOnMyLocation,
               tooltip: 'Center on my location',
               child: const Icon(Icons.my_location),
@@ -401,11 +410,11 @@ class _StyleToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
+            color: context.colors.textPrimary.withValues(alpha: 0.12),
             blurRadius: 12,
             offset: const Offset(0, 3),
           ),
@@ -444,7 +453,7 @@ class _StyleToggleButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? const Color(0xFFFF5A1F) : Colors.white,
+      color: selected ? context.colors.primary : context.colors.surface,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -454,7 +463,7 @@ class _StyleToggleButton extends StatelessWidget {
           child: Text(
             label,
             style: TextStyle(
-              color: selected ? Colors.white : Colors.black87,
+              color: selected ? context.colors.textOnPrimary : context.colors.textPrimary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -477,11 +486,11 @@ class _ZoomControls extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
+            color: context.colors.textPrimary.withValues(alpha: 0.12),
             blurRadius: 12,
             offset: const Offset(0, 3),
           ),
@@ -499,7 +508,7 @@ class _ZoomControls extends StatelessWidget {
           Container(
             width: 30,
             height: 1,
-            color: Colors.black12,
+            color: context.colors.scrim.withValues(alpha: 0.12),
           ),
           IconButton(
             visualDensity: VisualDensity.compact,
@@ -530,9 +539,9 @@ class _ActivityCard extends StatelessWidget {
         width: 200,
         margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          color: context.colors.surfaceVariant,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(color: context.colors.divider),
         ),
         child: Padding(
           padding: const EdgeInsets.all(12.0),
@@ -572,7 +581,7 @@ class _ActivityCard extends StatelessWidget {
                 activity.formattedDuration,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey[600],
+                  color: context.colors.textSecondary,
                 ),
               ),
             ],

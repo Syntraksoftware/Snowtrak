@@ -27,9 +27,12 @@ class UsersApi {
     return Profile.fromJson(response.data);
   }
 
+  /// Updates the presentation fields `profiles` owns.
+  ///
+  /// No `full_name`: migration 022 dropped that column, so the field was
+  /// accepted, dropped by Pydantic and answered 200 -- a save that did
+  /// nothing. The name is written through [updateUserProfile].
   Future<Profile> updateProfile({
-    String? fullName,
-    String? username,
     String? bio,
     String? avatarUrl,
     String? pushToken,
@@ -37,8 +40,6 @@ class UsersApi {
     String? home,
   }) async {
     final response = await _dio.put('/users/me/profile', data: {
-      if (fullName != null) 'full_name': fullName,
-      if (username != null) 'username': username,
       if (bio != null) 'bio': bio,
       if (avatarUrl != null) 'avatar_url': avatarUrl,
       if (pushToken != null) 'push_token': pushToken,
@@ -46,6 +47,17 @@ class UsersApi {
       if (home != null) 'home': home,
     });
     return Profile.fromJson(response.data);
+  }
+
+  /// Sets or clears the caller's chosen handle via its own endpoint --
+  /// separate from [updateProfile] because a taken handle (409) is a
+  /// different failure mode than the rest of the profile fields.
+  Future<String?> setUsername(String? username) async {
+    final response = await _dio.put<Map<String, dynamic>>(
+      '/users/me/username',
+      data: {'username': username},
+    );
+    return response.data?['username'] as String?;
   }
 
   Future<Profile> getProfileById(String userId) async {

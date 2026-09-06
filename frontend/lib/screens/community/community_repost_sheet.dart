@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snowtrak/core/theme.dart';
 
 /// Threads-style repost / quote actions (keeps sheet UI out of [ThreadsTab]).
 Future<void> showCommunityRepostSheet(
@@ -22,7 +23,7 @@ Future<void> showCommunityRepostSheet(
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: context.colors.divider,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -66,7 +67,7 @@ class _RepostSheetTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFFF0F0F2),
+      color: context.colors.surfaceVariant,
       borderRadius: BorderRadius.circular(28),
       child: InkWell(
         onTap: onTap,
@@ -77,14 +78,14 @@ class _RepostSheetTile extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: context.colors.textPrimary,
                 ),
               ),
               const Spacer(),
-              Icon(icon, color: Colors.black87, size: 22),
+              Icon(icon, color: context.colors.textPrimary, size: 22),
             ],
           ),
         ),

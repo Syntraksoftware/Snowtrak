@@ -107,20 +107,22 @@ class _MapErrorOverlay extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.map_outlined, color: Colors.white54, size: 48),
+              Icon(Icons.map_outlined,
+                  color: context.colors.textOnPrimary.withValues(alpha: 0.54),
+                  size: 48),
               const SizedBox(height: 16),
               Text(
                 message,
                 style: SnowtrakTypography.bodyMedium
-                    .copyWith(color: Colors.white70),
+                    .copyWith(color: context.colors.textOnPrimary.withValues(alpha: 0.7)),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: onRetry,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: SnowtrakColors.primary,
-                  foregroundColor: Colors.white,
+                  backgroundColor: context.colors.primary,
+                  foregroundColor: context.colors.textOnPrimary,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),

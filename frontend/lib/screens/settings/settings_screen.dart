@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snowtrak/core/theme.dart';
 import 'package:provider/provider.dart';
 import 'package:snowtrak/providers/auth_provider.dart';
 import 'package:snowtrak/screens/settings/notifications_settings_screen.dart';
@@ -24,9 +25,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final user = authProvider.user;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7), // iOS system background
+      backgroundColor: context.colors.background, // iOS system background
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF2F2F7),
+        backgroundColor: context.colors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -56,13 +57,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               SettingsIosRow(
                 icon: Icons.notifications,
-                iconBackground: const Color(0xFFFF3B30), // iOS Red
+                iconBackground: SnowtrakColors.tileRed,
                 label: 'Notifications',
                 onTap: () => _navigateTo(const NotificationsSettingsScreen()),
               ),
               SettingsIosRow(
                 icon: Icons.lock,
-                iconBackground: const Color(0xFF34C759), // iOS Green
+                iconBackground: SnowtrakColors.tileGreen,
                 label: 'Privacy & Security',
                 onTap: () => _navigateTo(const PrivacySettingsScreen()),
               ),
@@ -72,12 +73,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
 
           // Account & Personalization
-          SettingsIosSectionHeader('ACCOUNT'),
+          const SettingsIosSectionHeader('ACCOUNT'),
           SettingsIosGroup(
             children: [
               SettingsIosRow(
                 icon: Icons.person,
-                iconBackground: const Color(0xFF007AFF), // iOS Blue
+                iconBackground: SnowtrakColors.tileInk,
                 label: 'Account',
                 subtitle: 'Password, email, security',
                 onTap: () => _navigateTo(const AccountSettingsScreen()),
@@ -88,26 +89,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
 
           // App Settings
-          SettingsIosSectionHeader('APP'),
+          const SettingsIosSectionHeader('APP'),
           SettingsIosGroup(
             children: [
               SettingsIosRow(
                 icon: Icons.downhill_skiing,
-                iconBackground: const Color(0xFFFF9500), // iOS Orange
+                iconBackground: SnowtrakColors.tileOrange,
                 label: 'Activity & Recording',
                 subtitle: 'GPS, units, auto-pause',
                 onTap: () => _navigateTo(const ActivitySettingsScreen()),
               ),
               SettingsIosRow(
                 icon: Icons.display_settings,
-                iconBackground: const Color(0xFF5856D6), // iOS Purple
+                iconBackground: SnowtrakColors.tileSlate,
                 label: 'Display & Appearance',
                 subtitle: 'Theme, language, date format',
                 onTap: () => _navigateTo(const DisplaySettingsScreen()),
               ),
               SettingsIosRow(
                 icon: Icons.storage,
-                iconBackground: const Color(0xFF8E8E93), // iOS Gray
+                iconBackground: SnowtrakColors.tileGrey,
                 label: 'Data & Storage',
                 subtitle: 'Cache, offline maps, export',
                 onTap: () => _navigateTo(const DataStorageScreen()),
@@ -118,18 +119,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
 
           // Support
-          SettingsIosSectionHeader('SUPPORT'),
+          const SettingsIosSectionHeader('SUPPORT'),
           SettingsIosGroup(
             children: [
               SettingsIosRow(
                 icon: Icons.help,
-                iconBackground: const Color(0xFF007AFF), // iOS Blue
+                iconBackground: SnowtrakColors.tileInk,
                 label: 'Help & Support',
                 onTap: () => _navigateTo(const HelpSupportScreen()),
               ),
               SettingsIosRow(
                 icon: Icons.info,
-                iconBackground: const Color(0xFF8E8E93), // iOS Gray
+                iconBackground: SnowtrakColors.tileGrey,
                 label: 'About Snowtrak',
                 subtitle: 'Version 1.0.0',
                 onTap: () => _showAboutDialog(),
@@ -144,7 +145,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               SettingsIosActionRow(
                 label: 'Sign Out',
-                textColor: const Color(0xFF007AFF),
+                textColor: context.colors.primary,
                 onTap: () => _showLogoutConfirmation(),
               ),
             ],
@@ -157,7 +158,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               SettingsIosActionRow(
                 label: 'Delete Account',
-                textColor: const Color(0xFFFF3B30),
+                textColor: context.colors.error,
                 onTap: () => _showDeleteAccountConfirmation(),
               ),
             ],
@@ -171,7 +172,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               'Snowtrak v1.0.0 (Build 1)',
               style: TextStyle(
                 fontSize: 13,
-                color: Colors.grey[500],
+                color: context.colors.textSecondary,
               ),
             ),
           ),
@@ -207,28 +208,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
               'A skiing-focused fitness tracking and social community app.',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[600],
+                color: context.colors.textSecondary,
               ),
             ),
             const SizedBox(height: 16),
             GestureDetector(
               onTap: () {},
-              child: const Text(
+              child: Text(
                 'Terms of Service',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF007AFF),
+                  color: context.colors.primary,
                 ),
               ),
             ),
             const SizedBox(height: 8),
             GestureDetector(
               onTap: () {},
-              child: const Text(
+              child: Text(
                 'Privacy Policy',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF007AFF),
+                  color: context.colors.primary,
                 ),
               ),
             ),
@@ -237,9 +238,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
+            child: Text(
               'Done',
-              style: TextStyle(color: Color(0xFF007AFF)),
+              style: TextStyle(color: context.colors.primary),
             ),
           ),
         ],
@@ -257,9 +258,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text(
+            child: Text(
               'Cancel',
-              style: TextStyle(color: Color(0xFF007AFF)),
+              style: TextStyle(color: context.colors.primary),
             ),
           ),
           TextButton(
@@ -274,14 +275,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               
               // Pop all routes to return to root - the main Consumer will
               // automatically show LoginScreen when isAuthenticated is false
-              if (context.mounted) {
+              // State.context, so the State's own mounted is the right
+              // guard -- context.mounted answers a different question.
+              if (mounted) {
                 Navigator.of(context, rootNavigator: true)
                     .popUntil((route) => route.isFirst);
               }
             },
-            child: const Text(
+            child: Text(
               'Sign Out',
-              style: TextStyle(color: Color(0xFFFF3B30)),
+              style: TextStyle(color: context.colors.error),
             ),
           ),
         ],
@@ -301,9 +304,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
+            child: Text(
               'Cancel',
-              style: TextStyle(color: Color(0xFF007AFF)),
+              style: TextStyle(color: context.colors.primary),
             ),
           ),
           TextButton(
@@ -316,9 +319,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               );
             },
-            child: const Text(
+            child: Text(
               'Delete',
-              style: TextStyle(color: Color(0xFFFF3B30)),
+              style: TextStyle(color: context.colors.error),
             ),
           ),
         ],

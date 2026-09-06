@@ -1,11 +1,12 @@
 name: iOS Staging
 
 on:
+  # Manual only, deliberately. This ran on every push to develop, which meant
+  # every merged PR spent a TestFlight build slot and pushed a new binary at
+  # testers whether or not it was worth their time. A release to testers is a
+  # decision, so it takes a click: Actions -> iOS Staging -> Run workflow, and
+  # pick the branch. Nothing else uploads to TestFlight.
   workflow_dispatch:
-  push:
-    # develop only. main releases through v* tags, so a merge to main used to
-    # produce a redundant TestFlight build of the same code.
-    branches: [ develop ]
 
 permissions:
   contents: read
@@ -37,6 +38,19 @@ jobs:
         run: |
           echo "$ASC_KEY_BASE64" | base64 --decode > /tmp/AuthKey.p8
 
+      - name: Decode distribution certificate
+        # The App Store Connect API can hand back the provisioning profile, but
+        # never a private key -- so the .p12 has to travel as a secret. fastlane
+        # imports it into the throwaway keychain setup_ci creates.
+        env:
+          IOS_DIST_CERT_BASE64: ${{ secrets.IOS_DIST_CERT_BASE64 }}
+        run: |
+          if [ -z "$IOS_DIST_CERT_BASE64" ]; then
+            echo "ERROR: IOS_DIST_CERT_BASE64 is not set. See docs/ios_release_pipeline.md." >&2
+            exit 1
+          fi
+          echo "$IOS_DIST_CERT_BASE64" | base64 --decode > /tmp/dist.p12
+
       - name: Create placeholder MapTiler asset
         # frontend/pubspec.yaml declares .env.local.json as an asset, but the file
         # is gitignored (it holds a real MapTiler key), so CI never has it and the
@@ -56,7 +70,8 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_PATH: /tmp/AuthKey.p8
           APP_IDENTIFIER: ${{ secrets.APP_IDENTIFIER }}
-          PROV_PROFILE_NAME: ${{ secrets.PROV_PROFILE_NAME }}
+          IOS_DIST_CERT_PATH: /tmp/dist.p12
+          IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
           # Baked into the binary via --dart-define by the Fastfile. Without it the
           # shipped build falls back to keyless open tile sources.
           MAPTILER_API_KEY: ${{ secrets.MAPTILER_API_KEY }}

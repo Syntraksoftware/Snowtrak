@@ -77,18 +77,18 @@ class _CompactComposerState extends State<CompactComposer> {
             children: [
               CircleAvatar(
                 radius: 20,
-                backgroundColor: SnowtrakColors.primary.withValues(alpha: 0.12),
+                backgroundColor: context.colors.primary.withValues(alpha: 0.12),
                 child: user?.firstName != null
                     ? Text(
                         user!.firstName![0].toUpperCase(),
                         style: SnowtrakTypography.labelMedium.copyWith(
-                          color: SnowtrakColors.primary,
+                          color: context.colors.primary,
                           fontWeight: FontWeight.w700,
                         ),
                       )
-                    : const Icon(
+                    : Icon(
                         Icons.person_outline,
-                        color: SnowtrakColors.textSecondary,
+                        color: context.colors.textSecondary,
                         size: 20,
                       ),
               ),
@@ -104,7 +104,7 @@ class _CompactComposerState extends State<CompactComposer> {
                       maxLines: _isExpanded ? 4 : 1,
                       maxLength: widget.maxCharacters,
                       style: SnowtrakTypography.bodyLarge.copyWith(
-                        color: SnowtrakColors.textPrimary,
+                        color: context.colors.textPrimary,
                       ),
                       onTap: () {
                         if (widget.onComposeTap != null) {
@@ -118,7 +118,7 @@ class _CompactComposerState extends State<CompactComposer> {
                       decoration: InputDecoration(
                         hintText: 'Start a thread…',
                         hintStyle: SnowtrakTypography.bodyLarge.copyWith(
-                          color: SnowtrakColors.textTertiary,
+                          color: context.colors.textTertiary,
                         ),
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.zero,
@@ -133,10 +133,10 @@ class _CompactComposerState extends State<CompactComposer> {
                         child: FilledButton(
                           onPressed: canPost ? _handlePost : null,
                           style: FilledButton.styleFrom(
-                            backgroundColor: SnowtrakColors.primary,
-                            foregroundColor: Colors.white,
+                            backgroundColor: context.colors.primary,
+                            foregroundColor: context.colors.textOnPrimary,
                             disabledBackgroundColor:
-                                SnowtrakColors.primary.withValues(alpha: 0.35),
+                                context.colors.primary.withValues(alpha: 0.35),
                             padding: const EdgeInsets.symmetric(
                               horizontal: 18,
                               vertical: 8,
@@ -153,7 +153,7 @@ class _CompactComposerState extends State<CompactComposer> {
                             'Post',
                             style: SnowtrakTypography.labelMedium.copyWith(
                               fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                              color: context.colors.textOnPrimary,
                             ),
                           ),
                         ),
@@ -165,7 +165,7 @@ class _CompactComposerState extends State<CompactComposer> {
             ],
           ),
         ),
-        const Divider(height: 1, thickness: 1, color: SnowtrakColors.divider),
+        Divider(height: 1, thickness: 1, color: context.colors.divider),
       ],
     );
   }

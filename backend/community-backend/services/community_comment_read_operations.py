@@ -17,7 +17,9 @@ class CommunityCommentReadOperations:
         try:
             response = (
                 self._client.table("comments")
-                .select("*, user_info!comments_user_id_fkey(email, first_name, last_name)")
+                .select(
+                    "*, user_info!comments_user_id_fkey(email, first_name, last_name, username)"
+                )
                 .eq("id", comment_id)
                 .limit(1)
                 .execute()
@@ -110,7 +112,9 @@ class CommunityCommentReadOperations:
         try:
             response = (
                 self._client.table("comments")
-                .select("*, user_info!comments_user_id_fkey(email, first_name, last_name)")
+                .select(
+                    "*, user_info!comments_user_id_fkey(email, first_name, last_name, username)"
+                )
                 .eq("post_id", post_id)
                 .order("created_at", desc=False)
                 .execute()
@@ -145,11 +149,24 @@ class CommunityCommentReadOperations:
 
         empty: dict[str, list[dict[str, Any]]] = {pid: [] for pid in ordered_ids}
 
+        # This endpoint takes whatever post ids a client sends. A comment
+        # inherits its post's visibility, so the ids are narrowed to what this
+        # viewer may read before any comment is fetched. Posts they cannot see
+        # come back as an empty list, indistinguishable from a post with no
+        # comments.
+        expression, _ = self._visible_posts(current_user_id)
+        allowed = self.visible_post_ids(ordered_ids, expression)
+        readable_ids = [pid for pid in ordered_ids if pid in allowed]
+        if not readable_ids:
+            return empty
+
         try:
             response = (
                 self._client.table("comments")
-                .select("*, user_info!comments_user_id_fkey(email, first_name, last_name)")
-                .in_("post_id", ordered_ids)
+                .select(
+                    "*, user_info!comments_user_id_fkey(email, first_name, last_name, username)"
+                )
+                .in_("post_id", readable_ids)
                 .execute()
             )
             response_data = getattr(response, "data", None)

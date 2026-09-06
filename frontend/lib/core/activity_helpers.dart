@@ -34,7 +34,9 @@ class ActivityHelpers {
       case ActivityType.snowboard:
         return SnowtrakColors.snowboard;
       case ActivityType.other:
-        return SnowtrakColors.textSecondary;
+        // The ramp, not textSecondary: this returns data colours, and a
+        // data colour must not borrow a UI role's name.
+        return SnowtrakColors.neutral600;
     }
   }
   

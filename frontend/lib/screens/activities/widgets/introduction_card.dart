@@ -5,7 +5,6 @@ import 'package:snowtrak/screens/activities/widgets/home_section_card.dart';
 import 'package:snowtrak/screens/activities/widgets/home_section_spacing.dart';
 import 'package:snowtrak/screens/activities/widgets/home_selectable_chip.dart';
 import 'package:snowtrak/screens/home/home_tab_scope.dart';
-import 'package:snowtrak/ui/liquid/snowtrak_auth_theme.dart';
 
 enum _IntroAction { record, community, stats }
 
@@ -22,9 +21,9 @@ class _IntroductionCardState extends State<IntroductionCard> {
   void _selectAction(_IntroAction action) {
     setState(() => _selected = action);
     HomeTabScope.selectTabOrNull(context, switch (action) {
-      _IntroAction.record => 0,
-      _IntroAction.community => 1,
-      _IntroAction.stats => 4,
+      _IntroAction.record => HomeTab.record,
+      _IntroAction.community => HomeTab.community,
+      _IntroAction.stats => HomeTab.profile,
     });
   }
 
@@ -35,7 +34,7 @@ class _IntroductionCardState extends State<IntroductionCard> {
         icon: Icons.downhill_skiing,
         title: 'New to Snowtrak?',
         subtitle: 'Pick a starting point',
-        iconColor: SnowtrakAuthTheme.brand,
+        iconColor: context.colors.primary,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
