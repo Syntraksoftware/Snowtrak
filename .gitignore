@@ -43,3 +43,6 @@ frontend/test/failures/
 
 # per-machine Claude Code settings; .claude/settings.json is the shared one
 .claude/settings.local.json
+
+# macOS Finder metadata; committed once by accident.
+.DS_Store
