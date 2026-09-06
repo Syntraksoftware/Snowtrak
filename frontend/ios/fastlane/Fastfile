@@ -100,6 +100,14 @@ platform :ios do
   # a workflow_dispatch run, where GITHUB_REF_NAME holds a branch: no
   # --build-name is passed and pubspec supplies the number, as before.
   def release_build_name
+    # A tag push runs the workflow file as it stood when the tag was cut, so
+    # fixing that file does not fix a run that already failed. Re-running it as
+    # a dispatch is the way back, and a dispatch has a branch in
+    # GITHUB_REF_NAME -- hence the override, which keeps the re-run on the
+    # version the tag named instead of falling back to pubspec.
+    explicit = ENV["RELEASE_VERSION"].to_s
+    return explicit if explicit =~ /\A\d+\.\d+\.\d+\z/
+
     ref = ENV["GITHUB_REF_NAME"].to_s
     ref =~ /\Av(\d+\.\d+\.\d+)\z/ ? Regexp.last_match(1) : nil
   end
