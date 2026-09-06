@@ -238,6 +238,12 @@ platform :ios do
       skip_metadata: true,
       skip_screenshots: true,
       submit_for_review: false,
+      # Nothing is submitted here and no metadata is sent, so precheck has
+      # nothing left to validate -- but deliver runs it anyway, and it cannot
+      # read in-app purchases with an API key, only with an Apple ID login.
+      # That failed the build *after* the binary had already reached Apple,
+      # which is the worst place to fail: a red run over a successful upload.
+      run_precheck_before_submit: false,
       force: true
     )
   end

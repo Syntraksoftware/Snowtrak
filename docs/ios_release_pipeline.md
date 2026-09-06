@@ -206,3 +206,14 @@ previous run's IPA on disk. That once shipped a three-month-old binary to
 Apple. `Fastfile` now compares the IPA's mtime against the start of the build
 and fails loudly instead. If you see `Stale IPA at ...`, the real error is
 further up the log — it is an export failure, not a packaging one.
+
+A red run does not always mean nothing reached Apple. `deliver` uploads first
+and validates after, so a failure late in that action can sit above a
+successful upload. Search the log for `Successfully uploaded package` before
+assuming a re-run is needed; uploading the same build number twice is rejected
+by App Store Connect, so the re-run would fail for a second, unrelated reason.
+
+This bit once: `deliver` ran `precheck`, which cannot read in-app purchases
+with an API key, and failed the build after the binary had landed. Precheck is
+off now — nothing here submits for review or sends metadata, so it had nothing
+left to validate.
