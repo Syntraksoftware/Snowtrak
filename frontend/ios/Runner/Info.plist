@@ -22,6 +22,13 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<!-- Answers Apple's export-compliance question at upload time instead of
+	     leaving every build stuck on Missing Compliance until a human clicks
+	     through App Store Connect. false is correct while the only crypto here
+	     is platform HTTPS/TLS, which is exempt. Ship a cipher of our own and
+	     this key has to be revisited. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>

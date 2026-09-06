@@ -88,12 +88,35 @@ rm ~/Desktop/dist.p12
 If the new certificate has a different SHA-1, update `signingCertificate` in
 `ExportOptions.plist` — `security find-identity -v -p codesigning` prints it.
 
-## Build numbers
+## Version numbers
 
-`Fastfile` asks App Store Connect for the highest build number already uploaded
-for the current marketing version and adds one, so `CFBundleVersion` never
-collides. The marketing version (`CFBundleShortVersionString`) still comes from
-`pubspec.yaml` and is bumped by hand.
+Two numbers, two sources.
+
+`CFBundleVersion` — the build number. `Fastfile` asks App Store Connect for the
+highest one already uploaded for the current marketing version and adds one, so
+it never collides.
+
+`CFBundleShortVersionString` — the marketing version. The **production lane
+takes it from the git tag**: `v1.2.3` builds `1.2.3`, via `--build-name`.
+`pubspec.yaml` has read `1.0.0` since May and is no longer the source of truth
+for a release; nobody has to remember to bump it.
+
+The tag only wins when it looks like one. A `workflow_dispatch` run, a local
+`bundle exec fastlane production`, or the staging lane all leave
+`GITHUB_REF_NAME` holding a branch — no `--build-name` is passed and `pubspec`
+supplies the version, as before. A `-rc` tag is not matched either, and cannot
+reach the App Store anyway.
+
+## Export compliance
+
+`Info.plist` declares `ITSAppUsesNonExemptEncryption = false`, so an upload
+answers Apple's export question by itself. Without it every build sat on
+**Missing Compliance** in TestFlight until somebody clicked through the web UI,
+which no CI run can do.
+
+`false` holds while the only cryptography in the app is platform HTTPS/TLS,
+which is exempt. Bundle a cipher, ship your own key exchange, or do anything
+beyond ATS, and the key has to be revisited before the next upload.
 
 ## Running it locally
 
