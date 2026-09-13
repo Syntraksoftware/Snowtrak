@@ -56,6 +56,23 @@ class TestActivityEndpoints:
         assert body["type"] == "ski"
         assert body["is_public"] is True
 
+    def test_create_activity_records_a_max_pace(self, client):
+        # #48: the speed leaderboard ranks on this column and nothing used
+        # to write it, so the board was empty for every user in every week.
+        payload = _activity_payload()
+        for location in payload["locations"]:
+            location["speed"] = 20.0
+
+        body = client.post("/api/v1/activities", json=payload).json()
+
+        # 20 m/s is 72 km/h is 50 s/km.
+        assert body["max_pace"] == 50.0
+
+    def test_create_activity_without_speeds_reports_no_pace(self, client):
+        body = client.post("/api/v1/activities", json=_activity_payload()).json()
+
+        assert body["max_pace"] is None
+
     def test_create_activity_invalid_payload(self, client):
         payload = _activity_payload()
         payload.pop("type")

@@ -9,6 +9,7 @@ from typing import Any
 from shared.pipeline_enums import ProcessingStatus
 
 from config import get_config
+from domain.pace import pace_from_speed_kmh
 from services.gpx_parser import parse_gpx_bytes
 from services.map_backend_client import MapBackendClient, get_map_backend_client
 from services.nivus_client import NivusClient, get_nivus_client
@@ -79,6 +80,10 @@ class PipelineProcessor:
             distance_m = float(stats.get("total_distance_km") or 0) * 1000.0
             elevation_gain = float(stats.get("total_vertical_drop_m") or 0)
             moving_time_s = float(stats.get("moving_time_s") or 0)
+            # Engine 3's own aggregate, not a per-point maximum -- the
+            # percentile in domain.pace is for the sync path, which has raw
+            # fixes and no engine.
+            max_pace = pace_from_speed_kmh(stats.get("top_speed_kmh"))
 
             gps_path = [
                 {
@@ -98,6 +103,7 @@ class PipelineProcessor:
                 distance_meters=distance_m,
                 duration_seconds=int(moving_time_s),
                 elevation_gain_meters=elevation_gain,
+                max_pace=max_pace,
                 gps_path=gps_path,
                 thumbnail_url=thumbnail_url,
                 name=None,

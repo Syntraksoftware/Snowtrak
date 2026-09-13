@@ -60,6 +60,7 @@ class ActivitySupabaseClient:
         duration_seconds: int,
         distance_meters: float,
         elevation_gain_meters: float,
+        max_pace: float | None = None,
         visibility: str = "private",
         description: str | None = None,
         map_activity_id: str | None = None,
@@ -81,6 +82,11 @@ class ActivitySupabaseClient:
             "description": description,
             "created_at": datetime.utcnow().isoformat() + "Z",
         }
+        # Left out rather than written as 0: the column defaults to 0 and
+        # the leaderboard reads 0 as "no reading", so omitting says the same
+        # thing without claiming a measurement was taken.
+        if max_pace is not None:
+            payload["max_pace"] = max_pace
         if map_activity_id:
             payload["map_activity_id"] = map_activity_id
         if storage_key:
@@ -106,6 +112,7 @@ class ActivitySupabaseClient:
         distance_meters: float | None = None,
         duration_seconds: int | None = None,
         elevation_gain_meters: float | None = None,
+        max_pace: float | None = None,
         gps_path: list[dict[str, Any]] | None = None,
         thumbnail_url: str | None = None,
         name: str | None = None,
@@ -125,6 +132,8 @@ class ActivitySupabaseClient:
             update_fields["duration_seconds"] = duration_seconds
         if elevation_gain_meters is not None:
             update_fields["elevation_gain_meters"] = elevation_gain_meters
+        if max_pace is not None:
+            update_fields["max_pace"] = max_pace
         if gps_path is not None:
             update_fields["gps_path"] = gps_path
         if thumbnail_url is not None:
